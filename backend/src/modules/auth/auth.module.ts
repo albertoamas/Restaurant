@@ -2,19 +2,21 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantModule } from '../tenant/tenant.module';
 import { GetProfileUseCase } from './application/use-cases/get-profile.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
-import { UserOrmEntity } from './infrastructure/persistence/user.orm-entity';
+import { CreateCashierUseCase } from './application/use-cases/create-cashier.use-case';
+import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
+import { ToggleUserUseCase } from './application/use-cases/toggle-user.use-case';
+import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { UpdateUserBranchUseCase } from './application/use-cases/update-user-branch.use-case';
 import { UserRepository } from './infrastructure/persistence/user.repository';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { AuthController } from './infrastructure/controllers/auth.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserOrmEntity]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -38,7 +40,12 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
     LoginUseCase,
     RegisterUseCase,
     GetProfileUseCase,
+    CreateCashierUseCase,
+    ListUsersUseCase,
+    ToggleUserUseCase,
+    ChangePasswordUseCase,
+    UpdateUserBranchUseCase,
   ],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule, RegisterUseCase, 'UserRepositoryPort'],
 })
 export class AuthModule {}

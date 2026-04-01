@@ -1,4 +1,5 @@
 import { OrderType, OrderStatus, PaymentMethod } from './enums';
+import { CreateCustomerRequest } from './customer.types';
 
 export interface CreateOrderItemRequest {
   productId: string;
@@ -6,10 +7,13 @@ export interface CreateOrderItemRequest {
 }
 
 export interface CreateOrderRequest {
+  branchId?: string;
   type: OrderType;
   paymentMethod: PaymentMethod;
   notes?: string;
   items: CreateOrderItemRequest[];
+  customerId?: string;
+  createCustomer?: CreateCustomerRequest;
 }
 
 export interface OrderItemDto {
@@ -34,6 +38,8 @@ export interface OrderDto {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  customerId?: string | null;
+  customer?: { id: string; name: string; phone: string | null } | null;
 }
 
 export interface UpdateOrderStatusRequest {
@@ -55,4 +61,13 @@ export interface DailyReportDto {
     takeout: number;
     delivery: number;
   };
+}
+
+export interface TopProductDto {
+  productId: string;
+  productName: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  totalQuantity: number;
+  totalRevenue: number;
 }

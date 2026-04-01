@@ -9,8 +9,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -38,11 +40,23 @@ export class ProductController {
   ) {}
 
   @Get()
-  findAll(
+  async findAll(
     @CurrentTenant() tenantId: string,
+    @Res({ passthrough: true }) res: Response,
     @Query('categoryId') categoryId?: string,
+    @Query('includeInactive') includeInactive?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.listProducts.execute(tenantId, categoryId);
+    const result = await this.listProducts.execute(
+      tenantId,
+      categoryId,
+      includeInactive === 'true',
+      page ? +page : 1,
+      limit ? +limit : 100,
+    );
+    res.setHeader('X-Total-Count', result.total);
+    return result.data;
   }
 
   @Get(':id')

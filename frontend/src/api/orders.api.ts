@@ -4,6 +4,8 @@ import type { OrderDto, CreateOrderRequest, OrderStatus } from '@pos/shared';
 interface OrdersParams {
   date?: string;
   status?: OrderStatus;
+  branchId?: string;
+  customerId?: string;
   page?: number;
   limit?: number;
 }

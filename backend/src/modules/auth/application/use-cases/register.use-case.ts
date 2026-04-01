@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
@@ -26,17 +21,16 @@ export class RegisterUseCase {
     private readonly userRepository: UserRepositoryPort,
     @Inject('TenantRepositoryPort')
     private readonly tenantRepository: TenantRepositoryPort,
-    private readonly jwtService: JwtService,
   ) {}
 
-  async execute(dto: RegisterDto) {
+  async execute(dto: RegisterDto, startActive = false) {
     const existingUser = await this.userRepository.findByEmailGlobal(dto.email);
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
 
-    const tenant = Tenant.create(dto.businessName, slugify(dto.businessName));
-
+    const baseTenant = Tenant.create(dto.businessName, slugify(dto.businessName));
+    const tenant = startActive ? baseTenant.withActive(true) : baseTenant;
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const user = User.create({
@@ -50,24 +44,6 @@ export class RegisterUseCase {
     await this.tenantRepository.save(tenant);
     await this.userRepository.save(user);
 
-    const payload = {
-      sub: user.id,
-      tenantId: user.tenantId,
-      role: user.role,
-    };
-
-    const token = this.jwtService.sign(payload);
-
-    return {
-      accessToken: token,
-      user: {
-        id: user.id,
-        tenantId: user.tenantId,
-        tenantName: tenant.name,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    };
+    return { tenantId: tenant.id, message: 'Negocio creado correctamente.' };
   }
 }

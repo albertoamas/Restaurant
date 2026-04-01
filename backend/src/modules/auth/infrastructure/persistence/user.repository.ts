@@ -1,38 +1,85 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
-import { UserMapper } from './user.mapper';
-import { UserOrmEntity } from './user.orm-entity';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { User as PrismaUser } from '@prisma/client';
+import { UserRole } from '@pos/shared';
+
+function toDomain(row: PrismaUser): User {
+  const user = new User();
+  user.id = row.id;
+  user.tenantId = row.tenantId;
+  user.branchId = row.branchId;
+  user.email = row.email;
+  user.passwordHash = row.passwordHash;
+  user.name = row.name;
+  user.role = row.role as UserRole;
+  user.isActive = row.isActive;
+  user.createdAt = row.createdAt;
+  return user;
+}
 
 @Injectable()
 export class UserRepository implements UserRepositoryPort {
-  constructor(
-    @InjectRepository(UserOrmEntity)
-    private readonly repo: Repository<UserOrmEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string): Promise<User | null> {
-    const orm = await this.repo.findOne({ where: { id } });
-    return orm ? UserMapper.toDomain(orm) : null;
+  async findById(id: string, tenantId: string): Promise<User | null> {
+    const row = await this.prisma.user.findFirst({ where: { id, tenantId } });
+    return row ? toDomain(row) : null;
   }
 
   async findByEmail(tenantId: string, email: string): Promise<User | null> {
-    const orm = await this.repo.findOne({
-      where: { tenant_id: tenantId, email },
+    const row = await this.prisma.user.findUnique({
+      where: { tenantId_email: { tenantId, email } },
     });
-    return orm ? UserMapper.toDomain(orm) : null;
+    return row ? toDomain(row) : null;
   }
 
   async findByEmailGlobal(email: string): Promise<User | null> {
-    const orm = await this.repo.findOne({ where: { email } });
-    return orm ? UserMapper.toDomain(orm) : null;
+    const row = await this.prisma.user.findFirst({ where: { email } });
+    return row ? toDomain(row) : null;
+  }
+
+  async findAllByTenant(tenantId: string): Promise<User[]> {
+    const rows = await this.prisma.user.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(toDomain);
   }
 
   async save(user: User): Promise<User> {
-    const orm = UserMapper.toOrm(user);
-    const saved = await this.repo.save(orm);
-    return UserMapper.toDomain(saved);
+    const data = {
+      id: user.id,
+      tenantId: user.tenantId,
+      branchId: user.branchId,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    };
+
+    const row = await this.prisma.user.upsert({
+      where: { id: user.id },
+      create: data,
+      update: data,
+    });
+    return toDomain(row);
+  }
+
+  async updatePassword(userId: string, tenantId: string, newPasswordHash: string): Promise<void> {
+    await this.prisma.user.updateMany({
+      where: { id: userId, tenantId },
+      data: { passwordHash: newPasswordHash },
+    });
+  }
+
+  async updateBranch(userId: string, tenantId: string, branchId: string | null): Promise<void> {
+    await this.prisma.user.updateMany({
+      where: { id: userId, tenantId },
+      data: { branchId },
+    });
   }
 }

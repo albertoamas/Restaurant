@@ -1,42 +1,77 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
-import { ProductRepositoryPort } from '../../domain/ports/product-repository.port';
+import { ProductPage, ProductRepositoryPort } from '../../domain/ports/product-repository.port';
 import { Product } from '../../domain/entities/product.entity';
-import { ProductOrmEntity } from './product.orm-entity';
-import { ProductMapper } from './product.mapper';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { Product as PrismaProduct } from '@prisma/client';
+
+function toDomain(row: PrismaProduct): Product {
+  return Product.reconstitute({
+    id: row.id,
+    tenantId: row.tenantId,
+    categoryId: row.categoryId,
+    name: row.name,
+    price: Number(row.price),
+    imageUrl: row.imageUrl,
+    isActive: row.isActive,
+    createdAt: row.createdAt,
+  });
+}
 
 @Injectable()
 export class ProductRepository implements ProductRepositoryPort {
-  constructor(
-    @InjectRepository(ProductOrmEntity)
-    private readonly repo: Repository<ProductOrmEntity>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findAllByTenant(tenantId: string, categoryId?: string): Promise<Product[]> {
-    const where: Record<string, unknown> = { tenantId, isActive: true };
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
-    const rows = await this.repo.find({ where });
-    return rows.map(ProductMapper.toDomain);
+  async findAllByTenant(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100): Promise<ProductPage> {
+    const safeLimit = Math.min(limit, 200);
+    const skip = (page - 1) * safeLimit;
+    const where = {
+      tenantId,
+      ...(includeInactive ? {} : { isActive: true }),
+      ...(categoryId ? { categoryId } : {}),
+    };
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }],
+        skip,
+        take: safeLimit,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+    return { data: rows.map(toDomain), total };
   }
 
   async findById(id: string, tenantId: string): Promise<Product | null> {
-    const row = await this.repo.findOne({ where: { id, tenantId } });
-    return row ? ProductMapper.toDomain(row) : null;
+    const row = await this.prisma.product.findFirst({
+      where: { id, tenantId },
+    });
+    return row ? toDomain(row) : null;
   }
 
   async findByIds(ids: string[], tenantId: string): Promise<Product[]> {
-    const rows = await this.repo.find({
-      where: { id: In(ids), tenantId },
+    const rows = await this.prisma.product.findMany({
+      where: { id: { in: ids }, tenantId },
     });
-    return rows.map(ProductMapper.toDomain);
+    return rows.map(toDomain);
   }
 
   async save(product: Product): Promise<Product> {
-    const orm = ProductMapper.toOrm(product);
-    const saved = await this.repo.save(orm);
-    return ProductMapper.toDomain(saved);
+    const data = {
+      id: product.id,
+      tenantId: product.tenantId,
+      categoryId: product.categoryId,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      isActive: product.isActive,
+      createdAt: product.createdAt,
+    };
+
+    const row = await this.prisma.product.upsert({
+      where: { id: product.id },
+      create: data,
+      update: data,
+    });
+    return toDomain(row);
   }
 }

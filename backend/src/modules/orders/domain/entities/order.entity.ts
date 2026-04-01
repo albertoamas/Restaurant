@@ -5,6 +5,7 @@ import { OrderItem } from './order-item.entity';
 export interface OrderProps {
   id: string;
   tenantId: string;
+  branchId: string;
   orderNumber: number;
   type: OrderType;
   status: OrderStatus;
@@ -14,6 +15,7 @@ export interface OrderProps {
   total: number;
   notes: string | null;
   createdBy: string;
+  customerId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,12 +23,14 @@ export interface OrderProps {
 type CreateOrderProps = {
   id?: string;
   tenantId: string;
+  branchId: string;
   orderNumber: number;
   type: OrderType;
   paymentMethod: PaymentMethod;
   items: OrderItem[];
   notes?: string | null;
   createdBy: string;
+  customerId?: string | null;
 };
 
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -39,6 +43,7 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 export class Order {
   readonly id: string;
   readonly tenantId: string;
+  readonly branchId: string;
   readonly orderNumber: number;
   readonly type: OrderType;
   status: OrderStatus;
@@ -48,12 +53,14 @@ export class Order {
   readonly total: number;
   readonly notes: string | null;
   readonly createdBy: string;
+  readonly customerId: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
 
   private constructor(props: OrderProps) {
     this.id = props.id;
     this.tenantId = props.tenantId;
+    this.branchId = props.branchId;
     this.orderNumber = props.orderNumber;
     this.type = props.type;
     this.status = props.status;
@@ -63,6 +70,7 @@ export class Order {
     this.total = props.total;
     this.notes = props.notes;
     this.createdBy = props.createdBy;
+    this.customerId = props.customerId ?? null;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
@@ -71,12 +79,13 @@ export class Order {
     const id = props.id ?? uuidv4();
     const now = new Date();
 
-    const subtotal = props.items.reduce((sum, item) => sum + item.subtotal, 0);
+    const subtotal = Math.round(props.items.reduce((sum, item) => sum + item.subtotal, 0) * 100) / 100;
     const total = subtotal;
 
     return new Order({
       id,
       tenantId: props.tenantId,
+      branchId: props.branchId,
       orderNumber: props.orderNumber,
       type: props.type,
       status: OrderStatus.PENDING,
@@ -86,6 +95,7 @@ export class Order {
       total,
       notes: props.notes ?? null,
       createdBy: props.createdBy,
+      customerId: props.customerId ?? null,
       createdAt: now,
       updatedAt: now,
     });

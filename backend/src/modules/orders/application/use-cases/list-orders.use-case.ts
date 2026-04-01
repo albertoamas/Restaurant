@@ -5,7 +5,11 @@ import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 
 export interface ListOrdersFilters {
   date?: string;
+  from?: string;
+  to?: string;
   status?: OrderStatus;
+  branchId?: string;
+  customerId?: string;
   page?: number;
   limit?: number;
 }

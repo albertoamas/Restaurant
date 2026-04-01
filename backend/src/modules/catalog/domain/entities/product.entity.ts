@@ -54,4 +54,16 @@ export class Product {
   static reconstitute(props: ProductProps): Product {
     return new Product(props);
   }
+
+  update(props: {
+    categoryId?: string;
+    name?: string;
+    price?: number;
+    imageUrl?: string | null | undefined;
+  }): void {
+    if (props.categoryId !== undefined) this.categoryId = props.categoryId;
+    if (props.name !== undefined) this.name = props.name;
+    if (props.price !== undefined) this.price = props.price;
+    if (props.imageUrl !== undefined) this.imageUrl = props.imageUrl ?? null;
+  }
 }

@@ -1,9 +1,13 @@
-import { OrderStatus } from '@pos/shared';
+import { OrderStatus, TopProductDto } from '@pos/shared';
 import { Order } from '../entities/order.entity';
 
 export interface OrderFilters {
   date?: string;
+  from?: string;
+  to?: string;
   status?: OrderStatus;
+  branchId?: string;
+  customerId?: string;
   page?: number;
   limit?: number;
 }
@@ -28,6 +32,8 @@ export interface OrderRepositoryPort {
   save(order: Order): Promise<Order>;
   findById(id: string, tenantId: string): Promise<Order | null>;
   findAll(tenantId: string, filters?: OrderFilters): Promise<Order[]>;
-  getNextOrderNumber(tenantId: string, date: Date): Promise<number>;
+  getNextOrderNumber(tenantId: string, branchId: string, date: Date): Promise<number>;
   getDailyReport(tenantId: string, date: string): Promise<DailyReportResult>;
+  getReportByRange(tenantId: string, branchId: string | null, from: string, to: string): Promise<DailyReportResult>;
+  getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string): Promise<TopProductDto[]>;
 }

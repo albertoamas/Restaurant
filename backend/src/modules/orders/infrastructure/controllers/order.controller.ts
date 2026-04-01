@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -39,18 +40,30 @@ export class OrderController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateOrderDto,
   ) {
-    return this.createOrderUseCase.execute(tenantId, user.sub, dto);
+    // CASHIER uses their fixed JWT branchId; OWNER passes branchId in the request body
+    const branchId = user.branchId ?? dto.branchId;
+    if (!branchId) {
+      throw new BadRequestException('branchId is required. Select a branch before creating an order.');
+    }
+    return this.createOrderUseCase.execute(tenantId, branchId, user.sub, dto);
   }
 
   @Get()
   findAll(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Query('date') date?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
     @Query('status') status?: OrderStatus,
+    @Query('branchId') branchId?: string,
+    @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.listOrdersUseCase.execute(tenantId, { date, status, page, limit });
+    // Cashiers can only see their own branch; owners can filter or see all
+    const effectiveBranchId = user.branchId ?? branchId;
+    return this.listOrdersUseCase.execute(tenantId, { date, from, to, status, branchId: effectiveBranchId, customerId, page, limit });
   }
 
   @Get(':id')

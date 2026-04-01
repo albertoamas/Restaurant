@@ -1,7 +1,8 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
+import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { LoginDto } from '../dto/login.dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class LoginUseCase {
   constructor(
     @Inject('UserRepositoryPort')
     private readonly userRepository: UserRepositoryPort,
+    @Inject('TenantRepositoryPort')
+    private readonly tenantRepository: TenantRepositoryPort,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -24,9 +27,16 @@ export class LoginUseCase {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const tenant = await this.tenantRepository.findById(user.tenantId);
+
+    if (!tenant?.isActive) {
+      throw new ForbiddenException('Tu cuenta está inactiva. Contacta al administrador para activarla.');
+    }
+
     const payload = {
       sub: user.id,
       tenantId: user.tenantId,
+      branchId: user.branchId,
       role: user.role,
     };
 
@@ -37,6 +47,8 @@ export class LoginUseCase {
       user: {
         id: user.id,
         tenantId: user.tenantId,
+        tenantName: tenant.name,
+        branchId: user.branchId,
         email: user.email,
         name: user.name,
         role: user.role,

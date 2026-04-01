@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogModule } from '../catalog/catalog.module';
-import { OrderOrmEntity } from './infrastructure/persistence/order.orm-entity';
-import { OrderItemOrmEntity } from './infrastructure/persistence/order-item.orm-entity';
+import { EventsModule } from '../events/events.module';
+import { CustomersModule } from '../customers/customers.module';
 import { OrderRepository } from './infrastructure/persistence/order.repository';
 import { OrderController } from './infrastructure/controllers/order.controller';
 import { CreateOrderUseCase } from './application/use-cases/create-order.use-case';
@@ -11,10 +10,7 @@ import { GetOrderUseCase } from './application/use-cases/get-order.use-case';
 import { UpdateOrderStatusUseCase } from './application/use-cases/update-order-status.use-case';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([OrderOrmEntity, OrderItemOrmEntity]),
-    CatalogModule,
-  ],
+  imports: [CatalogModule, EventsModule, CustomersModule],
   controllers: [OrderController],
   providers: [
     {

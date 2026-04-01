@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
-import { Product } from '../../domain/entities/product.entity';
+import { ProductPage, ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
 
 @Injectable()
 export class ListProductsUseCase {
@@ -9,7 +8,7 @@ export class ListProductsUseCase {
     private readonly productRepository: ProductRepositoryPort,
   ) {}
 
-  async execute(tenantId: string, categoryId?: string): Promise<Product[]> {
-    return this.productRepository.findAllByTenant(tenantId, categoryId);
+  async execute(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100): Promise<ProductPage> {
+    return this.productRepository.findAllByTenant(tenantId, categoryId, includeInactive, page, limit);
   }
 }

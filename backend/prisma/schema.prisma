@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tenant ───────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users        User[]
+  branches     Branch[]
+  categories   Category[]
+  products     Product[]
+  orders       Order[]
+  cashSessions CashSession[]
+  expenses     Expense[]
+  customers    Customer[]
+
+  @@map("tenants")
+}
+
+// ─── User ─────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  branchId     String?  @map("branch_id")
+  email        String
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ─── Branch ───────────────────────────────────────────────────
+
+model Branch {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("branches")
+}
+
+// ─── Category ─────────────────────────────────────────────────
+
+model Category {
+  id        String  @id @default(uuid())
+  tenantId  String  @map("tenant_id")
+  name      String  @db.VarChar(255)
+  sortOrder Int     @default(0) @map("sort_order")
+  isActive  Boolean @default(true) @map("is_active")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([tenantId, sortOrder])
+  @@map("categories")
+}
+
+// ─── Product ──────────────────────────────────────────────────
+
+model Product {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  categoryId String   @map("category_id")
+  name       String   @db.VarChar(255)
+  price      Decimal  @db.Decimal(10, 2)
+  imageUrl   String?  @map("image_url") @db.VarChar(1024)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, categoryId])
+  @@map("products")
+}
+
+// ─── Order ────────────────────────────────────────────────────
+
+model Order {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  branchId      String   @map("branch_id")
+  orderNumber   Int      @map("order_number")
+  type          String
+  status        String
+  paymentMethod String   @map("payment_method")
+  subtotal      Decimal  @db.Decimal(10, 2)
+  total         Decimal  @db.Decimal(10, 2)
+  notes         String?
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  customerId    String?   @map("customer_id")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@map("orders")
+}
+
+// ─── OrderItem ────────────────────────────────────────────────
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String  @map("order_id")
+  productId   String  @map("product_id")
+  productName String  @map("product_name")
+  quantity    Int
+  unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal    Decimal @db.Decimal(10, 2)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// ─── CashSession ──────────────────────────────────────────────
+
+model CashSession {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  branchId       String    @map("branch_id")
+  openedBy       String    @map("opened_by")
+  closedBy       String?   @map("closed_by")
+  openingAmount  Decimal   @map("opening_amount") @db.Decimal(10, 2)
+  closingAmount  Decimal?  @map("closing_amount") @db.Decimal(10, 2)
+  expectedAmount Decimal?  @map("expected_amount") @db.Decimal(10, 2)
+  difference     Decimal?  @db.Decimal(10, 2)
+  status         String
+  openedAt       DateTime  @default(now()) @map("opened_at")
+  closedAt       DateTime? @map("closed_at")
+  notes          String?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId])
+  @@map("cash_sessions")
+}
+
+// ─── Expense ──────────────────────────────────────────────────
+
+model Expense {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  branchId    String   @map("branch_id")
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, branchId, createdAt])
+  @@map("expenses")
+}
+
+// ─── Customer ─────────────────────────────────────────────────
+
+model Customer {
+  id             String   @id @default(uuid())
+  tenantId       String   @map("tenant_id")
+  name           String   @db.VarChar(255)
+  phone          String?  @db.VarChar(50)
+  email          String?  @db.VarChar(255)
+  isRaffleWinner Boolean  @default(false) @map("is_raffle_winner")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId, name])
+  @@map("customers")
+}

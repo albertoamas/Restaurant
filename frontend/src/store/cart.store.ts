@@ -11,11 +11,13 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   orderType: OrderType;
+  notes: string;
   addItem: (product: { id: string; name: string; price: number }) => void;
   removeItem: (productId: string) => void;
   incrementItem: (productId: string) => void;
   decrementItem: (productId: string) => void;
   setOrderType: (type: OrderType) => void;
+  setNotes: (notes: string) => void;
   clear: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -24,6 +26,7 @@ interface CartStore {
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   orderType: OrderType.DINE_IN,
+  notes: '',
 
   addItem: (product) =>
     set((state) => {
@@ -63,7 +66,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   setOrderType: (type) => set({ orderType: type }),
 
-  clear: () => set({ items: [], orderType: OrderType.DINE_IN }),
+  setNotes: (notes) => set({ notes }),
+
+  clear: () => set({ items: [], orderType: OrderType.DINE_IN, notes: '' }),
 
   getTotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
 

@@ -1,4 +1,5 @@
-import { IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -7,6 +8,9 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
   name?: string;
 
   @IsOptional()
@@ -16,5 +20,6 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2048)
   imageUrl?: string | null;
 }

@@ -10,14 +10,17 @@ interface AuthUser {
   role: UserRole;
   tenantId: string;
   tenantName: string;
+  branchId: string | null;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  currentBranchId: string | null;
+  setCurrentBranch: (id: string) => void;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { businessName: string; ownerName: string; email: string; password: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -25,44 +28,63 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('pos_token'));
   const [isLoading, setIsLoading] = useState(true);
+  const [currentBranchId, setCurrentBranchId] = useState<string | null>(
+    () => localStorage.getItem('pos_branch'),
+  );
   const navigate = useNavigate();
 
+  const applyUser = useCallback((u: AuthUser) => {
+    setUser(u);
+    if (u.branchId) {
+      setCurrentBranchId(u.branchId);
+    } else {
+      const stored = localStorage.getItem('pos_branch');
+      setCurrentBranchId(stored);
+    }
+  }, []);
+
   useEffect(() => {
-    const token = localStorage.getItem('pos_token');
-    if (!token) {
+    const stored = localStorage.getItem('pos_token');
+    if (!stored) {
       setIsLoading(false);
       return;
     }
     authApi
       .getMe()
-      .then(setUser)
-      .catch(() => localStorage.removeItem('pos_token'))
+      .then(applyUser)
+      .catch(() => {
+        localStorage.removeItem('pos_token');
+        setToken(null);
+      })
       .finally(() => setIsLoading(false));
+  }, [applyUser]);
+
+  const setCurrentBranch = useCallback((id: string) => {
+    localStorage.setItem('pos_branch', id);
+    setCurrentBranchId(id);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login({ email, password });
     localStorage.setItem('pos_token', res.accessToken);
-    setUser(res.user);
+    setToken(res.accessToken);
+    applyUser(res.user as AuthUser);
     navigate('/pos');
-  }, [navigate]);
-
-  const register = useCallback(async (data: { businessName: string; ownerName: string; email: string; password: string }) => {
-    const res = await authApi.register(data);
-    localStorage.setItem('pos_token', res.accessToken);
-    setUser(res.user);
-    navigate('/pos');
-  }, [navigate]);
+  }, [navigate, applyUser]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('pos_token');
+    localStorage.removeItem('pos_branch');
+    setToken(null);
     setUser(null);
+    setCurrentBranchId(null);
     navigate('/login');
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, currentBranchId, setCurrentBranch, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

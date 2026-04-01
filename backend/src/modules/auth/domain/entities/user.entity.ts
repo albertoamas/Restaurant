@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class User {
   id: string;
   tenantId: string;
+  branchId: string | null;
   email: string;
   passwordHash: string;
   name: string;
@@ -13,6 +14,7 @@ export class User {
 
   static create(props: {
     tenantId: string;
+    branchId?: string | null;
     email: string;
     passwordHash: string;
     name: string;
@@ -21,6 +23,7 @@ export class User {
     const user = new User();
     user.id = uuidv4();
     user.tenantId = props.tenantId;
+    user.branchId = props.branchId ?? null;
     user.email = props.email;
     user.passwordHash = props.passwordHash;
     user.name = props.name;

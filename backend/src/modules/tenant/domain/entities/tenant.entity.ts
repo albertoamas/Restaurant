@@ -10,6 +10,11 @@ export class Tenant {
   ) {}
 
   static create(name: string, slug: string): Tenant {
-    return new Tenant(uuidv4(), name, slug, true, new Date());
+    // New tenants start inactive — admin must activate after payment
+    return new Tenant(uuidv4(), name, slug, false, new Date());
+  }
+
+  withActive(isActive: boolean): Tenant {
+    return new Tenant(this.id, this.name, this.slug, isActive, this.createdAt);
   }
 }

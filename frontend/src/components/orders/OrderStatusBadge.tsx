@@ -10,5 +10,5 @@ const statusConfig: Record<OrderStatus, { label: string; variant: 'success' | 'w
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   const config = statusConfig[status];
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+  return <Badge variant={config.variant} dot>{config.label}</Badge>;
 }

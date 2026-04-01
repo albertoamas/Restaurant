@@ -1,65 +1,129 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
-import type { CategoryDto, ProductDto, PaymentMethod } from '@pos/shared';
-import { categoriesApi } from '../api/categories.api';
-import { productsApi } from '../api/products.api';
+import { handleApiError } from '../utils/api-error';
+import type { PaymentMethod, OrderDto } from '@pos/shared';
+import type { CustomerPayload } from '../components/pos/PaymentModal';
 import { ordersApi } from '../api/orders.api';
 import { useCartStore } from '../store/cart.store';
+import { useAuth } from '../context/auth.context';
 import { CategoryTabs } from '../components/pos/CategoryTabs';
 import { ProductGrid } from '../components/pos/ProductGrid';
 import { OrderPanel } from '../components/pos/OrderPanel';
 import { PaymentModal } from '../components/pos/PaymentModal';
+import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
+import { printKitchenTicket } from '../utils/print';
+import { useSettingsStore } from '../store/settings.store';
+import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
+import { useBranches } from '../hooks/useBranches';
 
 export function PosPage() {
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [products, setProducts] = useState<ProductDto[]>([]);
+  const { categories } = useCategories();
+  const { products } = useProducts();
+  const { branches } = useBranches();
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [lastOrder, setLastOrder] = useState<OrderDto | null>(null);
 
-  const { items, orderType, addItem, getTotal, getItemCount, clear } = useCartStore();
+  const { items, orderType, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
+  const { currentBranchId } = useAuth();
+  const { autoPrintKitchen } = useSettingsStore();
 
-  useEffect(() => {
-    categoriesApi.getAll().then(setCategories).catch(() => {});
-    productsApi.getAll().then(setProducts).catch(() => {});
-  }, []);
+  const currentBranch = branches.find((b) => b.id === currentBranchId);
 
-  const filteredProducts = selectedCategory
-    ? products.filter((p) => p.categoryId === selectedCategory)
-    : products;
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
+    const matchesSearch = search.trim()
+      ? p.name.toLowerCase().includes(search.trim().toLowerCase())
+      : true;
+    return matchesCategory && matchesSearch;
+  });
 
-  const handleProductSelect = (product: ProductDto) => {
+  const handleProductSelect = (product: { id: string; name: string; price: number }) => {
     addItem({ id: product.id, name: product.name, price: product.price });
   };
 
   const handleCharge = () => {
+    if (!currentBranchId) {
+      toast.error('Selecciona una sucursal antes de crear un pedido');
+      return;
+    }
     setShowPayment(true);
   };
 
-  const handleConfirmPayment = async (method: PaymentMethod) => {
+  const handleConfirmPayment = async (method: PaymentMethod, customer: CustomerPayload) => {
     try {
       const order = await ordersApi.create({
+        branchId: currentBranchId ?? undefined,
         type: orderType,
         paymentMethod: method,
+        notes: notes.trim() || undefined,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        ...(customer?.customerId ? { customerId: customer.customerId } : {}),
+        ...(customer?.createCustomer ? { createCustomer: customer.createCustomer } : {}),
       });
-      toast.success(`Pedido #${order.orderNumber} creado`);
       clear();
       setShowPayment(false);
       setShowCart(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al crear pedido');
+      setLastOrder(order);
+      if (autoPrintKitchen) printKitchenTicket(order);
+    } catch (err) {
+      handleApiError(err, 'Error al crear pedido');
     }
   };
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       {/* Left: Products */}
-      <div className="flex-1 flex flex-col p-4 overflow-hidden">
+      <div className="flex-1 flex flex-col p-3 overflow-hidden">
+        {/* Branch indicator + search */}
+        <div className="mb-2.5">
+          {currentBranch && (
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+                {currentBranch.name}
+              </span>
+            </div>
+          )}
+          <div className="relative">
+            <svg
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-2xl bg-white
+                focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-400
+                transition-[border-color,box-shadow] duration-150
+                shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
         <CategoryTabs
           categories={categories}
           selected={selectedCategory}
-          onSelect={setSelectedCategory}
+          onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
         <div className="flex-1 overflow-y-auto mt-3">
           <ProductGrid products={filteredProducts} onSelect={handleProductSelect} />
@@ -76,22 +140,40 @@ export function PosPage() {
         {getItemCount() > 0 && (
           <button
             onClick={() => setShowCart(true)}
-            className="bg-emerald-600 text-white rounded-full px-5 py-3 shadow-lg flex items-center gap-2 font-semibold"
+            className={[
+              'bg-gradient-to-b from-primary-500 to-primary-600 text-white',
+              'rounded-2xl px-5 py-3.5 text-sm font-bold',
+              'shadow-[0_4px_20px_oklch(0.50_0.24_225/0.45)]',
+              'flex items-center gap-2.5',
+              'active:scale-[0.96] transition-transform',
+            ].join(' ')}
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-            </svg>
-            {getItemCount()} - S/ {getTotal().toFixed(2)}
+            <div className="relative">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+              <span className="absolute -top-2 -right-2 w-4 h-4 bg-white text-primary-700 text-[10px] font-black rounded-full flex items-center justify-center">
+                {getItemCount()}
+              </span>
+            </div>
+            Bs {getTotal().toFixed(2)}
           </button>
         )}
       </div>
 
-      {/* Mobile: cart slide-up */}
+      {/* Mobile: cart drawer */}
       {showCart && (
-        <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[70vh] rounded-t-2xl overflow-hidden">
-            <OrderPanel onCharge={handleCharge} />
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
+          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col bg-white">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1 shrink-0">
+              <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            </div>
+            <div className="flex-1 min-h-0">
+              <OrderPanel onCharge={handleCharge} />
+            </div>
           </div>
         </div>
       )}
@@ -102,6 +184,14 @@ export function PosPage() {
         total={getTotal()}
         onConfirm={handleConfirmPayment}
       />
+
+      {lastOrder && (
+        <OrderSuccessModal
+          isOpen
+          onClose={() => setLastOrder(null)}
+          order={lastOrder}
+        />
+      )}
     </div>
   );
 }

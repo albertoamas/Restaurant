@@ -36,7 +36,7 @@ export class OrderItem {
     quantity: number;
     unitPrice: number;
   }): OrderItem {
-    const subtotal = props.quantity * props.unitPrice;
+    const subtotal = Math.round(props.quantity * props.unitPrice * 100) / 100;
 
     return new OrderItem({
       id: uuidv4(),

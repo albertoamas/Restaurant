@@ -3,16 +3,19 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { OrderStatus } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class UpdateOrderStatusUseCase {
   constructor(
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(id: string, tenantId: string, newStatus: OrderStatus): Promise<Order> {
@@ -28,6 +31,8 @@ export class UpdateOrderStatusUseCase {
       throw new BadRequestException((error as Error).message);
     }
 
-    return this.orderRepository.save(order);
+    const saved = await this.orderRepository.save(order);
+    this.eventsService?.emit(tenantId, saved.branchId, 'order.updated', saved);
+    return saved;
   }
 }

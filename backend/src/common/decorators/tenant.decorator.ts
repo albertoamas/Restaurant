@@ -4,6 +4,7 @@ import { UserRole } from '@pos/shared';
 export interface JwtPayload {
   sub: string;
   tenantId: string;
+  branchId: string | null;
   role: UserRole;
 }
 

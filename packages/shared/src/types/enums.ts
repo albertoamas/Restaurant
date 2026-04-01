@@ -21,3 +21,17 @@ export enum PaymentMethod {
   QR = 'QR',
   TRANSFER = 'TRANSFER',
 }
+
+export enum CashSessionStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+}
+
+export enum ExpenseCategory {
+  SUPPLIES    = 'SUPPLIES',     // Insumos / Ingredientes
+  WAGES       = 'WAGES',        // Personal / Sueldos
+  UTILITIES   = 'UTILITIES',    // Servicios (luz, agua, gas)
+  TRANSPORT   = 'TRANSPORT',    // Transporte
+  MAINTENANCE = 'MAINTENANCE',  // Mantenimiento
+  OTHER       = 'OTHER',        // Otro
+}

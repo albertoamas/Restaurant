@@ -12,6 +12,10 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   user: {
@@ -21,11 +25,13 @@ export interface AuthResponse {
     role: UserRole;
     tenantId: string;
     tenantName: string;
+    branchId: string | null;
   };
 }
 
 export interface JwtPayload {
   sub: string;
   tenantId: string;
+  branchId: string | null;
   role: UserRole;
 }

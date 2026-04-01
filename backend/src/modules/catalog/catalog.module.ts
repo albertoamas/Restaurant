@@ -1,9 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
-// ORM Entities
-import { CategoryOrmEntity } from './infrastructure/persistence/category.orm-entity';
-import { ProductOrmEntity } from './infrastructure/persistence/product.orm-entity';
 
 // Repository implementations
 import { CategoryRepository } from './infrastructure/persistence/category.repository';
@@ -44,9 +39,6 @@ const productUseCases = [
 ];
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([CategoryOrmEntity, ProductOrmEntity]),
-  ],
   controllers: [CategoryController, ProductController],
   providers: [
     {

@@ -1,10 +1,14 @@
 import {
+  IsEmail,
   IsEnum,
   IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  MaxLength,
   Min,
+  MinLength,
   ValidateNested,
   IsArray,
   ArrayMinSize,
@@ -18,10 +22,31 @@ export class CreateOrderItemDto {
 
   @IsInt()
   @Min(1)
+  @Max(999)
   quantity: number;
 }
 
+export class CreateCustomerInlineDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  phone?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+}
+
 export class CreateOrderDto {
+  @IsOptional()
+  @IsUUID()
+  branchId?: string;
+
   @IsEnum(OrderType)
   type: OrderType;
 
@@ -30,6 +55,7 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   notes?: string;
 
   @IsArray()
@@ -37,4 +63,13 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   items: CreateOrderItemDto[];
+
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateCustomerInlineDto)
+  createCustomer?: CreateCustomerInlineDto;
 }
