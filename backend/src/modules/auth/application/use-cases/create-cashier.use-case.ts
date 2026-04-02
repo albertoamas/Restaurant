@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UserRole } from '@pos/shared';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { User } from '../../domain/entities/user.entity';
