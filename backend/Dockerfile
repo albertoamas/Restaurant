@@ -19,7 +19,7 @@ COPY packages/shared ./packages/shared
 COPY backend ./backend
 
 # Generate Prisma client (needed for nest build)
-RUN pnpm --filter backend exec prisma generate
+RUN cd /repo/backend && pnpm run prisma:generate
 
 # Compile NestJS — @pos/shared gets compiled inline via tsconfig paths
 RUN pnpm --filter backend build
@@ -43,7 +43,7 @@ COPY --from=builder /repo/backend/dist ./dist
 COPY --from=builder /repo/backend/prisma ./prisma
 
 # Generate Prisma client for the runner platform (linux/alpine binary)
-RUN pnpm --filter backend exec prisma generate
+RUN cd /app/backend && pnpm run prisma:generate
 
 # Seed initial uploads — Docker volume initializes from image on first run
 COPY --chown=node:node backend/uploads ./uploads
@@ -56,4 +56,4 @@ USER appuser
 EXPOSE 3000
 
 # Apply pending migrations then start the server
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main"]
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
