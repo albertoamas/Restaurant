@@ -1,11 +1,10 @@
 /**
- * Seed script — datos demo para HamBurgos
+ * Seed script — datos para HamBurgos
  * Uso: pnpm --filter backend seed
  *
- * Credenciales demo:
- *   OWNER:   admin@hamburgos.com   / demo123
- *   CAJERO:  cajero@hamburgos.com  / demo123  (sucursal Centro)
- *   Negocio: HamBurgos             (2 sucursales)
+ * Credenciales:
+ *   OWNER:   jimmy@hamburgos.com  / demo123
+ *   Negocio: HamBurgos            (1 sucursal)
  */
 
 import * as path from 'path';
@@ -43,48 +42,25 @@ async function seed() {
   console.log(`Tenant creado: HamBurgos (${tenant.id})`);
 
   // ── Sucursales ───────────────────────────────────────────────
-  const branchCentro = await prisma.branch.create({
-    data: {
-      tenantId: tenant.id,
-      name: 'Sucursal Centro',
-      address: 'Av. Principal 123',
-      phone: '999-000-001',
-    },
-  });
   await prisma.branch.create({
     data: {
       tenantId: tenant.id,
-      name: 'Sucursal Norte',
-      address: 'Jr. Los Pinos 456',
-      phone: '999-000-002',
+      name: 'HamBurgos',
     },
   });
-  console.log('Sucursales creadas: Sucursal Centro, Sucursal Norte');
+  console.log('Sucursal creada: HamBurgos');
 
   // ── Owner ────────────────────────────────────────────────────
   await prisma.user.create({
     data: {
       tenantId: tenant.id,
-      email: 'admin@hamburgos.com',
+      email: 'jimmy@hamburgos.com',
       passwordHash: PASSWORD_HASH,
-      name: 'Admin HamBurgos',
+      name: 'Jimmy Burgos Romero',
       role: 'OWNER',
     },
   });
-  console.log('Usuario OWNER creado: admin@hamburgos.com / demo123');
-
-  // ── Cajero (asignado a Sucursal Centro) ──────────────────────
-  await prisma.user.create({
-    data: {
-      tenantId: tenant.id,
-      email: 'cajero@hamburgos.com',
-      passwordHash: PASSWORD_HASH,
-      name: 'Cajero HamBurgos',
-      role: 'CASHIER',
-      branchId: branchCentro.id,
-    },
-  });
-  console.log('Usuario CASHIER creado: cajero@hamburgos.com / demo123 → Sucursal Centro');
+  console.log('Usuario OWNER creado: jimmy@hamburgos.com / demo123');
 
   // ── Categorías ───────────────────────────────────────────────
   const categoriesData = [
@@ -157,11 +133,8 @@ async function seed() {
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
-  console.log('  URL:        http://localhost:5173');
-  console.log('  OWNER:      admin@hamburgos.com  / demo123');
-  console.log('  CAJERO:     cajero@hamburgos.com / demo123');
-  console.log('  Negocio:    HamBurgos');
-  console.log('  Sucursales: Centro · Norte');
+  console.log('  OWNER:   jimmy@hamburgos.com / demo123');
+  console.log('  Negocio: HamBurgos');
   console.log('──────────────────────────────────────────────');
 }
 
