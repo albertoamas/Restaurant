@@ -16,8 +16,9 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "rootDir": "./src",
     "paths": {
-      "@pos/shared": ["../packages/shared/src"]
+      "@pos/shared": ["../packages/shared/dist"]
     }
   },
   "include": ["src"],

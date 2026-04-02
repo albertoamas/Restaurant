@@ -18,10 +18,13 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared ./packages/shared
 COPY backend ./backend
 
+# Build shared package first so @pos/shared resolves to compiled JS/d.ts
+RUN pnpm --filter @pos/shared build
+
 # Generate Prisma client (needed for nest build)
 RUN cd /repo/backend && pnpm run prisma:generate
 
-# Compile NestJS — @pos/shared gets compiled inline via tsconfig paths
+# Compile NestJS — imports @pos/shared from packages/shared/dist
 RUN pnpm --filter backend build
 
 # ── Stage 2: production runner ────────────────────────────────────────────────
@@ -36,6 +39,9 @@ COPY backend/package.json ./backend/
 COPY packages/shared/package.json ./packages/shared/
 COPY backend/prisma ./backend/prisma
 RUN pnpm install --frozen-lockfile --prod
+
+# Copy compiled shared package so require('@pos/shared') resolves at runtime
+COPY --from=builder /repo/packages/shared/dist /app/packages/shared/dist
 
 # Copy compiled output from builder
 WORKDIR /app/backend

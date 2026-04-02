@@ -6,7 +6,7 @@
   "scripts": {
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
-    "dev": "pnpm run dev:backend & pnpm run dev:frontend",
+    "dev": "pnpm --filter @pos/shared build && pnpm run dev:backend & pnpm run dev:frontend",
     "build:backend": "pnpm --filter backend build",
     "build:frontend": "pnpm --filter frontend build",
     "build": "pnpm run build:backend && pnpm run build:frontend"
