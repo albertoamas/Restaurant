@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
+import { branchesApi } from '../../api/branches.api';
+import type { BranchDto } from '@pos/shared';
 
 // Icon helpers (kept inline to avoid re-importing heavy icon libs)
 const Icons = {
@@ -22,8 +24,21 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled } = useSettingsStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [branches, setBranches] = useState<BranchDto[]>([]);
+  const [branchOpen, setBranchOpen] = useState(false);
+  const { currentBranchId, setCurrentBranch } = useAuth();
 
   const isOwner = user?.role === 'OWNER';
+
+  useEffect(() => {
+    if (isOwner) {
+      branchesApi.getAll().then((data) => {
+        if (Array.isArray(data)) setBranches(data.filter((b) => b.isActive));
+      }).catch(() => {});
+    }
+  }, [isOwner]);
+
+  const currentBranch = branches.find((b) => b.id === currentBranchId);
 
   const mobileNav = [
     { to: '/pos',       label: 'POS',        icon: Icons.pos,       show: true },
@@ -108,6 +123,56 @@ export function AppLayout() {
             </svg>
           </button>
         </div>
+
+        {/* Branch selector for OWNER */}
+        {isOwner && (
+          <div className="px-4 pb-3 border-b border-white/8 relative">
+            <button
+              onClick={() => setBranchOpen((o) => !o)}
+              className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-xs text-white/65 hover:text-white/90 transition-colors"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <svg className="w-3 h-3 shrink-0 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="truncate">
+                  {currentBranch ? currentBranch.name : (branches.length === 0 ? 'Sin sucursales' : 'Seleccionar sucursal')}
+                </span>
+              </div>
+              <svg className="w-3 h-3 shrink-0 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {branchOpen && branches.length > 0 && (
+              <div className="absolute left-4 right-4 top-full mt-1 rounded-xl shadow-lg z-50 overflow-hidden border border-white/8"
+                style={{ background: 'oklch(0.18 0.018 255)' }}>
+                {branches.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => { setCurrentBranch(b.id); setBranchOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/8 transition-colors flex items-center gap-2 ${
+                      b.id === currentBranchId ? 'text-primary-400 font-semibold' : 'text-white/65'
+                    }`}
+                  >
+                    {b.id === currentBranchId && <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />}
+                    {b.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Branch indicator for CASHIER */}
+        {user?.role === 'CASHIER' && user.branchId && (
+          <div className="px-4 pb-3 border-b border-white/8">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/12 border border-primary-500/20 text-xs text-primary-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse-dot shrink-0" />
+              <span className="truncate">Sucursal asignada</span>
+            </div>
+          </div>
+        )}
 
         {/* Drawer nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
