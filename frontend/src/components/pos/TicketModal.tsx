@@ -46,7 +46,8 @@ export function TicketModal({ isOpen, onClose, order, businessName }: Props) {
           <title>Ticket #${order.orderNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Courier New', monospace; font-size: 11px; width: 58mm; padding: 4px; }
+            body { font-family: 'Courier New', monospace; font-size: 11px; width: 48mm; padding: 2px; }
+            @media print { @page { margin: 0; size: 58mm auto; } body { width: 48mm; } }
             .center { text-align: center; }
             .bold { font-weight: bold; }
             .divider { border-top: 1px dashed #000; margin: 6px 0; }

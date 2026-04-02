@@ -32,7 +32,7 @@ function openPrintWindow(html: string, title: string) {
     <title>${title}</title>
     <style>
       *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:'Courier New',monospace;font-size:12px;width:58mm;padding:4px}
+      body{font-family:'Courier New',monospace;font-size:11px;width:48mm;padding:2px}
       .center{text-align:center}
       .big{font-size:48px;font-weight:900;text-align:center;letter-spacing:2px;line-height:1}
       .type{font-size:18px;font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0}
@@ -42,7 +42,7 @@ function openPrintWindow(html: string, title: string) {
       .qty{font-size:16px;font-weight:bold}
       .total-row{display:flex;justify-content:space-between;font-size:15px;font-weight:bold;margin-top:4px}
       .footer{text-align:center;margin-top:8px;font-size:11px}
-      @media print{@page{margin:0;size:58mm auto}}
+      @media print{@page{margin:0;size:58mm auto}body{width:48mm}}
     </style>
   </head><body>${html}</body></html>`);
   win.document.close();
