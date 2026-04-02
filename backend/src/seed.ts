@@ -8,10 +8,13 @@
  */
 
 import * as path from 'path';
-import * as dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load .env only in local development; in production vars come from Docker
+if (process.env.NODE_ENV !== 'production') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+}
 
 const prisma = new PrismaClient();
 
