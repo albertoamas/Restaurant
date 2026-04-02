@@ -17,6 +17,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared ./packages/shared
 COPY frontend ./frontend
 
+# Build shared package first so @pos/shared resolves to compiled JS
+RUN pnpm --filter @pos/shared build
+
 # Build React app — outputs to frontend/dist
 RUN pnpm --filter frontend build
 
