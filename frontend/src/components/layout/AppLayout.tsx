@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -20,20 +21,20 @@ const Icons = {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled } = useSettingsStore();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isOwner = user?.role === 'OWNER';
 
-  // Build mobile nav respecting role + module settings
   const mobileNav = [
-    { to: '/pos',      label: 'POS',        icon: Icons.pos,      show: true },
-    { to: '/orders',   label: 'Pedidos',    icon: Icons.orders,   show: ordersEnabled },
-    { to: '/cash',     label: 'Caja',       icon: Icons.cash,     show: cashEnabled },
-    { to: '/kitchen',  label: 'Cocina',     icon: Icons.kitchen,  show: kitchenEnabled },
-    { to: '/report',   label: 'Reporte',    icon: Icons.report,   show: isOwner },
-    { to: '/expenses',  label: 'Gastos',    icon: Icons.expenses,  show: isOwner },
-    { to: '/customers', label: 'Clientes',  icon: Icons.customers, show: isOwner },
-    { to: '/products',  label: 'Productos', icon: Icons.products,  show: isOwner },
-    { to: '/settings', label: 'Ajustes',    icon: Icons.settings, show: isOwner || (!isOwner && (branchesEnabled || teamEnabled)) },
+    { to: '/pos',       label: 'POS',        icon: Icons.pos,       show: true },
+    { to: '/orders',    label: 'Pedidos',    icon: Icons.orders,    show: ordersEnabled },
+    { to: '/cash',      label: 'Caja',       icon: Icons.cash,      show: cashEnabled },
+    { to: '/kitchen',   label: 'Cocina',     icon: Icons.kitchen,   show: kitchenEnabled },
+    { to: '/report',    label: 'Reporte',    icon: Icons.report,    show: isOwner },
+    { to: '/expenses',  label: 'Gastos',     icon: Icons.expenses,  show: isOwner },
+    { to: '/customers', label: 'Clientes',   icon: Icons.customers, show: isOwner },
+    { to: '/products',  label: 'Productos',  icon: Icons.products,  show: isOwner },
+    { to: '/settings',  label: 'Ajustes',    icon: Icons.settings,  show: isOwner || (!isOwner && (branchesEnabled || teamEnabled)) },
   ].filter((i) => i.show);
 
   if (user?.role === 'CASHIER' && !user.branchId) {
@@ -65,42 +66,107 @@ export function AppLayout() {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="lg:ml-60 flex flex-col min-h-screen pb-16 lg:pb-0">
-        <Header />
+      {/* Mobile drawer overlay */}
+      {drawerOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <div
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        style={{
+          background: 'linear-gradient(180deg, oklch(0.155 0.022 255) 0%, oklch(0.128 0.016 255) 100%)',
+        }}
+      >
+        {/* Drawer header */}
+        <div className="px-4 pt-5 pb-4 border-b border-white/8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.50_0.24_225/0.40)]">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-white truncate font-heading">
+                {user?.tenantName || 'Mi Negocio'}
+              </h1>
+              <p className="text-xs text-white/40 truncate">{user?.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Drawer nav */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+          {mobileNav.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setDrawerOpen(false)}
+              className={({ isActive }) =>
+                [
+                  'relative flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150',
+                  isActive
+                    ? 'text-white bg-white/10 border border-white/8'
+                    : 'text-white/45 hover:text-white/80 hover:bg-white/5',
+                ].join(' ')
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-400 rounded-full" />
+                  )}
+                  <span className={isActive ? 'text-primary-400' : 'text-white/35'}>
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Drawer footer */}
+        <div className="px-3 py-4 border-t border-white/8">
+          <div className="flex items-center gap-2.5 px-3 mb-2">
+            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-white/70">{(user?.name ?? '?')[0].toUpperCase()}</span>
+            </div>
+            <p className="text-xs text-white/50 truncate flex-1">{user?.email}</p>
+          </div>
+          <button
+            onClick={() => { setDrawerOpen(false); logout(); }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-red-400 hover:bg-red-500/10 w-full transition-all duration-150"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
+      <div className="lg:ml-60 flex flex-col min-h-screen">
+        <Header onMenuOpen={() => setDrawerOpen(true)} />
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile bottom nav */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/92 backdrop-blur-xl border-t border-gray-200/80 z-40 flex overflow-x-auto scrollbar-hide"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        {mobileNav.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center h-16 gap-0.5 transition-colors relative shrink-0 px-1
-              ${mobileNav.length <= 5 ? 'flex-1' : 'min-w-[64px]'}
-              ${isActive ? 'text-primary-600' : 'text-gray-400'}`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <span className="absolute inset-x-1.5 inset-y-1.5 rounded-xl bg-primary-50" />
-                )}
-                <span className="relative z-10">{item.icon}</span>
-                <span className={`relative z-10 text-[10px] font-medium leading-none ${isActive ? 'font-semibold text-primary-700' : ''}`}>
-                  {item.label}
-                </span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
     </div>
   );
 }
