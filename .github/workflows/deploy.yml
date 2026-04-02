@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_BASE: ghcr.io/${{ github.repository }}
+  IMAGE_BASE: ghcr.io/albertoamas/restaurant
 
 jobs:
   # ── Build Docker images and push to GitHub Container Registry ────────────────
