@@ -43,11 +43,8 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-
-  // Health check — bypasses globalPrefix 'api/v1' intentionally
-  // Registered after listen() so PrismaService is fully initialized
+  // Health check — registered before listen() so Express processes it
+  // before NestJS installs its catch-all 404 handler
   const prisma = app.get(PrismaService);
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.get('/health', async (_req: unknown, res: any) => {
@@ -58,6 +55,9 @@ async function bootstrap() {
       res.status(503).json({ status: 'error', timestamp: new Date().toISOString() });
     }
   });
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
   console.log(`POS API running on http://localhost:${port}/api/v1`);
 }
 bootstrap();
