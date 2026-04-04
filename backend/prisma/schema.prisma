@@ -122,7 +122,7 @@ model Order {
   customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   items    OrderItem[]
 
-  @@unique([tenantId, orderNumber])
+  @@index([tenantId, orderNumber])
   @@index([tenantId, createdAt])
   @@index([tenantId, status])
   @@index([tenantId, customerId])
