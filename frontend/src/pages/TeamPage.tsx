@@ -61,16 +61,26 @@ export function TeamPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide">
-      <div className="flex items-center justify-between mb-6">
-        <div />
-        <Button onClick={() => setShowModal(true)}>+ Agregar cajero</Button>
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Equipo y Roles</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Gestiona cajeros, estado de cuenta y sucursal asignada.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+              {users.length} usuarios
+            </span>
+            <Button onClick={() => setShowModal(true)}>+ Agregar cajero</Button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] divide-y divide-gray-50 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] divide-y divide-gray-50 overflow-hidden">
           {users.map((user) => (
             <div
               key={user.id}

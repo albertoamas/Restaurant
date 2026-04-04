@@ -88,17 +88,25 @@ export function ExpensesPage() {
   };
 
   const netProfit = totalSales !== null ? totalSales - summary.total : null;
-  const activeClass = 'bg-gradient-to-b from-primary-500 to-primary-600 text-white shadow-[0_4px_12px_oklch(0.50_0.24_225/0.30)]';
-  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-300 hover:text-primary-700';
+  const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
+  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
 
   const filteredExpenses = selectedCategory
     ? expenses.filter((e) => e.category === selectedCategory)
     : expenses;
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
       {/* Period selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Gastos Operativos</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Control por categoría, período y rentabilidad neta.</p>
+          </div>
+          <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar gasto</Button>
+        </div>
+
         <div className="flex flex-wrap gap-1.5">
           {PERIODS.map((p) => (
             <button
@@ -112,7 +120,6 @@ export function ExpensesPage() {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar Gasto</Button>
       </div>
 
       {/* Custom range */}
@@ -137,7 +144,7 @@ export function ExpensesPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {/* Total gastos */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] p-4 flex flex-col gap-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
           <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-red-500">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -150,7 +157,7 @@ export function ExpensesPage() {
         </div>
 
         {/* Ventas */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] p-4 flex flex-col gap-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-emerald-500">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -263,6 +270,7 @@ export function ExpensesPage() {
                         onClick={() => { handleDelete(expense.id); setDeletingId(null); }}
                         className="p-1.5 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors"
                         title="Confirmar eliminación"
+                        aria-label="Confirmar eliminación del gasto"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -272,6 +280,7 @@ export function ExpensesPage() {
                         onClick={() => setDeletingId(null)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                         title="Cancelar"
+                        aria-label="Cancelar eliminación"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -283,6 +292,7 @@ export function ExpensesPage() {
                       onClick={() => setDeletingId(expense.id)}
                       className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                       title="Eliminar gasto"
+                      aria-label="Eliminar gasto"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

@@ -8,13 +8,13 @@ interface Props {
 
 export function CategoryTabs({ categories, selected, onSelect }: Props) {
   const activeClass = [
-    'bg-gradient-to-b from-primary-500 to-primary-600 text-white',
-    'border-transparent',
+    'bg-primary-600 text-white border border-primary-600',
+    'shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]',
   ].join(' ');
 
   const inactiveClass = [
     'bg-white text-gray-600 border border-gray-200',
-    'hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50/50',
+    'hover:border-primary-400 hover:text-primary-800 hover:bg-primary-50/35',
   ].join(' ');
 
   return (

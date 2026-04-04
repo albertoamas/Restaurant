@@ -1,7 +1,7 @@
 import { type ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'emerald';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'emerald' | 'outline' | 'soft';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   fullWidth?: boolean;
   loading?: boolean;
@@ -9,17 +9,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants = {
   primary: [
-    'bg-gradient-to-b from-primary-500 to-primary-600 text-white',
-    'shadow-[0_1px_3px_oklch(0.13_0.012_260/0.12),inset_0_1px_0_oklch(1_0_0/0.15)]',
-    'hover:from-primary-600 hover:to-primary-700',
-    'hover:shadow-[0_4px_14px_oklch(0.50_0.24_225/0.35)]',
-    'focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-1',
+    'bg-primary-600 text-white border border-primary-600',
+    'shadow-[0_1px_2px_oklch(0.13_0.012_260/0.10)]',
+    'hover:bg-primary-700 hover:border-primary-700',
+    'hover:shadow-[0_3px_10px_oklch(0.45_0.16_235/0.24)]',
+    'focus-visible:ring-2 focus-visible:ring-primary-500/35 focus-visible:ring-offset-1',
   ].join(' '),
 
   secondary: [
     'bg-white border border-gray-200 text-gray-800',
     'shadow-[0_1px_2px_oklch(0.13_0.012_260/0.06)]',
-    'hover:border-primary-300 hover:bg-primary-50/50',
+    'hover:border-primary-300 hover:bg-primary-50/35',
   ].join(' '),
 
   danger: [
@@ -34,11 +34,22 @@ const variants = {
     'hover:bg-gray-100 hover:text-gray-900',
   ].join(' '),
 
+  outline: [
+    'bg-transparent border border-gray-300 text-gray-700',
+    'hover:border-primary-500 hover:text-primary-800 hover:bg-primary-50/25',
+  ].join(' '),
+
+  soft: [
+    'bg-primary-100 text-primary-800 border border-primary-200',
+    'hover:bg-primary-200/80 hover:border-primary-300',
+  ].join(' '),
+
   emerald: [
-    'bg-gradient-to-b from-emerald-500 to-emerald-600 text-white',
-    'shadow-[0_1px_3px_oklch(0.13_0.012_260/0.12),inset_0_1px_0_oklch(1_0_0/0.12)]',
-    'hover:from-emerald-600 hover:to-emerald-700',
-    'hover:shadow-[0_4px_16px_oklch(0.55_0.18_145/0.40)]',
+    'bg-emerald-600 text-white border border-emerald-600',
+    'shadow-[0_1px_2px_oklch(0.13_0.012_260/0.10)]',
+    'hover:bg-emerald-700 hover:border-emerald-700',
+    'hover:shadow-[0_3px_10px_oklch(0.52_0.14_150/0.24)]',
+    'focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-1',
   ].join(' '),
 };
 
@@ -63,15 +74,16 @@ export function Button({
     <button
       className={[
         'font-medium transition-all duration-150',
-        'active:scale-[0.96] active:brightness-95',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:brightness-100',
-        'focus-visible:outline-none',
+        'active:brightness-95',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:brightness-100',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2',
         variants[variant],
         sizes[size],
         fullWidth ? 'w-full' : '',
         className,
       ].join(' ')}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {loading ? (

@@ -123,7 +123,7 @@ export function Sidebar() {
     <aside
       className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-white/5"
       style={{
-        background: 'linear-gradient(180deg, oklch(0.155 0.022 255) 0%, oklch(0.128 0.016 255) 100%)',
+        background: 'linear-gradient(165deg, oklch(0.36 0.16 236) 0%, oklch(0.20 0.09 252) 100%)',
       }}
     >
       {/* Brand header */}

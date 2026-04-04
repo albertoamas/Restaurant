@@ -33,7 +33,7 @@ const methods = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
       </svg>
     ),
-    color: 'border-2 border-primary-200 bg-gradient-to-b from-primary-50 to-white hover:border-primary-400 hover:shadow-[0_4px_12px_oklch(0.50_0.24_225/0.20)] text-primary-700',
+    color: 'border-2 border-primary-200 bg-primary-50/65 hover:border-primary-400 hover:bg-primary-100/70 hover:shadow-[0_3px_10px_oklch(0.45_0.16_235/0.18)] text-primary-800',
   },
   {
     value: PaymentMethod.TRANSFER,

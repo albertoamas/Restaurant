@@ -48,7 +48,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] p-4 flex flex-col gap-3">
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-3">
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] ${bg} ${accent}`}>
         {icon}
       </div>
@@ -115,15 +115,25 @@ export function ReportPage() {
       .finally(() => setTopLoading(false));
   }, [utcFrom, utcTo, currentBranchId, user?.role, selectedCategory]);
 
-  const activeClass = 'bg-gradient-to-b from-primary-500 to-primary-600 text-white shadow-[0_4px_12px_oklch(0.50_0.24_225/0.30)]';
-  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-300 hover:text-primary-700';
+  const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
+  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
 
   const maxQty = topProducts[0]?.totalQuantity ?? 1;
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
-      {/* Period selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+      {/* Header + Period selector */}
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Reporte y Rendimiento</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Vista consolidada de ventas, gastos y desempeño por periodo.</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
+            {rangeLabel}
+          </span>
+        </div>
+
         <div className="flex flex-wrap gap-1.5">
           {PERIODS.map((p) => (
             <button
@@ -141,7 +151,7 @@ export function ReportPage() {
 
       {/* Custom range inputs */}
       {period === 'custom' && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <input
             type="date" value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
@@ -158,7 +168,7 @@ export function ReportPage() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400 mb-6 font-medium">{rangeLabel}</p>
+        <p className="text-xs text-gray-400 mb-6 font-medium">Comparativa activa: {rangeLabel}</p>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
@@ -203,7 +213,7 @@ export function ReportPage() {
 
           {/* Payment & Type breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <Card variant="default">
+            <Card variant="panel">
               <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Métodos de Pago</h3>
               <div className="space-y-4">
                 <PaymentBar label="Efectivo" amount={report.paymentBreakdown.cash} total={report.totalSales} color="bg-emerald-500" />
@@ -211,7 +221,7 @@ export function ReportPage() {
                 <PaymentBar label="Transferencia" amount={report.paymentBreakdown.transfer} total={report.totalSales} color="bg-violet-500" />
               </div>
             </Card>
-            <Card variant="default">
+            <Card variant="panel">
               <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Tipo de Pedido</h3>
               <div className="space-y-4">
                 <TypeRow label="Local" count={report.ordersByType.dineIn} total={report.orderCount} color="bg-primary-500" />
@@ -222,7 +232,7 @@ export function ReportPage() {
           </div>
 
           {/* Top products */}
-          <Card variant="default">
+          <Card variant="elevated">
             <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
               <h3 className="text-sm font-bold text-gray-700 font-heading">Productos Más Vendidos</h3>
               {categories.length > 0 && (
@@ -267,7 +277,7 @@ export function ReportPage() {
 
           {/* Net Profit section */}
           {expenseSummary !== null && (
-            <Card variant="default" className="mt-4">
+            <Card variant="feature" className="mt-4">
               <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Ganancia Neta</h3>
               {(() => {
                 const netProfit = report.totalSales - expenseSummary.total;

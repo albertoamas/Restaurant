@@ -92,8 +92,8 @@ export function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-        <div className="w-full max-w-xs bg-white rounded-2xl p-8 shadow-[0_4px_24px_oklch(0.13_0.012_260/0.10)]">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[linear-gradient(165deg,oklch(0.975_0.006_250),oklch(0.955_0.012_248))]">
+        <div className="w-full max-w-xs bg-white/85 backdrop-blur-xl rounded-2xl p-8 shadow-[0_14px_40px_oklch(0.13_0.012_260/0.16)] border border-white/70">
           <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center mx-auto mb-5">
             <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -122,34 +122,36 @@ export function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[linear-gradient(165deg,oklch(0.975_0.006_250),oklch(0.955_0.012_248))] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-heading font-black text-2xl text-gray-900">Panel de Admin</h1>
-            <p className="text-sm text-gray-400 mt-0.5">{tenants.length} negocio{tenants.length !== 1 ? 's' : ''} registrado{tenants.length !== 1 ? 's' : ''}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
-            >
-              {showForm ? 'Cancelar' : '+ Nuevo negocio'}
-            </Button>
-            <button
-              onClick={handleLogout}
-              className="text-xs text-gray-400 hover:text-gray-600 underline"
-            >
-              Salir
-            </button>
+        <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-heading font-black text-2xl text-gray-900">Panel de Admin</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{tenants.length} negocio{tenants.length !== 1 ? 's' : ''} registrado{tenants.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
+              >
+                {showForm ? 'Cancelar' : '+ Nuevo negocio'}
+              </Button>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
+              >
+                Salir
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Create tenant form */}
         {showForm && (
-          <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="bg-white/90 rounded-2xl p-6 mb-6 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] border border-white/70 backdrop-blur-sm">
             <h2 className="font-heading font-bold text-base text-gray-900 mb-4">Nuevo negocio</h2>
             <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
               <div className="col-span-2 sm:col-span-1">
@@ -216,7 +218,7 @@ export function AdminPage() {
             { label: 'Activos', value: tenants.filter((t) => t.isActive).length, color: 'text-green-600' },
             { label: 'Inactivos', value: tenants.filter((t) => !t.isActive).length, color: 'text-red-500' },
           ].map((s) => (
-            <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <div key={s.label} className="bg-white/90 rounded-xl p-4 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.08)] border border-white/70 text-center backdrop-blur-sm">
               <p className={`font-heading font-black text-2xl ${s.color}`}>{s.value}</p>
               <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
             </div>
@@ -224,7 +226,7 @@ export function AdminPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white/90 rounded-2xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] border border-white/70 overflow-hidden backdrop-blur-sm">
           {loading ? (
             <div className="flex justify-center py-12">
               <Spinner />

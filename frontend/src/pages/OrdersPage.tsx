@@ -46,14 +46,14 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
 
   return (
     <div className={[
-      'bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)]',
+      'bg-white/90 backdrop-blur-md rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.09)]',
       'overflow-hidden border-l-4 animate-fade',
       statusAccent[order.status] ?? 'border-l-gray-200',
       isCancelled ? 'opacity-60' : '',
     ].join(' ')}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-[linear-gradient(180deg,oklch(0.99_0.004_255),oklch(1_0_0/0))]">
         <div className="flex items-center gap-2.5">
           <span className="font-heading font-black text-2xl text-gray-900 leading-none">
             #{order.orderNumber}
@@ -153,7 +153,7 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
 
       {/* Footer */}
       <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-gray-50',
+        'flex items-center gap-3 px-4 py-3 border-t border-gray-100/80 bg-[oklch(0.99_0.004_250)]',
         action ? 'flex-col sm:flex-row' : '',
       ].join(' ')}>
         <span className="font-heading font-black text-xl text-gray-900 shrink-0">
@@ -215,31 +215,43 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
-            focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
-            shadow-[0_1px_2px_oklch(0.13_0.012_260/0.06)] transition-[border-color,box-shadow]"
-        />
-        <div className="flex gap-0.5 bg-gray-100 rounded-xl p-1">
-          {statusFilters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-[9px] transition-all duration-150 ${
-                statusFilter === f.value
-                  ? 'bg-white text-gray-900 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.08)] p-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-heading font-black text-xl text-gray-900">Gestión de Pedidos</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Monitorea y actualiza estados en tiempo real.</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
+            {orders.length} pedidos
+          </span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
+              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
+              shadow-[0_1px_2px_oklch(0.13_0.012_260/0.06)] transition-[border-color,box-shadow]"
+          />
+          <div className="flex gap-0.5 bg-[oklch(0.96_0.008_252)] rounded-xl p-1 overflow-x-auto">
+            {statusFilters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-[9px] whitespace-nowrap transition-all duration-150 ${
+                  statusFilter === f.value
+                    ? 'bg-white text-gray-900 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

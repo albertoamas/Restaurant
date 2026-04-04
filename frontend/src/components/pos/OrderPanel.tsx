@@ -37,6 +37,12 @@ const orderTypes = [
   },
 ];
 
+const selectedTypeClass: Record<OrderType, string> = {
+  [OrderType.DINE_IN]: 'bg-primary-50 text-primary-800 border border-primary-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
+  [OrderType.TAKEOUT]: 'bg-amber-50 text-amber-800 border border-amber-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
+  [OrderType.DELIVERY]: 'bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
+};
+
 export function OrderPanel({ onCharge }: Props) {
   const { items, orderType, notes, setOrderType, setNotes, incrementItem, decrementItem, removeItem, getTotal, getItemCount, clear } =
     useCartStore();
@@ -56,7 +62,7 @@ export function OrderPanel({ onCharge }: Props) {
               className={[
                 'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-xs font-semibold transition-all duration-150',
                 orderType === type.value
-                  ? 'bg-white text-gray-900 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)] border border-gray-100'
+                  ? selectedTypeClass[type.value]
                   : 'text-gray-500 hover:text-gray-700',
               ].join(' ')}
             >

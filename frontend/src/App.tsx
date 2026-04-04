@@ -17,12 +17,14 @@ import { BranchesPage } from './pages/BranchesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { AdminPage } from './pages/AdminPage';
+import { LandingPage } from './pages/LandingPage';
 
 export default function App() {
   return (
     <AuthProvider>
       <SocketProvider>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route element={<PrivateRoute />}>
@@ -30,7 +32,6 @@ export default function App() {
             <Route path="/kitchen" element={<KitchenPage />} />
 
             <Route element={<AppLayout />}>
-              <Route path="/" element={<Navigate to="/pos" replace />} />
               <Route path="/pos" element={<PosPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/cash" element={<CashPage />} />
@@ -45,7 +46,7 @@ export default function App() {
               </Route>
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/pos" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </SocketProvider>
     </AuthProvider>

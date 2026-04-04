@@ -311,14 +311,16 @@ export function CustomersPage() {
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 font-heading">Clientes</h1>
-          <p className="text-sm text-gray-400">{customers.length} registrado{customers.length !== 1 ? 's' : ''}</p>
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
+            <p className="text-xs text-gray-500 mt-0.5">{customers.length} registrado{customers.length !== 1 ? 's' : ''}</p>
+          </div>
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            + Nuevo cliente
+          </Button>
         </div>
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
-          + Nuevo cliente
-        </Button>
       </div>
 
       {/* Search */}
@@ -334,7 +336,7 @@ export function CustomersPage() {
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar por nombre o teléfono..."
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white/90"
         />
       </div>
 
@@ -362,7 +364,7 @@ export function CustomersPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_2px_8px_oklch(0.13_0.012_260/0.06)] overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 border-b border-gray-100 bg-gray-50">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</p>

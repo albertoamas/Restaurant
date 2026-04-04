@@ -39,16 +39,26 @@ export function BranchesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide">
-      <div className="flex items-center justify-between mb-6">
-        <div />
-        <Button onClick={() => { setEditing(null); setShowModal(true); }}>+ Nueva sucursal</Button>
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Sucursales</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Organiza locales, estado y datos de contacto.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+              {branches.length} sucursales
+            </span>
+            <Button onClick={() => { setEditing(null); setShowModal(true); }}>+ Nueva sucursal</Button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : branches.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-sm shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -57,7 +67,7 @@ export function BranchesPage() {
           <p className="text-xs mt-1">Crea tu primera sucursal</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] divide-y divide-gray-50 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] divide-y divide-gray-50 overflow-hidden">
           {branches.map((branch) => (
             <div
               key={branch.id}

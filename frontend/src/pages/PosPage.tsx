@@ -76,19 +76,28 @@ export function PosPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-[linear-gradient(165deg,oklch(0.975_0.006_250),oklch(0.952_0.012_248))]">
       {/* Left: Products */}
-      <div className="flex-1 flex flex-col p-3 overflow-hidden">
-        {/* Branch indicator + search */}
-        <div className="mb-2.5">
-          {currentBranch && (
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                {currentBranch.name}
-              </span>
+      <div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
+        <div className="mb-3 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.08)] p-3 sm:p-4 animate-slide">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <div>
+              <h2 className="font-heading text-lg sm:text-xl font-black text-gray-900 leading-tight">Punto de Venta</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Selecciona productos y cobra en segundos.</p>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 border border-primary-200 text-xs font-semibold text-primary-700">
+                {filteredProducts.length} productos
+              </span>
+              {currentBranch && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+                  {currentBranch.name}
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="relative">
             <svg
               className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
@@ -102,8 +111,8 @@ export function PosPage() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-2xl bg-white
-                focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-400
+              className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-2xl bg-white/95
+                focus:outline-none focus:ring-[3px] focus:ring-primary-500/18 focus:border-primary-400
                 transition-[border-color,box-shadow] duration-150
                 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
             />
@@ -111,6 +120,7 @@ export function PosPage() {
               <button
                 onClick={() => setSearch('')}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Limpiar búsqueda"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -125,13 +135,13 @@ export function PosPage() {
           selected={selectedCategory}
           onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
-        <div className="flex-1 overflow-y-auto mt-3">
+        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-white/70 bg-white/70 backdrop-blur-md p-2 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <ProductGrid products={filteredProducts} onSelect={handleProductSelect} />
         </div>
       </div>
 
       {/* Right: Order panel (desktop) */}
-      <div className="hidden lg:block w-80 border-l border-gray-200">
+      <div className="hidden lg:block w-80 border-l border-gray-200/70 bg-white/80 backdrop-blur-xl">
         <OrderPanel onCharge={handleCharge} />
       </div>
 
@@ -141,11 +151,11 @@ export function PosPage() {
           <button
             onClick={() => setShowCart(true)}
             className={[
-              'bg-gradient-to-b from-primary-500 to-primary-600 text-white',
+              'bg-primary-600 text-white border border-primary-600',
               'rounded-2xl px-5 py-3.5 text-sm font-bold',
-              'shadow-[0_4px_20px_oklch(0.50_0.24_225/0.45)]',
+              'shadow-[0_3px_12px_oklch(0.45_0.16_235/0.25)]',
               'flex items-center gap-2.5',
-              'active:scale-[0.96] transition-transform',
+              'hover:bg-primary-700 transition-colors',
             ].join(' ')}
           >
             <div className="relative">
@@ -166,7 +176,7 @@ export function PosPage() {
       {showCart && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col bg-white">
+          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col bg-white border-t border-gray-200/80">
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />

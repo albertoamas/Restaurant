@@ -95,7 +95,7 @@ export function AppLayout() {
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          background: 'linear-gradient(180deg, oklch(0.155 0.022 255) 0%, oklch(0.128 0.016 255) 100%)',
+          background: 'linear-gradient(165deg, oklch(0.36 0.16 236) 0%, oklch(0.20 0.09 252) 100%)',
         }}
       >
         {/* Drawer header */}

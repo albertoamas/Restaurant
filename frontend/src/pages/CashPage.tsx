@@ -95,10 +95,27 @@ export function CashPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-lg mx-auto animate-slide">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto animate-slide">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-xl font-black text-gray-900">Control de Caja</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Apertura, cierre y conciliación del turno actual.</p>
+          </div>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+            isOpen
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-gray-100 text-gray-600 border-gray-200'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-400'}`} />
+            {isOpen ? 'Turno abierto' : 'Turno cerrado'}
+          </span>
+        </div>
+      </div>
+
       {/* Hero status card */}
       <div className={[
-        'rounded-2xl p-6 mb-4 border',
+        'rounded-2xl p-6 mb-4 border shadow-[0_8px_26px_oklch(0.13_0.012_260/0.08)]',
         isOpen
           ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/60 border-emerald-200/80'
           : 'bg-gradient-to-br from-gray-50 to-gray-100/60 border-gray-200/80',
@@ -153,7 +170,7 @@ export function CashPage() {
 
       {/* Last closing summary */}
       {!isOpen && session?.closingAmount !== null && session?.closingAmount !== undefined && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] p-5">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -199,7 +216,7 @@ export function CashPage() {
         <button
           onClick={() => setShowHistory(true)}
           className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
-            bg-white border border-gray-100 rounded-xl py-3 hover:border-primary-200 hover:bg-primary-50/30"
+            bg-white/90 border border-white/70 rounded-xl py-3 hover:border-primary-200 hover:bg-primary-50/40 shadow-[0_6px_18px_oklch(0.13_0.012_260/0.06)]"
         >
           Ver historial de cierres ({closedSessions.length}) →
         </button>

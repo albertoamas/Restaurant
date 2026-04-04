@@ -59,13 +59,24 @@ export function ProductsPage() {
     return <div className="flex justify-center py-12"><Spinner /></div>;
   }
 
-  const activeClass = 'bg-gradient-to-b from-primary-500 to-primary-600 text-white shadow-[0_4px_12px_oklch(0.50_0.24_225/0.25)]';
-  const inactiveClass = 'bg-white text-gray-600 border border-gray-200 hover:border-primary-300 hover:text-primary-700';
+  const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.20)]';
+  const inactiveClass = 'bg-white text-gray-600 border border-gray-200 hover:border-primary-400 hover:text-primary-800';
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Catálogo de Productos</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Administra precios, estado y categorías con control total.</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
+            {filteredProducts.length} productos
+          </span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Category filter chips */}
         <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
           <button
@@ -90,6 +101,7 @@ export function ProductsPage() {
                 onClick={() => { setEditingCategory(cat); setShowCatModal(true); }}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                 title="Editar categoría"
+                aria-label={`Editar categoría ${cat.name}`}
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -101,12 +113,13 @@ export function ProductsPage() {
         </div>
         <div className="flex gap-2 shrink-0">
           <Button size="sm" onClick={openNewProduct}>+ Producto</Button>
-          <Button size="sm" variant="secondary" onClick={() => { setEditingCategory(null); setShowCatModal(true); }}>+ Categoría</Button>
+          <Button size="sm" variant="secondary" onClick={() => { setEditingCategory(null); setShowCatModal(true); }}>+ Agregar categoría</Button>
+        </div>
         </div>
       </div>
 
       {filteredProducts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-sm shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -123,8 +136,8 @@ export function ProductsPage() {
             {filteredProducts.map((p) => (
               <div
                 key={p.id}
-                className={`flex items-center gap-3 bg-white rounded-2xl border border-gray-100
-                  shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)] p-3 transition-colors
+                className={`flex items-center gap-3 bg-white/90 rounded-2xl border border-white/70
+                  shadow-[0_6px_18px_oklch(0.13_0.012_260/0.09)] p-3 transition-colors
                   ${!p.isActive ? 'opacity-60' : ''}`}
               >
                 {/* Thumbnail */}
@@ -173,11 +186,11 @@ export function ProductsPage() {
           </div>
 
           {/* Desktop table — hidden below lg */}
-          <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] overflow-hidden">
+          <div className="hidden lg:block bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100">
+                  <tr className="border-b border-gray-100 bg-[oklch(0.99_0.004_250)]">
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-16"></th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Producto</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Categoría</th>

@@ -82,9 +82,14 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-2xl mx-auto animate-slide space-y-4">
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide space-y-4">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5">
+        <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Ajustes del Negocio</h2>
+        <p className="text-xs text-gray-500 mt-1">Configura módulos, impresión, datos del recibo y seguridad de acceso.</p>
+      </div>
+
       {/* Business data */}
-      <Card>
+      <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -141,7 +146,7 @@ export function SettingsPage() {
 
       {/* Módulos */}
       {user?.role === UserRole.OWNER && (
-        <Card>
+        <Card variant="panel">
           <div className="flex items-center gap-2 mb-1">
             <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -204,7 +209,7 @@ export function SettingsPage() {
       )}
 
       {/* Printing & Kitchen */}
-      <Card>
+      <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -244,7 +249,7 @@ export function SettingsPage() {
       </Card>
 
       {/* Password change */}
-      <Card>
+      <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
