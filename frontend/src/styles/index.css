@@ -151,12 +151,26 @@
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
+    /* Eliminate 300ms tap delay and disable double-tap zoom on all elements */
+    touch-action: manipulation;
   }
 
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS from auto-adjusting font sizes after orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /*
+   * iOS Safari zooms in on any input with font-size < 16px.
+   * Force 16px on all form controls so the viewport never zooms on focus.
+   * Visual size is controlled by padding/height; this only affects the zoom trigger.
+   */
+  input, select, textarea {
+    font-size: 16px;
   }
 
   body {

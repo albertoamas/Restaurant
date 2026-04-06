@@ -189,7 +189,7 @@ export function PosPage() {
               <div className="w-10 h-1 bg-gray-200 rounded-full" />
             </div>
             <div className="flex-1 min-h-0">
-              <OrderPanel onCharge={handleCharge} />
+              <OrderPanel onCharge={handleCharge} onClose={() => setShowCart(false)} />
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 
 interface Props {
   onCharge: () => void;
+  onClose?: () => void;
 }
 
 const orderTypes = [
@@ -43,7 +44,7 @@ const selectedTypeClass: Record<OrderType, string> = {
   [OrderType.DELIVERY]: 'bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
 };
 
-export function OrderPanel({ onCharge }: Props) {
+export function OrderPanel({ onCharge, onClose }: Props) {
   const { items, orderType, notes, setOrderType, setNotes, incrementItem, decrementItem, removeItem, getTotal, getItemCount, clear } =
     useCartStore();
 
@@ -52,6 +53,27 @@ export function OrderPanel({ onCharge }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-white">
+      {/* Header: title + close button (solo en drawer mobile) */}
+      {onClose && (
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100 shrink-0">
+          <div>
+            <h3 className="font-heading font-black text-base text-gray-900 leading-tight">Tu pedido</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {count > 0 ? `${count} ítem${count !== 1 ? 's' : ''}` : 'Sin productos aún'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+            aria-label="Cerrar carrito"
+          >
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Order type selector */}
       <div className="p-3 border-b border-gray-100">
         <div className="flex gap-0.5 border border-gray-200 rounded-xl p-0.5 bg-gray-50">
@@ -76,13 +98,16 @@ export function OrderPanel({ onCharge }: Props) {
       {/* Cart header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">
-          Pedido {count > 0 && `· ${count} ítem${count !== 1 ? 's' : ''}`}
+          {!onClose && (count > 0 ? `Pedido · ${count} ítem${count !== 1 ? 's' : ''}` : 'Pedido')}
         </span>
         {items.length > 0 && (
           <button
             onClick={clear}
-            className="text-[11px] text-gray-400 hover:text-red-500 font-medium transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 active:bg-red-200 transition-colors"
           >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
             Limpiar
           </button>
         )}
