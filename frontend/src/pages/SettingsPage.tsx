@@ -4,7 +4,7 @@ import { UserRole } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
-import { adminApi } from '../api/admin.api';
+import api from '../api/client';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -23,11 +23,11 @@ function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
     setError('');
     setLoading(true);
     try {
-      await adminApi.ping(key.trim());
+      await api.post('/api/v1/auth/me/verify-password', { password: key });
       sessionStorage.setItem(SETTINGS_UNLOCK_KEY, '1');
       onUnlock();
     } catch {
-      setError('Clave incorrecta');
+      setError('Contraseña incorrecta');
     } finally {
       setLoading(false);
     }
@@ -43,10 +43,10 @@ function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
           </svg>
         </div>
         <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Ajustes protegidos</h2>
-        <p className="text-sm text-gray-500 mb-6">Ingresa la clave de administrador para continuar.</p>
+        <p className="text-sm text-gray-500 mb-6">Confirma tu contraseña para acceder a la configuración.</p>
         <form onSubmit={handleSubmit} className="space-y-3 text-left">
           <Input
-            label="Clave de administrador"
+            label="Tu contraseña"
             type="password"
             placeholder="••••••••"
             value={key}

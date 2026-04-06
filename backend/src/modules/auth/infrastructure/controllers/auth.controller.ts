@@ -28,6 +28,7 @@ import { ListUsersUseCase } from '../../application/use-cases/list-users.use-cas
 import { ToggleUserUseCase } from '../../application/use-cases/toggle-user.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { UpdateUserBranchUseCase } from '../../application/use-cases/update-user-branch.use-case';
+import { VerifyPasswordUseCase } from '../../application/use-cases/verify-password.use-case';
 
 @Controller('auth')
 export class AuthController {
@@ -38,6 +39,7 @@ export class AuthController {
     private readonly listUsersUseCase: ListUsersUseCase,
     private readonly toggleUserUseCase: ToggleUserUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly verifyPasswordUseCase: VerifyPasswordUseCase,
     private readonly updateUserBranchUseCase: UpdateUserBranchUseCase,
   ) {}
 
@@ -54,6 +56,17 @@ export class AuthController {
   }
 
   // ── Perfil propio (cualquier usuario autenticado) ─────────────
+
+  @Post('me/verify-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  verifyPassword(
+    @CurrentUser() user: JwtPayload,
+    @Body('password') password: string,
+  ) {
+    return this.verifyPasswordUseCase.execute(user.sub, user.tenantId, password);
+  }
 
   @Patch('me/password')
   @UseGuards(JwtAuthGuard)

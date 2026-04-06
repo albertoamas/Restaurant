@@ -146,6 +146,7 @@ routes/      ← PrivateRoute (any authenticated), OwnerRoute (OWNER only)
 ### Route structure
 
 ```
+/                ← public (LandingPage)
 /login           ← public
 /admin           ← public (protected only by x-admin-key header on API calls)
 /kitchen         ← auth only, fullscreen (no sidebar)
@@ -154,13 +155,15 @@ routes/      ← PrivateRoute (any authenticated), OwnerRoute (OWNER only)
   /orders        ← CASHIER + OWNER
   /cash          ← CASHIER + OWNER
   /report        ← OWNER only
+  /expenses      ← OWNER only
+  /customers     ← OWNER only
   /products      ← OWNER only
   /team          ← OWNER only
   /branches      ← OWNER only
   /settings      ← OWNER only
 ```
 
-Unknown routes redirect to `/pos`. There is no public self-registration — tenants are created by the developer via the `/admin` panel after payment.
+Unknown routes redirect to `/`. There is no public self-registration — tenants are created by the developer via the `/admin` panel after payment.
 
 ### Auth context
 

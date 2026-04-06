@@ -11,6 +11,7 @@ import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
 import { ToggleUserUseCase } from './application/use-cases/toggle-user.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
 import { UpdateUserBranchUseCase } from './application/use-cases/update-user-branch.use-case';
+import { VerifyPasswordUseCase } from './application/use-cases/verify-password.use-case';
 import { UserRepository } from './infrastructure/persistence/user.repository';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { AuthController } from './infrastructure/controllers/auth.controller';
@@ -45,6 +46,7 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
     ToggleUserUseCase,
     ChangePasswordUseCase,
     UpdateUserBranchUseCase,
+    VerifyPasswordUseCase,
   ],
   exports: [JwtStrategy, PassportModule, RegisterUseCase, 'UserRepositoryPort'],
 })

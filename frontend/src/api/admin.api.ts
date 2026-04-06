@@ -27,10 +27,6 @@ export const adminApi = {
   clearKey: () => sessionStorage.removeItem(KEY),
   hasKey: () => !!sessionStorage.getItem(KEY),
 
-  /** Lightweight key verification — throws if key is wrong */
-  ping: (key: string) =>
-    client.get<{ ok: boolean }>('/api/v1/admin/ping', { headers: { 'x-admin-key': key } }).then((r) => r.data),
-
   getTenants: () =>
     client.get<TenantRow[]>('/api/v1/admin/tenants', { headers: adminHeaders() }).then((r) => r.data),
 
