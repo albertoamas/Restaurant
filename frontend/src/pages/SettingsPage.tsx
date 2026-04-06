@@ -4,11 +4,65 @@ import { UserRole } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
+import { adminApi } from '../api/admin.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toggle } from '../components/ui/Toggle';
 import { handleApiError } from '../utils/api-error';
+
+const SETTINGS_UNLOCK_KEY = 'pos_settings_unlocked';
+
+function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await adminApi.ping(key.trim());
+      sessionStorage.setItem(SETTINGS_UNLOCK_KEY, '1');
+      onUnlock();
+    } catch {
+      setError('Clave incorrecta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
+      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
+          <svg className="w-7 h-7 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Ajustes protegidos</h2>
+        <p className="text-sm text-gray-500 mb-6">Ingresa la clave de administrador para continuar.</p>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <Input
+            label="Clave de administrador"
+            type="password"
+            placeholder="••••••••"
+            value={key}
+            onChange={(e) => { setKey(e.target.value); setError(''); }}
+            autoFocus
+            required
+          />
+          {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+          <Button type="submit" fullWidth loading={loading}>
+            {loading ? 'Verificando...' : 'Desbloquear'}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 interface SettingRowProps {
   label: string;
@@ -57,8 +111,13 @@ export function SettingsPage() {
     receiptFooter, setReceiptFooter,
   } = useSettingsStore();
 
+  const [unlocked, setUnlocked] = useState(() =>
+    sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1',
+  );
   const [pw, setPw] = useState(EMPTY_PW);
   const [pwLoading, setPwLoading] = useState(false);
+
+  if (!unlocked) return <SettingsLock onUnlock={() => setUnlocked(true)} />;
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
