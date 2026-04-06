@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
-import type { PaymentMethod, OrderDto } from '@pos/shared';
+import { PaymentMethod } from '@pos/shared';
+import type { OrderDto } from '@pos/shared';
 import type { CustomerPayload } from '../components/pos/PaymentModal';
 import { ordersApi } from '../api/orders.api';
 import { useCartStore } from '../store/cart.store';
 import { useAuth } from '../context/auth.context';
+import { useCashSessionStore } from '../store/cashSession.store';
 import { CategoryTabs } from '../components/pos/CategoryTabs';
 import { ProductGrid } from '../components/pos/ProductGrid';
 import { OrderPanel } from '../components/pos/OrderPanel';
@@ -31,6 +33,7 @@ export function PosPage() {
   const { items, orderType, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
   const { currentBranchId } = useAuth();
   const { autoPrintKitchen } = useSettingsStore();
+  const { isOpen: isCashOpen } = useCashSessionStore();
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
 
@@ -55,6 +58,10 @@ export function PosPage() {
   };
 
   const handleConfirmPayment = async (method: PaymentMethod, customer: CustomerPayload) => {
+    if (method === PaymentMethod.CASH && !isCashOpen()) {
+      toast.error('No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo.', { duration: 4000 });
+      return;
+    }
     try {
       const order = await ordersApi.create({
         branchId: currentBranchId ?? undefined,

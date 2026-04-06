@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CatalogModule } from '../catalog/catalog.module';
 import { EventsModule } from '../events/events.module';
 import { CustomersModule } from '../customers/customers.module';
+import { CashSessionModule } from '../cash-session/cash-session.module';
 import { OrderRepository } from './infrastructure/persistence/order.repository';
 import { OrderController } from './infrastructure/controllers/order.controller';
 import { CreateOrderUseCase } from './application/use-cases/create-order.use-case';
@@ -10,7 +11,7 @@ import { GetOrderUseCase } from './application/use-cases/get-order.use-case';
 import { UpdateOrderStatusUseCase } from './application/use-cases/update-order-status.use-case';
 
 @Module({
-  imports: [CatalogModule, EventsModule, CustomersModule],
+  imports: [CatalogModule, EventsModule, CustomersModule, CashSessionModule],
   controllers: [OrderController],
   providers: [
     {

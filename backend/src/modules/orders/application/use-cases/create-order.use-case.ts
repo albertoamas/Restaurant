@@ -4,10 +4,12 @@ import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
+import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { Customer } from '../../../customers/domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../../customers/domain/ports/customer-repository.port';
+import { PaymentMethod } from '@pos/shared';
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -17,6 +19,9 @@ export class CreateOrderUseCase {
 
     @Inject('ProductRepositoryPort')
     private readonly productRepository: ProductRepositoryPort,
+
+    @Inject('CashSessionRepositoryPort')
+    private readonly cashSessionRepository: CashSessionRepositoryPort,
 
     @Optional() @Inject(CUSTOMER_REPOSITORY_PORT)
     private readonly customerRepository?: CustomerRepositoryPort,
@@ -73,13 +78,21 @@ export class CreateOrderUseCase {
       }
     }
 
-    // 4. Reserve the order number for today (per branch)
+    // 4. Require an open cash session for CASH payments
+    if (dto.paymentMethod === PaymentMethod.CASH) {
+      const openSession = await this.cashSessionRepository.findOpenByBranch(tenantId, branchId);
+      if (!openSession) {
+        throw new BadRequestException('No hay una caja abierta. Abre la caja antes de registrar un pago en efectivo.');
+      }
+    }
+
+    // 6. Reserve the order number for today (per branch)
     const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, new Date());
 
-    // 5. Pre-generate the order id so items can reference it
+    // 7. Pre-generate the order id so items can reference it
     const orderId = uuidv4();
 
-    // 6. Build order items with product snapshot (name + price at time of order)
+    // 8. Build order items with product snapshot (name + price at time of order)
     const items: OrderItem[] = dto.items.map((itemDto) => {
       const product = productMap.get(itemDto.productId)!;
 
@@ -92,7 +105,7 @@ export class CreateOrderUseCase {
       });
     });
 
-    // 7. Create the aggregate root (subtotal + total computed inside)
+    // 9. Create the aggregate root (subtotal + total computed inside)
     const order = Order.create({
       id: orderId,
       tenantId,
@@ -106,7 +119,7 @@ export class CreateOrderUseCase {
       customerId: resolvedCustomerId,
     });
 
-    // 8. Persist and return
+    // 10. Persist and return
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emit(tenantId, branchId, 'order.created', saved);
     return saved;

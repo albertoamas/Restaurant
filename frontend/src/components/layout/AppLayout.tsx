@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
+import { useSocketEvent } from '../../context/socket.context';
+import { useCashSessionStore } from '../../store/cashSession.store';
+import { cashSessionApi } from '../../api/cash-session.api';
 import { branchesApi } from '../../api/branches.api';
-import type { BranchDto } from '@pos/shared';
+import type { BranchDto, CashSessionDto } from '@pos/shared';
 
 // Icon helpers (kept inline to avoid re-importing heavy icon libs)
 const Icons = {
@@ -39,6 +42,28 @@ export function AppLayout() {
       }).catch(() => {});
     }
   }, [isOwner]);
+
+  // Sync cash session state globally so every page can read it
+  const { setSession: setCashSession } = useCashSessionStore();
+
+  useEffect(() => {
+    if (!currentBranchId) return;
+    cashSessionApi.getCurrent(currentBranchId)
+      .then((s) => setCashSession(s))
+      .catch(() => setCashSession(null));
+  }, [currentBranchId, setCashSession]);
+
+  const handleCashOpened = useCallback(
+    (s: CashSessionDto) => setCashSession(s),
+    [setCashSession],
+  );
+  const handleCashClosed = useCallback(
+    (s: CashSessionDto) => setCashSession(s),
+    [setCashSession],
+  );
+
+  useSocketEvent<CashSessionDto>('cash.opened', handleCashOpened);
+  useSocketEvent<CashSessionDto>('cash.closed', handleCashClosed);
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
 
