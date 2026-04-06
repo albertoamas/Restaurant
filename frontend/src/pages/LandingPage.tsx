@@ -334,8 +334,8 @@ export function LandingPage() {
             </a>
           </div>
 
-          {/* Mock POS */}
-          <div className="mt-16 animate-slide stagger-4">
+          {/* Mock POS — hidden on mobile */}
+          <div className="hidden sm:block mt-16 animate-slide stagger-4">
             <MockPOS />
           </div>
         </div>
