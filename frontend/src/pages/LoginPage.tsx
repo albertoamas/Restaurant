@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
 
 export function LoginPage() {
-  const BRAND_NAME = 'VikunaPOS';
   const BRAND_TAGLINE = 'Control total de tu negocio, en un solo lugar.';
 
   const { login, isAuthenticated } = useAuth();
@@ -44,6 +43,14 @@ export function LoginPage() {
           ].join(','),
         }}
       />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, oklch(0.75 0.010 255) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          maskImage: 'radial-gradient(ellipse 100% 100% at 50% 0%, black 10%, transparent 80%)',
+        }}
+      />
 
       <div className="relative z-10 min-h-svh p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="w-full max-w-[430px] lg:max-w-6xl rounded-3xl overflow-hidden border border-white/70 shadow-[0_24px_60px_oklch(0.13_0.012_260/0.14)] bg-white/80 backdrop-blur-xl lg:grid lg:grid-cols-[1.05fr_0.95fr]">
@@ -53,7 +60,7 @@ export function LoginPage() {
 
             <div className="relative animate-slide stagger-1">
               <h1 className="font-heading font-black text-5xl leading-[1.02] tracking-tight text-white max-w-lg">
-                {BRAND_NAME}
+                Yanko<span className="opacity-70">POS</span>
               </h1>
               <p className="mt-3 text-sm text-white/80 max-w-md">
                 {BRAND_TAGLINE}
@@ -91,7 +98,7 @@ export function LoginPage() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="font-heading font-black text-2xl text-gray-900 tracking-tight">{BRAND_NAME}</h1>
+                  <h1 className="font-heading font-black text-2xl text-gray-900 tracking-tight">YankoPOS</h1>
                   <p className="text-[11px] text-gray-500 leading-snug max-w-[22rem]">{BRAND_TAGLINE}</p>
                 </div>
               </div>
@@ -99,7 +106,7 @@ export function LoginPage() {
 
             <div className="max-w-sm mx-auto lg:mx-0 lg:max-w-md">
               <p className="text-xs uppercase tracking-[0.17em] text-primary-700 font-semibold mb-2">Acceso Seguro</p>
-              <h2 className="text-3xl font-heading font-black text-gray-900 tracking-tight">Bienvenido a Vikuna POS</h2>
+              <h2 className="text-3xl font-heading font-black text-gray-900 tracking-tight">Bienvenido a YankoPOS</h2>
               <p className="text-sm text-gray-500 mt-1 mb-6">Control total de tu negocio, en un solo lugar.</p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
