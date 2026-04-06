@@ -78,11 +78,17 @@ export class CreateOrderUseCase {
       }
     }
 
-    // 4. Require an open cash session for CASH payments
+    // 4. Require an open cash session for CASH payments — only when the branch
+    //    has previously used cash management (at least one session exists).
+    //    Branches that have never opened a session are considered to not use
+    //    the cash module, so no enforcement applies.
     if (dto.paymentMethod === PaymentMethod.CASH) {
-      const openSession = await this.cashSessionRepository.findOpenByBranch(tenantId, branchId);
-      if (!openSession) {
-        throw new BadRequestException('No hay una caja abierta. Abre la caja antes de registrar un pago en efectivo.');
+      const anySessions = await this.cashSessionRepository.findByBranch(tenantId, branchId, 1);
+      if (anySessions.length > 0) {
+        const openSession = await this.cashSessionRepository.findOpenByBranch(tenantId, branchId);
+        if (!openSession) {
+          throw new BadRequestException('No hay una caja abierta. Abre la caja antes de registrar un pago en efectivo.');
+        }
       }
     }
 

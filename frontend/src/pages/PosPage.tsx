@@ -32,7 +32,7 @@ export function PosPage() {
 
   const { items, orderType, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
   const { currentBranchId } = useAuth();
-  const { autoPrintKitchen } = useSettingsStore();
+  const { autoPrintKitchen, cashEnabled } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
@@ -58,7 +58,7 @@ export function PosPage() {
   };
 
   const handleConfirmPayment = async (method: PaymentMethod, customer: CustomerPayload) => {
-    if (method === PaymentMethod.CASH && !isCashOpen()) {
+    if (cashEnabled && method === PaymentMethod.CASH && !isCashOpen()) {
       toast.error('No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo.', { duration: 4000 });
       return;
     }
