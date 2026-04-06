@@ -132,22 +132,39 @@ export class OrderRepository implements OrderRepositoryPort {
     return Number(result[0]?.next_number ?? 1);
   }
 
-  async getDailyReport(tenantId: string, date: string): Promise<DailyReportResult> {
-    const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
-      SELECT
-        COALESCE(SUM(total), 0)                                                 AS "totalSales",
-        COUNT(*)                                                                 AS "orderCount",
-        COALESCE(AVG(total), 0)                                                 AS "averageTicket",
-        COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
-        COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
-        COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
-        COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-        COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-        COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
-      FROM orders
-      WHERE tenant_id = ${tenantId}
-        AND DATE(created_at) = ${date}::date
-        AND status != ${OrderStatus.CANCELLED}`;
+  async getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult> {
+    const result = branchId
+      ? await this.prisma.$queryRaw<[Record<string, unknown>]>`
+          SELECT
+            COALESCE(SUM(total), 0)                                                 AS "totalSales",
+            COUNT(*)                                                                 AS "orderCount",
+            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+          FROM orders
+          WHERE tenant_id = ${tenantId}
+            AND branch_id = ${branchId}
+            AND DATE(created_at) = ${date}::date
+            AND status != ${OrderStatus.CANCELLED}`
+      : await this.prisma.$queryRaw<[Record<string, unknown>]>`
+          SELECT
+            COALESCE(SUM(total), 0)                                                 AS "totalSales",
+            COUNT(*)                                                                 AS "orderCount",
+            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
+            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+          FROM orders
+          WHERE tenant_id = ${tenantId}
+            AND DATE(created_at) = ${date}::date
+            AND status != ${OrderStatus.CANCELLED}`;
 
     return this.mapReport(result[0] ?? {});
   }

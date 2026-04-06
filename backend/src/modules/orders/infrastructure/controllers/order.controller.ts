@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -69,17 +70,29 @@ export class OrderController {
   @Get(':id')
   findOne(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.getOrderUseCase.execute(id, tenantId);
+    return this.getOrderUseCase.execute(id, tenantId).then((order) => {
+      if (user.branchId && order.branchId !== user.branchId) {
+        throw new ForbiddenException('No tienes permisos para ver pedidos de otra sucursal');
+      }
+      return order;
+    });
   }
 
   @Patch(':id/status')
   updateStatus(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderStatusDto,
   ) {
-    return this.updateOrderStatusUseCase.execute(id, tenantId, dto.status);
+    return this.getOrderUseCase.execute(id, tenantId).then(async (order) => {
+      if (user.branchId && order.branchId !== user.branchId) {
+        throw new ForbiddenException('No tienes permisos para actualizar pedidos de otra sucursal');
+      }
+      return this.updateOrderStatusUseCase.execute(id, tenantId, dto.status);
+    });
   }
 }

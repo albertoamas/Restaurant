@@ -19,11 +19,14 @@ export class ReportController {
   @Get('daily')
   getDailyReport(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Query('date') date?: string,
+    @Query('branchId') branchId?: string,
   ) {
     validateISODate(date, 'date');
     const reportDate = date || new Date().toISOString().split('T')[0];
-    return this.orderRepository.getDailyReport(tenantId, reportDate);
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.orderRepository.getDailyReport(tenantId, reportDate, effectiveBranchId);
   }
 
   @Get('range')

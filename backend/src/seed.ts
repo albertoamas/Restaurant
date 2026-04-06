@@ -12,8 +12,10 @@ import { PrismaClient } from '@prisma/client';
 
 // Load .env only in local development; in production vars come from Docker
 if (process.env.NODE_ENV !== 'production') {
+  const backendEnvPath = path.resolve(__dirname, '../.env');
+
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+  require('dotenv').config({ path: backendEnvPath });
 }
 
 const prisma = new PrismaClient();
