@@ -3,8 +3,9 @@
  * Uso: pnpm --filter backend seed
  *
  * Credenciales:
- *   OWNER:   jimmy@hamburgos.com  / demo123
- *   Negocio: HamBurgos            (1 sucursal)
+ *   OWNER:   jimmy75122919@gmail.com  / demo123  (Jimmy Burgos Romero)
+ *   CASHIER: armijom566@gmail.com     / demo123  (Miguel Angel Armijo)
+ *   Negocio: HamBurgos               (1 sucursal)
  */
 
 import * as path from 'path';
@@ -47,7 +48,7 @@ async function seed() {
   console.log(`Tenant creado: HamBurgos (${tenant.id})`);
 
   // ── Sucursales ───────────────────────────────────────────────
-  await prisma.branch.create({
+  const branch = await prisma.branch.create({
     data: {
       tenantId: tenant.id,
       name: 'HamBurgos',
@@ -59,13 +60,26 @@ async function seed() {
   await prisma.user.create({
     data: {
       tenantId: tenant.id,
-      email: 'jimmy@hamburgos.com',
+      email: 'jimmy75122919@gmail.com',
       passwordHash: PASSWORD_HASH,
       name: 'Jimmy Burgos Romero',
       role: 'OWNER',
     },
   });
-  console.log('Usuario OWNER creado: jimmy@hamburgos.com / demo123');
+  console.log('Usuario OWNER creado: jimmy75122919@gmail.com / demo123');
+
+  // ── Cajero ───────────────────────────────────────────────────
+  await prisma.user.create({
+    data: {
+      tenantId: tenant.id,
+      branchId: branch.id,
+      email: 'armijom566@gmail.com',
+      passwordHash: PASSWORD_HASH,
+      name: 'Miguel Angel Armijo',
+      role: 'CASHIER',
+    },
+  });
+  console.log('Usuario CASHIER creado: armijom566@gmail.com / demo123');
 
   // ── Categorías ───────────────────────────────────────────────
   const categoriesData = [
@@ -100,27 +114,27 @@ async function seed() {
     { cat: 'HB', name: 'Milanesa HB',  price: 35 },
 
     // Extras
-    { cat: 'Extras', name: 'Jamón',                       price: 3  },
-    { cat: 'Extras', name: 'Bacon',                       price: 5  },
-    { cat: 'Extras', name: 'Huevo',                       price: 4  },
-    { cat: 'Extras', name: 'Papas Fritas',                price: 10 },
+    { cat: 'Extras', name: 'Jamón',                        price: 3  },
+    { cat: 'Extras', name: 'Bacon',                        price: 5  },
+    { cat: 'Extras', name: 'Huevo',                        price: 4  },
+    { cat: 'Extras', name: 'Papas Fritas',                 price: 10 },
     { cat: 'Extras', name: 'Papas Fritas + Crispy Tocino', price: 15 },
 
     // Bebidas
-    { cat: 'Bebidas', name: 'Gaseosa Mini',        price: 3  },
-    { cat: 'Bebidas', name: 'Gaseosa Popular',     price: 7  },
-    { cat: 'Bebidas', name: 'Gaseosa Litro',       price: 10 },
-    { cat: 'Bebidas', name: 'Soda 2 Litros',       price: 15 },
-    { cat: 'Bebidas', name: 'Vaso Refresco',       price: 5  },
-    { cat: 'Bebidas', name: 'Refresco',            price: 15 },
-    { cat: 'Bebidas', name: 'Paceña 235ml',        price: 7  },
-    { cat: 'Bebidas', name: 'Paceña Litro',        price: 25 },
+    { cat: 'Bebidas', name: 'Gaseosa Mini',    price: 3  },
+    { cat: 'Bebidas', name: 'Gaseosa Popular', price: 7  },
+    { cat: 'Bebidas', name: 'Gaseosa Litro',   price: 10 },
+    { cat: 'Bebidas', name: 'Soda 2 Litros',   price: 15 },
+    { cat: 'Bebidas', name: 'Vaso Refresco',   price: 5  },
+    { cat: 'Bebidas', name: 'Refresco',        price: 15 },
+    { cat: 'Bebidas', name: 'Paceña 235ml',    price: 7  },
+    { cat: 'Bebidas', name: 'Paceña Litro',    price: 25 },
 
     // Combos
-    { cat: 'Combos', name: 'Dúo Original (2 Originales + gaseosa 500ml)',         price: 55  },
-    { cat: 'Combos', name: 'Dúo Doble (2 Dobles + gaseosa 500ml)',                price: 75  },
-    { cat: 'Combos', name: 'Familiar Original (4 Originales + gaseosa 1L)',       price: 107 },
-    { cat: 'Combos', name: 'Familiar Doble (4 Dobles + gaseosa 1L)',              price: 147 },
+    { cat: 'Combos', name: 'Dúo Original (2 Originales + gaseosa 500ml)',          price: 55  },
+    { cat: 'Combos', name: 'Dúo Doble (2 Dobles + gaseosa 500ml)',                 price: 75  },
+    { cat: 'Combos', name: 'Familiar Original (4 Originales + gaseosa 1L)',        price: 107 },
+    { cat: 'Combos', name: 'Familiar Doble (4 Dobles + gaseosa 1L)',               price: 147 },
     { cat: 'Combos', name: 'Combo Loco (XXX + 4 Quesos + Big Mama + gaseosa 2L)', price: 167 },
   ];
 
@@ -138,7 +152,8 @@ async function seed() {
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
-  console.log('  OWNER:   jimmy@hamburgos.com / demo123');
+  console.log('  OWNER:   jimmy75122919@gmail.com / demo123');
+  console.log('  CASHIER: armijom566@gmail.com    / demo123');
   console.log('  Negocio: HamBurgos');
   console.log('──────────────────────────────────────────────');
 }
