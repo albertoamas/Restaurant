@@ -15,6 +15,11 @@ export class AdminController {
     private readonly registerUseCase: RegisterUseCase,
   ) {}
 
+  @Get('ping')
+  ping() {
+    return { ok: true };
+  }
+
   @Get('tenants')
   listTenants() {
     return this.tenantRepository.findAll();
