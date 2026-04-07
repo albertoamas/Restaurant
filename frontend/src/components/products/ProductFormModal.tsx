@@ -143,11 +143,10 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
+            <label
+              htmlFor="product-image-input"
               className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-gray-200
-                rounded-xl hover:border-primary-400 hover:bg-primary-50/30 transition-colors text-gray-400 hover:text-primary-500"
+                rounded-xl hover:border-primary-400 hover:bg-primary-50/30 transition-colors text-gray-400 hover:text-primary-500 cursor-pointer"
             >
               <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -155,10 +154,11 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
               </svg>
               <span className="text-sm font-semibold">Haz clic para subir imagen</span>
               <span className="text-xs text-gray-400">JPG, PNG, WEBP · máx. 2 MB</span>
-            </button>
+            </label>
           )}
 
           <input
+            id="product-image-input"
             ref={fileInputRef}
             type="file" accept="image/*" className="hidden"
             onChange={handleFileChange}
