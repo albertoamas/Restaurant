@@ -5,12 +5,18 @@ import {
   UseGuards,
   UseInterceptors,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname, join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
+import * as sharp from 'sharp';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_EXT  = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
 @Controller('uploads')
 export class UploadController {
@@ -18,17 +24,9 @@ export class UploadController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: join(process.cwd(), 'uploads'),
-        filename: (_req, file, cb) => {
-          const ext = extname(file.originalname).toLowerCase();
-          cb(null, `${uuidv4()}${ext}`);
-        },
-      }),
-      limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB raw — Sharp will compress it down
       fileFilter: (_req, file, cb) => {
-        const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        const ALLOWED_EXT  = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
         const ext = extname(file.originalname).toLowerCase();
         if (!ALLOWED_MIME.includes(file.mimetype) || !ALLOWED_EXT.includes(ext)) {
           return cb(new BadRequestException('Solo se permiten imágenes JPG, PNG, WEBP o GIF'), false);
@@ -37,8 +35,24 @@ export class UploadController {
       },
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No se recibió ningún archivo');
-    return { url: `/uploads/${file.filename}` };
+
+    const uploadsDir = join(process.cwd(), 'uploads');
+    await mkdir(uploadsDir, { recursive: true });
+
+    const filename = `${uuidv4()}.webp`;
+    const dest = join(uploadsDir, filename);
+
+    try {
+      await sharp(file.buffer)
+        .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(dest);
+    } catch {
+      throw new InternalServerErrorException('Error al procesar la imagen');
+    }
+
+    return { url: `/uploads/${filename}` };
   }
 }
