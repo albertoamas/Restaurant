@@ -1,13 +1,15 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { Customer } from '../../domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../domain/ports/customer-repository.port';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class UpdateCustomerUseCase {
   constructor(
     @Inject(CUSTOMER_REPOSITORY_PORT)
     private readonly repo: CustomerRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(id: string, tenantId: string, dto: UpdateCustomerDto): Promise<Customer> {
@@ -22,6 +24,8 @@ export class UpdateCustomerUseCase {
     }
 
     customer.update(dto);
-    return this.repo.save(customer);
+    const saved = await this.repo.save(customer);
+    this.eventsService?.emitToTenant(tenantId, 'customer.updated', saved);
+    return saved;
   }
 }

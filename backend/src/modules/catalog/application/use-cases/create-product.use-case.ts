@@ -1,8 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
 import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/ports/category-repository.port';
 import { Product } from '../../domain/entities/product.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class CreateProductUseCase {
@@ -11,6 +12,7 @@ export class CreateProductUseCase {
     private readonly productRepository: ProductRepositoryPort,
     @Inject(CATEGORY_REPOSITORY_PORT)
     private readonly categoryRepository: CategoryRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(tenantId: string, dto: CreateProductDto): Promise<Product> {
@@ -27,6 +29,8 @@ export class CreateProductUseCase {
       imageUrl: dto.imageUrl ?? null,
     });
 
-    return this.productRepository.save(product);
+    const saved = await this.productRepository.save(product);
+    this.eventsService?.emitToTenant(tenantId, 'product.created', saved);
+    return saved;
   }
 }

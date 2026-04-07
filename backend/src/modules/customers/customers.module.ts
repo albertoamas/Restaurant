@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { EventsModule } from '../events/events.module';
 import { CUSTOMER_REPOSITORY_PORT } from './domain/ports/customer-repository.port';
 import { CustomerRepository } from './infrastructure/persistence/customer.repository';
 import { CustomerController } from './infrastructure/controllers/customer.controller';
@@ -11,7 +12,7 @@ import { SearchCustomersUseCase } from './application/use-cases/search-customers
 import { ToggleRaffleWinnerUseCase } from './application/use-cases/toggle-raffle-winner.use-case';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, EventsModule],
   controllers: [CustomerController],
   providers: [
     { provide: CUSTOMER_REPOSITORY_PORT, useClass: CustomerRepository },

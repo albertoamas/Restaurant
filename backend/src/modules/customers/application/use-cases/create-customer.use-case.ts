@@ -1,13 +1,15 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Optional } from '@nestjs/common';
 import { Customer } from '../../domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../domain/ports/customer-repository.port';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class CreateCustomerUseCase {
   constructor(
     @Inject(CUSTOMER_REPOSITORY_PORT)
     private readonly repo: CustomerRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(tenantId: string, dto: CreateCustomerDto): Promise<Customer> {
@@ -18,6 +20,8 @@ export class CreateCustomerUseCase {
       }
     }
     const customer = Customer.create({ tenantId, ...dto });
-    return this.repo.save(customer);
+    const saved = await this.repo.save(customer);
+    this.eventsService?.emitToTenant(tenantId, 'customer.created', saved);
+    return saved;
   }
 }

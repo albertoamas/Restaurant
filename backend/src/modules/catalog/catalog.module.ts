@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventsModule } from '../events/events.module';
 
 // Repository implementations
 import { CategoryRepository } from './infrastructure/persistence/category.repository';
@@ -39,6 +40,7 @@ const productUseCases = [
 ];
 
 @Module({
+  imports: [EventsModule],
   controllers: [CategoryController, ProductController],
   providers: [
     {

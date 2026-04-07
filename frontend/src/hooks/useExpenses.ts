@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ExpenseDto, ExpenseSummaryDto } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
 import { useVisibilityRefresh } from './useVisibilityRefresh';
+import { useSocketEvent } from '../context/socket.context';
 
 export function useExpenses(from: string, to: string, branchId?: string) {
   const [expenses, setExpenses] = useState<ExpenseDto[]>([]);
@@ -26,6 +27,10 @@ export function useExpenses(from: string, to: string, branchId?: string) {
 
   // Refresh when returning to the tab
   useVisibilityRefresh(load);
+
+  // Real-time: reload instantly on any expense change
+  useSocketEvent('expense.created', load);
+  useSocketEvent('expense.deleted', load);
 
   return { expenses, summary, loading, reload: load };
 }
