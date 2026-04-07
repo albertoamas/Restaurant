@@ -22,7 +22,7 @@ export class CloseCashSessionUseCase {
     session.close(userId, dto.closingAmount, cashSales, dto.notes);
 
     const saved = await this.repo.save(session);
-    this.eventsService?.emit(tenantId, branchId, 'cash.closed', saved);
+    this.eventsService?.emitToTenant(tenantId, 'cash.closed', saved);
     return saved;
   }
 }

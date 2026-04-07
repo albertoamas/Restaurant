@@ -22,7 +22,7 @@ export class CreateExpenseUseCase {
       createdBy: userId,
     });
     const saved = await this.expenseRepository.save(expense);
-    this.eventsService?.emit(tenantId, branchId, 'expense.created', saved);
+    this.eventsService?.emitToTenant(tenantId, 'expense.created', saved);
     return saved;
   }
 }

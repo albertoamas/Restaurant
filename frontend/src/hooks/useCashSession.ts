@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { CashSessionDto } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
 import { useVisibilityRefresh } from './useVisibilityRefresh';
+import { useSocketEvent } from '../context/socket.context';
 
 export function useCashSession(branchId: string | null) {
   const [session, setSession] = useState<CashSessionDto | null | undefined>(undefined);
@@ -28,6 +29,10 @@ export function useCashSession(branchId: string | null) {
 
   // Refresh when returning to the tab
   useVisibilityRefresh(load);
+
+  // Real-time via WebSocket
+  useSocketEvent('cash.opened', load);
+  useSocketEvent('cash.closed', load);
 
   return { session, setSession, history, loading, reload: load };
 }

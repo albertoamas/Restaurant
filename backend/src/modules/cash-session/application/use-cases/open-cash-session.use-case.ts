@@ -24,7 +24,7 @@ export class OpenCashSessionUseCase {
     });
 
     const saved = await this.repo.save(session);
-    this.eventsService?.emit(tenantId, branchId, 'cash.opened', saved);
+    this.eventsService?.emitToTenant(tenantId, 'cash.opened', saved);
     return saved;
   }
 }
