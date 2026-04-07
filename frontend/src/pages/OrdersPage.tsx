@@ -1,4 +1,4 @@
-import { OrderStatus } from '@pos/shared';
+import { OrderStatus, PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
 import { useSocketEvent } from '../context/socket.context';
@@ -25,11 +25,24 @@ const STEPS = [
 
 const stepIndex = (s: OrderStatus) => STEPS.findIndex((x) => x.status === s);
 
-const statusAccent: Record<string, string> = {
-  [OrderStatus.PENDING]:   'border-l-amber-400',
-  [OrderStatus.PREPARING]: 'border-l-primary-400',
-  [OrderStatus.DELIVERED]: 'border-l-emerald-400',
-  [OrderStatus.CANCELLED]: 'border-l-gray-300',
+const statusAccent: Record<string, { border: string; bg: string; badge: string }> = {
+  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-50/40',   badge: 'bg-amber-100 text-amber-700 border-amber-200' },
+  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-50/40', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-50/40',     badge: 'bg-sky-100 text-sky-700 border-sky-200' },
+  [OrderStatus.CANCELLED]: { border: 'border-l-red-300',     bg: '',                 badge: 'bg-red-100 text-red-600 border-red-200' },
+};
+
+const statusLabel: Record<string, string> = {
+  [OrderStatus.PENDING]:   'Pendiente',
+  [OrderStatus.PREPARING]: 'Preparando',
+  [OrderStatus.DELIVERED]: 'Entregado',
+  [OrderStatus.CANCELLED]: 'Cancelado',
+};
+
+const paymentLabel: Record<string, string> = {
+  [PaymentMethod.CASH]:     'Efectivo',
+  [PaymentMethod.QR]:       'QR',
+  [PaymentMethod.TRANSFER]: 'Transferencia',
 };
 
 const actionConfig: Record<string, { label: string; nextStatus: OrderStatus; color: string } | null> = {
@@ -44,16 +57,19 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
   const currentStep = stepIndex(order.status);
   const isCancelled = order.status === OrderStatus.CANCELLED;
 
+  const accent = statusAccent[order.status] ?? { border: 'border-l-gray-200', bg: '', badge: 'bg-gray-100 text-gray-500 border-gray-200' };
+
   return (
     <div className={[
       'bg-white/90 backdrop-blur-md rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.09)]',
       'overflow-hidden border-l-4 animate-fade',
-      statusAccent[order.status] ?? 'border-l-gray-200',
+      accent.border,
+      accent.bg,
       isCancelled ? 'opacity-60' : '',
     ].join(' ')}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 bg-[linear-gradient(180deg,oklch(0.99_0.004_255),oklch(1_0_0/0))]">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
         <div className="flex items-center gap-2.5">
           <span className="font-heading font-black text-2xl text-gray-900 leading-none">
             #{order.orderNumber}
@@ -66,9 +82,14 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
             {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-        <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
-          {orderTypeLabels[order.type]}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
+            {statusLabel[order.status]}
+          </span>
+          <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
+            {orderTypeLabels[order.type]}
+          </span>
+        </div>
       </div>
 
       {/* Items */}
@@ -112,19 +133,23 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
                       'w-6 h-6 rounded-full flex items-center justify-center transition-all',
                       done
                         ? active
-                          ? 'bg-primary-500 shadow-[0_0_0_3px_oklch(0.58_0.22_225/0.20)]'
-                          : 'bg-primary-200'
+                          ? order.status === OrderStatus.PENDING
+                            ? 'bg-amber-400 shadow-[0_0_0_3px_oklch(0.85_0.14_80/0.25)]'
+                            : order.status === OrderStatus.PREPARING
+                              ? 'bg-emerald-500 shadow-[0_0_0_3px_oklch(0.70_0.18_145/0.25)]'
+                              : 'bg-sky-500 shadow-[0_0_0_3px_oklch(0.65_0.15_220/0.25)]'
+                          : 'bg-gray-200'
                         : 'bg-gray-100 border-2 border-gray-200',
                     ].join(' ')}>
                       {done && !active && (
-                        <svg className="w-3 h-3 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                       {active && <span className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <span className={`text-[10px] font-semibold whitespace-nowrap ${
-                      done ? 'text-primary-600' : 'text-gray-400'
+                      done ? 'text-gray-600' : 'text-gray-400'
                     }`}>
                       {step.label}
                     </span>
@@ -132,7 +157,7 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
                   {/* Connector line */}
                   {i < STEPS.length - 1 && (
                     <div className={`flex-1 h-0.5 mb-4 mx-1 rounded-full transition-all ${
-                      i < currentStep ? 'bg-primary-300' : 'bg-gray-150'
+                      i < currentStep ? 'bg-gray-300' : 'bg-gray-150'
                     }`} />
                   )}
                 </div>
@@ -142,7 +167,7 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
         </div>
       ) : (
         <div className="px-4 pb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-lg">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -156,9 +181,14 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
         'flex items-center gap-3 px-4 py-3 border-t border-gray-100/80 bg-[oklch(0.99_0.004_250)]',
         action ? 'flex-col sm:flex-row' : '',
       ].join(' ')}>
-        <span className="font-heading font-black text-xl text-gray-900 shrink-0">
-          Bs {order.total.toFixed(2)}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-heading font-black text-xl text-gray-900">
+            Bs {order.total.toFixed(2)}
+          </span>
+          <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+            {paymentLabel[order.paymentMethod] ?? order.paymentMethod}
+          </span>
+        </div>
 
         {action && (
           <div className="flex gap-2 w-full sm:flex-1">
