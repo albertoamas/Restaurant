@@ -24,7 +24,12 @@ export function useOrders(date: string, statusFilter: string) {
     }
   }, [date, statusFilter]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  // Initial load + polling every 30s as fallback to socket
+  useEffect(() => {
+    fetchOrders();
+    const id = setInterval(fetchOrders, 30_000);
+    return () => clearInterval(id);
+  }, [fetchOrders]);
 
   return { orders, setOrders, loading, fetchOrders };
 }

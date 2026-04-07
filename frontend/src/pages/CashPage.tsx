@@ -85,6 +85,7 @@ export function CashPage() {
       toast.success('Caja abierta');
       setSession(s);
       setShowOpen(false);
+      reload();
     } catch (err) {
       handleApiError(err, 'Error al abrir caja');
     }
@@ -96,6 +97,7 @@ export function CashPage() {
       toast.success('Caja cerrada');
       setSession(s);
       setShowClose(false);
+      reload();
     } catch (err) {
       handleApiError(err, 'Error al cerrar caja');
     }

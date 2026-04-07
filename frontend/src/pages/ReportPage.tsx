@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import type { DailyReportDto, TopProductDto, CategoryDto, ExpenseSummaryDto } from '@pos/shared';
 import { UserRole, ExpenseCategory } from '@pos/shared';
@@ -6,6 +6,7 @@ import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
 import { categoriesApi } from '../api/categories.api';
 import { useAuth } from '../context/auth.context';
+import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
 import { today } from '../utils/date';
@@ -114,6 +115,16 @@ export function ReportPage() {
       .catch(() => toast.error('Error al cargar productos'))
       .finally(() => setTopLoading(false));
   }, [utcFrom, utcTo, currentBranchId, user?.role, selectedCategory]);
+
+  // Refresh all report data when returning to the tab
+  const reloadAll = useCallback(() => {
+    setLoading(true);
+    reportsApi.getByRange(utcFrom, utcTo, branchParam).then(setReport).catch(() => {}).finally(() => setLoading(false));
+    expensesApi.getSummary(utcFrom, utcTo, branchParam).then(setExpenseSummary).catch(() => {});
+    setTopLoading(true);
+    reportsApi.getTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined).then(setTopProducts).catch(() => {}).finally(() => setTopLoading(false));
+  }, [utcFrom, utcTo, currentBranchId, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+  useVisibilityRefresh(reloadAll);
 
   const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
   const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { customersApi } from '../api/customers.api';
+import { useVisibilityRefresh } from './useVisibilityRefresh';
 import type { CustomerStatsDto } from '@pos/shared';
 
 export function useCustomers(initialQ = '') {
@@ -23,6 +24,9 @@ export function useCustomers(initialQ = '') {
   useEffect(() => {
     load(q);
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh when returning to the tab
+  useVisibilityRefresh(load);
 
   return { customers, loading, q, setQ, reload: load };
 }
