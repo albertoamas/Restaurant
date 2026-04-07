@@ -26,11 +26,12 @@ export class GetProfileUseCase {
       name:       user.name,
       role:       user.role,
       modules: {
-        ordersEnabled:   tenant?.ordersEnabled   ?? true,
-        cashEnabled:     tenant?.cashEnabled     ?? true,
-        teamEnabled:     tenant?.teamEnabled     ?? true,
-        branchesEnabled: tenant?.branchesEnabled ?? true,
-        kitchenEnabled:  tenant?.kitchenEnabled  ?? false,
+        ordersEnabled:          tenant?.ordersEnabled          ?? true,
+        cashEnabled:            tenant?.cashEnabled            ?? true,
+        teamEnabled:            tenant?.teamEnabled            ?? true,
+        branchesEnabled:        tenant?.branchesEnabled        ?? true,
+        kitchenEnabled:         tenant?.kitchenEnabled         ?? false,
+        orderNumberResetPeriod: tenant?.orderNumberResetPeriod ?? 'DAILY',
       },
     };
   }

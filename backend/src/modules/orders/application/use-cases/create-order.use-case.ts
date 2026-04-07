@@ -5,6 +5,7 @@ import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
+import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { Customer } from '../../../customers/domain/entities/customer.entity';
@@ -22,6 +23,9 @@ export class CreateOrderUseCase {
 
     @Inject('CashSessionRepositoryPort')
     private readonly cashSessionRepository: CashSessionRepositoryPort,
+
+    @Inject('TenantRepositoryPort')
+    private readonly tenantRepository: TenantRepositoryPort,
 
     @Optional() @Inject(CUSTOMER_REPOSITORY_PORT)
     private readonly customerRepository?: CustomerRepositoryPort,
@@ -92,8 +96,10 @@ export class CreateOrderUseCase {
       }
     }
 
-    // 6. Reserve the order number for today (per branch)
-    const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, new Date());
+    // 6. Reserve the order number using the tenant's configured reset period
+    const tenant = await this.tenantRepository.findById(tenantId);
+    const resetPeriod = tenant?.orderNumberResetPeriod ?? 'DAILY';
+    const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, new Date(), resetPeriod);
 
     // 7. Pre-generate the order id so items can reference it
     const orderId = uuidv4();

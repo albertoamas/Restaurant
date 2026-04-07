@@ -10,6 +10,7 @@ interface TenantModules {
   teamEnabled: boolean;
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
+  orderNumberResetPeriod?: string;
 }
 
 interface AuthUser {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTeamEnabled,
     setBranchesEnabled,
     setKitchenEnabled,
+    setOrderNumberResetPeriod,
   } = useSettingsStore();
 
   /** Apply server-controlled module flags to the settings store */
@@ -61,7 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTeamEnabled(modules.teamEnabled);
     setBranchesEnabled(modules.branchesEnabled);
     setKitchenEnabled(modules.kitchenEnabled);
-  }, [setOrdersEnabled, setCashEnabled, setTeamEnabled, setBranchesEnabled, setKitchenEnabled]);
+    if (modules.orderNumberResetPeriod) {
+      setOrderNumberResetPeriod(modules.orderNumberResetPeriod as import('@pos/shared').OrderNumberResetPeriod);
+    }
+  }, [setOrdersEnabled, setCashEnabled, setTeamEnabled, setBranchesEnabled, setKitchenEnabled, setOrderNumberResetPeriod]);
 
   const applyUser = useCallback((u: AuthUser) => {
     setUser(u);

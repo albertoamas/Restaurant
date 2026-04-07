@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Tenant, TenantModules } from '../../domain/entities/tenant.entity';
+import { Tenant, TenantModules, TenantSettings } from '../../domain/entities/tenant.entity';
 import { TenantRepositoryPort, TenantWithOwner } from '../../domain/ports/tenant-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Tenant as PrismaTenant } from '@prisma/client';
+import { OrderNumberResetPeriod } from '@pos/shared';
 
 function toDomain(row: PrismaTenant): Tenant {
   return new Tenant(
@@ -16,6 +17,7 @@ function toDomain(row: PrismaTenant): Tenant {
     row.teamEnabled,
     row.branchesEnabled,
     row.kitchenEnabled,
+    (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
   );
 }
 
@@ -35,16 +37,17 @@ export class TenantRepository implements TenantRepositoryPort {
 
   async save(tenant: Tenant): Promise<Tenant> {
     const data = {
-      id:             tenant.id,
-      name:           tenant.name,
-      slug:           tenant.slug,
-      isActive:       tenant.isActive,
-      createdAt:      tenant.createdAt,
-      ordersEnabled:   tenant.ordersEnabled,
-      cashEnabled:     tenant.cashEnabled,
-      teamEnabled:     tenant.teamEnabled,
-      branchesEnabled: tenant.branchesEnabled,
-      kitchenEnabled:  tenant.kitchenEnabled,
+      id:                      tenant.id,
+      name:                    tenant.name,
+      slug:                    tenant.slug,
+      isActive:                tenant.isActive,
+      createdAt:               tenant.createdAt,
+      ordersEnabled:           tenant.ordersEnabled,
+      cashEnabled:             tenant.cashEnabled,
+      teamEnabled:             tenant.teamEnabled,
+      branchesEnabled:         tenant.branchesEnabled,
+      kitchenEnabled:          tenant.kitchenEnabled,
+      orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
     };
 
     const row = await this.prisma.tenant.upsert({
@@ -68,18 +71,21 @@ export class TenantRepository implements TenantRepositoryPort {
     });
 
     return rows.map((r) => ({
-      id:       r.id,
-      name:     r.name,
-      slug:     r.slug,
-      isActive: r.isActive,
+      id:        r.id,
+      name:      r.name,
+      slug:      r.slug,
+      isActive:  r.isActive,
       createdAt: r.createdAt,
-      owner:    r.users[0] ?? null,
+      owner:     r.users[0] ?? null,
       modules: {
         ordersEnabled:   r.ordersEnabled,
         cashEnabled:     r.cashEnabled,
         teamEnabled:     r.teamEnabled,
         branchesEnabled: r.branchesEnabled,
         kitchenEnabled:  r.kitchenEnabled,
+      },
+      settings: {
+        orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
       },
     }));
   }
@@ -107,6 +113,21 @@ export class TenantRepository implements TenantRepositoryPort {
         ...(modules.teamEnabled     !== undefined && { teamEnabled:     modules.teamEnabled }),
         ...(modules.branchesEnabled !== undefined && { branchesEnabled: modules.branchesEnabled }),
         ...(modules.kitchenEnabled  !== undefined && { kitchenEnabled:  modules.kitchenEnabled }),
+      },
+    });
+    return toDomain(row);
+  }
+
+  async updateSettings(id: string, settings: Partial<TenantSettings>): Promise<Tenant> {
+    const current = await this.prisma.tenant.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException(`Tenant ${id} not found`);
+
+    const row = await this.prisma.tenant.update({
+      where: { id },
+      data: {
+        ...(settings.orderNumberResetPeriod !== undefined && {
+          orderNumberResetPeriod: settings.orderNumberResetPeriod,
+        }),
       },
     });
     return toDomain(row);

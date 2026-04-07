@@ -1,0 +1,2 @@
+ALTER TABLE "tenants"
+  ADD COLUMN IF NOT EXISTS "order_number_reset_period" VARCHAR NOT NULL DEFAULT 'DAILY';

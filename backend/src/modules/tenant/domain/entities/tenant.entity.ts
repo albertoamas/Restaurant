@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { OrderNumberResetPeriod } from '@pos/shared';
 
 export interface TenantModules {
   ordersEnabled: boolean;
@@ -6,6 +7,10 @@ export interface TenantModules {
   teamEnabled: boolean;
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
+}
+
+export interface TenantSettings {
+  orderNumberResetPeriod: OrderNumberResetPeriod;
 }
 
 export class Tenant {
@@ -20,11 +25,16 @@ export class Tenant {
     public readonly teamEnabled: boolean,
     public readonly branchesEnabled: boolean,
     public readonly kitchenEnabled: boolean,
+    public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
   ) {}
 
   static create(name: string, slug: string): Tenant {
     // New tenants start inactive — admin must activate after payment
-    return new Tenant(uuidv4(), name, slug, false, new Date(), true, true, true, true, false);
+    return new Tenant(
+      uuidv4(), name, slug, false, new Date(),
+      true, true, true, true, false,
+      OrderNumberResetPeriod.DAILY,
+    );
   }
 
   withActive(isActive: boolean): Tenant {
@@ -32,6 +42,7 @@ export class Tenant {
       this.id, this.name, this.slug, isActive, this.createdAt,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
+      this.orderNumberResetPeriod,
     );
   }
 
@@ -43,6 +54,16 @@ export class Tenant {
       modules.teamEnabled     ?? this.teamEnabled,
       modules.branchesEnabled ?? this.branchesEnabled,
       modules.kitchenEnabled  ?? this.kitchenEnabled,
+      this.orderNumberResetPeriod,
+    );
+  }
+
+  withSettings(settings: Partial<TenantSettings>): Tenant {
+    return new Tenant(
+      this.id, this.name, this.slug, this.isActive, this.createdAt,
+      this.ordersEnabled, this.cashEnabled, this.teamEnabled,
+      this.branchesEnabled, this.kitchenEnabled,
+      settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
     );
   }
 
@@ -53,6 +74,12 @@ export class Tenant {
       teamEnabled:     this.teamEnabled,
       branchesEnabled: this.branchesEnabled,
       kitchenEnabled:  this.kitchenEnabled,
+    };
+  }
+
+  get settings(): TenantSettings {
+    return {
+      orderNumberResetPeriod: this.orderNumberResetPeriod,
     };
   }
 }

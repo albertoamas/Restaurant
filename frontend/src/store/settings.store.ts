@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { OrderNumberResetPeriod } from '@pos/shared';
 
 interface SettingsState {
   // Impresión
@@ -19,6 +20,10 @@ interface SettingsState {
   setCashEnabled: (value: boolean) => void;
   setTeamEnabled: (value: boolean) => void;
   setBranchesEnabled: (value: boolean) => void;
+
+  // Numeración de pedidos (server-controlled — set by auth context on login/getMe)
+  orderNumberResetPeriod: OrderNumberResetPeriod;
+  setOrderNumberResetPeriod: (value: OrderNumberResetPeriod) => void;
 
   // Sistema de fichas de sorteo
   raffleThreshold: number;
@@ -51,6 +56,9 @@ export const useSettingsStore = create<SettingsState>()(
       setCashEnabled: (value) => set({ cashEnabled: value }),
       setTeamEnabled: (value) => set({ teamEnabled: value }),
       setBranchesEnabled: (value) => set({ branchesEnabled: value }),
+
+      orderNumberResetPeriod: 'DAILY' as OrderNumberResetPeriod,
+      setOrderNumberResetPeriod: (value) => set({ orderNumberResetPeriod: value }),
 
       raffleThreshold: 100,
       setRaffleThreshold: (value) => set({ raffleThreshold: value }),

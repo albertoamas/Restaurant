@@ -53,11 +53,12 @@ export class LoginUseCase {
         name:       user.name,
         role:       user.role,
         modules: {
-          ordersEnabled:   tenant.ordersEnabled,
-          cashEnabled:     tenant.cashEnabled,
-          teamEnabled:     tenant.teamEnabled,
-          branchesEnabled: tenant.branchesEnabled,
-          kitchenEnabled:  tenant.kitchenEnabled,
+          ordersEnabled:          tenant.ordersEnabled,
+          cashEnabled:            tenant.cashEnabled,
+          teamEnabled:            tenant.teamEnabled,
+          branchesEnabled:        tenant.branchesEnabled,
+          kitchenEnabled:         tenant.kitchenEnabled,
+          orderNumberResetPeriod: tenant.orderNumberResetPeriod,
         },
       },
     };

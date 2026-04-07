@@ -27,6 +27,11 @@ export enum CashSessionStatus {
   CLOSED = 'CLOSED',
 }
 
+export enum OrderNumberResetPeriod {
+  DAILY   = 'DAILY',
+  MONTHLY = 'MONTHLY',
+}
+
 export enum ExpenseCategory {
   SUPPLIES    = 'SUPPLIES',     // Insumos / Ingredientes
   WAGES       = 'WAGES',        // Personal / Sueldos

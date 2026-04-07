@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { OrderNumberResetPeriod } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
 import { adminApi } from '../api/admin.api';
+import { tenantsApi } from '../api/tenants.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -104,7 +106,10 @@ export function SettingsPage() {
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
     receiptFooter, setReceiptFooter,
+    orderNumberResetPeriod, setOrderNumberResetPeriod,
   } = useSettingsStore();
+
+  const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
 
   const [unlocked, setUnlocked] = useState(() =>
     sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1',
@@ -210,6 +215,56 @@ export function SettingsPage() {
                 resize-none transition-[border-color,box-shadow] bg-white"
             />
           </div>
+        </div>
+      </Card>
+
+      {/* Order numbering */}
+      <Card variant="panel">
+        <div className="flex items-center gap-2 mb-1">
+          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+          </svg>
+          <h3 className="text-sm font-bold text-gray-700">Numeración de pedidos</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4 ml-6">Define cada cuándo se reinicia el contador de pedidos (#1, #2, #3…)</p>
+        <div className="flex gap-3">
+          {[
+            { value: OrderNumberResetPeriod.DAILY,   label: 'Diario',   desc: 'Se reinicia cada día' },
+            { value: OrderNumberResetPeriod.MONTHLY, label: 'Mensual',  desc: 'Se reinicia cada mes' },
+          ].map((opt) => {
+            const active = orderNumberResetPeriod === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={resetPeriodLoading}
+                onClick={async () => {
+                  if (active) return;
+                  setResetPeriodLoading(true);
+                  try {
+                    await tenantsApi.updateSettings({ orderNumberResetPeriod: opt.value });
+                    setOrderNumberResetPeriod(opt.value);
+                    toast.success('Configuración guardada');
+                  } catch (err) {
+                    handleApiError(err, 'Error al guardar');
+                  } finally {
+                    setResetPeriodLoading(false);
+                  }
+                }}
+                className={[
+                  'flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all',
+                  active
+                    ? 'border-primary-400 bg-primary-50 text-primary-800'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                  resetPeriodLoading ? 'opacity-50 cursor-not-allowed' : '',
+                ].join(' ')}
+              >
+                <p className="text-sm font-semibold">{opt.label}</p>
+                <p className="text-xs mt-0.5 opacity-70">{opt.desc}</p>
+              </button>
+            );
+          })}
         </div>
       </Card>
 

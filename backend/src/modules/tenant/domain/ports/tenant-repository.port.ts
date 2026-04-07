@@ -1,4 +1,4 @@
-import { Tenant, TenantModules } from '../entities/tenant.entity';
+import { Tenant, TenantModules, TenantSettings } from '../entities/tenant.entity';
 
 export interface TenantWithOwner {
   id: string;
@@ -8,6 +8,7 @@ export interface TenantWithOwner {
   createdAt: Date;
   owner: { name: string; email: string } | null;
   modules: TenantModules;
+  settings: TenantSettings;
 }
 
 export interface TenantRepositoryPort {
@@ -17,4 +18,5 @@ export interface TenantRepositoryPort {
   findAll(): Promise<TenantWithOwner[]>;
   toggleActive(id: string): Promise<Tenant>;
   updateModules(id: string, modules: Partial<TenantModules>): Promise<Tenant>;
+  updateSettings(id: string, settings: Partial<TenantSettings>): Promise<Tenant>;
 }

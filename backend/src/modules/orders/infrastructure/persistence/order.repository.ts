@@ -119,15 +119,27 @@ export class OrderRepository implements OrderRepositoryPort {
     return rows.map(toDomain);
   }
 
-  async getNextOrderNumber(tenantId: string, branchId: string, date: Date): Promise<number> {
-    const dateString = date.toISOString().split('T')[0];
+  async getNextOrderNumber(tenantId: string, branchId: string, date: Date, resetPeriod = 'DAILY'): Promise<number> {
+    let result: [{ next_number: bigint }];
 
-    const result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
-      SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
-      FROM orders
-      WHERE tenant_id = ${tenantId}
-        AND branch_id = ${branchId}
-        AND DATE(created_at) = ${dateString}::date`;
+    if (resetPeriod === 'MONTHLY') {
+      // Reset monthly: count orders in the same calendar month
+      result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
+        SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
+        FROM orders
+        WHERE tenant_id = ${tenantId}
+          AND branch_id = ${branchId}
+          AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', ${date}::timestamptz)`;
+    } else {
+      // Default: reset daily
+      const dateString = date.toISOString().split('T')[0];
+      result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
+        SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
+        FROM orders
+        WHERE tenant_id = ${tenantId}
+          AND branch_id = ${branchId}
+          AND DATE(created_at) = ${dateString}::date`;
+    }
 
     return Number(result[0]?.next_number ?? 1);
   }
