@@ -1,5 +1,13 @@
 import client from './client';
 
+export interface TenantModules {
+  ordersEnabled: boolean;
+  cashEnabled: boolean;
+  teamEnabled: boolean;
+  branchesEnabled: boolean;
+  kitchenEnabled: boolean;
+}
+
 export interface TenantRow {
   id: string;
   name: string;
@@ -7,6 +15,7 @@ export interface TenantRow {
   isActive: boolean;
   createdAt: string;
   owner: { name: string; email: string } | null;
+  modules: TenantModules;
 }
 
 export interface CreateTenantPayload {
@@ -39,4 +48,7 @@ export const adminApi = {
 
   toggleTenant: (id: string) =>
     client.patch<{ id: string; isActive: boolean }>(`/api/v1/admin/tenants/${id}/toggle`, {}, { headers: adminHeaders() }).then((r) => r.data),
+
+  updateModules: (id: string, modules: Partial<TenantModules>) =>
+    client.patch<TenantModules>(`/api/v1/admin/tenants/${id}/modules`, modules, { headers: adminHeaders() }).then((r) => r.data),
 };

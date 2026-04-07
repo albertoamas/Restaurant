@@ -45,13 +45,20 @@ export class LoginUseCase {
     return {
       accessToken: token,
       user: {
-        id: user.id,
-        tenantId: user.tenantId,
+        id:         user.id,
+        tenantId:   user.tenantId,
         tenantName: tenant.name,
-        branchId: user.branchId,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+        branchId:   user.branchId,
+        email:      user.email,
+        name:       user.name,
+        role:       user.role,
+        modules: {
+          ordersEnabled:   tenant.ordersEnabled,
+          cashEnabled:     tenant.cashEnabled,
+          teamEnabled:     tenant.teamEnabled,
+          branchesEnabled: tenant.branchesEnabled,
+          kitchenEnabled:  tenant.kitchenEnabled,
+        },
       },
     };
   }

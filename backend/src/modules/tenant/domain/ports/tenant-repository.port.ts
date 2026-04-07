@@ -1,4 +1,4 @@
-import { Tenant } from '../entities/tenant.entity';
+import { Tenant, TenantModules } from '../entities/tenant.entity';
 
 export interface TenantWithOwner {
   id: string;
@@ -7,6 +7,7 @@ export interface TenantWithOwner {
   isActive: boolean;
   createdAt: Date;
   owner: { name: string; email: string } | null;
+  modules: TenantModules;
 }
 
 export interface TenantRepositoryPort {
@@ -15,4 +16,5 @@ export interface TenantRepositoryPort {
   save(tenant: Tenant): Promise<Tenant>;
   findAll(): Promise<TenantWithOwner[]>;
   toggleActive(id: string): Promise<Tenant>;
+  updateModules(id: string, modules: Partial<TenantModules>): Promise<Tenant>;
 }

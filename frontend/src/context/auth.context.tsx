@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
+import { useSettingsStore } from '../store/settings.store';
 import type { UserRole } from '@pos/shared';
+
+interface TenantModules {
+  ordersEnabled: boolean;
+  cashEnabled: boolean;
+  teamEnabled: boolean;
+  branchesEnabled: boolean;
+  kitchenEnabled: boolean;
+}
 
 interface AuthUser {
   id: string;
@@ -11,6 +20,7 @@ interface AuthUser {
   tenantId: string;
   tenantName: string;
   branchId: string | null;
+  modules?: TenantModules;
 }
 
 interface AuthContextType {
@@ -35,6 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const navigate = useNavigate();
 
+  const {
+    setOrdersEnabled,
+    setCashEnabled,
+    setTeamEnabled,
+    setBranchesEnabled,
+    setKitchenEnabled,
+  } = useSettingsStore();
+
+  /** Apply server-controlled module flags to the settings store */
+  const applyModules = useCallback((modules?: TenantModules) => {
+    if (!modules) return;
+    setOrdersEnabled(modules.ordersEnabled);
+    setCashEnabled(modules.cashEnabled);
+    setTeamEnabled(modules.teamEnabled);
+    setBranchesEnabled(modules.branchesEnabled);
+    setKitchenEnabled(modules.kitchenEnabled);
+  }, [setOrdersEnabled, setCashEnabled, setTeamEnabled, setBranchesEnabled, setKitchenEnabled]);
+
   const applyUser = useCallback((u: AuthUser) => {
     setUser(u);
     if (u.branchId) {
@@ -43,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem('pos_branch');
       setCurrentBranchId(stored);
     }
-  }, []);
+    applyModules(u.modules);
+  }, [applyModules]);
 
   useEffect(() => {
     const stored = localStorage.getItem('pos_token');
@@ -84,7 +113,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, currentBranchId, setCurrentBranch, login, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      isAuthenticated: !!user,
+      isLoading,
+      currentBranchId,
+      setCurrentBranch,
+      login,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   );

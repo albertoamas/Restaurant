@@ -17,6 +17,13 @@ model Tenant {
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Module flags — controlled exclusively by the SaaS admin
+  ordersEnabled   Boolean @default(true)  @map("orders_enabled")
+  cashEnabled     Boolean @default(true)  @map("cash_enabled")
+  teamEnabled     Boolean @default(true)  @map("team_enabled")
+  branchesEnabled Boolean @default(true)  @map("branches_enabled")
+  kitchenEnabled  Boolean @default(false) @map("kitchen_enabled")
+
   users        User[]
   branches     Branch[]
   categories   Category[]

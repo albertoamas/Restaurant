@@ -6,11 +6,11 @@ interface SettingsState {
   autoPrintKitchen: boolean;
   setAutoPrintKitchen: (value: boolean) => void;
 
-  // Panel de cocina
+  // Panel de cocina (server-controlled — set by auth context on login/getMe)
   kitchenEnabled: boolean;
   setKitchenEnabled: (value: boolean) => void;
 
-  // Módulos opcionales
+  // Módulos opcionales (server-controlled — set by auth context on login/getMe)
   ordersEnabled: boolean;
   cashEnabled: boolean;
   teamEnabled: boolean;
@@ -36,6 +36,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
+      // Runtime defaults — overwritten by server values on every login/getMe
       autoPrintKitchen: true,
       setAutoPrintKitchen: (value) => set({ autoPrintKitchen: value }),
 
@@ -61,6 +62,17 @@ export const useSettingsStore = create<SettingsState>()(
       setBusinessPhone: (value) => set({ businessPhone: value }),
       setReceiptFooter: (value) => set({ receiptFooter: value }),
     }),
-    { name: 'pos-settings' },
+    {
+      name: 'pos-settings',
+      // Only persist local UI preferences.
+      // Module flags come from the server on every login/getMe — never from localStorage.
+      partialize: (state) => ({
+        autoPrintKitchen: state.autoPrintKitchen,
+        raffleThreshold:  state.raffleThreshold,
+        businessAddress:  state.businessAddress,
+        businessPhone:    state.businessPhone,
+        receiptFooter:    state.receiptFooter,
+      }),
+    },
   ),
 );

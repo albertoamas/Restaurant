@@ -18,13 +18,20 @@ export class GetProfileUseCase {
     const tenant = await this.tenantRepository.findById(user.tenantId);
 
     return {
-      id: user.id,
-      tenantId: user.tenantId,
+      id:         user.id,
+      tenantId:   user.tenantId,
       tenantName: tenant?.name ?? '',
-      branchId: user.branchId,
-      email: user.email,
-      name: user.name,
-      role: user.role,
+      branchId:   user.branchId,
+      email:      user.email,
+      name:       user.name,
+      role:       user.role,
+      modules: {
+        ordersEnabled:   tenant?.ordersEnabled   ?? true,
+        cashEnabled:     tenant?.cashEnabled     ?? true,
+        teamEnabled:     tenant?.teamEnabled     ?? true,
+        branchesEnabled: tenant?.branchesEnabled ?? true,
+        kitchenEnabled:  tenant?.kitchenEnabled  ?? false,
+      },
     };
   }
 }

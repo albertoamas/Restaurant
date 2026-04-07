@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { UserRole } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
@@ -102,10 +101,6 @@ export function SettingsPage() {
   const {
     autoPrintKitchen, setAutoPrintKitchen,
     kitchenEnabled, setKitchenEnabled,
-    ordersEnabled, setOrdersEnabled,
-    cashEnabled, setCashEnabled,
-    teamEnabled, setTeamEnabled,
-    branchesEnabled, setBranchesEnabled,
     raffleThreshold, setRaffleThreshold,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
@@ -145,7 +140,7 @@ export function SettingsPage() {
     <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide space-y-4">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5">
         <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Ajustes del Negocio</h2>
-        <p className="text-xs text-gray-500 mt-1">Configura módulos, impresión, datos del recibo y seguridad de acceso.</p>
+        <p className="text-xs text-gray-500 mt-1">Configura impresión, datos del recibo y seguridad de acceso.</p>
       </div>
 
       {/* Business data */}
@@ -218,70 +213,6 @@ export function SettingsPage() {
           </div>
         </div>
       </Card>
-
-      {/* Módulos */}
-      {user?.role === UserRole.OWNER && (
-        <Card variant="panel">
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            <h3 className="text-sm font-bold text-gray-700">Módulos activos</h3>
-          </div>
-          <p className="text-xs text-gray-400 mb-4 ml-6">Activa solo las funciones que tu negocio necesita. Los módulos desactivados se ocultan del menú.</p>
-          <div className="space-y-1">
-            <SettingRow
-              label="Pedidos"
-              description="Seguimiento y estados de órdenes."
-              value={ordersEnabled}
-              onChange={setOrdersEnabled}
-              icon={
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              }
-            />
-            <SettingRow
-              label="Caja"
-              description="Apertura y cierre de turno con control de efectivo."
-              value={cashEnabled}
-              onChange={setCashEnabled}
-              icon={
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              }
-            />
-            <SettingRow
-              label="Equipo"
-              description="Gestión de cajeros y sus sucursales asignadas."
-              value={teamEnabled}
-              onChange={setTeamEnabled}
-              icon={
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              }
-            />
-            <SettingRow
-              label="Sucursales"
-              description="Administración de múltiples locales."
-              value={branchesEnabled}
-              onChange={setBranchesEnabled}
-              icon={
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              }
-            />
-          </div>
-        </Card>
-      )}
 
       {/* Printing & Kitchen */}
       <Card variant="panel">

@@ -1,11 +1,118 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, type TenantRow, type CreateTenantPayload } from '../api/admin.api';
+import { adminApi, type TenantRow, type TenantModules, type CreateTenantPayload } from '../api/admin.api';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// ─── Module definitions ───────────────────────────────────────
+
+interface ModuleDef {
+  key: keyof TenantModules;
+  label: string;
+  description: string;
+}
+
+const MODULE_DEFS: ModuleDef[] = [
+  { key: 'ordersEnabled',   label: 'Pedidos',     description: 'Seguimiento y estados de órdenes' },
+  { key: 'cashEnabled',     label: 'Caja',         description: 'Apertura y cierre de turno con control de efectivo' },
+  { key: 'teamEnabled',     label: 'Equipo',       description: 'Gestión de cajeros y sus sucursales asignadas' },
+  { key: 'branchesEnabled', label: 'Sucursales',   description: 'Administración de múltiples locales' },
+  { key: 'kitchenEnabled',  label: 'Cocina',       description: 'Panel de visualización de pedidos en cocina' },
+];
+
+// ─── Module toggle row ────────────────────────────────────────
+
+function ModuleToggleRow({
+  def,
+  value,
+  disabled,
+  onChange,
+}: {
+  def: ModuleDef;
+  value: boolean;
+  disabled: boolean;
+  onChange: (key: keyof TenantModules, value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-gray-50 transition-colors">
+      <div className="min-w-0 pr-4">
+        <p className="text-sm font-semibold text-gray-800">{def.label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{def.description}</p>
+      </div>
+      <button
+        onClick={() => onChange(def.key, !value)}
+        disabled={disabled}
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+          value ? 'bg-primary-500' : 'bg-gray-200'
+        }`}
+        role="switch"
+        aria-checked={value}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            value ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ─── Modules panel (expanded per tenant) ─────────────────────
+
+function ModulesPanel({
+  tenant,
+  onUpdate,
+}: {
+  tenant: TenantRow;
+  onUpdate: (id: string, modules: TenantModules) => void;
+}) {
+  const [modules, setModules] = useState<TenantModules>(tenant.modules);
+  const [saving, setSaving] = useState<keyof TenantModules | null>(null);
+
+  // Keep in sync if parent reloads
+  useEffect(() => {
+    setModules(tenant.modules);
+  }, [tenant.modules]);
+
+  const handleChange = async (key: keyof TenantModules, value: boolean) => {
+    const updated = { ...modules, [key]: value };
+    setModules(updated); // optimistic
+    setSaving(key);
+    try {
+      await adminApi.updateModules(tenant.id, { [key]: value });
+      onUpdate(tenant.id, updated);
+    } catch {
+      setModules(modules); // revert on error
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-3">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-3">
+        Módulos activos
+      </p>
+      <div className="space-y-0.5">
+        {MODULE_DEFS.map((def) => (
+          <ModuleToggleRow
+            key={def.key}
+            def={def}
+            value={modules[def.key]}
+            disabled={saving === def.key}
+            onChange={handleChange}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main AdminPage ───────────────────────────────────────────
 
 export function AdminPage() {
   const [authenticated, setAuthenticated] = useState(adminApi.hasKey());
@@ -14,6 +121,7 @@ export function AdminPage() {
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -63,6 +171,12 @@ export function AdminPage() {
     }
   };
 
+  const handleModulesUpdate = (id: string, modules: TenantModules) => {
+    setTenants((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, modules } : t)),
+    );
+  };
+
   const handleLogout = () => {
     adminApi.clearKey();
     setAuthenticated(false);
@@ -89,6 +203,8 @@ export function AdminPage() {
 
   const setField = (field: keyof CreateTenantPayload) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // ── Login screen ──────────────────────────────────────────
 
   if (!authenticated) {
     return (
@@ -121,9 +237,12 @@ export function AdminPage() {
     );
   }
 
+  // ── Authenticated panel ───────────────────────────────────
+
   return (
     <div className="min-h-screen bg-[linear-gradient(165deg,oklch(0.975_0.006_250),oklch(0.955_0.012_248))] p-6">
       <div className="max-w-4xl mx-auto">
+
         {/* Header */}
         <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
           <div className="flex items-center justify-between">
@@ -214,8 +333,8 @@ export function AdminPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { label: 'Total', value: tenants.length, color: 'text-gray-900' },
-            { label: 'Activos', value: tenants.filter((t) => t.isActive).length, color: 'text-green-600' },
+            { label: 'Total',     value: tenants.length,                            color: 'text-gray-900' },
+            { label: 'Activos',   value: tenants.filter((t) => t.isActive).length,  color: 'text-green-600' },
             { label: 'Inactivos', value: tenants.filter((t) => !t.isActive).length, color: 'text-red-500' },
           ].map((s) => (
             <div key={s.label} className="bg-white/90 rounded-xl p-4 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.08)] border border-white/70 text-center backdrop-blur-sm">
@@ -225,7 +344,7 @@ export function AdminPage() {
           ))}
         </div>
 
-        {/* Table */}
+        {/* Tenant list */}
         <div className="bg-white/90 rounded-2xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] border border-white/70 overflow-hidden backdrop-blur-sm">
           {loading ? (
             <div className="flex justify-center py-12">
@@ -234,61 +353,99 @@ export function AdminPage() {
           ) : tenants.length === 0 ? (
             <p className="text-center text-sm text-gray-400 py-12">No hay negocios registrados</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  <th className="px-4 py-3">Negocio</th>
-                  <th className="px-4 py-3">Dueño</th>
-                  <th className="px-4 py-3">Registro</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {tenants.map((t) => (
-                  <tr key={t.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-gray-900">{t.name}</p>
-                      <p className="text-xs text-gray-400">{t.slug}</p>
-                    </td>
-                    <td className="px-4 py-3">
+            <div>
+              {tenants.map((t, idx) => (
+                <div key={t.id} className={idx !== 0 ? 'border-t border-gray-100' : ''}>
+
+                  {/* Tenant row */}
+                  <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors">
+
+                    {/* Expand / collapse button */}
+                    <button
+                      onClick={() => setExpandedId((prev) => (prev === t.id ? null : t.id))}
+                      className="p-1 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
+                      title={expandedId === t.id ? 'Ocultar módulos' : 'Configurar módulos'}
+                    >
+                      <svg
+                        className={`w-4 h-4 transition-transform duration-200 ${expandedId === t.id ? 'rotate-90' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    {/* Name + slug */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 truncate">{t.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{t.slug}</p>
+                    </div>
+
+                    {/* Owner */}
+                    <div className="hidden sm:block w-40 shrink-0">
                       {t.owner ? (
                         <>
-                          <p className="text-gray-700">{t.owner.name}</p>
-                          <p className="text-xs text-gray-400">{t.owner.email}</p>
+                          <p className="text-sm text-gray-700 truncate">{t.owner.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{t.owner.email}</p>
                         </>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-gray-300 text-sm">—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(t.createdAt)}</td>
-                    <td className="px-4 py-3">
+                    </div>
+
+                    {/* Date */}
+                    <div className="hidden md:block w-24 shrink-0 text-sm text-gray-500">
+                      {formatDate(t.createdAt)}
+                    </div>
+
+                    {/* Active modules count badge */}
+                    <div className="shrink-0">
+                      {(() => {
+                        const count = Object.values(t.modules).filter(Boolean).length;
+                        return (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-600 border border-primary-100">
+                            {count}/5 módulos
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Status badge */}
+                    <div className="shrink-0">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
                         t.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${t.isActive ? 'bg-green-500' : 'bg-red-400'}`} />
                         {t.isActive ? 'Activo' : 'Inactivo'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggle(t.id)}
-                        disabled={toggling === t.id}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
-                          t.isActive
-                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                            : 'bg-green-50 text-green-700 hover:bg-green-100'
-                        }`}
-                      >
-                        {toggling === t.id ? '...' : t.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+
+                    {/* Toggle active button */}
+                    <button
+                      onClick={() => handleToggle(t.id)}
+                      disabled={toggling === t.id}
+                      className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                        t.isActive
+                          ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                      }`}
+                    >
+                      {toggling === t.id ? '...' : t.isActive ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </div>
+
+                  {/* Modules panel */}
+                  {expandedId === t.id && (
+                    <ModulesPanel
+                      tenant={t}
+                      onUpdate={handleModulesUpdate}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
+
       </div>
     </div>
   );
