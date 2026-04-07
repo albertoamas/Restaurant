@@ -226,9 +226,12 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
       <button
         type="button"
         onClick={() => setMode('create')}
-        className="text-xs text-gray-400 hover:text-primary-500 transition-colors pl-1"
+        className="w-full flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-400 transition-colors text-sm font-medium"
       >
-        + Crear nuevo cliente
+        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Crear nuevo cliente
       </button>
     </div>
   );
