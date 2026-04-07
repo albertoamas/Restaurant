@@ -1,6 +1,9 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
+import { UserRole } from '@pos/shared';
 import { OpenCashSessionDto } from '../../application/dto/open-cash-session.dto';
 import { CloseCashSessionDto } from '../../application/dto/close-cash-session.dto';
 import { OpenCashSessionUseCase } from '../../application/use-cases/open-cash-session.use-case';
@@ -43,6 +46,8 @@ export class CashSessionController {
   }
 
   @Post('open')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   open(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -56,6 +61,8 @@ export class CashSessionController {
 
   @Post('close')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   close(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,

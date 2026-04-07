@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { CashSessionDto } from '@pos/shared';
 import { CashSessionStatus } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
 import { useAuth } from '../context/auth.context';
+import { useSettingsStore } from '../store/settings.store';
 import { useSocketEvent } from '../context/socket.context';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
@@ -41,7 +43,11 @@ function StatRow({ label, value, muted, bold, bordered, valueClass }: StatRowPro
 }
 
 export function CashPage() {
-  const { currentBranchId } = useAuth();
+  const { cashEnabled } = useSettingsStore();
+  if (!cashEnabled) return <Navigate to="/pos" replace />;
+
+  const { currentBranchId, user } = useAuth();
+  const isOwner = user?.role === 'OWNER';
   const { session, setSession, history, loading, reload } = useCashSession(currentBranchId);
   const [showOpen, setShowOpen] = useState(false);
   const [showClose, setShowClose] = useState(false);
@@ -71,6 +77,7 @@ export function CashPage() {
 
   const isOpen = session?.status === CashSessionStatus.OPEN;
   const closedSessions = history.filter((s) => s.status === CashSessionStatus.CLOSED);
+  const lastClosed = closedSessions[0] ?? null;
 
   const handleOpen = async (amount: number, notes?: string) => {
     try {
@@ -152,24 +159,36 @@ export function CashPage() {
             {session.notes && (
               <p className="text-xs text-emerald-600/60 bg-emerald-500/8 rounded-lg px-3 py-2 mb-4">{session.notes}</p>
             )}
-            <Button variant="secondary" fullWidth onClick={() => setShowClose(true)}>
-              Cerrar caja
-            </Button>
+            {isOwner ? (
+              <Button variant="secondary" fullWidth onClick={() => setShowClose(true)}>
+                Cerrar caja
+              </Button>
+            ) : (
+              <p className="text-sm text-emerald-600/70 text-center bg-emerald-500/8 rounded-xl px-3 py-2.5">
+                El administrador es quien cierra el turno.
+              </p>
+            )}
           </>
         ) : (
           <>
             <p className="text-sm text-gray-500 mb-5 leading-relaxed">
               Abre la caja al inicio del turno para registrar el monto inicial de efectivo.
             </p>
-            <Button size="lg" fullWidth onClick={() => setShowOpen(true)}>
-              Abrir caja
-            </Button>
+            {isOwner ? (
+              <Button size="lg" fullWidth onClick={() => setShowOpen(true)}>
+                Abrir caja
+              </Button>
+            ) : (
+              <p className="text-sm text-gray-400 text-center bg-gray-100 rounded-xl px-3 py-2.5">
+                El administrador abre el turno al inicio del día.
+              </p>
+            )}
           </>
         )}
       </div>
 
       {/* Last closing summary */}
-      {!isOpen && session?.closingAmount !== null && session?.closingAmount !== undefined && (
+      {!isOpen && lastClosed && (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,35 +196,35 @@ export function CashPage() {
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
             <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
-            {session?.closedAt && (
-              <span className="ml-auto text-xs text-gray-400">{formatDate(session.closedAt)}</span>
+            {lastClosed.closedAt && (
+              <span className="ml-auto text-xs text-gray-400">{formatDate(lastClosed.closedAt)}</span>
             )}
           </div>
 
           <div className="divide-y divide-gray-50">
-            <StatRow label="Monto inicial" value={`Bs ${session!.openingAmount.toFixed(2)}`} />
+            <StatRow label="Monto inicial" value={`Bs ${lastClosed.openingAmount.toFixed(2)}`} />
             <StatRow
               label="Ventas en efectivo"
-              value={`Bs ${((session!.expectedAmount ?? 0) - session!.openingAmount).toFixed(2)}`}
+              value={`Bs ${((lastClosed.expectedAmount ?? 0) - lastClosed.openingAmount).toFixed(2)}`}
             />
             <StatRow
               label="Esperado en caja"
-              value={`Bs ${(session!.expectedAmount ?? 0).toFixed(2)}`}
+              value={`Bs ${(lastClosed.expectedAmount ?? 0).toFixed(2)}`}
               bold
             />
             <StatRow
               label="Contado al cierre"
-              value={`Bs ${session!.closingAmount!.toFixed(2)}`}
+              value={`Bs ${lastClosed.closingAmount!.toFixed(2)}`}
               bold
               bordered
             />
             <StatRow
               label="Diferencia"
-              value={session!.difference !== null
-                ? `${session!.difference >= 0 ? '+' : ''}Bs ${session!.difference.toFixed(2)}`
+              value={lastClosed.difference !== null
+                ? `${lastClosed.difference >= 0 ? '+' : ''}Bs ${lastClosed.difference.toFixed(2)}`
                 : '—'}
               bold
-              valueClass={diffColor(session!.difference)}
+              valueClass={diffColor(lastClosed.difference)}
             />
           </div>
         </div>
