@@ -127,7 +127,7 @@ export class CreateOrderUseCase {
 
     // 10. Persist and return
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emit(tenantId, branchId, 'order.created', saved);
+    this.eventsService?.emitToTenant(tenantId, 'order.created', saved);
     return saved;
   }
 }

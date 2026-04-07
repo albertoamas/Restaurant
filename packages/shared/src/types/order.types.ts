@@ -28,6 +28,7 @@ export interface OrderItemDto {
 export interface OrderDto {
   id: string;
   orderNumber: number;
+  branchId: string;
   type: OrderType;
   status: OrderStatus;
   paymentMethod: PaymentMethod;

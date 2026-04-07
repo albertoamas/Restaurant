@@ -32,7 +32,7 @@ export class UpdateOrderStatusUseCase {
     }
 
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emit(tenantId, saved.branchId, 'order.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
     return saved;
   }
 }

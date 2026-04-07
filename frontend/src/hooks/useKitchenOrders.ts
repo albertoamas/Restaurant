@@ -29,12 +29,14 @@ export function useKitchenOrders(branchId: string | null) {
 
   // Real-time via WebSocket
   useSocketEvent<OrderDto>('order.created', (order) => {
+    if (order.branchId !== branchId) return;
     if (order.status === OrderStatus.PENDING) {
       setOrders((prev) => [...prev, order]);
     }
   });
 
   useSocketEvent<OrderDto>('order.updated', (order) => {
+    if (order.branchId !== branchId) return;
     if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
       setOrders((prev) => prev.filter((o) => o.id !== order.id));
     } else {
