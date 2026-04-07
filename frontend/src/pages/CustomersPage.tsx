@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
 import { Spinner } from '../components/ui/Spinner';
 import { useCustomers } from '../hooks/useCustomers';
+import { useSettingsStore } from '../store/settings.store';
 import { customersApi } from '../api/customers.api';
 import { ordersApi } from '../api/orders.api';
 import { handleApiError } from '../utils/api-error';
@@ -41,6 +42,17 @@ const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   [PaymentMethod.TRANSFER]: 'Transferencia',
 };
 
+// ── Raffle helpers ────────────────────────────────────────────────────────────
+
+function calcTickets(totalSpent: number, delivered: number, threshold: number) {
+  const earned = Math.floor(totalSpent / threshold);
+  const balance = Math.round(totalSpent % threshold * 100) / 100;
+  const pending = Math.max(0, earned - delivered);
+  return { earned, balance, pending };
+}
+
+// ── Order history ─────────────────────────────────────────────────────────────
+
 function CustomerOrderHistory({ customerId }: { customerId: string }) {
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,10 +62,7 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
   }, [customerId]);
 
   if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
-
-  if (orders.length === 0) {
-    return <p className="text-xs text-gray-400 text-center py-3">Sin pedidos registrados</p>;
-  }
+  if (orders.length === 0) return <p className="text-xs text-gray-400 text-center py-3">Sin pedidos registrados</p>;
 
   return (
     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -83,12 +92,16 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
   );
 }
 
+// ── Detail modal ──────────────────────────────────────────────────────────────
+
 function CustomerDetailModal({
   customer,
+  threshold,
   onClose,
   onUpdate,
 }: {
   customer: CustomerStatsDto;
+  threshold: number;
   onClose: () => void;
   onUpdate: () => void;
 }) {
@@ -99,6 +112,10 @@ function CustomerDetailModal({
   const [notes, setNotes] = useState(customer.notes ?? '');
   const [saving, setSaving] = useState(false);
   const [raffleSaving, setRaffleSaving] = useState(false);
+  const [ticketSaving, setTicketSaving] = useState(false);
+
+  const { earned, balance, pending } = calcTickets(customer.totalSpent, customer.ticketsDelivered, threshold);
+  const progressPct = threshold > 0 ? Math.min(100, (balance / threshold) * 100) : 0;
 
   async function handleSaveEdit() {
     setSaving(true);
@@ -130,9 +147,21 @@ function CustomerDetailModal({
     }
   }
 
+  async function handleDeliverTicket() {
+    setTicketSaving(true);
+    try {
+      await customersApi.deliverTicket(customer.id);
+      onUpdate();
+    } catch (err) {
+      handleApiError(err, 'Error al registrar entrega');
+    } finally {
+      setTicketSaving(false);
+    }
+  }
+
   return (
     <Modal isOpen onClose={onClose} title="Detalle del Cliente" size="sm">
-      {/* Stats */}
+      {/* Purchase stats */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="bg-gray-50 rounded-xl p-3 text-center">
           <p className="text-2xl font-bold text-gray-900 font-heading">{customer.purchaseCount}</p>
@@ -143,41 +172,73 @@ function CustomerDetailModal({
           <p className="text-xs text-gray-400 mt-0.5">Total gastado</p>
         </div>
       </div>
-
-      {/* Last order */}
       <p className="text-xs text-gray-400 mb-4">Última compra: {formatDate(customer.lastOrderAt)}</p>
 
-      {/* Edit info */}
+      {/* Raffle ticket panel */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎟️</span>
+            <p className="text-sm font-bold text-amber-900">Fichas de sorteo</p>
+          </div>
+          {pending > 0 && (
+            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {pending} pendiente{pending > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+          <div>
+            <p className="text-xl font-black text-amber-800">{earned}</p>
+            <p className="text-[10px] text-amber-600 font-medium">Ganadas</p>
+          </div>
+          <div>
+            <p className="text-xl font-black text-green-700">{customer.ticketsDelivered}</p>
+            <p className="text-[10px] text-green-600 font-medium">Entregadas</p>
+          </div>
+          <div>
+            <p className="text-xl font-black text-orange-600">{pending}</p>
+            <p className="text-[10px] text-orange-500 font-medium">Por entregar</p>
+          </div>
+        </div>
+
+        {/* Progress bar toward next ticket */}
+        <div className="mb-3">
+          <div className="flex justify-between text-[10px] text-amber-700 mb-1">
+            <span>Saldo hacia próxima ficha</span>
+            <span className="font-semibold">Bs {balance.toFixed(2)} / {threshold}</span>
+          </div>
+          <div className="h-2 bg-amber-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-amber-500 rounded-full transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
+
+        <Button
+          variant="primary"
+          fullWidth
+          onClick={handleDeliverTicket}
+          loading={ticketSaving}
+          disabled={pending === 0}
+        >
+          {pending === 0 ? 'Sin fichas por entregar' : `Entregar ficha (quedan ${pending})`}
+        </Button>
+      </div>
+
+      {/* Customer info */}
       {editMode ? (
         <div className="space-y-2 mb-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nombre *"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
-          />
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Teléfono"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
-          />
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notas (opcional)"
-            rows={2}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none"
-          />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *"
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono"
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none" />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setEditMode(false)} disabled={saving}>Cancelar</Button>
             <Button variant="primary" fullWidth onClick={handleSaveEdit} loading={saving}>Guardar</Button>
@@ -192,28 +253,20 @@ function CustomerDetailModal({
               {customer.email && <p className="text-sm text-gray-500">{customer.email}</p>}
               {customer.notes && <p className="text-xs text-gray-400 mt-1 italic">{customer.notes}</p>}
             </div>
-            <button
-              onClick={() => setEditMode(true)}
-              className="text-xs text-primary-500 hover:text-primary-700 underline"
-            >
+            <button onClick={() => setEditMode(true)} className="text-xs text-primary-500 hover:text-primary-700 underline">
               Editar
             </button>
           </div>
         </div>
       )}
 
-      {/* Raffle toggle */}
+      {/* Raffle winner toggle */}
       <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-800">Ganador de rifa</p>
-          <p className="text-xs text-gray-400">Marcar para sorteos y promociones</p>
+          <p className="text-sm font-medium text-gray-800">Ganador del sorteo</p>
+          <p className="text-xs text-gray-400">Marcar cuando salga premiado en el bombo</p>
         </div>
-        <Toggle
-          checked={customer.isRaffleWinner}
-          onChange={handleToggleRaffle}
-          disabled={raffleSaving}
-          label="Ganador de rifa"
-        />
+        <Toggle checked={customer.isRaffleWinner} onChange={handleToggleRaffle} disabled={raffleSaving} label="Ganador del sorteo" />
       </div>
 
       {/* Order history */}
@@ -224,6 +277,8 @@ function CustomerDetailModal({
     </Modal>
   );
 }
+
+// ── Create modal ──────────────────────────────────────────────────────────────
 
 function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState('');
@@ -254,35 +309,14 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
   return (
     <Modal isOpen onClose={onClose} title="Nuevo Cliente" size="sm">
       <div className="space-y-3">
-        <input
-          autoFocus
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nombre *"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
-        />
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Teléfono"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
-        />
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notas (opcional)"
-          rows={2}
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none"
-        />
+        <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *"
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono"
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none" />
         <div className="flex gap-2 pt-1">
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button variant="primary" fullWidth onClick={handleSubmit} loading={saving} disabled={!name.trim()}>
@@ -294,8 +328,11 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
   );
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export function CustomersPage() {
   const { customers, loading, q, setQ, reload } = useCustomers();
+  const { raffleThreshold } = useSettingsStore();
   const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -317,18 +354,14 @@ export function CustomersPage() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
             <p className="text-xs text-gray-500 mt-0.5">{customers.length} registrado{customers.length !== 1 ? 's' : ''}</p>
           </div>
-          <Button variant="primary" onClick={() => setShowCreate(true)}>
-            + Nuevo cliente
-          </Button>
+          <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo cliente</Button>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative mb-4">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -355,10 +388,7 @@ export function CustomersPage() {
             {q ? 'No se encontraron clientes' : 'Sin clientes registrados aún'}
           </p>
           {!q && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="mt-2 text-sm text-primary-500 hover:text-primary-700 underline"
-            >
+            <button onClick={() => setShowCreate(true)} className="mt-2 text-sm text-primary-500 hover:text-primary-700 underline">
               Crear el primer cliente
             </button>
           )}
@@ -366,33 +396,48 @@ export function CustomersPage() {
       ) : (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Compras</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Total Bs</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">🏆</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Gastado</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Saldo</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">🎟️</p>
           </div>
 
           {/* Rows */}
-          {customers.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelected(c)}
-              className="w-full grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div>
-                <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                {c.email && <p className="text-xs text-gray-400">{c.email}</p>}
-              </div>
-              <p className="text-sm text-gray-500 self-center">{c.phone ?? '—'}</p>
-              <p className="text-sm font-semibold text-gray-900 text-right self-center">{c.purchaseCount}</p>
-              <p className="text-sm text-gray-700 text-right self-center">{c.totalSpent.toFixed(2)}</p>
-              <div className="self-center text-center">
-                <span className={`text-base ${c.isRaffleWinner ? 'text-amber-500' : 'text-gray-200'}`}>★</span>
-              </div>
-            </button>
-          ))}
+          {customers.map((c) => {
+            const { balance, pending } = calcTickets(c.totalSpent, c.ticketsDelivered, raffleThreshold);
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className="w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-left"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{c.phone ?? c.email ?? '—'}</p>
+                </div>
+                <p className="text-sm text-gray-700 text-right self-center">Bs {c.totalSpent.toFixed(0)}</p>
+                <div className="text-right self-center">
+                  <p className="text-xs font-semibold text-gray-700">{balance.toFixed(0)} / {raffleThreshold}</p>
+                  <div className="h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                    <div
+                      className="h-full bg-amber-400 rounded-full"
+                      style={{ width: `${Math.min(100, (balance / raffleThreshold) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="self-center text-center">
+                  {pending > 0 ? (
+                    <span className="bg-amber-100 text-amber-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                      {pending}
+                    </span>
+                  ) : (
+                    <span className="text-gray-200 text-base">—</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -400,20 +445,15 @@ export function CustomersPage() {
       {selected && (
         <CustomerDetailModal
           customer={selected}
+          threshold={raffleThreshold}
           onClose={() => setSelected(null)}
-          onUpdate={() => {
-            reload();
-            setSelected(null);
-          }}
+          onUpdate={() => { reload(); setSelected(null); }}
         />
       )}
 
       {/* Create modal */}
       {showCreate && (
-        <CreateCustomerModal
-          onClose={() => setShowCreate(false)}
-          onCreated={reload}
-        />
+        <CreateCustomerModal onClose={() => setShowCreate(false)} onCreated={reload} />
       )}
     </div>
   );

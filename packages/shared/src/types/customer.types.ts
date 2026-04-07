@@ -12,6 +12,7 @@ export interface CustomerStatsDto extends CustomerDto {
   purchaseCount: number;
   totalSpent: number;
   lastOrderAt: string | null;
+  ticketsDelivered: number;
 }
 
 export interface CustomerSearchResult {

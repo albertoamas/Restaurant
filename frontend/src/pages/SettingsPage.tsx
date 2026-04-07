@@ -106,6 +106,7 @@ export function SettingsPage() {
     cashEnabled, setCashEnabled,
     teamEnabled, setTeamEnabled,
     branchesEnabled, setBranchesEnabled,
+    raffleThreshold, setRaffleThreshold,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
     receiptFooter, setReceiptFooter,
@@ -165,6 +166,21 @@ export function SettingsPage() {
               <span className="ml-auto text-xs text-gray-400 bg-gray-200 rounded-md px-2 py-0.5">Solo lectura</span>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
+          </div>
+          <div className="py-4">
+            <Input
+              label="Bs por ficha de sorteo"
+              type="number"
+              min="1"
+              step="1"
+              value={String(raffleThreshold)}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (v > 0) setRaffleThreshold(v);
+              }}
+              placeholder="Ej: 100"
+            />
+            <p className="text-xs text-gray-400 mt-1.5">El cliente recibe una ficha por cada {raffleThreshold} Bs acumulados en compras</p>
           </div>
           <div className="py-4">
             <Input

@@ -20,6 +20,10 @@ interface SettingsState {
   setTeamEnabled: (value: boolean) => void;
   setBranchesEnabled: (value: boolean) => void;
 
+  // Sistema de fichas de sorteo
+  raffleThreshold: number;
+  setRaffleThreshold: (value: number) => void;
+
   // Datos del negocio (para recibos)
   businessAddress: string;
   businessPhone: string;
@@ -46,6 +50,9 @@ export const useSettingsStore = create<SettingsState>()(
       setCashEnabled: (value) => set({ cashEnabled: value }),
       setTeamEnabled: (value) => set({ teamEnabled: value }),
       setBranchesEnabled: (value) => set({ branchesEnabled: value }),
+
+      raffleThreshold: 100,
+      setRaffleThreshold: (value) => set({ raffleThreshold: value }),
 
       businessAddress: '',
       businessPhone: '',

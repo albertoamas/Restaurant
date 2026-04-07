@@ -7,6 +7,7 @@ export interface CustomerProps {
   phone: string | null;
   email: string | null;
   isRaffleWinner: boolean;
+  ticketsDelivered: number;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +28,7 @@ export class Customer {
   phone: string | null;
   email: string | null;
   isRaffleWinner: boolean;
+  ticketsDelivered: number;
   notes: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -38,6 +40,7 @@ export class Customer {
     this.phone = props.phone;
     this.email = props.email;
     this.isRaffleWinner = props.isRaffleWinner;
+    this.ticketsDelivered = props.ticketsDelivered;
     this.notes = props.notes;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
@@ -52,6 +55,7 @@ export class Customer {
       phone: props.phone?.trim() || null,
       email: props.email?.trim() || null,
       isRaffleWinner: false,
+      ticketsDelivered: 0,
       notes: props.notes?.trim() || null,
       createdAt: now,
       updatedAt: now,
@@ -72,6 +76,11 @@ export class Customer {
 
   toggleRaffleWinner(): void {
     this.isRaffleWinner = !this.isRaffleWinner;
+    this.updatedAt = new Date();
+  }
+
+  deliverTicket(): void {
+    this.ticketsDelivered += 1;
     this.updatedAt = new Date();
   }
 }

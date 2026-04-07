@@ -18,6 +18,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
         phone: customer.phone,
         email: customer.email,
         isRaffleWinner: customer.isRaffleWinner,
+        ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
@@ -27,6 +28,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
         phone: customer.phone,
         email: customer.email,
         isRaffleWinner: customer.isRaffleWinner,
+        ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         updatedAt: customer.updatedAt,
       },
@@ -64,8 +66,8 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const rows = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.is_raffle_winner AS "isRaffleWinner", c.notes,
-        c.created_at AS "createdAt", c.updated_at AS "updatedAt",
+        c.is_raffle_winner AS "isRaffleWinner", c.tickets_delivered AS "ticketsDelivered",
+        c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
         COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
         MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED') AS "lastOrderAt"
@@ -86,8 +88,8 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.is_raffle_winner AS "isRaffleWinner", c.notes,
-        c.created_at AS "createdAt", c.updated_at AS "updatedAt",
+        c.is_raffle_winner AS "isRaffleWinner", c.tickets_delivered AS "ticketsDelivered",
+        c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
         COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
         MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED') AS "lastOrderAt"
@@ -129,6 +131,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
       phone: row.phone ?? null,
       email: row.email ?? null,
       isRaffleWinner: row.isRaffleWinner ?? row.is_raffle_winner ?? false,
+      ticketsDelivered: Number(row.ticketsDelivered ?? row.tickets_delivered ?? 0),
       notes: row.notes ?? null,
       createdAt: new Date(row.createdAt ?? row.created_at),
       updatedAt: new Date(row.updatedAt ?? row.updated_at),
@@ -142,6 +145,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
       phone: r.phone ?? null,
       email: r.email ?? null,
       isRaffleWinner: r.isRaffleWinner ?? false,
+      ticketsDelivered: Number(r.ticketsDelivered ?? 0),
       notes: r.notes ?? null,
       createdAt: new Date(r.createdAt).toISOString(),
       purchaseCount: Number(r.purchaseCount ?? 0),

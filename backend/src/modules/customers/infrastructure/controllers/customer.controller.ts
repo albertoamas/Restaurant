@@ -22,6 +22,7 @@ import { GetCustomerUseCase } from '../../application/use-cases/get-customer.use
 import { UpdateCustomerUseCase } from '../../application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from '../../application/use-cases/search-customers.use-case';
 import { ToggleRaffleWinnerUseCase } from '../../application/use-cases/toggle-raffle-winner.use-case';
+import { DeliverTicketUseCase } from '../../application/use-cases/deliver-ticket.use-case';
 import { CreateCustomerDto } from '../../application/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../application/dto/update-customer.dto';
 
@@ -35,6 +36,7 @@ export class CustomerController {
     private readonly updateCustomer: UpdateCustomerUseCase,
     private readonly searchCustomers: SearchCustomersUseCase,
     private readonly toggleRaffle: ToggleRaffleWinnerUseCase,
+    private readonly deliverTicketUseCase: DeliverTicketUseCase,
   ) {}
 
   // IMPORTANT: /search must be declared before /:id to avoid route collision
@@ -103,5 +105,16 @@ export class CustomerController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.toggleRaffle.execute(id, tenantId);
+  }
+
+  @Post(':id/tickets/deliver')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.OWNER)
+  deliverTicket(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.deliverTicketUseCase.execute(id, tenantId);
   }
 }

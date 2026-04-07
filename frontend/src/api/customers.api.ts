@@ -25,4 +25,7 @@ export const customersApi = {
 
   toggleRaffle: (id: string): Promise<CustomerDto> =>
     client.patch(`/api/v1/customers/${id}/raffle`).then((r) => r.data),
+
+  deliverTicket: (id: string): Promise<CustomerDto> =>
+    client.post(`/api/v1/customers/${id}/tickets/deliver`).then((r) => r.data),
 };

@@ -10,6 +10,7 @@ import { GetCustomerUseCase } from './application/use-cases/get-customer.use-cas
 import { UpdateCustomerUseCase } from './application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from './application/use-cases/search-customers.use-case';
 import { ToggleRaffleWinnerUseCase } from './application/use-cases/toggle-raffle-winner.use-case';
+import { DeliverTicketUseCase } from './application/use-cases/deliver-ticket.use-case';
 
 @Module({
   imports: [PrismaModule, EventsModule],
@@ -22,6 +23,7 @@ import { ToggleRaffleWinnerUseCase } from './application/use-cases/toggle-raffle
     UpdateCustomerUseCase,
     SearchCustomersUseCase,
     ToggleRaffleWinnerUseCase,
+    DeliverTicketUseCase,
   ],
   exports: [CUSTOMER_REPOSITORY_PORT],
 })
