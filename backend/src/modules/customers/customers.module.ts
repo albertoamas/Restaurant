@@ -9,7 +9,6 @@ import { ListCustomersUseCase } from './application/use-cases/list-customers.use
 import { GetCustomerUseCase } from './application/use-cases/get-customer.use-case';
 import { UpdateCustomerUseCase } from './application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from './application/use-cases/search-customers.use-case';
-import { ToggleRaffleWinnerUseCase } from './application/use-cases/toggle-raffle-winner.use-case';
 import { DeliverTicketUseCase } from './application/use-cases/deliver-ticket.use-case';
 
 @Module({
@@ -22,7 +21,6 @@ import { DeliverTicketUseCase } from './application/use-cases/deliver-ticket.use
     GetCustomerUseCase,
     UpdateCustomerUseCase,
     SearchCustomersUseCase,
-    ToggleRaffleWinnerUseCase,
     DeliverTicketUseCase,
   ],
   exports: [CUSTOMER_REPOSITORY_PORT],

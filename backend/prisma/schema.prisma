@@ -194,7 +194,6 @@ model Customer {
   name             String   @db.VarChar(255)
   phone            String?  @db.VarChar(50)
   email            String?  @db.VarChar(255)
-  isRaffleWinner   Boolean  @default(false) @map("is_raffle_winner")
   ticketsDelivered Int      @default(0) @map("tickets_delivered")
   notes            String?
   createdAt        DateTime @default(now()) @map("created_at")

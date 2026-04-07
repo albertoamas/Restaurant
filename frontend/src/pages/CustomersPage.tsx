@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
-import { Toggle } from '../components/ui/Toggle';
 import { Spinner } from '../components/ui/Spinner';
 import { useCustomers } from '../hooks/useCustomers';
 import { useSettingsStore } from '../store/settings.store';
@@ -111,7 +110,6 @@ function CustomerDetailModal({
   const [email, setEmail] = useState(customer.email ?? '');
   const [notes, setNotes] = useState(customer.notes ?? '');
   const [saving, setSaving] = useState(false);
-  const [raffleSaving, setRaffleSaving] = useState(false);
   const [ticketSaving, setTicketSaving] = useState(false);
 
   const { earned, balance, pending } = calcTickets(customer.totalSpent, customer.ticketsDelivered, threshold);
@@ -132,18 +130,6 @@ function CustomerDetailModal({
       handleApiError(err, 'Error al guardar');
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleToggleRaffle() {
-    setRaffleSaving(true);
-    try {
-      await customersApi.toggleRaffle(customer.id);
-      onUpdate();
-    } catch (err) {
-      handleApiError(err, 'Error al actualizar');
-    } finally {
-      setRaffleSaving(false);
     }
   }
 
@@ -259,15 +245,6 @@ function CustomerDetailModal({
           </div>
         </div>
       )}
-
-      {/* Raffle winner toggle */}
-      <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-800">Ganador del sorteo</p>
-          <p className="text-xs text-gray-400">Marcar cuando salga premiado en el bombo</p>
-        </div>
-        <Toggle checked={customer.isRaffleWinner} onChange={handleToggleRaffle} disabled={raffleSaving} label="Ganador del sorteo" />
-      </div>
 
       {/* Order history */}
       <div className="border-t border-gray-100 pt-4 mt-2">

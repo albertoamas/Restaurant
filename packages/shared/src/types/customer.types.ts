@@ -3,7 +3,7 @@ export interface CustomerDto {
   name: string;
   phone: string | null;
   email: string | null;
-  isRaffleWinner: boolean;
+  ticketsDelivered: number;
   notes: string | null;
   createdAt: string;
 }

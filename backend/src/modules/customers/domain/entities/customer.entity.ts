@@ -6,7 +6,6 @@ export interface CustomerProps {
   name: string;
   phone: string | null;
   email: string | null;
-  isRaffleWinner: boolean;
   ticketsDelivered: number;
   notes: string | null;
   createdAt: Date;
@@ -27,7 +26,6 @@ export class Customer {
   name: string;
   phone: string | null;
   email: string | null;
-  isRaffleWinner: boolean;
   ticketsDelivered: number;
   notes: string | null;
   readonly createdAt: Date;
@@ -39,7 +37,6 @@ export class Customer {
     this.name = props.name;
     this.phone = props.phone;
     this.email = props.email;
-    this.isRaffleWinner = props.isRaffleWinner;
     this.ticketsDelivered = props.ticketsDelivered;
     this.notes = props.notes;
     this.createdAt = props.createdAt;
@@ -54,7 +51,6 @@ export class Customer {
       name: props.name.trim(),
       phone: props.phone?.trim() || null,
       email: props.email?.trim() || null,
-      isRaffleWinner: false,
       ticketsDelivered: 0,
       notes: props.notes?.trim() || null,
       createdAt: now,
@@ -71,11 +67,6 @@ export class Customer {
     if (patch.phone !== undefined) this.phone = patch.phone?.trim() || null;
     if (patch.email !== undefined) this.email = patch.email?.trim() || null;
     if (patch.notes !== undefined) this.notes = patch.notes?.trim() || null;
-    this.updatedAt = new Date();
-  }
-
-  toggleRaffleWinner(): void {
-    this.isRaffleWinner = !this.isRaffleWinner;
     this.updatedAt = new Date();
   }
 

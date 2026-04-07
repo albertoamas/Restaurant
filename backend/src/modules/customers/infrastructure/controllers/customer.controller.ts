@@ -21,7 +21,6 @@ import { ListCustomersUseCase } from '../../application/use-cases/list-customers
 import { GetCustomerUseCase } from '../../application/use-cases/get-customer.use-case';
 import { UpdateCustomerUseCase } from '../../application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from '../../application/use-cases/search-customers.use-case';
-import { ToggleRaffleWinnerUseCase } from '../../application/use-cases/toggle-raffle-winner.use-case';
 import { DeliverTicketUseCase } from '../../application/use-cases/deliver-ticket.use-case';
 import { CreateCustomerDto } from '../../application/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../application/dto/update-customer.dto';
@@ -35,7 +34,6 @@ export class CustomerController {
     private readonly getCustomer: GetCustomerUseCase,
     private readonly updateCustomer: UpdateCustomerUseCase,
     private readonly searchCustomers: SearchCustomersUseCase,
-    private readonly toggleRaffle: ToggleRaffleWinnerUseCase,
     private readonly deliverTicketUseCase: DeliverTicketUseCase,
   ) {}
 
@@ -94,17 +92,6 @@ export class CustomerController {
     @Body() dto: UpdateCustomerDto,
   ) {
     return this.updateCustomer.execute(id, tenantId, dto);
-  }
-
-  @Patch(':id/raffle')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.OWNER)
-  raffle(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentTenant() tenantId: string,
-  ) {
-    return this.toggleRaffle.execute(id, tenantId);
   }
 
   @Post(':id/tickets/deliver')

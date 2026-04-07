@@ -17,7 +17,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        isRaffleWinner: customer.isRaffleWinner,
         ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         createdAt: customer.createdAt,
@@ -27,7 +26,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        isRaffleWinner: customer.isRaffleWinner,
         ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         updatedAt: customer.updatedAt,
@@ -66,7 +64,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const rows = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.is_raffle_winner AS "isRaffleWinner", c.tickets_delivered AS "ticketsDelivered",
+        c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
         COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
@@ -88,7 +86,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.is_raffle_winner AS "isRaffleWinner", c.tickets_delivered AS "ticketsDelivered",
+        c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
         COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
@@ -130,7 +128,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
       name: row.name,
       phone: row.phone ?? null,
       email: row.email ?? null,
-      isRaffleWinner: row.isRaffleWinner ?? row.is_raffle_winner ?? false,
       ticketsDelivered: Number(row.ticketsDelivered ?? row.tickets_delivered ?? 0),
       notes: row.notes ?? null,
       createdAt: new Date(row.createdAt ?? row.created_at),
@@ -144,7 +141,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
       name: r.name,
       phone: r.phone ?? null,
       email: r.email ?? null,
-      isRaffleWinner: r.isRaffleWinner ?? false,
       ticketsDelivered: Number(r.ticketsDelivered ?? 0),
       notes: r.notes ?? null,
       createdAt: new Date(r.createdAt).toISOString(),
