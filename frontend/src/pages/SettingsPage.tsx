@@ -100,7 +100,6 @@ export function SettingsPage() {
   const { user } = useAuth();
   const {
     autoPrintKitchen, setAutoPrintKitchen,
-    kitchenEnabled, setKitchenEnabled,
     raffleThreshold, setRaffleThreshold,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
@@ -214,31 +213,17 @@ export function SettingsPage() {
         </div>
       </Card>
 
-      {/* Printing & Kitchen */}
+      {/* Printing */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          <h3 className="text-sm font-bold text-gray-700">Cocina e Impresión</h3>
+          <h3 className="text-sm font-bold text-gray-700">Impresión</h3>
         </div>
-        <p className="text-xs text-gray-400 mb-4 ml-6">Opciones para la gestión de pedidos en cocina</p>
+        <p className="text-xs text-gray-400 mb-4 ml-6">Opciones de impresión de comandas</p>
         <div className="space-y-1">
-          <SettingRow
-            label="Activar panel de cocina"
-            description="Muestra una pantalla dedicada para que la cocina vea los pedidos en curso."
-            value={kitchenEnabled}
-            onChange={setKitchenEnabled}
-            icon={
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            }
-          />
           <SettingRow
             label="Imprimir comanda automáticamente"
             description="Al confirmar un pedido, se envía la comanda a la impresora de cocina sin clic adicional."
