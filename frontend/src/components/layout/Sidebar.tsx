@@ -82,10 +82,16 @@ export function Sidebar() {
   useEffect(() => {
     if (user?.role === 'OWNER') {
       branchesApi.getAll().then((data) => {
-        if (Array.isArray(data)) setBranches(data.filter((b) => b.isActive));
+        if (Array.isArray(data)) {
+          const active = data.filter((b) => b.isActive);
+          setBranches(active);
+          if (active.length === 1 && !currentBranchId) {
+            setCurrentBranch(active[0].id);
+          }
+        }
       }).catch(() => {});
     }
-  }, [user?.role]);
+  }, [user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
 
@@ -147,8 +153,10 @@ export function Sidebar() {
         {user?.role === 'OWNER' && (
           <div className="relative">
             <button
-              onClick={() => setBranchOpen((o) => !o)}
-              className="w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/6 hover:bg-white/10 border border-white/10 text-xs text-white/65 hover:text-white/90 transition-colors"
+              onClick={() => branches.length > 1 && setBranchOpen((o) => !o)}
+              className={`w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/6 border border-white/10 text-xs text-white/65 transition-colors ${
+                branches.length > 1 ? 'hover:bg-white/10 hover:text-white/90 cursor-pointer' : 'cursor-default'
+              }`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
                 <svg className="w-3 h-3 shrink-0 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,11 +167,13 @@ export function Sidebar() {
                   {currentBranch ? currentBranch.name : (branches.length === 0 ? 'Sin sucursales' : 'Seleccionar sucursal')}
                 </span>
               </div>
-              <svg className="w-3 h-3 shrink-0 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              {branches.length > 1 && (
+                <svg className="w-3 h-3 shrink-0 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
             </button>
-            {branchOpen && branches.length > 0 && (
+            {branchOpen && branches.length > 1 && (
               <div className="absolute top-full left-0 right-0 mt-1.5 rounded-xl shadow-[0_8px_24px_oklch(0.08_0.010_255/0.8)] z-50 overflow-hidden animate-slide-down border border-white/8"
                 style={{ background: 'oklch(0.18 0.018 255)' }}>
                 {branches.map((b) => (
