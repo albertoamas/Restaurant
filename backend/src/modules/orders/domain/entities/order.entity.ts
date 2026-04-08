@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { OrderType, OrderStatus, PaymentMethod } from '@pos/shared';
 import { OrderItem } from './order-item.entity';
+import { OrderPayment } from './order-payment.entity';
 
 export interface OrderProps {
   id: string;
@@ -10,6 +11,7 @@ export interface OrderProps {
   type: OrderType;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  payments: OrderPayment[];
   items: OrderItem[];
   subtotal: number;
   total: number;
@@ -26,7 +28,8 @@ type CreateOrderProps = {
   branchId: string;
   orderNumber: number;
   type: OrderType;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod;  // dominant method
+  payments: OrderPayment[];
   items: OrderItem[];
   notes?: string | null;
   createdBy: string;
@@ -34,8 +37,8 @@ type CreateOrderProps = {
 };
 
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  [OrderStatus.PENDING]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
-  [OrderStatus.PREPARING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING]:   [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+  [OrderStatus.PREPARING]: [OrderStatus.DELIVERED,  OrderStatus.CANCELLED],
   [OrderStatus.DELIVERED]: [OrderStatus.CANCELLED],
   [OrderStatus.CANCELLED]: [],
 };
@@ -48,6 +51,7 @@ export class Order {
   readonly type: OrderType;
   status: OrderStatus;
   readonly paymentMethod: PaymentMethod;
+  readonly payments: OrderPayment[];
   readonly items: OrderItem[];
   readonly subtotal: number;
   readonly total: number;
@@ -58,46 +62,48 @@ export class Order {
   updatedAt: Date;
 
   private constructor(props: OrderProps) {
-    this.id = props.id;
-    this.tenantId = props.tenantId;
-    this.branchId = props.branchId;
-    this.orderNumber = props.orderNumber;
-    this.type = props.type;
-    this.status = props.status;
+    this.id            = props.id;
+    this.tenantId      = props.tenantId;
+    this.branchId      = props.branchId;
+    this.orderNumber   = props.orderNumber;
+    this.type          = props.type;
+    this.status        = props.status;
     this.paymentMethod = props.paymentMethod;
-    this.items = props.items;
-    this.subtotal = props.subtotal;
-    this.total = props.total;
-    this.notes = props.notes;
-    this.createdBy = props.createdBy;
-    this.customerId = props.customerId ?? null;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
+    this.payments      = props.payments;
+    this.items         = props.items;
+    this.subtotal      = props.subtotal;
+    this.total         = props.total;
+    this.notes         = props.notes;
+    this.createdBy     = props.createdBy;
+    this.customerId    = props.customerId ?? null;
+    this.createdAt     = props.createdAt;
+    this.updatedAt     = props.updatedAt;
   }
 
   static create(props: CreateOrderProps): Order {
-    const id = props.id ?? uuidv4();
+    const id  = props.id ?? uuidv4();
     const now = new Date();
 
     const subtotal = Math.round(props.items.reduce((sum, item) => sum + item.subtotal, 0) * 100) / 100;
-    const total = subtotal;
+    const total    = subtotal;
 
     return new Order({
       id,
-      tenantId: props.tenantId,
-      branchId: props.branchId,
-      orderNumber: props.orderNumber,
-      type: props.type,
-      status: OrderStatus.PENDING,
+      tenantId:      props.tenantId,
+      branchId:      props.branchId,
+      orderNumber:   props.orderNumber,
+      type:          props.type,
+      status:        OrderStatus.PENDING,
       paymentMethod: props.paymentMethod,
-      items: props.items,
+      payments:      props.payments,
+      items:         props.items,
       subtotal,
       total,
-      notes: props.notes ?? null,
-      createdBy: props.createdBy,
-      customerId: props.customerId ?? null,
-      createdAt: now,
-      updatedAt: now,
+      notes:         props.notes ?? null,
+      createdBy:     props.createdBy,
+      customerId:    props.customerId ?? null,
+      createdAt:     now,
+      updatedAt:     now,
     });
   }
 
@@ -115,7 +121,7 @@ export class Order {
       );
     }
 
-    this.status = newStatus;
+    this.status    = newStatus;
     this.updatedAt = new Date();
   }
 }

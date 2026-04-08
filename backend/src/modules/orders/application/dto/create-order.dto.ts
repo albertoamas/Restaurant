@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -24,6 +25,15 @@ export class CreateOrderItemDto {
   @Min(1)
   @Max(999)
   quantity: number;
+}
+
+export class CreateOrderPaymentDto {
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
+
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
 }
 
 export class CreateCustomerInlineDto {
@@ -50,8 +60,11 @@ export class CreateOrderDto {
   @IsEnum(OrderType)
   type: OrderType;
 
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderPaymentDto)
+  payments: CreateOrderPaymentDto[];
 
   @IsOptional()
   @IsString()

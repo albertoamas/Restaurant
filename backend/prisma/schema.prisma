@@ -27,14 +27,15 @@ model Tenant {
   // Order settings — configurable by the tenant owner
   orderNumberResetPeriod String @default("DAILY") @map("order_number_reset_period")
 
-  users        User[]
-  branches     Branch[]
-  categories   Category[]
-  products     Product[]
-  orders       Order[]
-  cashSessions CashSession[]
-  expenses     Expense[]
-  customers    Customer[]
+  users         User[]
+  branches      Branch[]
+  categories    Category[]
+  products      Product[]
+  orders        Order[]
+  cashSessions  CashSession[]
+  expenses      Expense[]
+  customers     Customer[]
+  orderPayments OrderPayment[]
 
   @@map("tenants")
 }
@@ -128,9 +129,10 @@ model Order {
 
   customerId    String?   @map("customer_id")
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   items    OrderItem[]
+  payments OrderPayment[]
 
   @@index([tenantId, orderNumber])
   @@index([tenantId, createdAt])
@@ -153,6 +155,22 @@ model OrderItem {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("order_items")
+}
+
+// ─── OrderPayment ─────────────────────────────────────────────
+
+model OrderPayment {
+  id       String  @id @default(uuid())
+  orderId  String  @map("order_id")
+  tenantId String  @map("tenant_id")
+  method   String
+  amount   Decimal @db.Decimal(10, 2)
+
+  order  Order  @relation(fields: [orderId],  references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_payments")
 }
 
 // ─── CashSession ──────────────────────────────────────────────

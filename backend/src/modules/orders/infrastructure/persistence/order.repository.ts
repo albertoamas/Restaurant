@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus, OrderType, PaymentMethod, TopProductDto } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
+import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import {
   DailyReportResult,
   OrderFilters,
@@ -10,9 +11,11 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
-type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: true; customer: true } }>;
+type OrderWithRelations = Prisma.OrderGetPayload<{
+  include: { items: true; customer: true; payments: true };
+}>;
 
-function toDomain(row: OrderWithItems): Order {
+function toDomain(row: OrderWithRelations): Order {
   const items = row.items.map((item) =>
     OrderItem.reconstitute({
       id: item.id,
@@ -25,24 +28,38 @@ function toDomain(row: OrderWithItems): Order {
     }),
   );
 
+  const payments = row.payments.map(
+    (p) =>
+      new OrderPayment({
+        id:       p.id,
+        orderId:  p.orderId,
+        tenantId: p.tenantId,
+        method:   p.method as PaymentMethod,
+        amount:   Number(p.amount),
+      }),
+  );
+
   return Order.reconstitute({
-    id: row.id,
-    tenantId: row.tenantId,
-    branchId: row.branchId,
-    orderNumber: row.orderNumber,
-    type: row.type as OrderType,
-    status: row.status as OrderStatus,
+    id:            row.id,
+    tenantId:      row.tenantId,
+    branchId:      row.branchId,
+    orderNumber:   row.orderNumber,
+    type:          row.type as OrderType,
+    status:        row.status as OrderStatus,
     paymentMethod: row.paymentMethod as PaymentMethod,
+    payments,
     items,
-    subtotal: Number(row.subtotal),
-    total: Number(row.total),
-    notes: row.notes,
-    createdBy: row.createdBy,
+    subtotal:   Number(row.subtotal),
+    total:      Number(row.total),
+    notes:      row.notes,
+    createdBy:  row.createdBy,
     customerId: row.customerId ?? null,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    createdAt:  row.createdAt,
+    updatedAt:  row.updatedAt,
   });
 }
+
+const INCLUDE_ALL = { items: true, customer: true, payments: true } as const;
 
 @Injectable()
 export class OrderRepository implements OrderRepositoryPort {
@@ -50,46 +67,54 @@ export class OrderRepository implements OrderRepositoryPort {
 
   async save(order: Order): Promise<Order> {
     const row = await this.prisma.order.upsert({
-      where: { id: order.id },
+      where:  { id: order.id },
       create: {
-        id: order.id,
-        tenantId: order.tenantId,
-        branchId: order.branchId,
-        orderNumber: order.orderNumber,
-        type: order.type,
-        status: order.status,
+        id:            order.id,
+        tenantId:      order.tenantId,
+        branchId:      order.branchId,
+        orderNumber:   order.orderNumber,
+        type:          order.type,
+        status:        order.status,
         paymentMethod: order.paymentMethod,
-        subtotal: order.subtotal,
-        total: order.total,
-        notes: order.notes,
-        createdBy: order.createdBy,
-        customerId: order.customerId ?? null,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
+        subtotal:      order.subtotal,
+        total:         order.total,
+        notes:         order.notes,
+        createdBy:     order.createdBy,
+        customerId:    order.customerId ?? null,
+        createdAt:     order.createdAt,
+        updatedAt:     order.updatedAt,
         items: {
           create: order.items.map((item) => ({
-            id: item.id,
-            productId: item.productId,
+            id:          item.id,
+            productId:   item.productId,
             productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
+            quantity:    item.quantity,
+            unitPrice:   item.unitPrice,
+            subtotal:    item.subtotal,
+          })),
+        },
+        payments: {
+          create: order.payments.map((p) => ({
+            id:       p.id,
+            tenantId: p.tenantId,
+            method:   p.method,
+            amount:   p.amount,
           })),
         },
       },
       update: {
-        status: order.status,
+        status:    order.status,
         updatedAt: order.updatedAt,
       },
-      include: { items: true, customer: true },
+      include: INCLUDE_ALL,
     });
     return toDomain(row);
   }
 
   async findById(id: string, tenantId: string): Promise<Order | null> {
     const row = await this.prisma.order.findFirst({
-      where: { id, tenantId },
-      include: { items: true, customer: true },
+      where:   { id, tenantId },
+      include: INCLUDE_ALL,
     });
     return row ? toDomain(row) : null;
   }
@@ -99,22 +124,22 @@ export class OrderRepository implements OrderRepositoryPort {
 
     const where: Prisma.OrderWhereInput = { tenantId };
 
-    if (branchId) where.branchId = branchId;
-    if (status) where.status = status;
-    if (filters.customerId) where.customerId = filters.customerId;
+    if (branchId)            where.branchId   = branchId;
+    if (status)              where.status      = status;
+    if (filters.customerId)  where.customerId  = filters.customerId;
     if (filters.from && filters.to) {
       where.createdAt = { gte: new Date(filters.from), lte: new Date(filters.to) };
     } else if (date) {
       const start = new Date(`${date}T00:00:00.000Z`);
-      const end = new Date(`${date}T23:59:59.999Z`);
+      const end   = new Date(`${date}T23:59:59.999Z`);
       where.createdAt = { gte: start, lte: end };
     }
 
     const rows = await this.prisma.order.findMany({
       where,
-      include: { items: true, customer: true },
+      include: INCLUDE_ALL,
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take:    100,
     });
     return rows.map(toDomain);
   }
@@ -123,7 +148,6 @@ export class OrderRepository implements OrderRepositoryPort {
     let result: [{ next_number: bigint }];
 
     if (resetPeriod === 'MONTHLY') {
-      // Reset monthly: count orders in the same calendar month
       result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
         SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
         FROM orders
@@ -131,7 +155,6 @@ export class OrderRepository implements OrderRepositoryPort {
           AND branch_id = ${branchId}
           AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', ${date}::timestamptz)`;
     } else {
-      // Default: reset daily
       const dateString = date.toISOString().split('T')[0];
       result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
         SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
@@ -145,38 +168,39 @@ export class OrderRepository implements OrderRepositoryPort {
   }
 
   async getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult> {
-    const result = branchId
-      ? await this.prisma.$queryRaw<[Record<string, unknown>]>`
-          SELECT
-            COALESCE(SUM(total), 0)                                                 AS "totalSales",
-            COUNT(*)                                                                 AS "orderCount",
-            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
-          FROM orders
-          WHERE tenant_id = ${tenantId}
-            AND branch_id = ${branchId}
-            AND DATE(created_at) = ${date}::date
-            AND status != ${OrderStatus.CANCELLED}`
-      : await this.prisma.$queryRaw<[Record<string, unknown>]>`
-          SELECT
-            COALESCE(SUM(total), 0)                                                 AS "totalSales",
-            COUNT(*)                                                                 AS "orderCount",
-            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
-          FROM orders
-          WHERE tenant_id = ${tenantId}
-            AND DATE(created_at) = ${date}::date
-            AND status != ${OrderStatus.CANCELLED}`;
+    const branchFilter = branchId
+      ? Prisma.sql`AND o.branch_id = ${branchId}`
+      : Prisma.sql``;
+
+    const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
+      WITH filtered_orders AS (
+        SELECT o.id, o.total, o.type
+        FROM orders o
+        WHERE o.tenant_id = ${tenantId}
+          ${branchFilter}
+          AND DATE(o.created_at) = ${date}::date
+          AND o.status != ${OrderStatus.CANCELLED}
+      ),
+      order_stats AS (
+        SELECT
+          COALESCE(SUM(total), 0)                                                   AS "totalSales",
+          COUNT(*)                                                                   AS "orderCount",
+          COALESCE(AVG(total), 0)                                                   AS "averageTicket",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+        FROM filtered_orders
+      ),
+      payment_stats AS (
+        SELECT
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CASH}     THEN op.amount ELSE 0 END), 0) AS "cashSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.QR}       THEN op.amount ELSE 0 END), 0) AS "qrSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales"
+        FROM order_payments op
+        WHERE op.order_id IN (SELECT id FROM filtered_orders)
+      )
+      SELECT os.*, ps.*
+      FROM order_stats os, payment_stats ps`;
 
     return this.mapReport(result[0] ?? {});
   }
@@ -187,43 +211,42 @@ export class OrderRepository implements OrderRepositoryPort {
     from: string,
     to: string,
   ): Promise<DailyReportResult> {
-    // `from` and `to` are UTC ISO strings (e.g. "2026-03-29T04:00:00.000Z")
-    // so we compare directly against the stored UTC timestamps.
     const fromTs = new Date(from);
     const toTs   = new Date(to);
 
-    const result = branchId
-      ? await this.prisma.$queryRaw<[Record<string, unknown>]>`
-          SELECT
-            COALESCE(SUM(total), 0)                                                 AS "totalSales",
-            COUNT(*)                                                                 AS "orderCount",
-            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
-          FROM orders
-          WHERE tenant_id = ${tenantId}
-            AND branch_id = ${branchId}
-            AND created_at BETWEEN ${fromTs} AND ${toTs}
-            AND status != ${OrderStatus.CANCELLED}`
-      : await this.prisma.$queryRaw<[Record<string, unknown>]>`
-          SELECT
-            COALESCE(SUM(total), 0)                                                 AS "totalSales",
-            COUNT(*)                                                                 AS "orderCount",
-            COALESCE(AVG(total), 0)                                                 AS "averageTicket",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.CASH}      THEN total ELSE 0 END), 0) AS "cashSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.QR}        THEN total ELSE 0 END), 0) AS "qrSales",
-            COALESCE(SUM(CASE WHEN payment_method = ${PaymentMethod.TRANSFER}  THEN total ELSE 0 END), 0) AS "transferSales",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-            COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
-          FROM orders
-          WHERE tenant_id = ${tenantId}
-            AND created_at BETWEEN ${fromTs} AND ${toTs}
-            AND status != ${OrderStatus.CANCELLED}`;
+    const branchFilter = branchId
+      ? Prisma.sql`AND o.branch_id = ${branchId}`
+      : Prisma.sql``;
+
+    const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
+      WITH filtered_orders AS (
+        SELECT o.id, o.total, o.type
+        FROM orders o
+        WHERE o.tenant_id = ${tenantId}
+          ${branchFilter}
+          AND o.created_at BETWEEN ${fromTs} AND ${toTs}
+          AND o.status != ${OrderStatus.CANCELLED}
+      ),
+      order_stats AS (
+        SELECT
+          COALESCE(SUM(total), 0)                                                   AS "totalSales",
+          COUNT(*)                                                                   AS "orderCount",
+          COALESCE(AVG(total), 0)                                                   AS "averageTicket",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+        FROM filtered_orders
+      ),
+      payment_stats AS (
+        SELECT
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CASH}     THEN op.amount ELSE 0 END), 0) AS "cashSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.QR}       THEN op.amount ELSE 0 END), 0) AS "qrSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales"
+        FROM order_payments op
+        WHERE op.order_id IN (SELECT id FROM filtered_orders)
+      )
+      SELECT os.*, ps.*
+      FROM order_stats os, payment_stats ps`;
 
     return this.mapReport(result[0] ?? {});
   }
@@ -320,28 +343,28 @@ export class OrderRepository implements OrderRepositoryPort {
     }
 
     return rows.map((r) => ({
-      productId: r.productId,
-      productName: r.productName,
-      categoryId: r.categoryId ?? null,
-      categoryName: r.categoryName ?? null,
+      productId:     r.productId,
+      productName:   r.productName,
+      categoryId:    r.categoryId ?? null,
+      categoryName:  r.categoryName ?? null,
       totalQuantity: Number(r.totalQuantity),
-      totalRevenue: Number(r.totalRevenue),
+      totalRevenue:  Number(r.totalRevenue),
     }));
   }
 
   private mapReport(row: Record<string, unknown>): DailyReportResult {
     return {
-      totalSales: Number(row.totalSales ?? 0),
-      orderCount: Number(row.orderCount ?? 0),
+      totalSales:    Number(row.totalSales   ?? 0),
+      orderCount:    Number(row.orderCount   ?? 0),
       averageTicket: Number(row.averageTicket ?? 0),
       paymentBreakdown: {
-        cash: Number(row.cashSales ?? 0),
-        qr: Number(row.qrSales ?? 0),
+        cash:     Number(row.cashSales     ?? 0),
+        qr:       Number(row.qrSales       ?? 0),
         transfer: Number(row.transferSales ?? 0),
       },
       ordersByType: {
-        dineIn: Number(row.dineInCount ?? 0),
-        takeout: Number(row.takeoutCount ?? 0),
+        dineIn:   Number(row.dineInCount   ?? 0),
+        takeout:  Number(row.takeoutCount  ?? 0),
         delivery: Number(row.deliveryCount ?? 0),
       },
     };

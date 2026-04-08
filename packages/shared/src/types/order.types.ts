@@ -6,10 +6,20 @@ export interface CreateOrderItemRequest {
   quantity: number;
 }
 
+export interface OrderPaymentDto {
+  method: PaymentMethod;
+  amount: number;
+}
+
+export interface CreateOrderPaymentRequest {
+  method: PaymentMethod;
+  amount: number;
+}
+
 export interface CreateOrderRequest {
   branchId?: string;
   type: OrderType;
-  paymentMethod: PaymentMethod;
+  payments: CreateOrderPaymentRequest[];
   notes?: string;
   items: CreateOrderItemRequest[];
   customerId?: string;
@@ -31,7 +41,8 @@ export interface OrderDto {
   branchId: string;
   type: OrderType;
   status: OrderStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod;  // dominant method (backward compat)
+  payments: OrderPaymentDto[];   // full breakdown
   items: OrderItemDto[];
   subtotal: number;
   total: number;

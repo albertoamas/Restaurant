@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/commo
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
+import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
@@ -82,11 +83,10 @@ export class CreateOrderUseCase {
       }
     }
 
-    // 4. Require an open cash session for CASH payments — only when the branch
+    // 4. Require an open cash session if any payment uses CASH — only when the branch
     //    has previously used cash management (at least one session exists).
-    //    Branches that have never opened a session are considered to not use
-    //    the cash module, so no enforcement applies.
-    if (dto.paymentMethod === PaymentMethod.CASH) {
+    const hasCashPayment = dto.payments.some((p) => p.method === PaymentMethod.CASH);
+    if (hasCashPayment) {
       const anySessions = await this.cashSessionRepository.findByBranch(tenantId, branchId, 1);
       if (anySessions.length > 0) {
         const openSession = await this.cashSessionRepository.findOpenByBranch(tenantId, branchId);
@@ -96,15 +96,15 @@ export class CreateOrderUseCase {
       }
     }
 
-    // 6. Reserve the order number using the tenant's configured reset period
+    // 5. Reserve the order number using the tenant's configured reset period
     const tenant = await this.tenantRepository.findById(tenantId);
     const resetPeriod = tenant?.orderNumberResetPeriod ?? 'DAILY';
     const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, new Date(), resetPeriod);
 
-    // 7. Pre-generate the order id so items can reference it
+    // 6. Pre-generate the order id so items and payments can reference it
     const orderId = uuidv4();
 
-    // 8. Build order items with product snapshot (name + price at time of order)
+    // 7. Build order items with product snapshot (name + price at time of order)
     const items: OrderItem[] = dto.items.map((itemDto) => {
       const product = productMap.get(itemDto.productId)!;
 
@@ -117,21 +117,46 @@ export class CreateOrderUseCase {
       });
     });
 
-    // 9. Create the aggregate root (subtotal + total computed inside)
+    // 8. Validate that payments sum matches the order total (tolerance ±0.01 for rounding)
+    const subtotal = Math.round(items.reduce((sum, i) => sum + i.subtotal, 0) * 100) / 100;
+    const paymentsSum = Math.round(dto.payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+    if (Math.abs(paymentsSum - subtotal) > 0.01) {
+      throw new BadRequestException(
+        `La suma de pagos (${paymentsSum}) no coincide con el total del pedido (${subtotal})`,
+      );
+    }
+
+    // 9. Determine dominant payment method (highest amount; first wins on tie)
+    const dominant = dto.payments.reduce((a, b) => (b.amount > a.amount ? b : a));
+
+    // 10. Build OrderPayment entities
+    const payments: OrderPayment[] = dto.payments.map(
+      (p) =>
+        new OrderPayment({
+          id:       uuidv4(),
+          orderId,
+          tenantId,
+          method:   p.method as PaymentMethod,
+          amount:   p.amount,
+        }),
+    );
+
+    // 11. Create the aggregate root (subtotal + total computed inside)
     const order = Order.create({
       id: orderId,
       tenantId,
       branchId,
       orderNumber,
-      type: dto.type,
-      paymentMethod: dto.paymentMethod,
+      type:          dto.type,
+      paymentMethod: dominant.method,
+      payments,
       items,
-      notes: dto.notes ?? null,
-      createdBy: userId,
+      notes:      dto.notes ?? null,
+      createdBy:  userId,
       customerId: resolvedCustomerId,
     });
 
-    // 10. Persist and return
+    // 12. Persist and return
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToTenant(tenantId, 'order.created', saved);
     return saved;

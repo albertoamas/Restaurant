@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
-import { PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
-import type { CustomerPayload } from '../components/pos/PaymentModal';
+import { PaymentMethod } from '@pos/shared';
+import type { CustomerPayload, PaymentEntry } from '../components/pos/PaymentModal';
 import { ordersApi } from '../api/orders.api';
 import { useCartStore } from '../store/cart.store';
 import { useAuth } from '../context/auth.context';
@@ -57,8 +57,9 @@ export function PosPage() {
     setShowPayment(true);
   };
 
-  const handleConfirmPayment = async (method: PaymentMethod, customer: CustomerPayload) => {
-    if (cashEnabled && method === PaymentMethod.CASH && !isCashOpen()) {
+  const handleConfirmPayment = async (payments: PaymentEntry[], customer: CustomerPayload) => {
+    const hasCash = payments.some((p) => p.method === PaymentMethod.CASH);
+    if (cashEnabled && hasCash && !isCashOpen()) {
       toast.error('No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo.', { duration: 4000 });
       return;
     }
@@ -66,7 +67,7 @@ export function PosPage() {
       const order = await ordersApi.create({
         branchId: currentBranchId ?? undefined,
         type: orderType,
-        paymentMethod: method,
+        payments: payments.map((p) => ({ method: p.method, amount: p.amount })),
         notes: notes.trim() || undefined,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         ...(customer?.customerId ? { customerId: customer.customerId } : {}),

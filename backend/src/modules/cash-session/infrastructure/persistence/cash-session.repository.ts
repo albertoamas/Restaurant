@@ -77,13 +77,14 @@ export class CashSessionRepository implements CashSessionRepositoryPort {
 
   async getCashSalesDuringSession(tenantId: string, branchId: string, from: Date): Promise<number> {
     const result = await this.prisma.$queryRaw<[{ cash_total: number }]>`
-      SELECT COALESCE(SUM(total), 0) AS cash_total
-      FROM orders
-      WHERE tenant_id = ${tenantId}
-        AND branch_id = ${branchId}
-        AND payment_method = ${PaymentMethod.CASH}
-        AND status != 'CANCELLED'
-        AND created_at >= ${from}`;
+      SELECT COALESCE(SUM(op.amount), 0) AS cash_total
+      FROM order_payments op
+      JOIN orders o ON o.id = op.order_id
+      WHERE o.tenant_id = ${tenantId}
+        AND o.branch_id = ${branchId}
+        AND op.method = ${PaymentMethod.CASH}
+        AND o.status != 'CANCELLED'
+        AND o.created_at >= ${from}`;
 
     return Number(result[0]?.cash_total ?? 0);
   }

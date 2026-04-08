@@ -186,7 +186,9 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
             Bs {order.total.toFixed(2)}
           </span>
           <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
-            {paymentLabel[order.paymentMethod] ?? order.paymentMethod}
+            {order.payments && order.payments.length > 1
+              ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
+              : (paymentLabel[order.paymentMethod] ?? order.paymentMethod)}
           </span>
         </div>
 
