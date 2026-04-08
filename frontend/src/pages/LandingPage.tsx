@@ -242,7 +242,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           </div>
         </div>
         <p className="text-xs mt-1.5" style={{ color: 'oklch(0.68 0.008 260)' }}>
-          ~${plan.usd} USD al tipo de cambio actual
+          ~${plan.usd} USD al tipo de cambio referencial
         </p>
       </div>
 
