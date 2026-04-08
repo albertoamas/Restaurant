@@ -5,10 +5,22 @@ import { useSocketEvent } from '../context/socket.context';
 import { Spinner } from '../components/ui/Spinner';
 import { orderTypeLabels } from '../utils/order';
 import { useOrders } from '../hooks/useOrders';
-import { today } from '../utils/date';
-import { useState } from 'react';
+import { today, elapsed } from '../utils/date';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
+
+function useElapsed(createdAt: string) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const secs = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
+  return { text: elapsed(createdAt), secs };
+}
+
+const ACTIVE_STATUSES = new Set([OrderStatus.PENDING, OrderStatus.PREPARING]);
 
 const statusFilters = [
   { value: '', label: 'Todos' },
@@ -52,10 +64,33 @@ const actionConfig: Record<string, { label: string; nextStatus: OrderStatus; col
   [OrderStatus.CANCELLED]: null,
 };
 
+function ElapsedChip({ createdAt }: { createdAt: string }) {
+  const { text, secs } = useElapsed(createdAt);
+  const urgent   = secs >= 600; // > 10 min → red
+  const warning  = secs >= 300; // > 5 min → amber
+  return (
+    <span className={[
+      'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums',
+      urgent
+        ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+        : warning
+          ? 'bg-amber-50 text-amber-600 border-amber-200'
+          : 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    ].join(' ')}>
+      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {text}
+    </span>
+  );
+}
+
 function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange: (id: string, s: OrderStatus) => void }) {
   const action = actionConfig[order.status];
   const currentStep = stepIndex(order.status);
   const isCancelled = order.status === OrderStatus.CANCELLED;
+  const isActive = ACTIVE_STATUSES.has(order.status);
 
   const accent = statusAccent[order.status] ?? { border: 'border-l-gray-200', bg: '', badge: 'bg-gray-100 text-gray-500 border-gray-200' };
 
@@ -74,13 +109,17 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
           <span className="font-heading font-black text-2xl text-gray-900 leading-none">
             #{order.orderNumber}
           </span>
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-          </span>
+          {isActive ? (
+            <ElapsedChip createdAt={order.createdAt} />
+          ) : (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
