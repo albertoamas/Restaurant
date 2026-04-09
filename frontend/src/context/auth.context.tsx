@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBranchesEnabled,
     setKitchenEnabled,
     setOrderNumberResetPeriod,
+    setTenantLogo,
   } = useSettingsStore();
 
   /** Apply server-controlled module flags to the settings store */
@@ -77,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentBranchId(stored);
     }
     applyModules(u.modules);
-  }, [applyModules]);
+    setTenantLogo((u as AuthUser & { tenantLogo?: string | null }).tenantLogo ?? null);
+  }, [applyModules, setTenantLogo]);
 
   useEffect(() => {
     const stored = localStorage.getItem('pos_token');

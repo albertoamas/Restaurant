@@ -11,6 +11,7 @@ export interface TenantModules {
 
 export interface TenantSettings {
   orderNumberResetPeriod: OrderNumberResetPeriod;
+  logoUrl?: string | null;
 }
 
 export class Tenant {
@@ -26,6 +27,7 @@ export class Tenant {
     public readonly branchesEnabled: boolean,
     public readonly kitchenEnabled: boolean,
     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
+    public readonly logoUrl: string | null = null,
   ) {}
 
   static create(name: string, slug: string): Tenant {
@@ -34,6 +36,7 @@ export class Tenant {
       uuidv4(), name, slug, false, new Date(),
       true, true, true, true, false,
       OrderNumberResetPeriod.DAILY,
+      null,
     );
   }
 
@@ -42,7 +45,7 @@ export class Tenant {
       this.id, this.name, this.slug, isActive, this.createdAt,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
-      this.orderNumberResetPeriod,
+      this.orderNumberResetPeriod, this.logoUrl,
     );
   }
 
@@ -54,7 +57,7 @@ export class Tenant {
       modules.teamEnabled     ?? this.teamEnabled,
       modules.branchesEnabled ?? this.branchesEnabled,
       modules.kitchenEnabled  ?? this.kitchenEnabled,
-      this.orderNumberResetPeriod,
+      this.orderNumberResetPeriod, this.logoUrl,
     );
   }
 
@@ -64,6 +67,7 @@ export class Tenant {
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
+      settings.logoUrl !== undefined ? (settings.logoUrl ?? null) : this.logoUrl,
     );
   }
 
@@ -80,6 +84,7 @@ export class Tenant {
   get settings(): TenantSettings {
     return {
       orderNumberResetPeriod: this.orderNumberResetPeriod,
+      logoUrl: this.logoUrl,
     };
   }
 }

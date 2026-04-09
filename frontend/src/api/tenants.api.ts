@@ -3,6 +3,7 @@ import type { OrderNumberResetPeriod } from '@pos/shared';
 
 export interface TenantSettingsPayload {
   orderNumberResetPeriod?: OrderNumberResetPeriod;
+  logoUrl?: string | null;
 }
 
 export const tenantsApi = {

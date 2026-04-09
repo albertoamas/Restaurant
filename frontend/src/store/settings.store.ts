@@ -36,6 +36,10 @@ interface SettingsState {
   setBusinessAddress: (value: string) => void;
   setBusinessPhone: (value: string) => void;
   setReceiptFooter: (value: string) => void;
+
+  // Logo del negocio (server-controlled — set by auth context on login/getMe)
+  tenantLogo: string | null;
+  setTenantLogo: (value: string | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -69,6 +73,9 @@ export const useSettingsStore = create<SettingsState>()(
       setBusinessAddress: (value) => set({ businessAddress: value }),
       setBusinessPhone: (value) => set({ businessPhone: value }),
       setReceiptFooter: (value) => set({ receiptFooter: value }),
+
+      tenantLogo: null,
+      setTenantLogo: (value) => set({ tenantLogo: value }),
     }),
     {
       name: 'pos-settings',

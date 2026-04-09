@@ -48,6 +48,7 @@ export class LoginUseCase {
         id:         user.id,
         tenantId:   user.tenantId,
         tenantName: tenant.name,
+        tenantLogo: tenant.logoUrl ?? null,
         branchId:   user.branchId,
         email:      user.email,
         name:       user.name,

@@ -1,5 +1,5 @@
 import { Body, Controller, Patch, UseGuards } from '@nestjs/common';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
@@ -13,6 +13,10 @@ class UpdateTenantSettingsDto implements Partial<TenantSettings> {
   @IsOptional()
   @IsEnum(OrderNumberResetPeriod)
   orderNumberResetPeriod?: OrderNumberResetPeriod;
+
+  @IsOptional()
+  @IsString()
+  logoUrl?: string | null;
 }
 
 @Controller('tenants')

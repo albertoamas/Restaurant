@@ -29,13 +29,14 @@ const confettiPieces = [
 
 export function OrderSuccessModal({ isOpen, onClose, order }: Props) {
   const { user } = useAuth();
-  const { businessAddress, businessPhone, receiptFooter } = useSettingsStore();
+  const { businessAddress, businessPhone, receiptFooter, tenantLogo } = useSettingsStore();
 
   const handlePrintReceipt = () => printReceipt(order, {
     businessName: user?.tenantName ?? 'Mi Negocio',
     businessAddress,
     businessPhone,
     receiptFooter,
+    logoUrl: tenantLogo,
   });
 
   return (

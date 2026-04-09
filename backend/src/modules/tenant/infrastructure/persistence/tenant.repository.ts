@@ -18,6 +18,7 @@ function toDomain(row: PrismaTenant): Tenant {
     row.branchesEnabled,
     row.kitchenEnabled,
     (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
+    row.logoUrl ?? null,
   );
 }
 
@@ -48,6 +49,7 @@ export class TenantRepository implements TenantRepositoryPort {
       branchesEnabled:         tenant.branchesEnabled,
       kitchenEnabled:          tenant.kitchenEnabled,
       orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
+      logoUrl:                 tenant.logoUrl,
     };
 
     const row = await this.prisma.tenant.upsert({
@@ -127,6 +129,9 @@ export class TenantRepository implements TenantRepositoryPort {
       data: {
         ...(settings.orderNumberResetPeriod !== undefined && {
           orderNumberResetPeriod: settings.orderNumberResetPeriod,
+        }),
+        ...(settings.logoUrl !== undefined && {
+          logoUrl: settings.logoUrl,
         }),
       },
     });

@@ -25,7 +25,10 @@ model Tenant {
   kitchenEnabled  Boolean @default(false) @map("kitchen_enabled")
 
   // Order settings — configurable by the tenant owner
-  orderNumberResetPeriod String @default("DAILY") @map("order_number_reset_period")
+  orderNumberResetPeriod String  @default("DAILY") @map("order_number_reset_period")
+
+  // Branding — configurable by the tenant owner
+  logoUrl                String? @map("logo_url")
 
   users         User[]
   branches      Branch[]

@@ -90,6 +90,7 @@ export interface ReceiptSettings {
   businessAddress?: string;
   businessPhone?: string;
   receiptFooter?: string;
+  logoUrl?: string | null;
 }
 
 /** Recibo para el cliente — se imprime a pedido */
@@ -110,8 +111,12 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
   const phoneLine = settings.businessPhone
     ? `<div class="center" style="color:#555;font-size:11px">Tel: ${settings.businessPhone}</div>` : '';
   const footer = settings.receiptFooter ?? '¡Gracias por su compra!';
+  const logoBlock = settings.logoUrl
+    ? `<div style="text-align:center;margin-bottom:4px"><img src="${settings.logoUrl}" alt="logo" style="max-width:100px;max-height:60px;object-fit:contain;display:inline-block" /></div>`
+    : '';
 
   const html = `
+    ${logoBlock}
     <div class="center" style="font-size:15px;font-weight:bold">${settings.businessName}</div>
     ${addressLine}
     ${phoneLine}

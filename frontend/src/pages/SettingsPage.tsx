@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { OrderNumberResetPeriod } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
@@ -6,6 +6,7 @@ import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
 import { adminApi } from '../api/admin.api';
 import { tenantsApi } from '../api/tenants.api';
+import { uploadsApi } from '../api/uploads.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -107,9 +108,12 @@ export function SettingsPage() {
     businessPhone, setBusinessPhone,
     receiptFooter, setReceiptFooter,
     orderNumberResetPeriod, setOrderNumberResetPeriod,
+    tenantLogo, setTenantLogo,
   } = useSettingsStore();
 
   const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [unlocked, setUnlocked] = useState(() =>
     sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1',
@@ -118,6 +122,36 @@ export function SettingsPage() {
   const [pwLoading, setPwLoading] = useState(false);
 
   if (!unlocked) return <SettingsLock onUnlock={() => setUnlocked(true)} />;
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoLoading(true);
+    try {
+      const url = await uploadsApi.image(file);
+      await tenantsApi.updateSettings({ logoUrl: url });
+      setTenantLogo(url);
+      toast.success('Logo actualizado');
+    } catch (err) {
+      handleApiError(err, 'Error al subir logo');
+    } finally {
+      setLogoLoading(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    setLogoLoading(true);
+    try {
+      await tenantsApi.updateSettings({ logoUrl: null });
+      setTenantLogo(null);
+      toast.success('Logo eliminado');
+    } catch (err) {
+      handleApiError(err, 'Error al eliminar logo');
+    } finally {
+      setLogoLoading(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +199,52 @@ export function SettingsPage() {
               <span className="ml-auto text-xs text-gray-400 bg-gray-200 rounded-md px-2 py-0.5">Solo lectura</span>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
+          </div>
+          <div className="py-4">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Logo del negocio</label>
+            <p className="text-xs text-gray-400 mb-3">Se muestra en el recibo del cliente. PNG o WEBP, fondo blanco o transparente recomendado.</p>
+            <div className="flex items-center gap-4">
+              {tenantLogo ? (
+                <div className="w-20 h-20 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                  <img src={tenantLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center shrink-0">
+                  <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  loading={logoLoading}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {tenantLogo ? 'Cambiar logo' : 'Subir logo'}
+                </Button>
+                {tenantLogo && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    loading={logoLoading}
+                    onClick={handleLogoRemove}
+                    className="text-red-500 hover:text-red-600 text-xs"
+                  >
+                    Eliminar logo
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
           <div className="py-4">
             <Input
