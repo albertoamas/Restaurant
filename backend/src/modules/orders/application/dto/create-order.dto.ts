@@ -60,11 +60,11 @@ export class CreateOrderDto {
   @IsEnum(OrderType)
   type: OrderType;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateOrderPaymentDto)
-  payments: CreateOrderPaymentDto[];
+  payments?: CreateOrderPaymentDto[];
 
   @IsOptional()
   @IsString()

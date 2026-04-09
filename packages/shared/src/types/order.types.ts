@@ -19,11 +19,15 @@ export interface CreateOrderPaymentRequest {
 export interface CreateOrderRequest {
   branchId?: string;
   type: OrderType;
-  payments: CreateOrderPaymentRequest[];
+  payments?: CreateOrderPaymentRequest[];
   notes?: string;
   items: CreateOrderItemRequest[];
   customerId?: string;
   createCustomer?: CreateCustomerRequest;
+}
+
+export interface RegisterOrderPaymentsRequest {
+  payments: CreateOrderPaymentRequest[];
 }
 
 export interface OrderItemDto {
@@ -41,8 +45,9 @@ export interface OrderDto {
   branchId: string;
   type: OrderType;
   status: OrderStatus;
-  paymentMethod: PaymentMethod;  // dominant method (backward compat)
-  payments: OrderPaymentDto[];   // full breakdown
+  paymentMethod: PaymentMethod | null;  // dominant method (null when payment deferred)
+  payments: OrderPaymentDto[];          // full breakdown (empty when payment deferred)
+  isPaid: boolean;                      // true when at least one payment registered
   items: OrderItemDto[];
   subtotal: number;
   total: number;

@@ -1,4 +1,4 @@
-import { OrderStatus, TopProductDto } from '@pos/shared';
+import { OrderStatus, PaymentMethod, TopProductDto } from '@pos/shared';
 import { Order } from '../entities/order.entity';
 
 export interface OrderFilters {
@@ -33,6 +33,12 @@ export interface OrderRepositoryPort {
   findById(id: string, tenantId: string): Promise<Order | null>;
   findAll(tenantId: string, filters?: OrderFilters): Promise<Order[]>;
   getNextOrderNumber(tenantId: string, branchId: string, date: Date, resetPeriod?: string): Promise<number>;
+  registerPayments(
+    orderId: string,
+    tenantId: string,
+    payments: { id: string; method: PaymentMethod; amount: number }[],
+    dominantMethod: PaymentMethod,
+  ): Promise<Order>;
   getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult>;
   getReportByRange(tenantId: string, branchId: string | null, from: string, to: string): Promise<DailyReportResult>;
   getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string): Promise<TopProductDto[]>;

@@ -7,7 +7,7 @@ const ORDER_TYPE_LABEL: Record<OrderType, string> = {
   [OrderType.DELIVERY]: 'DELIVERY',
 };
 
-const PAYMENT_LABEL: Record<PaymentMethod, string> = {
+const PAYMENT_LABEL: Partial<Record<PaymentMethod, string>> = {
   [PaymentMethod.CASH]: 'Efectivo',
   [PaymentMethod.QR]: 'QR',
   [PaymentMethod.TRANSFER]: 'Transferencia',
@@ -133,7 +133,11 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
     <div class="divider"></div>
     <div class="total-row"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
     <div class="row" style="color:#555;margin-top:4px">
-      <span>Pago:</span><span>${PAYMENT_LABEL[order.paymentMethod]}</span>
+      <span>Pago:</span><span>${
+        order.payments.length > 0
+          ? order.payments.map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`).join(' + ')
+          : '—'
+      }</span>
     </div>
     <div class="divider"></div>
     <div class="footer">${footer}</div>

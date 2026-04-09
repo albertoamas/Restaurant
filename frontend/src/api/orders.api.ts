@@ -1,5 +1,5 @@
 import client from './client';
-import type { OrderDto, CreateOrderRequest, OrderStatus } from '@pos/shared';
+import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest } from '@pos/shared';
 
 interface OrdersParams {
   date?: string;
@@ -22,4 +22,7 @@ export const ordersApi = {
 
   updateStatus: (id: string, status: OrderStatus) =>
     client.patch<OrderDto>(`/api/v1/orders/${id}/status`, { status }).then((r) => r.data),
+
+  registerPayments: (id: string, payments: CreateOrderPaymentRequest[]) =>
+    client.post<OrderDto>(`/api/v1/orders/${id}/payments`, { payments }).then((r) => r.data),
 };

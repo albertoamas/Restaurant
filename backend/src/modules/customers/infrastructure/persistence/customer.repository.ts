@@ -66,9 +66,9 @@ export class CustomerRepository implements CustomerRepositoryPort {
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
         c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
-        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
-        COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
-        MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED') AS "lastOrderAt"
+        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount",
+        COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)), 0) AS "totalSpent",
+        MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "lastOrderAt"
       FROM customers c
       LEFT JOIN orders o ON o.customer_id = c.id
       WHERE c.tenant_id = $1
@@ -88,9 +88,9 @@ export class CustomerRepository implements CustomerRepositoryPort {
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
         c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
-        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount",
-        COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED'), 0) AS "totalSpent",
-        MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED') AS "lastOrderAt"
+        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount",
+        COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)), 0) AS "totalSpent",
+        MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "lastOrderAt"
       FROM customers c
       LEFT JOIN orders o ON o.customer_id = c.id
       WHERE c.id = ${id} AND c.tenant_id = ${tenantId}
@@ -103,7 +103,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT
         c.id, c.name, c.phone,
-        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED') AS "purchaseCount"
+        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount"
       FROM customers c
       LEFT JOIN orders o ON o.customer_id = c.id
       WHERE c.tenant_id = ${tenantId}

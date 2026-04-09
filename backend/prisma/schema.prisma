@@ -122,7 +122,7 @@ model Order {
   orderNumber   Int      @map("order_number")
   type          String
   status        String
-  paymentMethod String   @map("payment_method")
+  paymentMethod String?  @map("payment_method")
   subtotal      Decimal  @db.Decimal(10, 2)
   total         Decimal  @db.Decimal(10, 2)
   notes         String?

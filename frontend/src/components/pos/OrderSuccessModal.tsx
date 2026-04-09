@@ -92,17 +92,19 @@ export function OrderSuccessModal({ isOpen, onClose, order }: Props) {
         </p>
 
         <div className="flex gap-3">
-          <Button variant="secondary" fullWidth onClick={onClose}>
+          <Button variant="secondary" fullWidth={!order.isPaid} onClick={onClose}>
             Nuevo pedido
           </Button>
-          <Button
-            variant="ghost"
-            fullWidth
-            onClick={handlePrintReceipt}
-            className="border border-gray-200"
-          >
-            Imprimir recibo
-          </Button>
+          {order.isPaid && (
+            <Button
+              variant="ghost"
+              fullWidth
+              onClick={handlePrintReceipt}
+              className="border border-gray-200"
+            >
+              Imprimir recibo
+            </Button>
+          )}
         </div>
       </div>
     </Modal>

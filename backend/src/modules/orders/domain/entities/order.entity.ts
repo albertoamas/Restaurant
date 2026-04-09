@@ -10,7 +10,7 @@ export interface OrderProps {
   orderNumber: number;
   type: OrderType;
   status: OrderStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod | null;
   payments: OrderPayment[];
   items: OrderItem[];
   subtotal: number;
@@ -28,7 +28,7 @@ type CreateOrderProps = {
   branchId: string;
   orderNumber: number;
   type: OrderType;
-  paymentMethod: PaymentMethod;  // dominant method
+  paymentMethod: PaymentMethod | null;  // null when payment is deferred
   payments: OrderPayment[];
   items: OrderItem[];
   notes?: string | null;
@@ -50,8 +50,9 @@ export class Order {
   readonly orderNumber: number;
   readonly type: OrderType;
   status: OrderStatus;
-  readonly paymentMethod: PaymentMethod;
+  readonly paymentMethod: PaymentMethod | null;
   readonly payments: OrderPayment[];
+  readonly isPaid: boolean;
   readonly items: OrderItem[];
   readonly subtotal: number;
   readonly total: number;
@@ -70,6 +71,7 @@ export class Order {
     this.status        = props.status;
     this.paymentMethod = props.paymentMethod;
     this.payments      = props.payments;
+    this.isPaid        = props.payments.length > 0;
     this.items         = props.items;
     this.subtotal      = props.subtotal;
     this.total         = props.total;

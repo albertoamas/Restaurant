@@ -112,7 +112,7 @@ export function TicketModal({ isOpen, onClose, order, businessName }: Props) {
         </div>
         <div className="row mt-1 text-gray-600">
           <span>Pago:</span>
-          <span>{paymentLabel[order.paymentMethod]}</span>
+          <span>{order.paymentMethod ? paymentLabel[order.paymentMethod] : '—'}</span>
         </div>
         <div className="divider" />
 

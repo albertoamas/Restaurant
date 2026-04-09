@@ -10,6 +10,7 @@ import { CreateOrderUseCase } from './application/use-cases/create-order.use-cas
 import { ListOrdersUseCase } from './application/use-cases/list-orders.use-case';
 import { GetOrderUseCase } from './application/use-cases/get-order.use-case';
 import { UpdateOrderStatusUseCase } from './application/use-cases/update-order-status.use-case';
+import { RegisterOrderPaymentUseCase } from './application/use-cases/register-order-payment.use-case';
 
 @Module({
   imports: [CatalogModule, EventsModule, CustomersModule, CashSessionModule, TenantModule],
@@ -23,6 +24,7 @@ import { UpdateOrderStatusUseCase } from './application/use-cases/update-order-s
     ListOrdersUseCase,
     GetOrderUseCase,
     UpdateOrderStatusUseCase,
+    RegisterOrderPaymentUseCase,
   ],
   exports: ['OrderRepositoryPort'],
 })

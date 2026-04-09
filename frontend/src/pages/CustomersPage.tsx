@@ -72,7 +72,7 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
               <span className="text-xs font-semibold text-gray-700">#{o.orderNumber}</span>
               <span className="text-xs text-gray-400">{ORDER_TYPE_LABEL[o.type]}</span>
               <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400">{PAYMENT_LABEL[o.paymentMethod]}</span>
+              <span className="text-xs text-gray-400">{o.paymentMethod ? PAYMENT_LABEL[o.paymentMethod] : '—'}</span>
             </div>
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_STYLE[o.status]}`}>
               {STATUS_LABEL[o.status]}

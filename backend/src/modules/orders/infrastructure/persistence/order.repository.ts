@@ -46,7 +46,7 @@ function toDomain(row: OrderWithRelations): Order {
     orderNumber:   row.orderNumber,
     type:          row.type as OrderType,
     status:        row.status as OrderStatus,
-    paymentMethod: row.paymentMethod as PaymentMethod,
+    paymentMethod: (row.paymentMethod as PaymentMethod) ?? null,
     payments,
     items,
     subtotal:   Number(row.subtotal),
@@ -107,6 +107,34 @@ export class OrderRepository implements OrderRepositoryPort {
         updatedAt: order.updatedAt,
       },
       include: INCLUDE_ALL,
+    });
+    return toDomain(row);
+  }
+
+  async registerPayments(
+    orderId: string,
+    tenantId: string,
+    payments: { id: string; method: PaymentMethod; amount: number }[],
+    dominantMethod: PaymentMethod,
+  ): Promise<Order> {
+    const row = await this.prisma.$transaction(async (tx) => {
+      await tx.orderPayment.createMany({
+        data: payments.map((p) => ({
+          id:       p.id,
+          orderId,
+          tenantId,
+          method:   p.method,
+          amount:   p.amount,
+        })),
+      });
+      await tx.order.update({
+        where: { id: orderId },
+        data:  { paymentMethod: dominantMethod, updatedAt: new Date() },
+      });
+      return tx.order.findFirstOrThrow({
+        where:   { id: orderId },
+        include: INCLUDE_ALL,
+      });
     });
     return toDomain(row);
   }
@@ -180,6 +208,7 @@ export class OrderRepository implements OrderRepositoryPort {
           ${branchFilter}
           AND DATE(o.created_at) = ${date}::date
           AND o.status != ${OrderStatus.CANCELLED}
+          AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
       ),
       order_stats AS (
         SELECT
@@ -226,6 +255,7 @@ export class OrderRepository implements OrderRepositoryPort {
           ${branchFilter}
           AND o.created_at BETWEEN ${fromTs} AND ${toTs}
           AND o.status != ${OrderStatus.CANCELLED}
+          AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
       ),
       order_stats AS (
         SELECT

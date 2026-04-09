@@ -85,7 +85,7 @@ export class CreateOrderUseCase {
 
     // 4. Require an open cash session if any payment uses CASH — only when the branch
     //    has previously used cash management (at least one session exists).
-    const hasCashPayment = dto.payments.some((p) => p.method === PaymentMethod.CASH);
+    const hasCashPayment = (dto.payments ?? []).some((p) => p.method === PaymentMethod.CASH);
     if (hasCashPayment) {
       const anySessions = await this.cashSessionRepository.findByBranch(tenantId, branchId, 1);
       if (anySessions.length > 0) {
@@ -118,19 +118,24 @@ export class CreateOrderUseCase {
     });
 
     // 8. Validate that payments sum matches the order total (tolerance ±0.01 for rounding)
+    //    Skip validation when no payments provided (deferred payment flow)
     const subtotal = Math.round(items.reduce((sum, i) => sum + i.subtotal, 0) * 100) / 100;
-    const paymentsSum = Math.round(dto.payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-    if (Math.abs(paymentsSum - subtotal) > 0.01) {
-      throw new BadRequestException(
-        `La suma de pagos (${paymentsSum}) no coincide con el total del pedido (${subtotal})`,
-      );
+    if (dto.payments && dto.payments.length > 0) {
+      const paymentsSum = Math.round(dto.payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+      if (Math.abs(paymentsSum - subtotal) > 0.01) {
+        throw new BadRequestException(
+          `La suma de pagos (${paymentsSum}) no coincide con el total del pedido (${subtotal})`,
+        );
+      }
     }
 
-    // 9. Determine dominant payment method (highest amount; first wins on tie)
-    const dominant = dto.payments.reduce((a, b) => (b.amount > a.amount ? b : a));
+    // 9. Determine dominant payment method (null when no payments — deferred)
+    const dominant = dto.payments?.length
+      ? dto.payments.reduce((a, b) => (b.amount > a.amount ? b : a))
+      : null;
 
-    // 10. Build OrderPayment entities
-    const payments: OrderPayment[] = dto.payments.map(
+    // 10. Build OrderPayment entities (empty array when deferred)
+    const payments: OrderPayment[] = (dto.payments ?? []).map(
       (p) =>
         new OrderPayment({
           id:       uuidv4(),
@@ -148,7 +153,7 @@ export class CreateOrderUseCase {
       branchId,
       orderNumber,
       type:          dto.type,
-      paymentMethod: dominant.method,
+      paymentMethod: dominant?.method ?? null,
       payments,
       items,
       notes:      dto.notes ?? null,

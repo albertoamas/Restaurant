@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { PaymentMethod } from '@pos/shared';
-import type { CreateCustomerRequest } from '@pos/shared';
+import type { OrderDto } from '@pos/shared';
 import { Modal } from '../ui/Modal';
-import { CustomerPicker } from './CustomerPicker';
-
-export type CustomerPayload = { customerId?: string; createCustomer?: CreateCustomerRequest } | null;
-export type PaymentEntry = { method: PaymentMethod; amount: number };
+import { ordersApi } from '../../api/orders.api';
+import toast from 'react-hot-toast';
+import { handleApiError } from '../../utils/api-error';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  total: number;
-  onConfirm: (payments: PaymentEntry[], customer: CustomerPayload) => Promise<void>;
-  onDeferPayment?: (customer: CustomerPayload) => Promise<void>;
+  order: OrderDto;
+  onPaid: () => void;
 }
+
+type PaymentEntry = { method: PaymentMethod; amount: number };
 
 const methods = [
   {
@@ -56,20 +56,19 @@ const methods = [
 
 const methodMap = Object.fromEntries(methods.map((m) => [m.value, m]));
 
-export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment }: Props) {
+export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
   const [loading, setLoading] = useState(false);
-  const [customerValue, setCustomerValue] = useState<CustomerPayload>(null);
   const [splitMode, setSplitMode] = useState(false);
   const [splitPayments, setSplitPayments] = useState<PaymentEntry[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [amountInput, setAmountInput] = useState('');
 
+  const total = order.total;
   const assigned = Math.round(splitPayments.reduce((s, p) => s + p.amount, 0) * 100) / 100;
   const remaining = Math.round((total - assigned) * 100) / 100;
   const splitComplete = Math.abs(remaining) <= 0.01;
 
   const resetState = () => {
-    setCustomerValue(null);
     setSplitMode(false);
     setSplitPayments([]);
     setSelectedMethod(null);
@@ -78,14 +77,22 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
 
   const handleClose = () => { resetState(); onClose(); };
 
-  const handleSingleMethod = async (method: PaymentMethod) => {
+  const submitPayments = async (payments: PaymentEntry[]) => {
     setLoading(true);
     try {
-      await onConfirm([{ method, amount: total }], customerValue);
+      await ordersApi.registerPayments(order.id, payments.map((p) => ({ method: p.method, amount: p.amount })));
+      toast.success('Cobro registrado');
       resetState();
+      onPaid();
+    } catch (err) {
+      handleApiError(err, 'Error al registrar cobro');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSingleMethod = (method: PaymentMethod) => {
+    submitPayments([{ method, amount: total }]);
   };
 
   const handleAddSplit = () => {
@@ -102,26 +109,17 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
     setSplitPayments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleConfirmSplit = async () => {
+  const handleConfirmSplit = () => {
     if (!splitComplete) return;
-    setLoading(true);
-    try {
-      await onConfirm(splitPayments, customerValue);
-      resetState();
-    } finally {
-      setLoading(false);
-    }
+    submitPayments(splitPayments);
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Método de Pago">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro">
       <div className="text-center mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Total a cobrar</p>
         <p className="font-heading font-black text-4xl text-gray-900">Bs {total.toFixed(2)}</p>
-      </div>
-
-      <div className="mb-4">
-        <CustomerPicker onCustomerChange={setCustomerValue} />
+        <p className="text-xs text-gray-400 mt-1">Pedido #{order.orderNumber}</p>
       </div>
 
       {!splitMode ? (
@@ -144,30 +142,17 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
             ))}
           </div>
 
-          <div className="mt-3 flex flex-col items-center gap-1">
+          <div className="mt-3 flex justify-center">
             <button
               onClick={() => { setSplitMode(true); setAmountInput(remaining.toFixed(2)); }}
               className="text-xs font-medium text-gray-400 hover:text-primary-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-primary-50"
             >
               + Dividir pago
             </button>
-            {onDeferPayment && (
-              <button
-                onClick={async () => {
-                  setLoading(true);
-                  try { await onDeferPayment(customerValue); resetState(); } finally { setLoading(false); }
-                }}
-                disabled={loading}
-                className="text-xs font-medium text-gray-400 hover:text-amber-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-amber-50 disabled:opacity-50"
-              >
-                Cobrar después
-              </button>
-            )}
           </div>
         </>
       ) : (
         <div className="space-y-3">
-          {/* Remaining indicator */}
           <div className="flex justify-between items-center text-sm px-1">
             <span className="text-gray-500">Asignado: <span className="font-semibold text-gray-700">Bs {assigned.toFixed(2)}</span></span>
             <span className={remaining > 0.01 ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold'}>
@@ -175,7 +160,6 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
             </span>
           </div>
 
-          {/* Already-added payments */}
           {splitPayments.length > 0 && (
             <div className="space-y-1.5">
               {splitPayments.map((p, i) => {
@@ -201,12 +185,9 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
             </div>
           )}
 
-          {/* Add next payment — only if not complete yet */}
           {!splitComplete && (
             <div className="border border-gray-200 rounded-2xl p-3 space-y-2.5 bg-gray-50/60">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Agregar pago</p>
-
-              {/* Method selector */}
               <div className="flex gap-2">
                 {methods.map((m) => (
                   <button
@@ -221,8 +202,6 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                   </button>
                 ))}
               </div>
-
-              {/* Amount input + add button */}
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">Bs</span>
@@ -251,7 +230,6 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
             </div>
           )}
 
-          {/* Confirm / back buttons */}
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => { setSplitMode(false); setSplitPayments([]); setSelectedMethod(null); setAmountInput(''); }}

@@ -201,6 +201,26 @@ export function PosPage() {
         onClose={() => setShowPayment(false)}
         total={getTotal()}
         onConfirm={handleConfirmPayment}
+        onDeferPayment={async (customer) => {
+          try {
+            const order = await ordersApi.create({
+              branchId: currentBranchId ?? undefined,
+              type: orderType,
+              payments: [],
+              notes: notes.trim() || undefined,
+              items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+              ...(customer?.customerId ? { customerId: customer.customerId } : {}),
+              ...(customer?.createCustomer ? { createCustomer: customer.createCustomer } : {}),
+            });
+            clear();
+            setShowPayment(false);
+            setShowCart(false);
+            setLastOrder(order);
+            if (autoPrintKitchen) printKitchenTicket(order);
+          } catch (err) {
+            handleApiError(err, 'Error al crear pedido');
+          }
+        }}
       />
 
       {lastOrder && (

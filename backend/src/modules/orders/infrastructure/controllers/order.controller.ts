@@ -20,10 +20,12 @@ import {
 } from '../../../../common/decorators/tenant.decorator';
 import { CreateOrderDto } from '../../application/dto/create-order.dto';
 import { UpdateOrderStatusDto } from '../../application/dto/update-order-status.dto';
+import { RegisterOrderPaymentDto } from '../../application/dto/register-order-payment.dto';
 import { CreateOrderUseCase } from '../../application/use-cases/create-order.use-case';
 import { GetOrderUseCase } from '../../application/use-cases/get-order.use-case';
 import { ListOrdersUseCase } from '../../application/use-cases/list-orders.use-case';
 import { UpdateOrderStatusUseCase } from '../../application/use-cases/update-order-status.use-case';
+import { RegisterOrderPaymentUseCase } from '../../application/use-cases/register-order-payment.use-case';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -33,6 +35,7 @@ export class OrderController {
     private readonly listOrdersUseCase: ListOrdersUseCase,
     private readonly getOrderUseCase: GetOrderUseCase,
     private readonly updateOrderStatusUseCase: UpdateOrderStatusUseCase,
+    private readonly registerOrderPaymentUseCase: RegisterOrderPaymentUseCase,
   ) {}
 
   @Post()
@@ -79,6 +82,16 @@ export class OrderController {
       }
       return order;
     });
+  }
+
+  @Post(':id/payments')
+  registerPayments(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RegisterOrderPaymentDto,
+  ) {
+    return this.registerOrderPaymentUseCase.execute(tenantId, id, dto);
   }
 
   @Patch(':id/status')

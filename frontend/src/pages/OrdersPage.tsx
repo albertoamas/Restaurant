@@ -9,6 +9,7 @@ import { today, elapsed } from '../utils/date';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
+import { PayOrderModal } from '../components/orders/PayOrderModal';
 
 function useElapsed(createdAt: string) {
   const [, tick] = useState(0);
@@ -86,7 +87,7 @@ function ElapsedChip({ createdAt }: { createdAt: string }) {
   );
 }
 
-function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange: (id: string, s: OrderStatus) => void }) {
+function OrderCard({ order, onStatusChange, onPayOrder }: { order: OrderDto; onStatusChange: (id: string, s: OrderStatus) => void; onPayOrder: (order: OrderDto) => void }) {
   const action = actionConfig[order.status];
   const currentStep = stepIndex(order.status);
   const isCancelled = order.status === OrderStatus.CANCELLED;
@@ -224,33 +225,49 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
           <span className="font-heading font-black text-xl text-gray-900">
             Bs {order.total.toFixed(2)}
           </span>
-          <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
-            {order.payments && order.payments.length > 1
-              ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
-              : (paymentLabel[order.paymentMethod] ?? order.paymentMethod)}
-          </span>
+          {order.isPaid ? (
+            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+              {order.payments.length > 1
+                ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
+                : (paymentLabel[order.payments[0]?.method] ?? '—')}
+            </span>
+          ) : (
+            <span className="text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+              Pendiente de cobro
+            </span>
+          )}
         </div>
 
-        {action && (
-          <div className="flex gap-2 w-full sm:flex-1">
-            {/* Cancel */}
+        <div className="flex gap-2 w-full sm:flex-1">
+          {!order.isPaid && !isCancelled && (
             <button
-              onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
-              className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-gray-200
-                rounded-xl hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+              onClick={() => onPayOrder(order)}
+              className="px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white transition-all active:scale-[0.97]"
             >
-              Cancelar
+              Cobrar
             </button>
-            {/* Primary action */}
-            <button
-              onClick={() => onStatusChange(order.id, action.nextStatus)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all
-                active:scale-[0.97] ${action.color}`}
-            >
-              {action.label}
-            </button>
-          </div>
-        )}
+          )}
+          {action && (
+            <>
+              {/* Cancel */}
+              <button
+                onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
+                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-gray-200
+                  rounded-xl hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+              >
+                Cancelar
+              </button>
+              {/* Primary action */}
+              <button
+                onClick={() => onStatusChange(order.id, action.nextStatus)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all
+                  active:scale-[0.97] ${action.color}`}
+              >
+                {action.label}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -259,6 +276,7 @@ function OrderCard({ order, onStatusChange }: { order: OrderDto; onStatusChange:
 export function OrdersPage() {
   const [date, setDate] = useState(today());
   const [statusFilter, setStatusFilter] = useState('');
+  const [payingOrder, setPayingOrder] = useState<OrderDto | null>(null);
   const { orders, setOrders, loading, fetchOrders } = useOrders(date, statusFilter);
 
   useSocketEvent<OrderDto>('order.created', (order) => {
@@ -341,9 +359,18 @@ export function OrdersPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} />
+            <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} onPayOrder={setPayingOrder} />
           ))}
         </div>
+      )}
+
+      {payingOrder && (
+        <PayOrderModal
+          isOpen
+          order={payingOrder}
+          onClose={() => setPayingOrder(null)}
+          onPaid={() => { setPayingOrder(null); fetchOrders(); }}
+        />
       )}
     </div>
   );
