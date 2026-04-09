@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
 import { useSettingsStore } from '../store/settings.store';
-import type { UserRole } from '@pos/shared';
+import type { UserRole, SaasPlan, PlanLimits } from '@pos/shared';
 
 interface TenantModules {
   ordersEnabled: boolean;
@@ -22,6 +22,8 @@ interface AuthUser {
   tenantName: string;
   branchId: string | null;
   modules?: TenantModules;
+  plan?: SaasPlan;
+  planLimits?: PlanLimits;
 }
 
 interface AuthContextType {
@@ -54,6 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setKitchenEnabled,
     setOrderNumberResetPeriod,
     setTenantLogo,
+    setPlan,
+    setPlanLimits,
   } = useSettingsStore();
 
   /** Apply server-controlled module flags to the settings store */
@@ -79,7 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     applyModules(u.modules);
     setTenantLogo((u as AuthUser & { tenantLogo?: string | null }).tenantLogo ?? null);
-  }, [applyModules, setTenantLogo]);
+    if (u.plan)       setPlan(u.plan);
+    if (u.planLimits) setPlanLimits(u.planLimits);
+  }, [applyModules, setTenantLogo, setPlan, setPlanLimits]);
 
   useEffect(() => {
     const stored = localStorage.getItem('pos_token');

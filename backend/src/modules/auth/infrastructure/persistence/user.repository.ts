@@ -40,6 +40,10 @@ export class UserRepository implements UserRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
+  async countCashiersByTenant(tenantId: string): Promise<number> {
+    return this.prisma.user.count({ where: { tenantId, role: 'CASHIER' } });
+  }
+
   async findAllByTenant(tenantId: string): Promise<User[]> {
     const rows = await this.prisma.user.findMany({
       where: { tenantId },

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
+import { PlanLimitService } from '../../../plans/application/plan-limit.service';
 import { LoginDto } from '../dto/login.dto';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class LoginUseCase {
     private readonly userRepository: UserRepositoryPort,
     @Inject('TenantRepositoryPort')
     private readonly tenantRepository: TenantRepositoryPort,
+    private readonly planLimitService: PlanLimitService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -33,6 +35,8 @@ export class LoginUseCase {
       throw new ForbiddenException('Tu cuenta está inactiva. Contacta al administrador para activarla.');
     }
 
+    const plan = await this.planLimitService.getPlan(tenant.plan);
+
     const payload = {
       sub: user.id,
       tenantId: user.tenantId,
@@ -53,6 +57,8 @@ export class LoginUseCase {
         email:      user.email,
         name:       user.name,
         role:       user.role,
+        plan:       tenant.plan,
+        planLimits: plan.limits,
         modules: {
           ordersEnabled:          tenant.ordersEnabled,
           cashEnabled:            tenant.cashEnabled,

@@ -32,6 +32,12 @@ export enum OrderNumberResetPeriod {
   MONTHLY = 'MONTHLY',
 }
 
+export enum SaasPlan {
+  BASICO  = 'BASICO',
+  PRO     = 'PRO',
+  NEGOCIO = 'NEGOCIO',
+}
+
 export enum ExpenseCategory {
   SUPPLIES    = 'SUPPLIES',     // Insumos / Ingredientes
   WAGES       = 'WAGES',        // Personal / Sueldos

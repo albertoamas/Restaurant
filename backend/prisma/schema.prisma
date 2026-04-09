@@ -8,6 +8,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Plan ─────────────────────────────────────────────────────
+
+model Plan {
+  id             String   @id              // 'BASICO' | 'PRO' | 'NEGOCIO'
+  displayName    String   @map("display_name")
+  priceBs        Decimal  @map("price_bs") @db.Decimal(10, 2)
+  maxBranches    Int      @map("max_branches")   // -1 = unlimited
+  maxCashiers    Int      @map("max_cashiers")
+  maxProducts    Int      @map("max_products")
+  kitchenEnabled Boolean  @default(false)  @map("kitchen_enabled")
+  createdAt      DateTime @default(now())  @map("created_at")
+  updatedAt      DateTime @updatedAt       @map("updated_at")
+
+  tenants Tenant[]
+
+  @@map("plans")
+}
+
 // ─── Tenant ───────────────────────────────────────────────────
 
 model Tenant {
@@ -16,6 +34,10 @@ model Tenant {
   slug      String   @unique
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
+
+  // Plan — assigned by admin, references plans table
+  plan   String  @default("BASICO")
+  planRel Plan   @relation(fields: [plan], references: [id])
 
   // Module flags — controlled exclusively by the SaaS admin
   ordersEnabled   Boolean @default(true)  @map("orders_enabled")

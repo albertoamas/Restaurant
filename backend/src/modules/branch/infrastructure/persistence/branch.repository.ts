@@ -27,6 +27,10 @@ export class BranchRepository implements BranchRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    return this.prisma.branch.count({ where: { tenantId } });
+  }
+
   async findAllByTenant(tenantId: string): Promise<Branch[]> {
     const rows = await this.prisma.branch.findMany({
       where: { tenantId },

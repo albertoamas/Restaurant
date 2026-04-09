@@ -4,6 +4,8 @@ import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/p
 import { Product } from '../../domain/entities/product.entity';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { EventsService } from '../../../events/events.service';
+import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
+import { PlanLimitService } from '../../../plans/application/plan-limit.service';
 
 @Injectable()
 export class CreateProductUseCase {
@@ -12,14 +14,22 @@ export class CreateProductUseCase {
     private readonly productRepository: ProductRepositoryPort,
     @Inject(CATEGORY_REPOSITORY_PORT)
     private readonly categoryRepository: CategoryRepositoryPort,
+    @Inject('TenantRepositoryPort')
+    private readonly tenantRepository: TenantRepositoryPort,
+    private readonly planLimitService: PlanLimitService,
     @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(tenantId: string, dto: CreateProductDto): Promise<Product> {
-    const category = await this.categoryRepository.findById(dto.categoryId, tenantId);
-    if (!category) {
-      throw new NotFoundException(`Category ${dto.categoryId} not found`);
+    const tenant = await this.tenantRepository.findById(tenantId);
+    if (tenant) {
+      const plan = await this.planLimitService.getPlan(tenant.plan);
+      const count = await this.productRepository.countByTenant(tenantId);
+      this.planLimitService.assertWithinLimit('productos', plan, count);
     }
+
+    const category = await this.categoryRepository.findById(dto.categoryId, tenantId);
+    if (!category) throw new NotFoundException(`Category ${dto.categoryId} not found`);
 
     const product = Product.create({
       tenantId,

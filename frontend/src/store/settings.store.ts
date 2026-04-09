@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { OrderNumberResetPeriod } from '@pos/shared';
+import type { OrderNumberResetPeriod, SaasPlan, PlanLimits } from '@pos/shared';
 
 interface SettingsState {
   // Impresión
@@ -40,6 +40,12 @@ interface SettingsState {
   // Logo del negocio (server-controlled — set by auth context on login/getMe)
   tenantLogo: string | null;
   setTenantLogo: (value: string | null) => void;
+
+  // Plan SaaS (server-controlled — set by auth context on login/getMe)
+  plan: SaasPlan;
+  setPlan: (value: SaasPlan) => void;
+  planLimits: PlanLimits;
+  setPlanLimits: (value: PlanLimits) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -76,6 +82,11 @@ export const useSettingsStore = create<SettingsState>()(
 
       tenantLogo: null,
       setTenantLogo: (value) => set({ tenantLogo: value }),
+
+      plan: 'BASICO' as SaasPlan,
+      setPlan: (value) => set({ plan: value }),
+      planLimits: { maxBranches: 1, maxCashiers: 2, maxProducts: 80, kitchenEnabled: false } as PlanLimits,
+      setPlanLimits: (value) => set({ planLimits: value }),
     }),
     {
       name: 'pos-settings',

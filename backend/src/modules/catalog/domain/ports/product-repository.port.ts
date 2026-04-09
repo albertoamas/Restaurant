@@ -11,5 +11,6 @@ export interface ProductRepositoryPort {
   findAllByTenant(tenantId: string, categoryId?: string, includeInactive?: boolean, page?: number, limit?: number): Promise<ProductPage>;
   findById(id: string, tenantId: string): Promise<Product | null>;
   findByIds(ids: string[], tenantId: string): Promise<Product[]>;
+  countByTenant(tenantId: string): Promise<number>;
   save(product: Product): Promise<Product>;
 }

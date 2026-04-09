@@ -3,7 +3,7 @@ import { Tenant, TenantModules, TenantSettings } from '../../domain/entities/ten
 import { TenantRepositoryPort, TenantWithOwner } from '../../domain/ports/tenant-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Tenant as PrismaTenant } from '@prisma/client';
-import { OrderNumberResetPeriod } from '@pos/shared';
+import { OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
 
 function toDomain(row: PrismaTenant): Tenant {
   return new Tenant(
@@ -12,6 +12,7 @@ function toDomain(row: PrismaTenant): Tenant {
     row.slug,
     row.isActive,
     row.createdAt,
+    (row.plan as SaasPlan) ?? SaasPlan.BASICO,
     row.ordersEnabled,
     row.cashEnabled,
     row.teamEnabled,
@@ -43,6 +44,7 @@ export class TenantRepository implements TenantRepositoryPort {
       slug:                    tenant.slug,
       isActive:                tenant.isActive,
       createdAt:               tenant.createdAt,
+      plan:                    tenant.plan,
       ordersEnabled:           tenant.ordersEnabled,
       cashEnabled:             tenant.cashEnabled,
       teamEnabled:             tenant.teamEnabled,
@@ -68,17 +70,26 @@ export class TenantRepository implements TenantRepositoryPort {
           select: { name: true, email: true },
           take:   1,
         },
+        _count: {
+          select: {
+            branches: true,
+            users:    { where: { role: 'CASHIER' } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     return rows.map((r) => ({
-      id:        r.id,
-      name:      r.name,
-      slug:      r.slug,
-      isActive:  r.isActive,
-      createdAt: r.createdAt,
-      owner:     r.users[0] ?? null,
+      id:           r.id,
+      name:         r.name,
+      slug:         r.slug,
+      isActive:     r.isActive,
+      createdAt:    r.createdAt,
+      plan:         (r.plan as SaasPlan) ?? SaasPlan.BASICO,
+      owner:        r.users[0] ?? null,
+      branchCount:  r._count.branches,
+      cashierCount: r._count.users,
       modules: {
         ordersEnabled:   r.ordersEnabled,
         cashEnabled:     r.cashEnabled,
@@ -90,6 +101,13 @@ export class TenantRepository implements TenantRepositoryPort {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
       },
     }));
+  }
+
+  async updatePlan(id: string, plan: SaasPlan): Promise<Tenant> {
+    const current = await this.prisma.tenant.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException(`Tenant ${id} not found`);
+    const row = await this.prisma.tenant.update({ where: { id }, data: { plan } });
+    return toDomain(row);
   }
 
   async toggleActive(id: string): Promise<Tenant> {

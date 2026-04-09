@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrderNumberResetPeriod } from '@pos/shared';
+import { OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
 
 export interface TenantModules {
   ordersEnabled: boolean;
@@ -21,6 +21,7 @@ export class Tenant {
     public readonly slug: string,
     public readonly isActive: boolean,
     public readonly createdAt: Date,
+    public readonly plan: SaasPlan,
     public readonly ordersEnabled: boolean,
     public readonly cashEnabled: boolean,
     public readonly teamEnabled: boolean,
@@ -34,6 +35,7 @@ export class Tenant {
     // New tenants start inactive — admin must activate after payment
     return new Tenant(
       uuidv4(), name, slug, false, new Date(),
+      SaasPlan.BASICO,
       true, true, true, true, false,
       OrderNumberResetPeriod.DAILY,
       null,
@@ -43,6 +45,17 @@ export class Tenant {
   withActive(isActive: boolean): Tenant {
     return new Tenant(
       this.id, this.name, this.slug, isActive, this.createdAt,
+      this.plan,
+      this.ordersEnabled, this.cashEnabled, this.teamEnabled,
+      this.branchesEnabled, this.kitchenEnabled,
+      this.orderNumberResetPeriod, this.logoUrl,
+    );
+  }
+
+  withPlan(plan: SaasPlan): Tenant {
+    return new Tenant(
+      this.id, this.name, this.slug, this.isActive, this.createdAt,
+      plan,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       this.orderNumberResetPeriod, this.logoUrl,
@@ -52,6 +65,7 @@ export class Tenant {
   withModules(modules: Partial<TenantModules>): Tenant {
     return new Tenant(
       this.id, this.name, this.slug, this.isActive, this.createdAt,
+      this.plan,
       modules.ordersEnabled   ?? this.ordersEnabled,
       modules.cashEnabled     ?? this.cashEnabled,
       modules.teamEnabled     ?? this.teamEnabled,
@@ -64,6 +78,7 @@ export class Tenant {
   withSettings(settings: Partial<TenantSettings>): Tenant {
     return new Tenant(
       this.id, this.name, this.slug, this.isActive, this.createdAt,
+      this.plan,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TenantModule } from '../tenant/tenant.module';
+import { PlansModule } from '../plans/plans.module';
 import { GetProfileUseCase } from './application/use-cases/get-profile.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
@@ -29,6 +30,7 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
       }),
     }),
     TenantModule,
+    PlansModule,
   ],
   controllers: [AuthController],
   providers: [

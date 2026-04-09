@@ -55,6 +55,10 @@ export class ProductRepository implements ProductRepositoryPort {
     return rows.map(toDomain);
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    return this.prisma.product.count({ where: { tenantId } });
+  }
+
   async save(product: Product): Promise<Product> {
     const data = {
       id: product.id,
