@@ -41,7 +41,8 @@ export function AppLayout() {
         if (Array.isArray(data)) {
           const active = data.filter((b) => b.isActive);
           setBranches(active);
-          if (active.length === 1 && !currentBranchId) {
+          const currentIsValid = active.some((b) => b.id === currentBranchId);
+          if (active.length === 1 && !currentIsValid) {
             setCurrentBranch(active[0].id);
           }
         }

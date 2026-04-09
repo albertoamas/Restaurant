@@ -170,7 +170,7 @@ Unknown routes redirect to `/`. No public self-registration.
 
 ### Auth & branch selection
 
-`useAuth()` exposes `{ user, token, currentBranchId, login, logout }`. When an OWNER logs in, `currentBranchId` is `null` until they select a branch from the Sidebar. If there is only one branch, it is auto-selected. `currentBranchId` is stored in `sessionStorage` (not persisted across tabs) via `auth.context.tsx`.
+`useAuth()` exposes `{ user, token, currentBranchId, login, logout }`. When an OWNER logs in, `currentBranchId` is `null` until they select a branch from the Sidebar. If there is only one branch, it is auto-selected. `currentBranchId` is stored in `localStorage` (`pos_branch` key) via `auth.context.tsx`, so it persists across tabs and sessions. It is cleared on logout.
 
 ### Socket context
 
