@@ -111,8 +111,11 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
   const phoneLine = settings.businessPhone
     ? `<div class="center" style="color:#555;font-size:11px">Tel: ${settings.businessPhone}</div>` : '';
   const footer = settings.receiptFooter ?? '¡Gracias por su compra!';
-  const logoBlock = settings.logoUrl
-    ? `<div style="text-align:center;margin-bottom:4px"><img src="${settings.logoUrl}" alt="logo" style="max-width:100px;max-height:60px;object-fit:contain;display:inline-block" /></div>`
+  const logoSrc = settings.logoUrl
+    ? (settings.logoUrl.startsWith('http') ? settings.logoUrl : `${window.location.origin}${settings.logoUrl}`)
+    : null;
+  const logoBlock = logoSrc
+    ? `<div style="text-align:center;margin-bottom:4px"><img src="${logoSrc}" alt="logo" style="max-width:100px;max-height:60px;object-fit:contain;display:inline-block" /></div>`
     : '';
 
   const html = `
