@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { EventsModule } from '../events/events.module';
+import { CashSessionModule } from '../cash-session/cash-session.module';
 import { EXPENSE_REPOSITORY_PORT } from './domain/ports/expense-repository.port';
 import { ExpenseRepository } from './infrastructure/persistence/expense.repository';
 import { ExpenseController } from './infrastructure/controllers/expense.controller';
@@ -10,7 +11,9 @@ import { DeleteExpenseUseCase } from './application/use-cases/delete-expense.use
 import { GetExpenseSummaryUseCase } from './application/use-cases/get-expense-summary.use-case';
 
 @Module({
-  imports: [PrismaModule, EventsModule],
+  // CashSessionModule se importa para que CreateExpenseUseCase pueda inyectar
+  // CashSessionRepositoryPort y adjuntar el gasto a la sesión de caja activa.
+  imports: [PrismaModule, EventsModule, CashSessionModule],
   controllers: [ExpenseController],
   providers: [
     { provide: EXPENSE_REPOSITORY_PORT, useClass: ExpenseRepository },

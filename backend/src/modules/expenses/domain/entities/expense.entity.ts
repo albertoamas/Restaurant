@@ -10,6 +10,8 @@ interface ExpenseProps {
   description: string | null;
   createdBy: string;
   createdAt: Date;
+  // Sesión de caja activa al momento de crear el gasto. Null si no había sesión abierta.
+  cashSessionId: string | null;
 }
 
 export class Expense {
@@ -21,6 +23,7 @@ export class Expense {
   readonly description: string | null;
   readonly createdBy: string;
   readonly createdAt: Date;
+  readonly cashSessionId: string | null;
 
   private constructor(props: ExpenseProps) {
     this.id = props.id;
@@ -31,6 +34,7 @@ export class Expense {
     this.description = props.description ?? null;
     this.createdBy = props.createdBy;
     this.createdAt = props.createdAt;
+    this.cashSessionId = props.cashSessionId ?? null;
   }
 
   static create(props: Omit<ExpenseProps, 'id' | 'createdAt'>): Expense {

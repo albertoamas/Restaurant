@@ -15,6 +15,7 @@ function toDomain(row: PrismaExpense): Expense {
     description: row.description ?? null,
     createdBy: row.createdBy,
     createdAt: row.createdAt,
+    cashSessionId: row.cashSessionId ?? null,
   });
 }
 
@@ -25,14 +26,15 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
   async save(expense: Expense): Promise<Expense> {
     const row = await this.prisma.expense.create({
       data: {
-        id: expense.id,
-        tenantId: expense.tenantId,
-        branchId: expense.branchId,
-        category: expense.category,
-        amount: expense.amount,
-        description: expense.description,
-        createdBy: expense.createdBy,
-        createdAt: expense.createdAt,
+        id:            expense.id,
+        tenantId:      expense.tenantId,
+        branchId:      expense.branchId,
+        category:      expense.category,
+        amount:        expense.amount,
+        description:   expense.description,
+        createdBy:     expense.createdBy,
+        createdAt:     expense.createdAt,
+        cashSessionId: expense.cashSessionId ?? null,
       },
     });
     return toDomain(row);

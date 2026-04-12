@@ -175,28 +175,27 @@ export class OrderRepository implements OrderRepositoryPort {
   }
 
   async getNextOrderNumber(tenantId: string, branchId: string, boliviaDateStr: string, resetPeriod = 'DAILY'): Promise<number> {
-    let result: [{ next_number: bigint }];
+    // Normalizar el periodo según el modo de reset:
+    //   DAILY   → 'YYYY-MM-DD'  (boliviaDateStr ya viene en este formato)
+    //   MONTHLY → 'YYYY-MM'     (truncar los últimos 3 caracteres)
+    const period =
+      resetPeriod === 'MONTHLY'
+        ? boliviaDateStr.slice(0, 7)  // 'YYYY-MM'
+        : boliviaDateStr;             // 'YYYY-MM-DD'
 
-    if (resetPeriod === 'MONTHLY') {
-      // DATE_TRUNC en hora Bolivia para que el mes cambie a medianoche local, no UTC
-      result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
-        SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
-        FROM orders
-        WHERE tenant_id = ${tenantId}
-          AND branch_id = ${branchId}
-          AND DATE_TRUNC('month', created_at AT TIME ZONE 'America/La_Paz')
-            = DATE_TRUNC('month', ${boliviaDateStr}::date)`;
-    } else {
-      // DATE en hora Bolivia: los timestamps UTC se interpretan en zona local
-      result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
-        SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
-        FROM orders
-        WHERE tenant_id = ${tenantId}
-          AND branch_id = ${branchId}
-          AND DATE(created_at AT TIME ZONE 'America/La_Paz') = ${boliviaDateStr}::date`;
-    }
+    // INSERT atómico: si el periodo no existe → last_number = 1 (primer pedido del día/mes)
+    //                  si ya existe           → incrementa last_number en 1
+    // El RETURNING devuelve el valor DESPUÉS del update, en un único round-trip.
+    // Esto es seguro bajo concurrencia total: PostgreSQL serializa el UPDATE dentro
+    // del ON CONFLICT, imposibilitando que dos requests lean el mismo valor.
+    const result = await this.prisma.$queryRaw<[{ last_number: number }]>`
+      INSERT INTO branch_order_sequences (tenant_id, branch_id, period, last_number)
+      VALUES (${tenantId}, ${branchId}, ${period}, 1)
+      ON CONFLICT (tenant_id, branch_id, period)
+      DO UPDATE SET last_number = branch_order_sequences.last_number + 1
+      RETURNING last_number`;
 
-    return Number(result[0]?.next_number ?? 1);
+    return result[0].last_number;
   }
 
   async getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult> {

@@ -52,15 +52,16 @@ model Tenant {
   // Branding — configurable by the tenant owner
   logoUrl                String? @map("logo_url")
 
-  users         User[]
-  branches      Branch[]
-  categories    Category[]
-  products      Product[]
-  orders        Order[]
-  cashSessions  CashSession[]
-  expenses      Expense[]
-  customers     Customer[]
-  orderPayments OrderPayment[]
+  users                User[]
+  branches             Branch[]
+  categories           Category[]
+  products             Product[]
+  orders               Order[]
+  cashSessions         CashSession[]
+  expenses             Expense[]
+  customers            Customer[]
+  orderPayments        OrderPayment[]
+  branchOrderSequences BranchOrderSequence[]
 
   @@map("tenants")
 }
@@ -215,27 +216,51 @@ model CashSession {
   closedAt       DateTime? @map("closed_at")
   notes          String?
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  expenses Expense[]
 
   @@index([tenantId, branchId])
   @@map("cash_sessions")
 }
 
-// ─── Expense ──────────────────────────────────────────────────
+// ─── BranchOrderSequence ──────────────────────────────────────
+// Secuencias atómicas de número de orden por branch y periodo.
+// Sustituye el MAX(order_number)+1 que tenía race condition.
+// period = 'YYYY-MM-DD' (DAILY) o 'YYYY-MM' (MONTHLY).
 
-model Expense {
-  id          String   @id @default(uuid())
-  tenantId    String   @map("tenant_id")
-  branchId    String   @map("branch_id")
-  category    String
-  amount      Decimal  @db.Decimal(10, 2)
-  description String?
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+model BranchOrderSequence {
+  tenantId   String @map("tenant_id")
+  branchId   String @map("branch_id")
+  period     String
+  lastNumber Int    @map("last_number")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@id([tenantId, branchId, period])
+  @@map("branch_order_sequences")
+}
+
+// ─── Expense ──────────────────────────────────────────────────
+
+model Expense {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  branchId      String   @map("branch_id")
+  category      String
+  amount        Decimal  @db.Decimal(10, 2)
+  description   String?
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Vínculo formal con la sesión de caja activa al momento de crear el gasto.
+  // Nullable: si no hay sesión abierta el gasto se registra igual (cash_session_id = NULL).
+  cashSessionId String?     @map("cash_session_id")
+
+  tenant      Tenant       @relation(fields: [tenantId],      references: [id], onDelete: Cascade)
+  cashSession CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+
   @@index([tenantId, branchId, createdAt])
+  @@index([cashSessionId], map: "expenses_cash_session_id_idx")
   @@map("expenses")
 }
 
