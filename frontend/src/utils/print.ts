@@ -5,7 +5,7 @@ import { OrderType, PaymentMethod } from '@pos/shared';
  * Escapa los caracteres especiales HTML para prevenir XSS al insertar
  * strings de usuario dentro de plantillas HTML (ventana de impresión).
  */
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
