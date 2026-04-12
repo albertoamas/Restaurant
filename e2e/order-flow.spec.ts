@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const OWNER_EMAIL    = 'admin@hamburgos.com';
+const OWNER_EMAIL    = 'jimmy75122919@gmail.com';
 const OWNER_PASSWORD = 'demo123';
 
 // Login helper
