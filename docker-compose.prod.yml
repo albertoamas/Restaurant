@@ -20,6 +20,18 @@ services:
       retries: 10
       start_period: 30s
     networks: [pos-network]
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.50'
+        reservations:
+          memory: 128m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ── NestJS Backend ──────────────────────────────────────────────────────────
   backend:
@@ -47,6 +59,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.00'
+        reservations:
+          memory: 128m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   # ── nginx + React Frontend ──────────────────────────────────────────────────
   frontend:
@@ -59,6 +83,24 @@ services:
       backend:
         condition: service_healthy
     networks: [pos-network]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: '0.25'
+        reservations:
+          memory: 32m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
 
 volumes:
   postgres_data:

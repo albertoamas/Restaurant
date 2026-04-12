@@ -1,21 +1,62 @@
+# ── Dependencies (never needed in image — installed fresh) ──────────────────
 node_modules
 **/node_modules
+
+# ── Build outputs (rebuilt inside Docker) ───────────────────────────────────
 dist
 **/dist
+frontend/dist
+backend/dist
+packages/shared/dist
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# ── Secrets and local environment ───────────────────────────────────────────
 .env
 **/.env
 .env.*
 !**/.env.example
+
+# ── Git ──────────────────────────────────────────────────────────────────────
 .git
 .gitignore
+.gitattributes
 .github
-*.log
-.DS_Store
-Thumbs.db
-coverage
-frontend/dist
-backend/dist
+
+# ── Docker compose files (not needed inside images) ─────────────────────────
 docker-compose.yml
 docker-compose.prod.yml
-*.tsbuildinfo
-**/*.tsbuildinfo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs
+**/logs
+
+# ── OS artifacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+**/.DS_Store
+
+# ── IDE / Editor ─────────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+
+# ── Test and coverage ─────────────────────────────────────────────────────────
+coverage
+**/coverage
+*.spec.ts
+*.test.ts
+**/__tests__
+**/__mocks__
+
+# ── Scripts (only needed on VPS, not inside images) ──────────────────────────
+scripts
+
+# ── CI ────────────────────────────────────────────────────────────────────────
+.github
+
+# ── Docs ─────────────────────────────────────────────────────────────────────
+*.md
+!packages/shared/README.md
