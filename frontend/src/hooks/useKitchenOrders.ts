@@ -27,22 +27,27 @@ export function useKitchenOrders(branchId: string | null) {
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  // Real-time via WebSocket
-  useSocketEvent<OrderDto>('order.created', (order) => {
+  // Handlers estables con useCallback para que useSocketEvent no re-registre
+  // el listener en cada render (evita el frame sin listener durante off+on).
+  const handleOrderCreated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
     if (order.status === OrderStatus.PENDING) {
       setOrders((prev) => [...prev, order]);
     }
-  });
+  }, [branchId]);
 
-  useSocketEvent<OrderDto>('order.updated', (order) => {
+  const handleOrderUpdated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
     if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
       setOrders((prev) => prev.filter((o) => o.id !== order.id));
     } else {
       setOrders((prev) => prev.map((o) => o.id === order.id ? order : o));
     }
-  });
+  }, [branchId]);
+
+  // Real-time via WebSocket
+  useSocketEvent<OrderDto>('order.created', handleOrderCreated);
+  useSocketEvent<OrderDto>('order.updated', handleOrderUpdated);
 
   const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {

@@ -1,6 +1,19 @@
 import type { OrderDto } from '@pos/shared';
 import { OrderType, PaymentMethod } from '@pos/shared';
 
+/**
+ * Escapa los caracteres especiales HTML para prevenir XSS al insertar
+ * strings de usuario dentro de plantillas HTML (ventana de impresión).
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const ORDER_TYPE_LABEL: Record<OrderType, string> = {
   [OrderType.DINE_IN]: 'LOCAL',
   [OrderType.TAKEOUT]: 'PARA LLEVAR',
@@ -57,7 +70,7 @@ export function printKitchenTicket(order: OrderDto) {
       <div style="margin-bottom:6px">
         <div class="row">
           <span class="qty">${i.quantity}x</span>
-          <span class="item-name" style="flex:1;margin-left:8px">${i.productName}</span>
+          <span class="item-name" style="flex:1;margin-left:8px">${escapeHtml(i.productName)}</span>
         </div>
       </div>`)
     .join('');
@@ -66,7 +79,7 @@ export function printKitchenTicket(order: OrderDto) {
     ? `<div class="divider"></div>
        <div style="border:2px solid #000;padding:4px;margin:4px 0">
          <div style="font-weight:bold;font-size:12px">NOTAS:</div>
-         <div style="font-size:14px;margin-top:2px">${order.notes}</div>
+         <div style="font-size:14px;margin-top:2px">${escapeHtml(order.notes)}</div>
        </div>`
     : '';
 
@@ -98,7 +111,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
   const items = order.items
     .map(i => `
       <div style="margin-bottom:4px">
-        <div>${i.productName}</div>
+        <div>${escapeHtml(i.productName)}</div>
         <div class="row" style="color:#555">
           <span>${i.quantity} x Bs ${Number(i.unitPrice).toFixed(2)}</span>
           <span>Bs ${Number(i.subtotal).toFixed(2)}</span>
@@ -107,10 +120,10 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
     .join('');
 
   const addressLine = settings.businessAddress
-    ? `<div class="center" style="color:#555;font-size:11px">${settings.businessAddress}</div>` : '';
+    ? `<div class="center" style="color:#555;font-size:11px">${escapeHtml(settings.businessAddress)}</div>` : '';
   const phoneLine = settings.businessPhone
-    ? `<div class="center" style="color:#555;font-size:11px">Tel: ${settings.businessPhone}</div>` : '';
-  const footer = settings.receiptFooter ?? '¡Gracias por su compra!';
+    ? `<div class="center" style="color:#555;font-size:11px">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
+  const footer = escapeHtml(settings.receiptFooter ?? '¡Gracias por su compra!');
   const logoSrc = settings.logoUrl
     ? (settings.logoUrl.startsWith('http') ? settings.logoUrl : `${window.location.origin}${settings.logoUrl}`)
     : null;
@@ -120,7 +133,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
 
   const html = `
     ${logoBlock}
-    <div class="center" style="font-size:15px;font-weight:bold">${settings.businessName}</div>
+    <div class="center" style="font-size:15px;font-weight:bold">${escapeHtml(settings.businessName)}</div>
     ${addressLine}
     ${phoneLine}
     <div class="center" style="color:#555;font-size:11px">Comprobante de venta</div>

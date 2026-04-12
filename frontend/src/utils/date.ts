@@ -1,6 +1,11 @@
+import { toBoliviaDateString } from './timezone';
+
+/**
+ * Devuelve la fecha de hoy en formato "YYYY-MM-DD" usando la hora de Bolivia (UTC-4),
+ * independiente del timezone configurado en el dispositivo.
+ */
 export function today(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return toBoliviaDateString(new Date());
 }
 
 export function formatDate(iso: string): string {

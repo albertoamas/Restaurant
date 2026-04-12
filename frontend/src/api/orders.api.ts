@@ -1,8 +1,10 @@
 import client from './client';
 import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest } from '@pos/shared';
 
-interface OrdersParams {
+export interface OrdersParams {
   date?: string;
+  from?: string;
+  to?: string;
   status?: OrderStatus;
   branchId?: string;
   customerId?: string;

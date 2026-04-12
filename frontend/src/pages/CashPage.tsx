@@ -216,7 +216,7 @@ export function CashPage() {
             />
             <StatRow
               label="Contado al cierre"
-              value={`Bs ${lastClosed.closingAmount!.toFixed(2)}`}
+              value={`Bs ${(lastClosed.closingAmount ?? 0).toFixed(2)}`}
               bold
               bordered
             />
