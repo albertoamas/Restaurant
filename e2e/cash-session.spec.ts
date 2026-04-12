@@ -5,7 +5,7 @@ const OWNER_PASSWORD = 'demo123';
 
 async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.getByLabel(/email/i).fill(OWNER_EMAIL);
+  await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
   await page.getByLabel(/contraseña/i).fill(OWNER_PASSWORD);
   await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
   await page.waitForURL(/\/pos/, { timeout: 10_000 });

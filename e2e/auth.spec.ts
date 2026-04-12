@@ -7,7 +7,7 @@ const OWNER_PASSWORD = 'demo123';
 test.describe('Autenticación', () => {
   test('login válido redirige a /pos', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel(/email/i).fill(OWNER_EMAIL);
+    await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
     await page.getByLabel(/contraseña/i).fill(OWNER_PASSWORD);
     await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
 
@@ -16,7 +16,7 @@ test.describe('Autenticación', () => {
 
   test('contraseña incorrecta muestra mensaje de error', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel(/email/i).fill(OWNER_EMAIL);
+    await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
     await page.getByLabel(/contraseña/i).fill('wrong-password');
     await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
 
