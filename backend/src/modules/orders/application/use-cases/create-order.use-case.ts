@@ -5,6 +5,7 @@ import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
+import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
@@ -19,6 +20,9 @@ export class CreateOrderUseCase {
   constructor(
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
+
+    @Inject('BranchRepositoryPort')
+    private readonly branchRepository: BranchRepositoryPort,
 
     @Inject('ProductRepositoryPort')
     private readonly productRepository: ProductRepositoryPort,
@@ -36,10 +40,17 @@ export class CreateOrderUseCase {
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CreateOrderDto): Promise<Order> {
-    // 1. Collect requested product ids (deduplicated for the lookup)
+    // 1. Verificar que la sucursal existe y pertenece a este tenant.
+    //    Previene que un OWNER envíe un branchId de otro tenant en el request body.
+    const branch = await this.branchRepository.findById(branchId, tenantId);
+    if (!branch) {
+      throw new BadRequestException(`Sucursal ${branchId} no encontrada`);
+    }
+
+    // 2. Collect requested product ids (deduplicated for the lookup)
     const productIds = [...new Set(dto.items.map((item) => item.productId))];
 
-    // 2. Fetch and validate all products belong to the tenant
+    // 3. Fetch and validate all products belong to the tenant
     const products = await this.productRepository.findByIds(productIds, tenantId);
 
     if (products.length !== productIds.length) {

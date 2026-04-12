@@ -33,6 +33,7 @@ export class CreateOrderPaymentDto {
 
   @IsNumber()
   @Min(0.01)
+  @Max(999999)
   amount: number;
 }
 

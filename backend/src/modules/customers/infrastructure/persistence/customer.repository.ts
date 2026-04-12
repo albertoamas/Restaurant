@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CustomerSearchResult, CustomerStatsDto } from '@pos/shared';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Customer, CustomerProps } from '../../domain/entities/customer.entity';
@@ -50,19 +51,15 @@ export class CustomerRepository implements CustomerRepositoryPort {
 
   async findAll(tenantId: string, q?: string, page = 1, limit = 50): Promise<CustomerStatsDto[]> {
     const offset = (page - 1) * limit;
-    const searchClause = q
-      ? `AND (c.name ILIKE $2 OR c.phone ILIKE $2)`
-      : '';
 
-    const params: unknown[] = q
-      ? [tenantId, `%${q}%`, limit, offset]
-      : [tenantId, limit, offset];
+    // Fragmento de búsqueda condicional usando Prisma.sql — todos los valores son parámetros
+    // enlazados por el driver de PostgreSQL. Nunca se interpola input del usuario en el SQL.
+    const searchFilter = q
+      ? Prisma.sql`AND (c.name ILIKE ${'%' + q + '%'} OR c.phone ILIKE ${'%' + q + '%'})`
+      : Prisma.empty;
 
-    const limitIdx = q ? 3 : 2;
-    const offsetIdx = q ? 4 : 3;
-
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT
+    const rows = await this.prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
         c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
@@ -71,13 +68,12 @@ export class CustomerRepository implements CustomerRepositoryPort {
         MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "lastOrderAt"
       FROM customers c
       LEFT JOIN orders o ON o.customer_id = c.id
-      WHERE c.tenant_id = $1
-      ${searchClause}
+      WHERE c.tenant_id = ${tenantId}
+      ${searchFilter}
       GROUP BY c.id
       ORDER BY c.name ASC
-      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
-      ...params,
-    );
+      LIMIT ${limit} OFFSET ${offset}
+    `);
 
     return rows.map(this.toStatsDto);
   }

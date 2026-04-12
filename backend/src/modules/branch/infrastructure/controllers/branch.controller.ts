@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -13,7 +12,7 @@ import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
-import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
+import { CurrentTenant } from '../../../../common/decorators/tenant.decorator';
 import { CreateBranchDto } from '../../application/dto/create-branch.dto';
 import { UpdateBranchDto } from '../../application/dto/update-branch.dto';
 import { CreateBranchUseCase } from '../../application/use-cases/create-branch.use-case';
@@ -44,17 +43,12 @@ export class BranchController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.OWNER, UserRole.CASHIER)
+  @Roles(UserRole.OWNER)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentTenant() tenantId: string,
-    @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateBranchDto,
   ) {
-    // Cashier can only edit their own branch
-    if (user.role === UserRole.CASHIER && user.branchId !== id) {
-      throw new ForbiddenException('Solo puedes editar tu propia sucursal');
-    }
     return this.updateBranchUseCase.execute(id, tenantId, dto);
   }
 
