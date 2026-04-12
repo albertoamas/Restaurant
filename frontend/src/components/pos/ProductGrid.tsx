@@ -17,6 +17,7 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
 
   return (
     <button
+      data-testid="product-card"
       onClick={handleClick}
       className={[
         'relative flex flex-col overflow-hidden rounded-xl border bg-white text-left',

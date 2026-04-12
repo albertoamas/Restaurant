@@ -15,6 +15,7 @@
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "types": ["jest", "node"],
     "rootDir": "./src",
     "paths": {
       "@pos/shared": ["../packages/shared/dist"]

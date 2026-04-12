@@ -3,13 +3,21 @@ import { test, expect } from '@playwright/test';
 const OWNER_EMAIL    = 'jimmy75122919@gmail.com';
 const OWNER_PASSWORD = 'demo123';
 
-// Login helper
+// Login helper — also selects first branch for OWNER accounts with multiple branches
 async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
   await page.getByLabel(/contraseña/i).fill(OWNER_PASSWORD);
   await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
   await page.waitForURL(/\/pos/, { timeout: 10_000 });
+
+  // If the sidebar shows "Seleccionar sucursal", pick the first branch
+  const noBranchBtn = page.getByRole('button', { name: /seleccionar sucursal/i });
+  if (await noBranchBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await noBranchBtn.click();
+    await page.locator('[class*="slide-down"] button').first().click();
+    await page.waitForTimeout(300);
+  }
 }
 
 test.describe('Flujo de pedido', () => {
@@ -18,20 +26,17 @@ test.describe('Flujo de pedido', () => {
   });
 
   test('añadir un producto al carrito muestra el total', async ({ page }) => {
-    // Click the first available product card
-    const firstProduct = page.locator('[data-testid="product-card"], .product-card').first();
+    const firstProduct = page.locator('[data-testid="product-card"]').first();
     await firstProduct.waitFor({ timeout: 10_000 });
     await firstProduct.click();
 
-    // Cart should show at least 1 item and a non-zero total
-    await expect(page.getByText(/Bs/)).toBeVisible();
-    await expect(page.locator('[data-testid="cart-total"], .cart-total, [class*="total"]').first())
-      .toBeVisible();
+    // OrderPanel button changes to "Cobrar · Bs X.XX" when cart has items
+    await expect(page.getByRole('button', { name: /cobrar.*Bs/i })).toBeVisible({ timeout: 5_000 });
   });
 
   test('confirmar pedido con pago QR aparece en /orders', async ({ page }) => {
     // Add a product
-    const firstProduct = page.locator('[data-testid="product-card"], .product-card').first();
+    const firstProduct = page.locator('[data-testid="product-card"]').first();
     await firstProduct.waitFor({ timeout: 10_000 });
     await firstProduct.click();
 

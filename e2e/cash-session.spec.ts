@@ -9,6 +9,14 @@ async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.getByLabel(/contraseña/i).fill(OWNER_PASSWORD);
   await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
   await page.waitForURL(/\/pos/, { timeout: 10_000 });
+
+  // If the sidebar shows "Seleccionar sucursal", pick the first branch
+  const noBranchBtn = page.getByRole('button', { name: /seleccionar sucursal/i });
+  if (await noBranchBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await noBranchBtn.click();
+    await page.locator('[class*="slide-down"] button').first().click();
+    await page.waitForTimeout(300);
+  }
 }
 
 test.describe('Sesión de caja', () => {
@@ -18,60 +26,78 @@ test.describe('Sesión de caja', () => {
   });
 
   test('abrir caja con monto inicial muestra opción de cierre', async ({ page }) => {
-    // If there's already an open session, the close button should be visible
-    const closeBtn = page.getByRole('button', { name: /cerrar caja|close/i });
-    const openBtn  = page.getByRole('button', { name: /abrir caja|open/i });
+    const closeBtn = page.getByRole('button', { name: /cerrar caja/i });
+    const openBtn  = page.getByRole('button', { name: /abrir caja/i });
 
-    const isAlreadyOpen = await closeBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    // Wait for the page to finish loading the session — either button will appear
+    await Promise.any([
+      closeBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+      openBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+    ]);
+
+    const isAlreadyOpen = await closeBtn.isVisible();
 
     if (!isAlreadyOpen) {
-      // Open the cash session
       await openBtn.click();
-      const amountInput = page.getByPlaceholder(/monto|amount/i).first();
-      if (await amountInput.isVisible()) {
+      // Actual label in CashAmountModal: "Monto inicial en efectivo"; confirmLabel: "Abrir caja"
+      const amountInput = page.getByLabel(/monto inicial en efectivo/i);
+      if (await amountInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
         await amountInput.fill('500');
       }
-      await page.getByRole('button', { name: /abrir|confirmar/i }).last().click();
+      await page.getByRole('button', { name: /^abrir caja$/i }).last().click();
     }
 
-    await expect(page.getByRole('button', { name: /cerrar caja/i })).toBeVisible({ timeout: 5_000 });
+    await expect(closeBtn).toBeVisible({ timeout: 5_000 });
   });
 
   test('cerrar caja muestra la diferencia calculada', async ({ page }) => {
-    // Ensure a session is open first
     const closeBtn = page.getByRole('button', { name: /cerrar caja/i });
-    const isOpen   = await closeBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    const openBtn  = page.getByRole('button', { name: /abrir caja/i });
 
+    // Wait for session state to load
+    await Promise.any([
+      closeBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+      openBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+    ]);
+
+    const isOpen = await closeBtn.isVisible();
     if (!isOpen) {
       test.skip(true, 'No hay sesión de caja abierta para cerrar');
     }
 
     await closeBtn.click();
 
-    // Enter closing amount
-    const closingInput = page.getByPlaceholder(/monto|cierre|closing/i).first();
-    if (await closingInput.isVisible()) {
+    // Actual label in CashAmountModal: "Efectivo contado al cierre"
+    const closingInput = page.getByLabel(/efectivo contado al cierre/i);
+    if (await closingInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await closingInput.fill('500');
     }
 
-    await page.getByRole('button', { name: /cerrar|confirmar/i }).last().click();
+    // Confirm button text: "Cerrar caja" (inside the modal, .last() picks it over any others)
+    await page.getByRole('button', { name: /^cerrar caja$/i }).last().click();
 
-    // Should show difference (diferencia)
-    await expect(page.getByText(/diferencia|Bs/i)).toBeVisible({ timeout: 5_000 });
+    // "Diferencia" label appears in the last-closed summary StatRow
+    await expect(page.getByText('Diferencia')).toBeVisible({ timeout: 5_000 });
   });
 
   test('intentar crear pedido CASH con caja cerrada muestra un error', async ({ page }) => {
-    // Ensure no open cash session
     const closeBtn = page.getByRole('button', { name: /cerrar caja/i });
-    const isOpen   = await closeBtn.isVisible({ timeout: 2_000 }).catch(() => false);
+    const openBtn  = page.getByRole('button', { name: /abrir caja/i });
 
+    // Wait for session state to load
+    await Promise.any([
+      closeBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+      openBtn.waitFor({ state: 'visible', timeout: 10_000 }),
+    ]);
+
+    const isOpen = await closeBtn.isVisible();
     if (isOpen) {
       test.skip(true, 'Hay sesión abierta — este test requiere caja cerrada');
     }
 
     // Go to POS and try to add item + pay with cash
     await page.goto('/pos');
-    const firstProduct = page.locator('[data-testid="product-card"], .product-card').first();
+    const firstProduct = page.locator('[data-testid="product-card"]').first();
     await firstProduct.waitFor({ timeout: 10_000 });
     await firstProduct.click();
 
@@ -90,7 +116,7 @@ test.describe('Sesión de caja', () => {
       await finalizeBtn.click();
     }
 
-    // Should show error about cash session
-    await expect(page.getByText(/caja|sesión|efectivo/i)).toBeVisible({ timeout: 5_000 });
+    // PosPage shows: "No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo."
+    await expect(page.getByText(/no hay caja abierta/i)).toBeVisible({ timeout: 5_000 });
   });
 });

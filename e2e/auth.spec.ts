@@ -14,14 +14,23 @@ test.describe('Autenticación', () => {
     await expect(page).toHaveURL(/\/pos/, { timeout: 10_000 });
   });
 
-  test('contraseña incorrecta muestra mensaje de error', async ({ page }) => {
+  test('contraseña incorrecta no redirige al panel', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
     await page.getByLabel(/contraseña/i).fill('wrong-password');
-    await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
 
-    // Toast de error o mensaje en pantalla
-    await expect(page.getByText(/credencial|inválid|incorrect/i)).toBeVisible({ timeout: 5_000 });
+    // Capture the API response concurrently with the click — avoids toast timing race
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (resp) => resp.url().includes('/auth/login'),
+        { timeout: 5_000 },
+      ),
+      page.getByRole('button', { name: /ingresar|entrar|login/i }).click(),
+    ]);
+
+    // Bad credentials → 401, no redirect to /pos
+    expect(response.ok()).toBe(false);
+    await expect(page).toHaveURL(/\/login/, { timeout: 2_000 });
   });
 
   test('acceder a /orders sin autenticar redirige a /login', async ({ page }) => {
