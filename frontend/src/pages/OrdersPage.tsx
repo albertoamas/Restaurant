@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
 import { PayOrderModal } from '../components/orders/PayOrderModal';
+import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 
 function useElapsed(createdAt: string) {
   const [, tick] = useState(0);
@@ -118,7 +119,7 @@ function OrderCard({ order, onStatusChange, onPayOrder }: { order: OrderDto; onS
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(order.createdAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
@@ -277,6 +278,7 @@ export function OrdersPage() {
   const [date, setDate] = useState(today());
   const [statusFilter, setStatusFilter] = useState('');
   const [payingOrder, setPayingOrder] = useState<OrderDto | null>(null);
+  const [paidOrder, setPaidOrder] = useState<OrderDto | null>(null);
   const { orders, setOrders, loading, fetchOrders } = useOrders(date, statusFilter);
 
   useSocketEvent<OrderDto>('order.created', (order) => {
@@ -369,7 +371,16 @@ export function OrdersPage() {
           isOpen
           order={payingOrder}
           onClose={() => setPayingOrder(null)}
-          onPaid={() => { setPayingOrder(null); fetchOrders(); }}
+          onPaid={(order) => { setPayingOrder(null); setPaidOrder(order); fetchOrders(); }}
+        />
+      )}
+
+      {paidOrder && (
+        <OrderSuccessModal
+          isOpen
+          order={paidOrder}
+          title="¡Cobro registrado!"
+          onClose={() => setPaidOrder(null)}
         />
       )}
     </div>

@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: pos_user
       POSTGRES_PASSWORD: pos_password
       POSTGRES_DB: pos_db
+      TZ: America/La_Paz
     ports:
       - '5433:5432'
     volumes:

@@ -22,6 +22,7 @@ import { ListExpensesUseCase } from '../../application/use-cases/list-expenses.u
 import { DeleteExpenseUseCase } from '../../application/use-cases/delete-expense.use-case';
 import { GetExpenseSummaryUseCase } from '../../application/use-cases/get-expense-summary.use-case';
 import { CreateExpenseDto } from '../../application/dto/create-expense.dto';
+import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
@@ -61,13 +62,14 @@ export class ExpenseController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    const nowUtc = new Date().toISOString();
+    // Default: inicio y fin del día de hoy en hora Bolivia
+    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.listExpenses.execute(
       tenantId,
       effectiveBranchId,
-      new Date(from || nowUtc),
-      new Date(to || nowUtc),
+      new Date(from || defaultStart),
+      new Date(to   || defaultEnd),
       category,
     );
   }
@@ -82,13 +84,14 @@ export class ExpenseController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    const nowUtc = new Date().toISOString();
+    // Default: inicio y fin del día de hoy en hora Bolivia
+    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.getExpenseSummary.execute(
       tenantId,
       effectiveBranchId,
-      new Date(from || nowUtc),
-      new Date(to || nowUtc),
+      new Date(from || defaultStart),
+      new Date(to   || defaultEnd),
     );
   }
 

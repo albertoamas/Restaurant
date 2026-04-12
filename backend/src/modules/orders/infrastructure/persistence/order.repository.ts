@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus, OrderType, PaymentMethod, TopProductDto } from '@pos/shared';
+import { BOLIVIA_OFFSET } from '../../../../common/utils/timezone.util';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
@@ -158,8 +159,9 @@ export class OrderRepository implements OrderRepositoryPort {
     if (filters.from && filters.to) {
       where.createdAt = { gte: new Date(filters.from), lte: new Date(filters.to) };
     } else if (date) {
-      const start = new Date(`${date}T00:00:00.000Z`);
-      const end   = new Date(`${date}T23:59:59.999Z`);
+      // Límites en hora Bolivia: medianoche local → UTC+4h
+      const start = new Date(`${date}T00:00:00${BOLIVIA_OFFSET}`);
+      const end   = new Date(`${date}T23:59:59.999${BOLIVIA_OFFSET}`);
       where.createdAt = { gte: start, lte: end };
     }
 
@@ -172,24 +174,26 @@ export class OrderRepository implements OrderRepositoryPort {
     return rows.map(toDomain);
   }
 
-  async getNextOrderNumber(tenantId: string, branchId: string, date: Date, resetPeriod = 'DAILY'): Promise<number> {
+  async getNextOrderNumber(tenantId: string, branchId: string, boliviaDateStr: string, resetPeriod = 'DAILY'): Promise<number> {
     let result: [{ next_number: bigint }];
 
     if (resetPeriod === 'MONTHLY') {
+      // DATE_TRUNC en hora Bolivia para que el mes cambie a medianoche local, no UTC
       result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
         SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
         FROM orders
         WHERE tenant_id = ${tenantId}
           AND branch_id = ${branchId}
-          AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', ${date}::timestamptz)`;
+          AND DATE_TRUNC('month', created_at AT TIME ZONE 'America/La_Paz')
+            = DATE_TRUNC('month', ${boliviaDateStr}::date)`;
     } else {
-      const dateString = date.toISOString().split('T')[0];
+      // DATE en hora Bolivia: los timestamps UTC se interpretan en zona local
       result = await this.prisma.$queryRaw<[{ next_number: bigint }]>`
         SELECT COALESCE(MAX(order_number), 0) + 1 AS next_number
         FROM orders
         WHERE tenant_id = ${tenantId}
           AND branch_id = ${branchId}
-          AND DATE(created_at) = ${dateString}::date`;
+          AND DATE(created_at AT TIME ZONE 'America/La_Paz') = ${boliviaDateStr}::date`;
     }
 
     return Number(result[0]?.next_number ?? 1);
@@ -206,7 +210,7 @@ export class OrderRepository implements OrderRepositoryPort {
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
-          AND DATE(o.created_at) = ${date}::date
+          AND DATE(o.created_at AT TIME ZONE 'America/La_Paz') = ${date}::date
           AND o.status != ${OrderStatus.CANCELLED}
           AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
       ),

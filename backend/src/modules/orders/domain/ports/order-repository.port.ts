@@ -32,7 +32,7 @@ export interface OrderRepositoryPort {
   save(order: Order): Promise<Order>;
   findById(id: string, tenantId: string): Promise<Order | null>;
   findAll(tenantId: string, filters?: OrderFilters): Promise<Order[]>;
-  getNextOrderNumber(tenantId: string, branchId: string, date: Date, resetPeriod?: string): Promise<number>;
+  getNextOrderNumber(tenantId: string, branchId: string, boliviaDateStr: string, resetPeriod?: string): Promise<number>;
   registerPayments(
     orderId: string,
     tenantId: string,

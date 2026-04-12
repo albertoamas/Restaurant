@@ -10,6 +10,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   order: OrderDto;
+  title?: string;
 }
 
 const ORDER_TYPE_LABEL: Record<OrderType, string> = {
@@ -27,7 +28,7 @@ const confettiPieces = [
   { color: 'bg-cyan-400',    x: '12px',  delay: '75ms',  size: 'w-1 h-2' },
 ];
 
-export function OrderSuccessModal({ isOpen, onClose, order }: Props) {
+export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Creado!' }: Props) {
   const { user } = useAuth();
   const { businessAddress, businessPhone, receiptFooter, tenantLogo } = useSettingsStore();
 
@@ -75,7 +76,7 @@ export function OrderSuccessModal({ isOpen, onClose, order }: Props) {
         </div>
 
         <p className="font-heading font-black text-2xl text-gray-900 mb-0.5">
-          ¡Pedido Creado!
+          {title}
         </p>
         <p className="font-heading font-bold text-lg text-gray-500 mb-1">
           #{order.orderNumber}

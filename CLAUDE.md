@@ -28,6 +28,8 @@ pnpm dev
 
 **Demo credentials** (after seed): `admin@hamburgos.com / demo123` (OWNER), `cajero@hamburgos.com / demo123` (CASHIER). Business: "HamBurgos", branches: Centro · Norte.
 
+> **WARNING:** Never run `seed` in production. It creates a demo tenant with well-known credentials.
+
 ## Development Commands
 
 ```bash
@@ -47,7 +49,7 @@ pnpm --filter backend seed
 # Type-check (no tests exist — type-check is the main CI gate)
 pnpm --filter @pos/shared build          # MUST run first after editing shared types
 pnpm --filter backend typecheck
-npx tsc --noEmit -p frontend/tsconfig.app.json   # or: cd frontend && npx tsc --noEmit
+pnpm --filter frontend typecheck
 
 # Prisma commands (run from repo root — pnpm filter sets the right cwd)
 pnpm --filter backend prisma:generate        # Regenerate client after schema changes
@@ -119,13 +121,13 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `tenant` | `PATCH /tenants/settings` | Owner-only; `orderNumberResetPeriod` (DAILY/MONTHLY) |
 | `branch` | `GET/POST /branches`, `PATCH /branches/:id` | |
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
-| `orders` | `POST /orders`, `GET /orders`, `PATCH /orders/:id/status` | Split payments; price snapshot |
+| `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
 | `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products` | Raw SQL aggregation |
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
 | `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
-| `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle` | `AdminGuard`; no JWT |
+| `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
 ### Rate Limiting
@@ -178,16 +180,16 @@ Unknown routes redirect to `/`. No public self-registration.
 
 ## Data Model
 
-11 tables, all scoped by `tenant_id`:
+12 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
 
 ```
-Tenant ──┬── User (OWNER / CASHIER, optional branchId)
-         ├── Branch
-         ├── Category ── Product (price, imageUrl)
-         ├── Order ──┬── OrderItem  (productName + unitPrice snapshot)
-         │           └── OrderPayment  (method, amount — N per order)
-         ├── CashSession ── Expense (category, amount, description)
-         └── Customer (name, phone, email, ticketsDelivered)
+Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional branchId)
+                           ├── Branch
+                           ├── Category ── Product (price, imageUrl)
+                           ├── Order ──┬── OrderItem  (productName + unitPrice snapshot)
+                           │           └── OrderPayment  (method, amount — N per order)
+                           ├── CashSession ── Expense (category, amount, description)
+                           └── Customer (name, phone, email, ticketsDelivered)
 ```
 
 Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings in DB.
@@ -196,25 +198,41 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 `Order.paymentMethod` stores the **dominant** method (highest amount) for backward compat and display. The `order_payments` table stores one row per partial payment. Use cases validate that `SUM(payments.amount) == order.total` (±0.01 tolerance). Reports and cash-session totals aggregate from `order_payments`, not from `orders.payment_method`.
 
+### SaaS plans and module flags
+
+`Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Each plan defines capacity limits (`maxBranches`, `maxCashiers`, `maxProducts`, `kitchenEnabled`). Use cases check these limits before creating branches, cashiers, or products.
+
+`Tenant` also has per-tenant module flags set exclusively by the admin (not the tenant owner): `ordersEnabled`, `cashEnabled`, `teamEnabled`, `branchesEnabled`, `kitchenEnabled`. These are read by `GET /auth/me` and applied client-side via `applyModules()` in `auth.context.tsx` every login — they populate `settings.store.ts` but are **not** persisted to localStorage.
+
 ### Tenant settings
 
 `Tenant.orderNumberResetPeriod` (DAILY | MONTHLY) controls when `order_number` resets to 1. The SQL uses `DATE()` for daily and `DATE_TRUNC('month', …)` for monthly.
+
+> **Timezone caveat:** The DAILY reset uses `new Date().toISOString().split('T')[0]` — this is the **UTC date**, not local time. In Bolivia (UTC-4) the counter resets at 20:00 local time, not midnight. A fix requires passing the local date string from the client or using `AT TIME ZONE` in the SQL.
 
 ## Shared Package
 
 `packages/shared/src/` exports enums and DTO types. **The backend imports from the compiled `dist/` folder** (via tsconfig paths). Always run `pnpm --filter @pos/shared build` after editing shared types before typechecking the backend.
 
-Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`.
+Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`.
 
 ## Environment Variables (backend)
 
+Two template files exist:
+- `backend/.env.example` — local dev defaults, copy to `backend/.env`
+- `.env.production.example` — production template with `CHANGE_ME` placeholders, copy to `.env` on the VPS
+
 ```
-DATABASE_URL     postgresql://pos_user:pos_password@localhost:5433/pos_db
-JWT_SECRET
-JWT_EXPIRATION   (default: 7d)
+DATABASE_URL     postgresql://...  (dev: localhost:5433/pos_db with pos_user/pos_password)
+JWT_SECRET       Required. Generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_EXPIRATION   (default: 24h)
 PORT             (default: 3000)
-FRONTEND_URL     (default: http://localhost:5173)
-ADMIN_SECRET     x-admin-key header value. Dev default: dev-admin-secret
+FRONTEND_URL     (default: http://localhost:5173) — used for CORS
+ADMIN_SECRET     x-admin-key header value for /admin/* routes.
+                 If unset, AdminGuard returns 401 — no fallback.
+                 Dev default in backend/.env.example: dev-admin-secret
+                 Production: must be set to a strong secret.
+NODE_ENV         development | production
 ```
 
 ## CI/CD
@@ -231,6 +249,7 @@ Migrations run automatically on backend container start (`prisma migrate deploy`
 
 `docker-compose.prod.yml`: three services — `postgres`, `backend`, `frontend`/nginx.
 
-- Uploads persist via Docker volume `uploads_data`.
+- Uploads persist via Docker volume `uploads_data`. **No automated backup configured** — back up this volume manually or via a cron job.
 - nginx proxies `/api/`, `/uploads/`, `/socket.io/` to backend; stays on HTTP internally.
+- `/uploads/<uuid>.<ext>` files are **publicly accessible** — any URL is guessable if the UUID leaks. Acceptable for product/logo images; do not store sensitive files here.
 - TLS: Cloudflare orange-cloud proxy, SSL/TLS set to "Full".

@@ -14,7 +14,7 @@ const pageTitles: Record<string, string> = {
 };
 
 function formatDate(): string {
-  return new Date().toLocaleDateString('es-ES', {
+  return new Date().toLocaleDateString('es-BO', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -22,7 +22,7 @@ function formatDate(): string {
 }
 
 function formatDateShort(): string {
-  return new Date().toLocaleDateString('es-ES', {
+  return new Date().toLocaleDateString('es-BO', {
     day: 'numeric',
     month: 'short',
   });

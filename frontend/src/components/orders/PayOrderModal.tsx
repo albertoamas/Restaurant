@@ -3,14 +3,13 @@ import { PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { Modal } from '../ui/Modal';
 import { ordersApi } from '../../api/orders.api';
-import toast from 'react-hot-toast';
 import { handleApiError } from '../../utils/api-error';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   order: OrderDto;
-  onPaid: () => void;
+  onPaid: (order: OrderDto) => void;
 }
 
 type PaymentEntry = { method: PaymentMethod; amount: number };
@@ -80,10 +79,9 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
   const submitPayments = async (payments: PaymentEntry[]) => {
     setLoading(true);
     try {
-      await ordersApi.registerPayments(order.id, payments.map((p) => ({ method: p.method, amount: p.amount })));
-      toast.success('Cobro registrado');
+      const updatedOrder = await ordersApi.registerPayments(order.id, payments.map((p) => ({ method: p.method, amount: p.amount })));
       resetState();
-      onPaid();
+      onPaid(updatedOrder);
     } catch (err) {
       handleApiError(err, 'Error al registrar cobro');
     } finally {

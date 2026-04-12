@@ -10,6 +10,7 @@ import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
 import { today } from '../utils/date';
+import { getBoliviaDayBounds } from '../utils/timezone';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
 
@@ -79,8 +80,9 @@ export function ReportPage() {
   const { from, to } = getRange(period, customFrom, customTo);
   const rangeLabel = from === to ? from : `${from} → ${to}`;
 
-  const utcFrom = new Date(from + 'T00:00:00').toISOString();
-  const utcTo   = new Date(to   + 'T23:59:59.999').toISOString();
+  // Límites exactos del día en Bolivia (UTC-4), independiente del timezone del dispositivo
+  const { start: utcFrom } = getBoliviaDayBounds(from);
+  const { end:   utcTo   } = getBoliviaDayBounds(to);
   const branchParam = user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;
 
   // Load categories once

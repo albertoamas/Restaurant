@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import { toBoliviaDateString } from '../../../../common/utils/timezone.util';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
@@ -99,7 +100,7 @@ export class CreateOrderUseCase {
     // 5. Reserve the order number using the tenant's configured reset period
     const tenant = await this.tenantRepository.findById(tenantId);
     const resetPeriod = tenant?.orderNumberResetPeriod ?? 'DAILY';
-    const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, new Date(), resetPeriod);
+    const orderNumber = await this.orderRepository.getNextOrderNumber(tenantId, branchId, toBoliviaDateString(new Date()), resetPeriod);
 
     // 6. Pre-generate the order id so items and payments can reference it
     const orderId = uuidv4();

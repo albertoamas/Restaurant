@@ -31,7 +31,7 @@ function KitchenClock() {
   }, []);
   return (
     <span className="font-heading font-bold text-sm text-gray-500 tabular-nums">
-      {time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      {time.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
     </span>
   );
 }
