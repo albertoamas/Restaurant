@@ -211,8 +211,8 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
         : `${window.location.origin}${settings.logoUrl}`)
     : null;
   const logoBlock = logoSrc
-    ? `<div class="center" style="margin-bottom:3pt">
-         <img src="${logoSrc}" alt="" style="max-width:80pt;max-height:40pt;object-fit:contain"/>
+    ? `<div class="center" style="margin-bottom:4pt">
+         <img src="${logoSrc}" alt="" style="width:40mm;height:auto;display:block;margin:0 auto"/>
        </div>`
     : '';
 
