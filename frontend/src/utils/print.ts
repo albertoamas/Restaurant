@@ -44,18 +44,20 @@ function formatDateTime(iso: string) {
  * - @page con margin:0mm y size:58mm auto para que el driver no añada márgenes.
  */
 const THERMAL_CSS = `
-  *{margin:0;padding:0;box-sizing:border-box}
+  *{margin:0;padding:0;box-sizing:border-box;word-break:break-word;overflow-wrap:break-word}
   body{
     font-family:'Courier New',Courier,monospace;
-    font-size:8pt;
+    font-size:9pt;
+    font-weight:bold;
     color:#000;
     background:#fff;
     width:48mm;
+    margin:0 auto;
   }
   .center{text-align:center}
   .right{text-align:right}
   .bold{font-weight:bold}
-  .divider{border-top:1px dashed #000;margin:3pt 0}
+  .divider{border-top:1px dashed #000;margin:4pt 0}
   .row{display:flex;justify-content:space-between;align-items:baseline}
   @media print{
     @page{
@@ -64,6 +66,7 @@ const THERMAL_CSS = `
     }
     body{
       width:48mm;
+      margin:0 auto;
       -webkit-print-color-adjust:exact;
       print-color-adjust:exact;
     }
@@ -133,29 +136,29 @@ export function printKitchenTicket(order: OrderDto): void {
   const items = order.items
     .map(i => `
       <div style="margin-bottom:5pt;display:flex;align-items:baseline;gap:4pt">
-        <span style="font-size:13pt;font-weight:900;min-width:18pt">${i.quantity}x</span>
-        <span style="font-size:9pt;font-weight:bold;flex:1">${escapeHtml(i.productName)}</span>
+        <span style="font-size:14pt;font-weight:900;min-width:20pt">${i.quantity}x</span>
+        <span style="font-size:10pt;font-weight:900;flex:1">${escapeHtml(i.productName)}</span>
       </div>`)
     .join('');
 
   const notasBlock = order.notes
     ? `<div class="divider"></div>
-       <div style="border:2px solid #000;padding:3pt;margin:3pt 0">
-         <div style="font-weight:bold;font-size:8pt">NOTAS:</div>
+       <div style="border:2px solid #000;padding:4pt;margin:4pt 0">
+         <div style="font-weight:900;font-size:9pt">NOTAS:</div>
          <div style="font-size:9pt;margin-top:2pt">${escapeHtml(order.notes)}</div>
        </div>`
     : '';
 
   const html = `
-    <div class="center" style="font-size:8pt">${formatTime(order.createdAt)}</div>
+    <div class="center" style="font-size:9pt">${formatTime(order.createdAt)}</div>
     <div class="center" style="font-size:36pt;font-weight:900;letter-spacing:1pt;line-height:1.1">#${order.orderNumber}</div>
-    <div class="center" style="font-size:14pt;font-weight:bold;border:2px solid #000;padding:3pt;margin:4pt 0">${ORDER_TYPE_LABEL[order.type]}</div>
+    <div class="center" style="font-size:14pt;font-weight:900;border:2px solid #000;padding:3pt;margin:4pt 0">${ORDER_TYPE_LABEL[order.type]}</div>
     <div class="divider"></div>
-    <div style="font-size:7pt;font-weight:bold;margin-bottom:3pt">PRODUCTOS</div>
+    <div style="font-size:9pt;font-weight:900;margin-bottom:3pt">PRODUCTOS</div>
     ${items}
     ${notasBlock}
     <div class="divider"></div>
-    <div class="center" style="font-size:8pt">--- COMANDA ---</div>
+    <div class="center" style="font-size:9pt">--- COMANDA ---</div>
   `;
 
   printViaIframe(html, 450);
@@ -181,9 +184,9 @@ export interface ReceiptSettings {
 export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   const items = order.items
     .map(i => `
-      <div style="margin-bottom:3pt">
-        <div style="font-size:8pt">${escapeHtml(i.productName)}</div>
-        <div class="row" style="font-size:8pt">
+      <div style="margin-bottom:4pt">
+        <div style="font-size:9pt;font-weight:900">${escapeHtml(i.productName)}</div>
+        <div class="row" style="font-size:9pt">
           <span>${i.quantity} x Bs ${Number(i.unitPrice).toFixed(2)}</span>
           <span>Bs ${Number(i.subtotal).toFixed(2)}</span>
         </div>
@@ -191,9 +194,9 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     .join('');
 
   const addressLine = settings.businessAddress
-    ? `<div class="center" style="font-size:7pt">${escapeHtml(settings.businessAddress)}</div>` : '';
+    ? `<div class="center" style="font-size:8pt">${escapeHtml(settings.businessAddress)}</div>` : '';
   const phoneLine = settings.businessPhone
-    ? `<div class="center" style="font-size:7pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
+    ? `<div class="center" style="font-size:8pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
   const footer = escapeHtml(settings.receiptFooter ?? '¡Gracias por su compra!');
 
   const logoSrc = settings.logoUrl
@@ -216,10 +219,10 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
 
   const html = `
     ${logoBlock}
-    <div class="center bold" style="font-size:11pt">${escapeHtml(settings.businessName)}</div>
+    <div class="center bold" style="font-size:12pt">${escapeHtml(settings.businessName)}</div>
     ${addressLine}
     ${phoneLine}
-    <div class="center" style="font-size:7pt">Comprobante de venta</div>
+    <div class="center" style="font-size:8pt">Comprobante de venta</div>
     <div class="divider"></div>
     <div class="row"><span>Pedido:</span><span class="bold">#${order.orderNumber}</span></div>
     <div class="row"><span>Fecha:</span><span>${formatDateTime(order.createdAt)}</span></div>
@@ -227,10 +230,10 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     <div class="divider"></div>
     ${items}
     <div class="divider"></div>
-    <div class="row bold" style="font-size:11pt"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
-    <div class="row" style="font-size:7pt;margin-top:2pt"><span>Pago:</span><span>${pagoStr}</span></div>
+    <div class="row bold" style="font-size:12pt"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
+    <div class="row" style="font-size:8pt;margin-top:2pt"><span>Pago:</span><span>${pagoStr}</span></div>
     <div class="divider"></div>
-    <div class="center" style="font-size:7pt;margin-top:4pt">${footer}</div>
+    <div class="center" style="font-size:8pt;margin-top:4pt">${footer}</div>
   `;
 
   // 650ms si hay logo (imagen async), 450ms si no
