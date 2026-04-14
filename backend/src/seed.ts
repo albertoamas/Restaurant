@@ -28,30 +28,63 @@ async function seed() {
   console.log('Conectado a la base de datos');
 
   // ── Reset ────────────────────────────────────────────────────
-  console.log('Limpiando tablas...');
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.cashSession.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.branch.deleteMany();
+  // Borrar tenant cascadea automáticamente a: users, branches, categories,
+  // products, orders (→ items, payments), cashSessions (→ expenses),
+  // customers y branchOrderSequences. No quedan huérfanos.
+  console.log('Limpiando datos...');
   await prisma.tenant.deleteMany();
+  await prisma.plan.deleteMany();
+
+  // ── Planes (globales, sin tenant_id) ─────────────────────────
+  console.log('Creando planes...');
+  await prisma.plan.createMany({
+    data: [
+      {
+        id:             'BASICO',
+        displayName:    'Básico',
+        priceBs:        220,
+        maxBranches:    1,
+        maxCashiers:    2,
+        maxProducts:    80,
+        kitchenEnabled: false,
+      },
+      {
+        id:             'PRO',
+        displayName:    'Pro',
+        priceBs:        399,
+        maxBranches:    3,
+        maxCashiers:    8,
+        maxProducts:    -1,
+        kitchenEnabled: true,
+      },
+      {
+        id:             'NEGOCIO',
+        displayName:    'Negocio',
+        priceBs:        790,
+        maxBranches:    -1,
+        maxCashiers:    -1,
+        maxProducts:    -1,
+        kitchenEnabled: true,
+      },
+    ],
+  });
 
   // ── Tenant ───────────────────────────────────────────────────
   const tenant = await prisma.tenant.create({
     data: {
-      name: 'HamBurgos',
-      slug: 'hamburgos',
+      name:                   'HamBurgos',
+      slug:                   'hamburgos',
+      plan:                   'BASICO',
+      orderNumberResetPeriod: 'MONTHLY',
     },
   });
   console.log(`Tenant creado: HamBurgos (${tenant.id})`);
 
-  // ── Sucursales ───────────────────────────────────────────────
+  // ── Sucursal ─────────────────────────────────────────────────
   const branch = await prisma.branch.create({
     data: {
       tenantId: tenant.id,
-      name: 'HamBurgos',
+      name:     'HamBurgos',
     },
   });
   console.log('Sucursal creada: HamBurgos');
@@ -59,11 +92,11 @@ async function seed() {
   // ── Owner ────────────────────────────────────────────────────
   await prisma.user.create({
     data: {
-      tenantId: tenant.id,
-      email: 'jimmy75122919@gmail.com',
+      tenantId:     tenant.id,
+      email:        'jimmy75122919@gmail.com',
       passwordHash: PASSWORD_HASH,
-      name: 'Jimmy Burgos Romero',
-      role: 'OWNER',
+      name:         'Jimmy Burgos Romero',
+      role:         'OWNER',
     },
   });
   console.log('Usuario OWNER creado: jimmy75122919@gmail.com / demo123');
@@ -71,12 +104,12 @@ async function seed() {
   // ── Cajero ───────────────────────────────────────────────────
   await prisma.user.create({
     data: {
-      tenantId: tenant.id,
-      branchId: branch.id,
-      email: 'armijom566@gmail.com',
+      tenantId:     tenant.id,
+      branchId:     branch.id,
+      email:        'armijom566@gmail.com',
       passwordHash: PASSWORD_HASH,
-      name: 'Miguel Angel Armijo',
-      role: 'CASHIER',
+      name:         'Miguel Angel Armijo',
+      role:         'CASHIER',
     },
   });
   console.log('Usuario CASHIER creado: armijom566@gmail.com / demo123');
@@ -141,10 +174,10 @@ async function seed() {
   for (const p of products) {
     await prisma.product.create({
       data: {
-        tenantId: tenant.id,
+        tenantId:   tenant.id,
         categoryId: categoryIds[p.cat],
-        name: p.name,
-        price: p.price,
+        name:       p.name,
+        price:      p.price,
       },
     });
   }
@@ -154,7 +187,7 @@ async function seed() {
   console.log('──────────────────────────────────────────────');
   console.log('  OWNER:   jimmy75122919@gmail.com / demo123');
   console.log('  CASHIER: armijom566@gmail.com    / demo123');
-  console.log('  Negocio: HamBurgos');
+  console.log('  Negocio: HamBurgos (plan BASICO, reset MONTHLY)');
   console.log('──────────────────────────────────────────────');
 }
 
