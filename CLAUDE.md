@@ -46,10 +46,21 @@ pnpm dev:frontend   # Vite on :5173
 # Seed the database with demo data (tenant, owner, cashier, branches, products)
 pnpm --filter backend seed
 
-# Type-check (no tests exist — type-check is the main CI gate)
+# Type-check
 pnpm --filter @pos/shared build          # MUST run first after editing shared types
 pnpm --filter backend typecheck
 pnpm --filter frontend typecheck
+
+# Tests
+pnpm test:backend                        # Jest (38 unit/integration tests)
+pnpm test:frontend                       # Vitest (30 unit tests)
+pnpm test:e2e                            # Playwright (9 E2E tests — requires pnpm dev running)
+
+# Run a single backend test file
+pnpm --filter backend test -- --testPathPattern="create-order"
+
+# Run a single frontend test file
+pnpm --filter frontend test:run -- src/store/cart.store.spec.ts
 
 # Prisma commands (run from repo root — pnpm filter sets the right cwd)
 pnpm --filter backend prisma:generate        # Regenerate client after schema changes
@@ -208,7 +219,7 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 `Tenant.orderNumberResetPeriod` (DAILY | MONTHLY) controls when `order_number` resets to 1. The SQL uses `DATE()` for daily and `DATE_TRUNC('month', …)` for monthly.
 
-> **Timezone caveat:** The DAILY reset uses `new Date().toISOString().split('T')[0]` — this is the **UTC date**, not local time. In Bolivia (UTC-4) the counter resets at 20:00 local time, not midnight. A fix requires passing the local date string from the client or using `AT TIME ZONE` in the SQL.
+Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/utils/timezone.util.ts` uses `America/La_Paz` (UTC-4) for all date calculations including order number resets.
 
 ## Shared Package
 
@@ -249,7 +260,7 @@ Migrations run automatically on backend container start (`prisma migrate deploy`
 
 `docker-compose.prod.yml`: three services — `postgres`, `backend`, `frontend`/nginx.
 
-- Uploads persist via Docker volume `uploads_data`. **No automated backup configured** — back up this volume manually or via a cron job.
+- Uploads persist via Docker volume `uploads_data`. Backup script: `scripts/backup-db.sh` (pg_dump + uploads tar). Schedule with cron: `0 3 * * * /opt/pos/scripts/backup-db.sh`.
 - nginx proxies `/api/`, `/uploads/`, `/socket.io/` to backend; stays on HTTP internally.
 - `/uploads/<uuid>.<ext>` files are **publicly accessible** — any URL is guessable if the UUID leaks. Acceptable for product/logo images; do not store sensitive files here.
 - TLS: Cloudflare orange-cloud proxy, SSL/TLS set to "Full".

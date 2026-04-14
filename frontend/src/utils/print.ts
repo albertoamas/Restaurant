@@ -15,14 +15,14 @@ export function escapeHtml(str: string): string {
 }
 
 const ORDER_TYPE_LABEL: Record<OrderType, string> = {
-  [OrderType.DINE_IN]: 'LOCAL',
-  [OrderType.TAKEOUT]: 'PARA LLEVAR',
+  [OrderType.DINE_IN]:  'LOCAL',
+  [OrderType.TAKEOUT]:  'PARA LLEVAR',
   [OrderType.DELIVERY]: 'DELIVERY',
 };
 
 const PAYMENT_LABEL: Partial<Record<PaymentMethod, string>> = {
-  [PaymentMethod.CASH]: 'Efectivo',
-  [PaymentMethod.QR]: 'QR',
+  [PaymentMethod.CASH]:     'Efectivo',
+  [PaymentMethod.QR]:       'QR',
   [PaymentMethod.TRANSFER]: 'Transferencia',
 };
 
@@ -37,82 +37,153 @@ function formatDateTime(iso: string) {
   });
 }
 
-function openPrintWindow(html: string, title: string) {
-  const win = window.open('', '_blank', 'width=320,height=500');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head>
+/**
+ * CSS base para impresora térmica 58mm (ancho imprimible ~48mm).
+ * - Unidades en `pt` para consistencia entre pantalla (96dpi) y térmica (203dpi).
+ * - Colores forzados a #000 puro — las térmicas no tienen escala de grises real.
+ * - @page con margin:0mm y size:58mm auto para que el driver no añada márgenes.
+ */
+const THERMAL_CSS = `
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Courier New',Courier,monospace;
+    font-size:8pt;
+    color:#000;
+    background:#fff;
+    width:48mm;
+  }
+  .center{text-align:center}
+  .right{text-align:right}
+  .bold{font-weight:bold}
+  .divider{border-top:1px dashed #000;margin:3pt 0}
+  .row{display:flex;justify-content:space-between;align-items:baseline}
+  @media print{
+    @page{
+      margin:0mm;
+      size:58mm auto;
+    }
+    body{
+      width:48mm;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+  }
+`;
+
+/**
+ * Inyecta el HTML en un iframe oculto y dispara window.print().
+ *
+ * Por qué iframe en lugar de window.open():
+ *  - window.open() es bloqueado por Chrome/Edge como popup no autorizado.
+ *  - El iframe evita el blocker al no abrir una ventana visible.
+ *  - afterprint limpia el iframe cuando el usuario cierra el diálogo,
+ *    sin necesidad de win.close() ni timeouts arbitrarios para el cierre.
+ *
+ * @param html     Contenido <body> del ticket
+ * @param delayMs  Tiempo de espera antes de print() — usar 600 si hay imágenes
+ */
+function printViaIframe(html: string, delayMs = 450): void {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+
+  // srcdoc evita document.write() (deprecado) y carga el documento de forma estándar.
+  iframe.srcdoc = `<!DOCTYPE html><html><head>
     <meta charset="utf-8"/>
-    <title>${title}</title>
-    <style>
-      *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:'Courier New',monospace;font-size:11px;width:48mm;padding:2px}
-      .center{text-align:center}
-      .big{font-size:48px;font-weight:900;text-align:center;letter-spacing:2px;line-height:1}
-      .type{font-size:18px;font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:6px 0}
-      .divider{border-top:1px dashed #000;margin:6px 0}
-      .row{display:flex;justify-content:space-between}
-      .item-name{font-weight:bold}
-      .qty{font-size:16px;font-weight:bold}
-      .total-row{display:flex;justify-content:space-between;font-size:15px;font-weight:bold;margin-top:4px}
-      .footer{text-align:center;margin-top:8px;font-size:11px}
-      @media print{@page{margin:0;size:58mm auto}body{width:48mm}}
-    </style>
-  </head><body>${html}</body></html>`);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); win.close(); }, 300);
+    <style>${THERMAL_CSS}</style>
+  </head><body>${html}</body></html>`;
+
+  document.body.appendChild(iframe);
+
+  const cleanup = () => {
+    if (document.body.contains(iframe)) document.body.removeChild(iframe);
+  };
+
+  // load se dispara cuando el documento (y recursos síncronos) está listo.
+  // delayMs adicional da margen para imágenes async (logo en el recibo).
+  iframe.addEventListener('load', () => {
+    const win = iframe.contentWindow;
+    if (!win) { cleanup(); return; }
+
+    // Limpiar al cerrar el diálogo de impresión
+    win.addEventListener('afterprint', cleanup);
+    // Fallback: eliminar el iframe si afterprint no dispara (2 min)
+    const fallback = setTimeout(cleanup, 120_000);
+    win.addEventListener('afterprint', () => clearTimeout(fallback));
+
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, delayMs);
+  });
 }
 
-/** Comanda para cocina — se imprime automáticamente al crear el pedido */
-export function printKitchenTicket(order: OrderDto) {
+/* ─── Comanda de cocina ──────────────────────────────────────────────────── */
+
+/**
+ * Comanda para cocina — se imprime automáticamente al crear el pedido.
+ *
+ * Diseño optimizado para lectura rápida en cocina:
+ *  - Número de pedido en 36pt (visible a distancia)
+ *  - Tipo de orden en caja bordeada
+ *  - Cada item con cantidad prominente
+ *  - Notas en recuadro propio
+ */
+export function printKitchenTicket(order: OrderDto): void {
   const items = order.items
     .map(i => `
-      <div style="margin-bottom:6px">
-        <div class="row">
-          <span class="qty">${i.quantity}x</span>
-          <span class="item-name" style="flex:1;margin-left:8px">${escapeHtml(i.productName)}</span>
-        </div>
+      <div style="margin-bottom:5pt;display:flex;align-items:baseline;gap:4pt">
+        <span style="font-size:13pt;font-weight:900;min-width:18pt">${i.quantity}x</span>
+        <span style="font-size:9pt;font-weight:bold;flex:1">${escapeHtml(i.productName)}</span>
       </div>`)
     .join('');
 
   const notasBlock = order.notes
     ? `<div class="divider"></div>
-       <div style="border:2px solid #000;padding:4px;margin:4px 0">
-         <div style="font-weight:bold;font-size:12px">NOTAS:</div>
-         <div style="font-size:14px;margin-top:2px">${escapeHtml(order.notes)}</div>
+       <div style="border:2px solid #000;padding:3pt;margin:3pt 0">
+         <div style="font-weight:bold;font-size:8pt">NOTAS:</div>
+         <div style="font-size:9pt;margin-top:2pt">${escapeHtml(order.notes)}</div>
        </div>`
     : '';
 
   const html = `
-    <div class="center" style="font-size:11px;color:#666">${formatTime(order.createdAt)}</div>
-    <div class="big">#${order.orderNumber}</div>
-    <div class="type">${ORDER_TYPE_LABEL[order.type]}</div>
+    <div class="center" style="font-size:8pt">${formatTime(order.createdAt)}</div>
+    <div class="center" style="font-size:36pt;font-weight:900;letter-spacing:1pt;line-height:1.1">#${order.orderNumber}</div>
+    <div class="center" style="font-size:14pt;font-weight:bold;border:2px solid #000;padding:3pt;margin:4pt 0">${ORDER_TYPE_LABEL[order.type]}</div>
     <div class="divider"></div>
-    <div style="margin-bottom:4px"><strong>PRODUCTOS</strong></div>
+    <div style="font-size:7pt;font-weight:bold;margin-bottom:3pt">PRODUCTOS</div>
     ${items}
     ${notasBlock}
     <div class="divider"></div>
-    <div class="center" style="font-size:11px;color:#666">— COMANDA —</div>
+    <div class="center" style="font-size:8pt">--- COMANDA ---</div>
   `;
 
-  openPrintWindow(html, `Comanda #${order.orderNumber}`);
+  printViaIframe(html, 450);
 }
+
+/* ─── Recibo para cliente ────────────────────────────────────────────────── */
 
 export interface ReceiptSettings {
-  businessName: string;
+  businessName:     string;
   businessAddress?: string;
-  businessPhone?: string;
-  receiptFooter?: string;
-  logoUrl?: string | null;
+  businessPhone?:   string;
+  receiptFooter?:   string;
+  logoUrl?:         string | null;
 }
 
-/** Recibo para el cliente — se imprime a pedido */
-export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
+/**
+ * Recibo para el cliente — se imprime a pedido tras confirmar el pago.
+ *
+ * Incluye logo si está configurado (requiere driver Epson-compatible;
+ * el driver "Generic / Text Only" no renderiza imágenes).
+ * El delay es mayor (650ms) para dar tiempo a cargar la imagen del logo.
+ */
+export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   const items = order.items
     .map(i => `
-      <div style="margin-bottom:4px">
-        <div>${escapeHtml(i.productName)}</div>
-        <div class="row" style="color:#555">
+      <div style="margin-bottom:3pt">
+        <div style="font-size:8pt">${escapeHtml(i.productName)}</div>
+        <div class="row" style="font-size:8pt">
           <span>${i.quantity} x Bs ${Number(i.unitPrice).toFixed(2)}</span>
           <span>Bs ${Number(i.subtotal).toFixed(2)}</span>
         </div>
@@ -120,41 +191,48 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings) {
     .join('');
 
   const addressLine = settings.businessAddress
-    ? `<div class="center" style="color:#555;font-size:11px">${escapeHtml(settings.businessAddress)}</div>` : '';
+    ? `<div class="center" style="font-size:7pt">${escapeHtml(settings.businessAddress)}</div>` : '';
   const phoneLine = settings.businessPhone
-    ? `<div class="center" style="color:#555;font-size:11px">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
+    ? `<div class="center" style="font-size:7pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
   const footer = escapeHtml(settings.receiptFooter ?? '¡Gracias por su compra!');
+
   const logoSrc = settings.logoUrl
-    ? (settings.logoUrl.startsWith('http') ? settings.logoUrl : `${window.location.origin}${settings.logoUrl}`)
+    ? (settings.logoUrl.startsWith('http')
+        ? settings.logoUrl
+        : `${window.location.origin}${settings.logoUrl}`)
     : null;
   const logoBlock = logoSrc
-    ? `<div style="text-align:center;margin-bottom:4px"><img src="${logoSrc}" alt="logo" style="max-width:100px;max-height:60px;object-fit:contain;display:inline-block" /></div>`
+    ? `<div class="center" style="margin-bottom:3pt">
+         <img src="${logoSrc}" alt="" style="max-width:80pt;max-height:40pt;object-fit:contain"/>
+       </div>`
     : '';
+
+  // Desglose de pagos (soporta split: "Efectivo Bs 50.00 + QR Bs 30.00")
+  const pagoStr = order.payments.length > 0
+    ? order.payments
+        .map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`)
+        .join(' + ')
+    : '—';
 
   const html = `
     ${logoBlock}
-    <div class="center" style="font-size:15px;font-weight:bold">${escapeHtml(settings.businessName)}</div>
+    <div class="center bold" style="font-size:11pt">${escapeHtml(settings.businessName)}</div>
     ${addressLine}
     ${phoneLine}
-    <div class="center" style="color:#555;font-size:11px">Comprobante de venta</div>
+    <div class="center" style="font-size:7pt">Comprobante de venta</div>
     <div class="divider"></div>
-    <div class="row"><span>Pedido:</span><span><strong>#${order.orderNumber}</strong></span></div>
+    <div class="row"><span>Pedido:</span><span class="bold">#${order.orderNumber}</span></div>
     <div class="row"><span>Fecha:</span><span>${formatDateTime(order.createdAt)}</span></div>
     <div class="row"><span>Tipo:</span><span>${ORDER_TYPE_LABEL[order.type]}</span></div>
     <div class="divider"></div>
     ${items}
     <div class="divider"></div>
-    <div class="total-row"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
-    <div class="row" style="color:#555;margin-top:4px">
-      <span>Pago:</span><span>${
-        order.payments.length > 0
-          ? order.payments.map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`).join(' + ')
-          : '—'
-      }</span>
-    </div>
+    <div class="row bold" style="font-size:11pt"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
+    <div class="row" style="font-size:7pt;margin-top:2pt"><span>Pago:</span><span>${pagoStr}</span></div>
     <div class="divider"></div>
-    <div class="footer">${footer}</div>
+    <div class="center" style="font-size:7pt;margin-top:4pt">${footer}</div>
   `;
 
-  openPrintWindow(html, `Recibo #${order.orderNumber}`);
+  // 650ms si hay logo (imagen async), 450ms si no
+  printViaIframe(html, logoSrc ? 650 : 450);
 }

@@ -1,32 +1,60 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi, type OrdersParams } from '../api/orders.api';
 import { getBoliviaDayBounds } from '../utils/timezone';
 
-export function useOrders(date: string, statusFilter: string) {
-  const [orders, setOrders] = useState<OrderDto[]>([]);
-  const [loading, setLoading] = useState(true);
+const PAGE_SIZE = 50;
 
+export function useOrders(date: string, statusFilter: string) {
+  const [orders, setOrders]           = useState<OrderDto[]>([]);
+  const [total, setTotal]             = useState(0);
+  const [loading, setLoading]         = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const pageRef                       = useRef(1);
+
+  const buildParams = useCallback((p: number): OrdersParams => {
+    const { start, end } = getBoliviaDayBounds(date);
+    return {
+      from:  start,
+      to:    end,
+      page:  p,
+      limit: PAGE_SIZE,
+      ...(statusFilter ? { status: statusFilter as OrderStatus } : {}),
+    };
+  }, [date, statusFilter]);
+
+  // Full refresh — always replaces the list and resets to page 1
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      // Límites exactos del día en Bolivia (UTC-4), independiente del timezone del dispositivo
-      const { start, end } = getBoliviaDayBounds(date);
-      const params: OrdersParams = {
-        from: start,
-        to:   end,
-        ...(statusFilter ? { status: statusFilter as OrderStatus } : {}),
-      };
-      const data = await ordersApi.getAll(params);
-      setOrders(data);
+      const result = await ordersApi.getAll(buildParams(1));
+      setOrders(result.data);
+      setTotal(result.total);
+      pageRef.current = 1;
     } catch {
       toast.error('Error al cargar pedidos');
     } finally {
       setLoading(false);
     }
-  }, [date, statusFilter]);
+  }, [buildParams]);
+
+  // Append next page without replacing existing orders
+  const loadMore = useCallback(async () => {
+    const nextPage = pageRef.current + 1;
+    setLoadingMore(true);
+    try {
+      const result = await ordersApi.getAll(buildParams(nextPage));
+      setOrders((prev) => [...prev, ...result.data]);
+      setTotal(result.total);
+      pageRef.current = nextPage;
+    } catch {
+      toast.error('Error al cargar más pedidos');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [buildParams]);
 
   // Initial load + polling every 30s as fallback to socket
   useEffect(() => {
@@ -35,5 +63,7 @@ export function useOrders(date: string, statusFilter: string) {
     return () => clearInterval(id);
   }, [fetchOrders]);
 
-  return { orders, setOrders, loading, fetchOrders };
+  const hasMore = orders.length < total;
+
+  return { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore };
 }

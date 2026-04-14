@@ -279,7 +279,7 @@ export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [payingOrder, setPayingOrder] = useState<OrderDto | null>(null);
   const [paidOrder, setPaidOrder] = useState<OrderDto | null>(null);
-  const { orders, setOrders, loading, fetchOrders } = useOrders(date, statusFilter);
+  const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } = useOrders(date, statusFilter);
 
   useSocketEvent<OrderDto>('order.created', (order) => {
     const d = order.createdAt.split('T')[0];
@@ -315,7 +315,7 @@ export function OrdersPage() {
             <p className="text-xs text-gray-500 mt-0.5">Monitorea y actualiza estados en tiempo real.</p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
-            {orders.length} pedidos
+            {total > orders.length ? `${orders.length} de ${total} pedidos` : `${total} pedidos`}
           </span>
         </div>
 
@@ -363,6 +363,30 @@ export function OrdersPage() {
           {orders.map((order) => (
             <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} onPayOrder={setPayingOrder} />
           ))}
+          {hasMore && (
+            <div className="flex justify-center pt-2 pb-4">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:border-primary-300 hover:text-primary-700 hover:bg-primary-50 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+              >
+                {loadingMore ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+                    </svg>
+                    Cargando...
+                  </>
+                ) : (
+                  <>
+                    Cargar más
+                    <span className="text-xs font-normal text-gray-400">({total - orders.length} restantes)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

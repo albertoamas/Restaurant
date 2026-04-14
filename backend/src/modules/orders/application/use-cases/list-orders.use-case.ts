@@ -21,7 +21,7 @@ export class ListOrdersUseCase {
     private readonly orderRepository: OrderRepositoryPort,
   ) {}
 
-  async execute(tenantId: string, filters: ListOrdersFilters = {}): Promise<Order[]> {
+  async execute(tenantId: string, filters: ListOrdersFilters = {}): Promise<{ data: Order[]; total: number }> {
     return this.orderRepository.findAll(tenantId, filters);
   }
 }

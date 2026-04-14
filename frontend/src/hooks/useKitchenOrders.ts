@@ -11,7 +11,7 @@ export function useKitchenOrders(branchId: string | null) {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const data = await ordersApi.getAll({ date: today(), branchId: branchId ?? undefined });
+      const { data } = await ordersApi.getAll({ date: today(), branchId: branchId ?? undefined });
       setOrders(data.filter((o) =>
         o.status === OrderStatus.PENDING || o.status === OrderStatus.PREPARING,
       ));

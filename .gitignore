@@ -9,6 +9,7 @@ Thumbs.db
 coverage/
 .nyc_output/
 *.tsbuildinfo
+test-results/
 
 # Uploads locales — en producción se almacenan en el volumen Docker uploads_data
 backend/uploads/*.webp

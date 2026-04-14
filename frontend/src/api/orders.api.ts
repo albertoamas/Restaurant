@@ -17,7 +17,7 @@ export const ordersApi = {
     client.post<OrderDto>('/api/v1/orders', data).then((r) => r.data),
 
   getAll: (params?: OrdersParams) =>
-    client.get<OrderDto[]>('/api/v1/orders', { params }).then((r) => r.data),
+    client.get<{ data: OrderDto[]; total: number }>('/api/v1/orders', { params }).then((r) => r.data),
 
   getOne: (id: string) =>
     client.get<OrderDto>(`/api/v1/orders/${id}`).then((r) => r.data),

@@ -57,7 +57,7 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    ordersApi.getAll({ customerId, limit: 50 }).then(setOrders).catch(() => setOrders([])).finally(() => setLoading(false));
+    ordersApi.getAll({ customerId, limit: 50 }).then((r) => setOrders(r.data)).catch(() => setOrders([])).finally(() => setLoading(false));
   }, [customerId]);
 
   if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;

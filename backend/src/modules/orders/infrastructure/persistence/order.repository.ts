@@ -148,8 +148,10 @@ export class OrderRepository implements OrderRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
-  async findAll(tenantId: string, filters: OrderFilters = {}): Promise<Order[]> {
+  async findAll(tenantId: string, filters: OrderFilters = {}): Promise<{ data: Order[]; total: number }> {
     const { date, status, branchId } = filters;
+    const limit = Math.min(filters.limit ?? 50, 200);
+    const skip  = ((filters.page ?? 1) - 1) * limit;
 
     const where: Prisma.OrderWhereInput = { tenantId };
 
@@ -165,13 +167,18 @@ export class OrderRepository implements OrderRepositoryPort {
       where.createdAt = { gte: start, lte: end };
     }
 
-    const rows = await this.prisma.order.findMany({
-      where,
-      include: INCLUDE_ALL,
-      orderBy: { createdAt: 'desc' },
-      take:    100,
-    });
-    return rows.map(toDomain);
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        include: INCLUDE_ALL,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return { data: rows.map(toDomain), total };
   }
 
   async getNextOrderNumber(tenantId: string, branchId: string, boliviaDateStr: string, resetPeriod = 'DAILY'): Promise<number> {

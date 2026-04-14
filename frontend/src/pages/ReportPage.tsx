@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import type { DailyReportDto, TopProductDto, CategoryDto, ExpenseSummaryDto } from '@pos/shared';
-import { UserRole, ExpenseCategory } from '@pos/shared';
+import { UserRole, ExpenseCategory, SaasPlan } from '@pos/shared';
 import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
 import { categoriesApi } from '../api/categories.api';
 import { useAuth } from '../context/auth.context';
+import { useSettingsStore } from '../store/settings.store';
 import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
 import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
 import { today } from '../utils/date';
 import { getBoliviaDayBounds } from '../utils/timezone';
+import { downloadCsv } from '../utils/csv';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
 
@@ -64,6 +66,9 @@ function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
 
 export function ReportPage() {
   const { currentBranchId, user } = useAuth();
+  const plan = useSettingsStore((s) => s.plan);
+  const canExport = plan !== SaasPlan.BASICO;
+
   const [period, setPeriod] = useState<Period>('today');
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
@@ -128,6 +133,76 @@ export function ReportPage() {
   }, [utcFrom, utcTo, currentBranchId, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
   useVisibilityRefresh(reloadAll);
 
+  const EXPENSE_LABELS: Partial<Record<ExpenseCategory, string>> = {
+    [ExpenseCategory.SUPPLIES]:    'Insumos',
+    [ExpenseCategory.WAGES]:       'Personal',
+    [ExpenseCategory.UTILITIES]:   'Servicios',
+    [ExpenseCategory.TRANSPORT]:   'Transporte',
+    [ExpenseCategory.MAINTENANCE]: 'Mantenimiento',
+    [ExpenseCategory.OTHER]:       'Otro',
+  };
+
+  const handleExport = () => {
+    if (!report) return;
+    const filename = from === to
+      ? `reporte_${from}.csv`
+      : `reporte_${from}_${to}.csv`;
+
+    const totalExpenses = expenseSummary?.total ?? 0;
+    const netProfit     = report.totalSales - totalExpenses;
+
+    downloadCsv(filename, [
+      {
+        title: `Reporte de ventas — ${rangeLabel}`,
+        headers: [
+          'Ventas Totales (Bs)',
+          'Pedidos',
+          'Ticket Promedio (Bs)',
+          'Efectivo (Bs)',
+          'QR (Bs)',
+          'Transferencia (Bs)',
+          'Local',
+          'Para Llevar',
+          'Delivery',
+          'Gastos (Bs)',
+          'Ganancia Neta (Bs)',
+        ],
+        rows: [[
+          report.totalSales.toFixed(2),
+          report.orderCount,
+          report.averageTicket.toFixed(2),
+          report.paymentBreakdown.cash.toFixed(2),
+          report.paymentBreakdown.qr.toFixed(2),
+          report.paymentBreakdown.transfer.toFixed(2),
+          report.ordersByType.dineIn,
+          report.ordersByType.takeout,
+          report.ordersByType.delivery,
+          totalExpenses.toFixed(2),
+          netProfit.toFixed(2),
+        ]],
+      },
+      {
+        title: 'Productos más vendidos',
+        headers: ['Posición', 'Producto', 'Categoría', 'Unidades', 'Ingresos (Bs)'],
+        rows: topProducts.map((p, i) => [
+          i + 1,
+          p.productName,
+          p.categoryName ?? '—',
+          p.totalQuantity,
+          p.totalRevenue.toFixed(2),
+        ]),
+      },
+      ...(expenseSummary && expenseSummary.total > 0 ? [{
+        title: 'Desglose de gastos',
+        headers: ['Categoría', 'Monto (Bs)'],
+        rows: (Object.entries(expenseSummary.byCategory) as [ExpenseCategory, number][])
+          .filter(([, amount]) => amount > 0)
+          .sort(([, a], [, b]) => b - a)
+          .map(([cat, amount]) => [EXPENSE_LABELS[cat] ?? cat, amount.toFixed(2)]),
+      }] : []),
+    ]);
+  };
+
   const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
   const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
 
@@ -142,9 +217,41 @@ export function ReportPage() {
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Reporte y Rendimiento</h2>
             <p className="text-xs text-gray-500 mt-0.5">Vista consolidada de ventas, gastos y desempeño por periodo.</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
-            {rangeLabel}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+              {rangeLabel}
+            </span>
+            {canExport ? (
+              <button
+                onClick={handleExport}
+                disabled={!report || loading}
+                title="Exportar a CSV"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Exportar CSV
+              </button>
+            ) : (
+              <div className="relative group">
+                <button
+                  disabled
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Exportar CSV
+                </button>
+                <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-gray-200 bg-white shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug">
+                  Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -302,15 +409,6 @@ export function ReportPage() {
                   ? Math.min(100, (expenseSummary.total / report.totalSales) * 100)
                   : 0;
 
-                const EXPENSE_META: Partial<Record<ExpenseCategory, { label: string }>> = {
-                  [ExpenseCategory.SUPPLIES]:    { label: 'Insumos' },
-                  [ExpenseCategory.WAGES]:       { label: 'Personal' },
-                  [ExpenseCategory.UTILITIES]:   { label: 'Servicios' },
-                  [ExpenseCategory.TRANSPORT]:   { label: 'Transporte' },
-                  [ExpenseCategory.MAINTENANCE]: { label: 'Mantenimiento' },
-                  [ExpenseCategory.OTHER]:       { label: 'Otro' },
-                };
-
                 return (
                   <>
                     {/* Main net profit display */}
@@ -353,7 +451,7 @@ export function ReportPage() {
                           .map(([cat, amount]) => (
                             <div key={cat}>
                               <div className="flex justify-between text-sm mb-1.5">
-                                <span className="text-gray-600 font-medium">{EXPENSE_META[cat]?.label ?? cat}</span>
+                                <span className="text-gray-600 font-medium">{EXPENSE_LABELS[cat] ?? cat}</span>
                                 <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
                               </div>
                               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">

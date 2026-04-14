@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -62,8 +63,8 @@ export class OrderController {
     @Query('status') status?: OrderStatus,
     @Query('branchId') branchId?: string,
     @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page',  new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     // Cashiers can only see their own branch; owners can filter or see all
     const effectiveBranchId = user.branchId ?? branchId;
