@@ -55,7 +55,7 @@ const THERMAL_CSS = `
   }
   .ticket{
     width:46mm;
-    margin:0 auto;
+    margin-left:6mm;
     overflow:hidden;
   }
   .center{text-align:center}
