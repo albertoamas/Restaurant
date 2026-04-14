@@ -11,9 +11,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { memoryStorage } from 'multer';
 import { extname, join } from 'path';
-import { writeFile, mkdir } from 'fs/promises';
+import { mkdir } from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import sharp from 'sharp';
+import sharp = require('sharp');
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
