@@ -52,11 +52,14 @@ const THERMAL_CSS = `
     color:#000;
     background:#fff;
     width:58mm;
+    text-align:center;
   }
   .ticket{
+    display:inline-block;
     width:46mm;
-    margin-left:6mm;
+    text-align:left;
     overflow:hidden;
+    vertical-align:top;
   }
   .center{text-align:center}
   .right{text-align:right}
