@@ -51,8 +51,11 @@ export class LoginUseCase {
       user: {
         id:         user.id,
         tenantId:   user.tenantId,
-        tenantName: tenant.name,
-        tenantLogo: tenant.logoUrl ?? null,
+        tenantName:    tenant.name,
+        tenantLogo:    tenant.logoUrl         ?? null,
+        tenantAddress: tenant.businessAddress ?? null,
+        tenantPhone:   tenant.businessPhone   ?? null,
+        tenantSlogan:  tenant.receiptSlogan   ?? null,
         branchId:   user.branchId,
         email:      user.email,
         name:       user.name,

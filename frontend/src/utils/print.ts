@@ -171,7 +171,7 @@ export interface ReceiptSettings {
   businessName:     string;
   businessAddress?: string;
   businessPhone?:   string;
-  receiptFooter?:   string;
+  receiptSlogan?:   string;
   logoUrl?:         string | null;
 }
 
@@ -198,7 +198,10 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     ? `<div class="center" style="font-size:8pt">${escapeHtml(settings.businessAddress)}</div>` : '';
   const phoneLine = settings.businessPhone
     ? `<div class="center" style="font-size:8pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
-  const footer = escapeHtml(settings.receiptFooter ?? '¡Gracias por su compra!');
+  const sloganLine = settings.receiptSlogan
+    ? `<div class="center" style="font-size:8pt;font-style:italic">${escapeHtml(settings.receiptSlogan)}</div>` : '';
+  const customerLine = order.customer?.name
+    ? `<div class="center" style="font-size:8pt">Cliente: ${escapeHtml(order.customer.name)}</div>` : '';
 
   const logoSrc = settings.logoUrl
     ? (settings.logoUrl.startsWith('http')
@@ -219,13 +222,15 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     : '—';
 
   const html = `
+    <div class="center" style="font-size:36pt;font-weight:900;line-height:1.1">#${order.orderNumber}</div>
+    ${customerLine}
+    <div class="divider"></div>
     ${logoBlock}
     <div class="center bold" style="font-size:12pt">${escapeHtml(settings.businessName)}</div>
     ${addressLine}
     ${phoneLine}
-    <div class="center" style="font-size:8pt">Comprobante de venta</div>
+    ${sloganLine}
     <div class="divider"></div>
-    <div class="row"><span>Pedido:</span><span class="bold">#${order.orderNumber}</span></div>
     <div class="row"><span>Fecha:</span><span>${formatDateTime(order.createdAt)}</span></div>
     <div class="row"><span>Tipo:</span><span>${ORDER_TYPE_LABEL[order.type]}</span></div>
     <div class="divider"></div>
@@ -234,7 +239,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     <div class="row bold" style="font-size:12pt"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
     <div class="row" style="font-size:8pt;margin-top:2pt"><span>Pago:</span><span>${pagoStr}</span></div>
     <div class="divider"></div>
-    <div class="center" style="font-size:8pt;margin-top:4pt">${footer}</div>
+    <div class="center" style="font-size:8pt;margin-top:4pt">¡Gracias por su compra!</div>
   `;
 
   // 650ms si hay logo (imagen async), 450ms si no

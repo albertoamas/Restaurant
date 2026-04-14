@@ -29,13 +29,13 @@ interface SettingsState {
   raffleThreshold: number;
   setRaffleThreshold: (value: number) => void;
 
-  // Datos del negocio (para recibos)
+  // Datos del negocio (server-controlled — set by auth context on login/getMe)
   businessAddress: string;
   businessPhone: string;
-  receiptFooter: string;
+  receiptSlogan: string;
   setBusinessAddress: (value: string) => void;
   setBusinessPhone: (value: string) => void;
-  setReceiptFooter: (value: string) => void;
+  setReceiptSlogan: (value: string) => void;
 
   // Logo del negocio (server-controlled — set by auth context on login/getMe)
   tenantLogo: string | null;
@@ -75,10 +75,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       businessAddress: '',
       businessPhone: '',
-      receiptFooter: '¡Gracias por su compra!',
+      receiptSlogan: '',
       setBusinessAddress: (value) => set({ businessAddress: value }),
-      setBusinessPhone: (value) => set({ businessPhone: value }),
-      setReceiptFooter: (value) => set({ receiptFooter: value }),
+      setBusinessPhone:   (value) => set({ businessPhone: value }),
+      setReceiptSlogan:   (value) => set({ receiptSlogan: value }),
 
       tenantLogo: null,
       setTenantLogo: (value) => set({ tenantLogo: value }),
@@ -92,12 +92,11 @@ export const useSettingsStore = create<SettingsState>()(
       name: 'pos-settings',
       // Only persist local UI preferences.
       // Module flags come from the server on every login/getMe — never from localStorage.
+      // Only persist local UI preferences.
+      // businessAddress/Phone/receiptSlogan come from server on every login — never from localStorage.
       partialize: (state) => ({
         autoPrintKitchen: state.autoPrintKitchen,
         raffleThreshold:  state.raffleThreshold,
-        businessAddress:  state.businessAddress,
-        businessPhone:    state.businessPhone,
-        receiptFooter:    state.receiptFooter,
       }),
     },
   ),

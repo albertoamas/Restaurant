@@ -25,6 +25,10 @@ export interface AuthResponse {
     role: UserRole;
     tenantId: string;
     tenantName: string;
+    tenantLogo: string | null;
+    tenantAddress: string | null;
+    tenantPhone: string | null;
+    tenantSlogan: string | null;
     branchId: string | null;
   };
 }

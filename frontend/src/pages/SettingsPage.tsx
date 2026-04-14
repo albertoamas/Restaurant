@@ -106,10 +106,18 @@ export function SettingsPage() {
     raffleThreshold, setRaffleThreshold,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
-    receiptFooter, setReceiptFooter,
+    receiptSlogan, setReceiptSlogan,
     orderNumberResetPeriod, setOrderNumberResetPeriod,
     tenantLogo, setTenantLogo,
   } = useSettingsStore();
+
+  const saveReceiptField = async (field: 'businessAddress' | 'businessPhone' | 'receiptSlogan', value: string) => {
+    try {
+      await tenantsApi.updateSettings({ [field]: value || null });
+    } catch (err) {
+      handleApiError(err, 'Error al guardar');
+    }
+  };
 
   const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
@@ -266,6 +274,7 @@ export function SettingsPage() {
               label="Dirección"
               value={businessAddress}
               onChange={(e) => setBusinessAddress(e.target.value)}
+              onBlur={(e) => saveReceiptField('businessAddress', e.target.value)}
               placeholder="Ej: Av. Los Pinos 123, Santa Cruz"
             />
           </div>
@@ -274,26 +283,29 @@ export function SettingsPage() {
               label="Teléfono"
               value={businessPhone}
               onChange={(e) => setBusinessPhone(e.target.value)}
+              onBlur={(e) => saveReceiptField('businessPhone', e.target.value)}
               placeholder="Ej: +591 77712345"
             />
           </div>
           <div className="py-4">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Mensaje en el recibo</label>
-              <span className={`text-xs font-medium ${receiptFooter.length > RECEIPT_MAX ? 'text-red-500' : 'text-gray-400'}`}>
-                {receiptFooter.length}/{RECEIPT_MAX}
+              <label className="text-sm font-medium text-gray-700">Eslogan del recibo</label>
+              <span className={`text-xs font-medium ${receiptSlogan.length > RECEIPT_MAX ? 'text-red-500' : 'text-gray-400'}`}>
+                {receiptSlogan.length}/{RECEIPT_MAX}
               </span>
             </div>
             <textarea
-              value={receiptFooter}
-              onChange={(e) => setReceiptFooter(e.target.value)}
-              placeholder="Ej: ¡Gracias por su compra!"
+              value={receiptSlogan}
+              onChange={(e) => setReceiptSlogan(e.target.value)}
+              onBlur={(e) => saveReceiptField('receiptSlogan', e.target.value)}
+              placeholder="Ej: El mejor sabor de la ciudad"
               rows={2}
               maxLength={RECEIPT_MAX}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
                 resize-none transition-[border-color,box-shadow] bg-white"
             />
+            <p className="text-xs text-gray-400 mt-1.5">Aparece debajo del nombre del negocio en el recibo</p>
           </div>
         </div>
       </Card>

@@ -12,6 +12,9 @@ export interface TenantModules {
 export interface TenantSettings {
   orderNumberResetPeriod: OrderNumberResetPeriod;
   logoUrl?: string | null;
+  businessAddress?: string | null;
+  businessPhone?: string | null;
+  receiptSlogan?: string | null;
 }
 
 export class Tenant {
@@ -29,6 +32,9 @@ export class Tenant {
     public readonly kitchenEnabled: boolean,
     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
     public readonly logoUrl: string | null = null,
+    public readonly businessAddress: string | null = null,
+    public readonly businessPhone: string | null = null,
+    public readonly receiptSlogan: string | null = null,
   ) {}
 
   static create(name: string, slug: string): Tenant {
@@ -38,7 +44,7 @@ export class Tenant {
       SaasPlan.BASICO,
       true, true, true, true, false,
       OrderNumberResetPeriod.DAILY,
-      null,
+      null, null, null, null,
     );
   }
 
@@ -49,6 +55,7 @@ export class Tenant {
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       this.orderNumberResetPeriod, this.logoUrl,
+      this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -59,6 +66,7 @@ export class Tenant {
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       this.orderNumberResetPeriod, this.logoUrl,
+      this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -72,6 +80,7 @@ export class Tenant {
       modules.branchesEnabled ?? this.branchesEnabled,
       modules.kitchenEnabled  ?? this.kitchenEnabled,
       this.orderNumberResetPeriod, this.logoUrl,
+      this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -82,7 +91,10 @@ export class Tenant {
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
       this.branchesEnabled, this.kitchenEnabled,
       settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
-      settings.logoUrl !== undefined ? (settings.logoUrl ?? null) : this.logoUrl,
+      settings.logoUrl          !== undefined ? (settings.logoUrl          ?? null) : this.logoUrl,
+      settings.businessAddress  !== undefined ? (settings.businessAddress  ?? null) : this.businessAddress,
+      settings.businessPhone    !== undefined ? (settings.businessPhone    ?? null) : this.businessPhone,
+      settings.receiptSlogan    !== undefined ? (settings.receiptSlogan    ?? null) : this.receiptSlogan,
     );
   }
 
@@ -99,7 +111,10 @@ export class Tenant {
   get settings(): TenantSettings {
     return {
       orderNumberResetPeriod: this.orderNumberResetPeriod,
-      logoUrl: this.logoUrl,
+      logoUrl:         this.logoUrl,
+      businessAddress: this.businessAddress,
+      businessPhone:   this.businessPhone,
+      receiptSlogan:   this.receiptSlogan,
     };
   }
 }

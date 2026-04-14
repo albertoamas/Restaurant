@@ -56,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setKitchenEnabled,
     setOrderNumberResetPeriod,
     setTenantLogo,
+    setBusinessAddress,
+    setBusinessPhone,
+    setReceiptSlogan,
     setPlan,
     setPlanLimits,
   } = useSettingsStore();
@@ -82,10 +85,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentBranchId(stored);
     }
     applyModules(u.modules);
-    setTenantLogo((u as AuthUser & { tenantLogo?: string | null }).tenantLogo ?? null);
+    const ext = u as AuthUser & {
+      tenantLogo?: string | null;
+      tenantAddress?: string | null;
+      tenantPhone?: string | null;
+      tenantSlogan?: string | null;
+    };
+    setTenantLogo(ext.tenantLogo ?? null);
+    setBusinessAddress(ext.tenantAddress ?? '');
+    setBusinessPhone(ext.tenantPhone ?? '');
+    setReceiptSlogan(ext.tenantSlogan ?? '');
     if (u.plan)       setPlan(u.plan);
     if (u.planLimits) setPlanLimits(u.planLimits);
-  }, [applyModules, setTenantLogo, setPlan, setPlanLimits]);
+  }, [applyModules, setTenantLogo, setBusinessAddress, setBusinessPhone, setReceiptSlogan, setPlan, setPlanLimits]);
 
   useEffect(() => {
     const stored = localStorage.getItem('pos_token');

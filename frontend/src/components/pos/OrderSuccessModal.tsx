@@ -30,13 +30,13 @@ const confettiPieces = [
 
 export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Creado!' }: Props) {
   const { user } = useAuth();
-  const { businessAddress, businessPhone, receiptFooter, tenantLogo } = useSettingsStore();
+  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
 
   const handlePrintReceipt = () => printReceipt(order, {
     businessName: user?.tenantName ?? 'Mi Negocio',
     businessAddress,
     businessPhone,
-    receiptFooter,
+    receiptSlogan,
     logoUrl: tenantLogo,
   });
 

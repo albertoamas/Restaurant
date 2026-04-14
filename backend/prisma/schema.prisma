@@ -49,8 +49,11 @@ model Tenant {
   // Order settings — configurable by the tenant owner
   orderNumberResetPeriod String  @default("DAILY") @map("order_number_reset_period")
 
-  // Branding — configurable by the tenant owner
-  logoUrl                String? @map("logo_url")
+  // Branding & receipt — configurable by the tenant owner
+  logoUrl         String? @map("logo_url")
+  businessAddress String? @map("business_address") @db.VarChar(255)
+  businessPhone   String? @map("business_phone")   @db.VarChar(50)
+  receiptSlogan   String? @map("receipt_slogan")   @db.VarChar(255)
 
   users                User[]
   branches             Branch[]

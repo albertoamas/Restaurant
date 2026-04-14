@@ -19,7 +19,10 @@ function toDomain(row: PrismaTenant): Tenant {
     row.branchesEnabled,
     row.kitchenEnabled,
     (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
-    row.logoUrl ?? null,
+    row.logoUrl         ?? null,
+    row.businessAddress ?? null,
+    row.businessPhone   ?? null,
+    row.receiptSlogan   ?? null,
   );
 }
 
@@ -52,6 +55,9 @@ export class TenantRepository implements TenantRepositoryPort {
       kitchenEnabled:          tenant.kitchenEnabled,
       orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
       logoUrl:                 tenant.logoUrl,
+      businessAddress:         tenant.businessAddress,
+      businessPhone:           tenant.businessPhone,
+      receiptSlogan:           tenant.receiptSlogan,
     };
 
     const row = await this.prisma.tenant.upsert({
@@ -148,9 +154,10 @@ export class TenantRepository implements TenantRepositoryPort {
         ...(settings.orderNumberResetPeriod !== undefined && {
           orderNumberResetPeriod: settings.orderNumberResetPeriod,
         }),
-        ...(settings.logoUrl !== undefined && {
-          logoUrl: settings.logoUrl,
-        }),
+        ...(settings.logoUrl         !== undefined && { logoUrl:         settings.logoUrl }),
+        ...(settings.businessAddress !== undefined && { businessAddress: settings.businessAddress }),
+        ...(settings.businessPhone   !== undefined && { businessPhone:   settings.businessPhone }),
+        ...(settings.receiptSlogan   !== undefined && { receiptSlogan:   settings.receiptSlogan }),
       },
     });
     return toDomain(row);
