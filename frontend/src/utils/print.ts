@@ -51,15 +51,7 @@ const THERMAL_CSS = `
     font-weight:bold;
     color:#000;
     background:#fff;
-    width:58mm;
-    text-align:center;
-  }
-  .ticket{
-    display:inline-block;
-    width:46mm;
-    text-align:left;
-    overflow:hidden;
-    vertical-align:top;
+    width:48mm;
   }
   .center{text-align:center}
   .right{text-align:right}
@@ -72,7 +64,7 @@ const THERMAL_CSS = `
       size:58mm auto;
     }
     body{
-      width:58mm;
+      width:48mm;
       -webkit-print-color-adjust:exact;
       print-color-adjust:exact;
     }
@@ -94,16 +86,16 @@ const THERMAL_CSS = `
 function printViaIframe(html: string, delayMs = 450): void {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
-  // Ancho real del papel para que el navegador maquete correctamente antes de imprimir.
-  // top:-200% lo mantiene invisible pero el viewport interno tiene 58mm reales.
-  iframe.style.cssText = 'position:fixed;top:-200%;left:0;width:58mm;height:1px;border:0;opacity:0;pointer-events:none;';
+  // Viewport al ancho imprimible real (48mm) para que el layout sea correcto antes de imprimir.
+  // top:-200% lo mantiene invisible fuera de pantalla.
+  iframe.style.cssText = 'position:fixed;top:-200%;left:0;width:48mm;height:1px;border:0;opacity:0;pointer-events:none;';
 
   // srcdoc evita document.write() (deprecado) y carga el documento de forma estándar.
-  // .ticket centra el contenido de 46mm dentro del body de 58mm.
+  // El driver de la impresora posiciona el área imprimible dentro del rollo — no se añaden márgenes CSS.
   iframe.srcdoc = `<!DOCTYPE html><html><head>
     <meta charset="utf-8"/>
     <style>${THERMAL_CSS}</style>
-  </head><body><div class="ticket">${html}</div></body></html>`;
+  </head><body>${html}</body></html>`;
 
   document.body.appendChild(iframe);
 
