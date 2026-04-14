@@ -3,6 +3,12 @@ import { OrderType, OrderStatus, PaymentMethod } from '@pos/shared';
 import { OrderItem } from './order-item.entity';
 import { OrderPayment } from './order-payment.entity';
 
+export interface OrderCustomer {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+
 export interface OrderProps {
   id: string;
   tenantId: string;
@@ -18,6 +24,7 @@ export interface OrderProps {
   notes: string | null;
   createdBy: string;
   customerId: string | null;
+  customer?: OrderCustomer | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +66,7 @@ export class Order {
   readonly notes: string | null;
   readonly createdBy: string;
   readonly customerId: string | null;
+  readonly customer: OrderCustomer | null;
   readonly createdAt: Date;
   updatedAt: Date;
 
@@ -78,6 +86,7 @@ export class Order {
     this.notes         = props.notes;
     this.createdBy     = props.createdBy;
     this.customerId    = props.customerId ?? null;
+    this.customer      = props.customer ?? null;
     this.createdAt     = props.createdAt;
     this.updatedAt     = props.updatedAt;
   }

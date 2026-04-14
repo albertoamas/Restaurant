@@ -55,6 +55,9 @@ function toDomain(row: OrderWithRelations): Order {
     notes:      row.notes,
     createdBy:  row.createdBy,
     customerId: row.customerId ?? null,
+    customer:   row.customer
+      ? { id: row.customer.id, name: row.customer.name, phone: row.customer.phone ?? null }
+      : null,
     createdAt:  row.createdAt,
     updatedAt:  row.updatedAt,
   });
