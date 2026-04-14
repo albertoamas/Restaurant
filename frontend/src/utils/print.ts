@@ -51,7 +51,7 @@ const THERMAL_CSS = `
     font-weight:bold;
     color:#000;
     background:#fff;
-    width:48mm;
+    width:44mm;
   }
   .center{text-align:center}
   .right{text-align:right}
@@ -64,7 +64,7 @@ const THERMAL_CSS = `
       size:58mm auto;
     }
     body{
-      width:48mm;
+      width:44mm;
       -webkit-print-color-adjust:exact;
       print-color-adjust:exact;
     }
@@ -88,7 +88,7 @@ function printViaIframe(html: string, delayMs = 450): void {
   iframe.setAttribute('aria-hidden', 'true');
   // Viewport al ancho imprimible real (48mm) para que el layout sea correcto antes de imprimir.
   // top:-200% lo mantiene invisible fuera de pantalla.
-  iframe.style.cssText = 'position:fixed;top:-200%;left:0;width:48mm;height:1px;border:0;opacity:0;pointer-events:none;';
+  iframe.style.cssText = 'position:fixed;top:-200%;left:0;width:44mm;height:1px;border:0;opacity:0;pointer-events:none;';
 
   // srcdoc evita document.write() (deprecado) y carga el documento de forma estándar.
   // El driver de la impresora posiciona el área imprimible dentro del rollo — no se añaden márgenes CSS.
