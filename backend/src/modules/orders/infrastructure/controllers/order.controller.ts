@@ -27,6 +27,8 @@ import { GetOrderUseCase } from '../../application/use-cases/get-order.use-case'
 import { ListOrdersUseCase } from '../../application/use-cases/list-orders.use-case';
 import { UpdateOrderStatusUseCase } from '../../application/use-cases/update-order-status.use-case';
 import { RegisterOrderPaymentUseCase } from '../../application/use-cases/register-order-payment.use-case';
+import { EditOrderUseCase } from '../../application/use-cases/edit-order.use-case';
+import { EditOrderDto } from '../../application/dto/edit-order.dto';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -37,6 +39,7 @@ export class OrderController {
     private readonly getOrderUseCase: GetOrderUseCase,
     private readonly updateOrderStatusUseCase: UpdateOrderStatusUseCase,
     private readonly registerOrderPaymentUseCase: RegisterOrderPaymentUseCase,
+    private readonly editOrderUseCase: EditOrderUseCase,
   ) {}
 
   @Post()
@@ -93,6 +96,21 @@ export class OrderController {
     @Body() dto: RegisterOrderPaymentDto,
   ) {
     return this.registerOrderPaymentUseCase.execute(tenantId, id, dto);
+  }
+
+  @Patch(':id')
+  edit(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: EditOrderDto,
+  ) {
+    return this.getOrderUseCase.execute(id, tenantId).then(async (order) => {
+      if (user.branchId && order.branchId !== user.branchId) {
+        throw new ForbiddenException('No tienes permisos para editar pedidos de otra sucursal');
+      }
+      return this.editOrderUseCase.execute(id, tenantId, dto);
+    });
   }
 
   @Patch(':id/status')

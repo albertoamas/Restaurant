@@ -30,6 +30,7 @@ export interface DailyReportResult {
 
 export interface OrderRepositoryPort {
   save(order: Order): Promise<Order>;
+  update(order: Order): Promise<Order>;
   findById(id: string, tenantId: string): Promise<Order | null>;
   findAll(tenantId: string, filters?: OrderFilters): Promise<{ data: Order[]; total: number }>;
   getNextOrderNumber(tenantId: string, branchId: string, boliviaDateStr: string, resetPeriod?: string): Promise<number>;

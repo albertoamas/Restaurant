@@ -115,6 +115,31 @@ export class OrderRepository implements OrderRepositoryPort {
     return toDomain(row);
   }
 
+  async update(order: Order): Promise<Order> {
+    const row = await this.prisma.$transaction(async (tx) => {
+      // Sync payment method on the single payment row so reports stay accurate
+      if (order.paymentMethod && order.payments.length === 1) {
+        await tx.orderPayment.update({
+          where: { id: order.payments[0].id },
+          data:  { method: order.paymentMethod },
+        });
+      }
+
+      return tx.order.update({
+        where: { id: order.id },
+        data: {
+          type:          order.type,
+          notes:         order.notes,
+          customerId:    order.customerId ?? null,
+          paymentMethod: order.paymentMethod,
+          updatedAt:     order.updatedAt,
+        },
+        include: INCLUDE_ALL,
+      });
+    });
+    return toDomain(row);
+  }
+
   async registerPayments(
     orderId: string,
     tenantId: string,

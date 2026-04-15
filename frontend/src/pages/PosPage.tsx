@@ -61,7 +61,7 @@ export function PosPage() {
     const hasCash = payments.some((p) => p.method === PaymentMethod.CASH);
     if (cashEnabled && hasCash && !isCashOpen()) {
       toast.error('No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo.', { duration: 4000 });
-      return;
+      throw new Error('cash_session_closed');
     }
     try {
       const order = await ordersApi.create({

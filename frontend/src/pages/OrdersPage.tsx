@@ -1,28 +1,17 @@
-import { OrderStatus, PaymentMethod } from '@pos/shared';
+import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
 import { useSocketEvent } from '../context/socket.context';
 import { Spinner } from '../components/ui/Spinner';
-import { orderTypeLabels } from '../utils/order';
 import { useOrders } from '../hooks/useOrders';
-import { today, elapsed } from '../utils/date';
-import { useState, useEffect } from 'react';
+import { today } from '../utils/date';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
+import { OrderCard } from '../components/orders/OrderCard';
 import { PayOrderModal } from '../components/orders/PayOrderModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
-
-function useElapsed(createdAt: string) {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const secs = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
-  return { text: elapsed(createdAt), secs };
-}
-
-const ACTIVE_STATUSES = new Set([OrderStatus.PENDING, OrderStatus.PREPARING]);
+import { EditOrderModal } from '../components/orders/EditOrderModal';
 
 const statusFilters = [
   { value: '', label: 'Todos' },
@@ -31,254 +20,12 @@ const statusFilters = [
   { value: OrderStatus.DELIVERED, label: 'Entregados' },
 ];
 
-const STEPS = [
-  { status: OrderStatus.PENDING,   label: 'Recibido'  },
-  { status: OrderStatus.PREPARING, label: 'Preparando' },
-  { status: OrderStatus.DELIVERED, label: 'Entregado'  },
-];
-
-const stepIndex = (s: OrderStatus) => STEPS.findIndex((x) => x.status === s);
-
-const statusAccent: Record<string, { border: string; bg: string; badge: string }> = {
-  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-50/40',   badge: 'bg-amber-100 text-amber-700 border-amber-200' },
-  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-50/40', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-50/40',     badge: 'bg-sky-100 text-sky-700 border-sky-200' },
-  [OrderStatus.CANCELLED]: { border: 'border-l-red-300',     bg: '',                 badge: 'bg-red-100 text-red-600 border-red-200' },
-};
-
-const statusLabel: Record<string, string> = {
-  [OrderStatus.PENDING]:   'Pendiente',
-  [OrderStatus.PREPARING]: 'Preparando',
-  [OrderStatus.DELIVERED]: 'Entregado',
-  [OrderStatus.CANCELLED]: 'Cancelado',
-};
-
-const paymentLabel: Record<string, string> = {
-  [PaymentMethod.CASH]:     'Efectivo',
-  [PaymentMethod.QR]:       'QR',
-  [PaymentMethod.TRANSFER]: 'Transferencia',
-};
-
-const actionConfig: Record<string, { label: string; nextStatus: OrderStatus; color: string } | null> = {
-  [OrderStatus.PENDING]:   { label: 'Iniciar preparación', nextStatus: OrderStatus.PREPARING, color: 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700' },
-  [OrderStatus.PREPARING]: { label: 'Marcar como entregado', nextStatus: OrderStatus.DELIVERED, color: 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700' },
-  [OrderStatus.DELIVERED]: null,
-  [OrderStatus.CANCELLED]: null,
-};
-
-function ElapsedChip({ createdAt }: { createdAt: string }) {
-  const { text, secs } = useElapsed(createdAt);
-  const urgent   = secs >= 600; // > 10 min → red
-  const warning  = secs >= 300; // > 5 min → amber
-  return (
-    <span className={[
-      'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums',
-      urgent
-        ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
-        : warning
-          ? 'bg-amber-50 text-amber-600 border-amber-200'
-          : 'bg-emerald-50 text-emerald-600 border-emerald-200',
-    ].join(' ')}>
-      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      {text}
-    </span>
-  );
-}
-
-function OrderCard({ order, onStatusChange, onPayOrder }: { order: OrderDto; onStatusChange: (id: string, s: OrderStatus) => void; onPayOrder: (order: OrderDto) => void }) {
-  const action = actionConfig[order.status];
-  const currentStep = stepIndex(order.status);
-  const isCancelled = order.status === OrderStatus.CANCELLED;
-  const isActive = ACTIVE_STATUSES.has(order.status);
-
-  const accent = statusAccent[order.status] ?? { border: 'border-l-gray-200', bg: '', badge: 'bg-gray-100 text-gray-500 border-gray-200' };
-
-  return (
-    <div className={[
-      'bg-white/90 backdrop-blur-md rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.09)]',
-      'overflow-hidden border-l-4 animate-fade',
-      accent.border,
-      accent.bg,
-      isCancelled ? 'opacity-60' : '',
-    ].join(' ')}>
-
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="font-heading font-black text-2xl text-gray-900 leading-none">
-            #{order.orderNumber}
-          </span>
-          {isActive ? (
-            <ElapsedChip createdAt={order.createdAt} />
-          ) : (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {new Date(order.createdAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
-            {statusLabel[order.status]}
-          </span>
-          <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
-            {orderTypeLabels[order.type]}
-          </span>
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-        {order.items.map((item) => (
-          <span
-            key={item.id}
-            className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1"
-          >
-            <span className="font-heading font-bold text-gray-900">{item.quantity}×</span>
-            {item.productName}
-          </span>
-        ))}
-      </div>
-
-      {/* Notes */}
-      {order.notes && (
-        <div className="px-4 pb-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-xl">
-            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
-            {order.notes}
-          </span>
-        </div>
-      )}
-
-      {/* Progress stepper */}
-      {!isCancelled ? (
-        <div className="px-4 pb-4">
-          <div className="flex items-center gap-0">
-            {STEPS.map((step, i) => {
-              const done = i <= currentStep;
-              const active = i === currentStep;
-              return (
-                <div key={step.status} className="flex items-center flex-1 last:flex-none">
-                  {/* Circle */}
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={[
-                      'w-6 h-6 rounded-full flex items-center justify-center transition-all',
-                      done
-                        ? active
-                          ? order.status === OrderStatus.PENDING
-                            ? 'bg-amber-400 shadow-[0_0_0_3px_oklch(0.85_0.14_80/0.25)]'
-                            : order.status === OrderStatus.PREPARING
-                              ? 'bg-emerald-500 shadow-[0_0_0_3px_oklch(0.70_0.18_145/0.25)]'
-                              : 'bg-sky-500 shadow-[0_0_0_3px_oklch(0.65_0.15_220/0.25)]'
-                          : 'bg-gray-200'
-                        : 'bg-gray-100 border-2 border-gray-200',
-                    ].join(' ')}>
-                      {done && !active && (
-                        <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      {active && <span className="w-2 h-2 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-[10px] font-semibold whitespace-nowrap ${
-                      done ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {/* Connector line */}
-                  {i < STEPS.length - 1 && (
-                    <div className={`flex-1 h-0.5 mb-4 mx-1 rounded-full transition-all ${
-                      i < currentStep ? 'bg-gray-300' : 'bg-gray-150'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="px-4 pb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Cancelado
-          </span>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-gray-100/80 bg-[oklch(0.99_0.004_250)]',
-        action ? 'flex-col sm:flex-row' : '',
-      ].join(' ')}>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-heading font-black text-xl text-gray-900">
-            Bs {order.total.toFixed(2)}
-          </span>
-          {order.isPaid ? (
-            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
-              {order.payments.length > 1
-                ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
-                : (paymentLabel[order.payments[0]?.method] ?? '—')}
-            </span>
-          ) : (
-            <span className="text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
-              Pendiente de cobro
-            </span>
-          )}
-        </div>
-
-        <div className="flex gap-2 w-full sm:flex-1">
-          {!order.isPaid && !isCancelled && (
-            <button
-              onClick={() => onPayOrder(order)}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white transition-all active:scale-[0.97]"
-            >
-              Cobrar
-            </button>
-          )}
-          {action && (
-            <>
-              {/* Cancel */}
-              <button
-                onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
-                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-gray-200
-                  rounded-xl hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-              >
-                Cancelar
-              </button>
-              {/* Primary action */}
-              <button
-                onClick={() => onStatusChange(order.id, action.nextStatus)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all
-                  active:scale-[0.97] ${action.color}`}
-              >
-                {action.label}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function OrdersPage() {
   const [date, setDate] = useState(today());
   const [statusFilter, setStatusFilter] = useState('');
   const [payingOrder, setPayingOrder] = useState<OrderDto | null>(null);
   const [paidOrder, setPaidOrder] = useState<OrderDto | null>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderDto | null>(null);
   const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } = useOrders(date, statusFilter);
 
   useSocketEvent<OrderDto>('order.created', (order) => {
@@ -361,7 +108,13 @@ export function OrdersPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onStatusChange={handleStatusChange} onPayOrder={setPayingOrder} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              onStatusChange={handleStatusChange}
+              onPayOrder={setPayingOrder}
+              onEdit={setEditingOrder}
+            />
           ))}
           {hasMore && (
             <div className="flex justify-center pt-2 pb-4">
@@ -405,6 +158,18 @@ export function OrdersPage() {
           order={paidOrder}
           title="¡Cobro registrado!"
           onClose={() => setPaidOrder(null)}
+        />
+      )}
+
+      {editingOrder && (
+        <EditOrderModal
+          isOpen
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSaved={(updated) => {
+            setEditingOrder(null);
+            setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+          }}
         />
       )}
     </div>

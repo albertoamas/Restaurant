@@ -88,7 +88,9 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
       <button
         type="button"
         onClick={() => { setExpanded(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 transition-colors text-sm"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl
+          border-2 border-gray-200 text-sm font-medium text-gray-400
+          hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
       >
         <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -163,9 +165,9 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
 
   // Search mode
   return (
-    <div className="space-y-1" ref={dropdownRef}>
+    <div className="space-y-2" ref={dropdownRef}>
       <div className="relative">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-primary-300 focus-within:border-primary-400">
+        <div className="flex items-center gap-2 px-3 py-3 rounded-2xl border-2 border-gray-200 bg-white focus-within:border-primary-400 transition-colors">
           <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -226,7 +228,9 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
       <button
         type="button"
         onClick={() => setMode('create')}
-        className="w-full flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-400 transition-colors text-sm font-medium"
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl
+          border-2 border-gray-200 text-sm font-medium text-gray-400
+          hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
       >
         <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

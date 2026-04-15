@@ -55,17 +55,17 @@ export class Order {
   readonly tenantId: string;
   readonly branchId: string;
   readonly orderNumber: number;
-  readonly type: OrderType;
+  type: OrderType;
   status: OrderStatus;
-  readonly paymentMethod: PaymentMethod | null;
+  paymentMethod: PaymentMethod | null;
   readonly payments: OrderPayment[];
   readonly isPaid: boolean;
   readonly items: OrderItem[];
   readonly subtotal: number;
   readonly total: number;
-  readonly notes: string | null;
+  notes: string | null;
   readonly createdBy: string;
-  readonly customerId: string | null;
+  customerId: string | null;
   readonly customer: OrderCustomer | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -120,6 +120,14 @@ export class Order {
 
   static reconstitute(props: OrderProps): Order {
     return new Order(props);
+  }
+
+  edit(fields: { notes?: string | null; type?: OrderType; customerId?: string | null; paymentMethod?: PaymentMethod }): void {
+    if (fields.notes         !== undefined) this.notes         = fields.notes;
+    if (fields.type          !== undefined) this.type          = fields.type;
+    if (fields.customerId    !== undefined) this.customerId    = fields.customerId;
+    if (fields.paymentMethod !== undefined) this.paymentMethod = fields.paymentMethod;
+    this.updatedAt = new Date();
   }
 
   updateStatus(newStatus: OrderStatus): void {

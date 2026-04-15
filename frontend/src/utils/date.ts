@@ -22,3 +22,11 @@ export function elapsed(createdAt: string): string {
   const s = diff % 60;
   return `${m}m ${s}s`;
 }
+
+export function elapsedBetween(from: string, to: string): string {
+  const diff = Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  const m = Math.floor(diff / 60);
+  const s = diff % 60;
+  return `${m}m ${s}s`;
+}

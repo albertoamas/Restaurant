@@ -1,4 +1,3 @@
-import { OrderType } from '@pos/shared';
 import { useCartStore } from '../../store/cart.store';
 import { CartItem } from './CartItem';
 import { Button } from '../ui/Button';
@@ -8,44 +7,8 @@ interface Props {
   onClose?: () => void;
 }
 
-const orderTypes = [
-  {
-    value: OrderType.DINE_IN,
-    label: 'Local',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
-  {
-    value: OrderType.TAKEOUT,
-    label: 'Llevar',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-      </svg>
-    ),
-  },
-  {
-    value: OrderType.DELIVERY,
-    label: 'Delivery',
-    icon: (
-      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-];
-
-const selectedTypeClass: Record<OrderType, string> = {
-  [OrderType.DINE_IN]: 'bg-primary-50 text-primary-800 border border-primary-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
-  [OrderType.TAKEOUT]: 'bg-amber-50 text-amber-800 border border-amber-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
-  [OrderType.DELIVERY]: 'bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]',
-};
-
 export function OrderPanel({ onCharge, onClose }: Props) {
-  const { items, orderType, notes, setOrderType, setNotes, incrementItem, decrementItem, removeItem, getTotal, getItemCount, clear } =
+  const { items, notes, setNotes, incrementItem, decrementItem, removeItem, getTotal, getItemCount, clear } =
     useCartStore();
 
   const total = getTotal();
@@ -73,27 +36,6 @@ export function OrderPanel({ onCharge, onClose }: Props) {
           </button>
         </div>
       )}
-
-      {/* Order type selector */}
-      <div className="p-3 border-b border-gray-100">
-        <div className="flex gap-0.5 border border-gray-200 rounded-xl p-0.5 bg-gray-50">
-          {orderTypes.map((type) => (
-            <button
-              key={type.value}
-              onClick={() => setOrderType(type.value)}
-              className={[
-                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[10px] text-xs font-semibold transition-all duration-150',
-                orderType === type.value
-                  ? selectedTypeClass[type.value]
-                  : 'text-gray-500 hover:text-gray-700',
-              ].join(' ')}
-            >
-              {type.icon}
-              {type.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Cart header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">

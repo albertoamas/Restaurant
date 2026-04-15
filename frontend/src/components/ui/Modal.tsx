@@ -7,7 +7,7 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full' | '2xl';
   variant?: 'dialog' | 'drawer';
 }
 
@@ -15,7 +15,9 @@ const sizes = {
   sm:   'max-w-sm',
   md:   'max-w-md',
   lg:   'max-w-lg',
+  xl:   'max-w-xl',
   full: 'max-w-2xl',
+  '2xl': 'max-w-3xl',
 };
 
 export function Modal({

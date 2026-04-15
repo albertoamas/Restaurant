@@ -41,8 +41,18 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="">
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
       <div className="text-center py-2">
+        {/* Botón X */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Cerrar"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         {/* Success icon with confetti */}
         <div className="relative inline-flex items-center justify-center mb-5">
           {/* Confetti pieces */}
@@ -93,7 +103,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
         </p>
 
         <div className="flex gap-3">
-          <Button variant="secondary" fullWidth={!order.isPaid} onClick={onClose}>
+          <Button variant="secondary" fullWidth onClick={onClose}>
             Nuevo pedido
           </Button>
           {order.isPaid && (

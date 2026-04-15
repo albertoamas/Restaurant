@@ -1,5 +1,13 @@
 import client from './client';
-import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest } from '@pos/shared';
+import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest, OrderType, PaymentMethod } from '@pos/shared';
+
+export interface EditOrderRequest {
+  type?: OrderType;
+  notes?: string | null;
+  customerId?: string | null;
+  createCustomer?: { name: string; phone?: string; email?: string };
+  paymentMethod?: PaymentMethod;
+}
 
 export interface OrdersParams {
   date?: string;
@@ -27,4 +35,7 @@ export const ordersApi = {
 
   registerPayments: (id: string, payments: CreateOrderPaymentRequest[]) =>
     client.post<OrderDto>(`/api/v1/orders/${id}/payments`, { payments }).then((r) => r.data),
+
+  update: (id: string, data: EditOrderRequest) =>
+    client.patch<OrderDto>(`/api/v1/orders/${id}`, data).then((r) => r.data),
 };
