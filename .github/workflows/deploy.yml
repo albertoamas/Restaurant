@@ -152,8 +152,10 @@ jobs:
             # Bring services up; postgres is only recreated if its config/image changed
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Remove dangling images to free disk space
-            docker image prune -f
+            # Remove ALL unused images (not just dangling) to prevent disk accumulation.
+            # Safe: only removes images with no running container — current images and
+            # postgres are kept because their containers are active.
+            docker image prune -a -f
 
             # ── Post-deploy health check ────────────────────────────────────
             echo "Waiting for services to become healthy..."
