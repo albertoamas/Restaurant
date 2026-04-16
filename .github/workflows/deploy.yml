@@ -116,6 +116,27 @@ jobs:
             set -e
             cd /opt/pos
 
+            # ── On any failure, dump logs for every service ─────────────────
+            on_error() {
+              echo "===== DEPLOY FAILED — container logs ====="
+              docker compose -f docker-compose.prod.yml logs --tail=60 postgres || true
+              docker compose -f docker-compose.prod.yml logs --tail=60 backend  || true
+              echo "===== disk & memory ====="
+              df -h
+              free -m
+              echo "===== container states ====="
+              docker compose -f docker-compose.prod.yml ps || true
+            }
+            trap on_error ERR
+
+            # ── Pre-flight: abort if disk is critically low (< 500 MB free) ─
+            FREE_KB=$(df /var/lib/docker | awk 'NR==2 {print $4}')
+            if [ "$FREE_KB" -lt 512000 ]; then
+              echo "ERROR: less than 500 MB free on /var/lib/docker ($((FREE_KB/1024)) MB). Aborting."
+              df -h
+              exit 1
+            fi
+
             # Update IMAGE_TAG in .env — awk is safe with any SHA value (no special-char risks)
             awk -v tag="${{ needs.build-and-push.outputs.image_tag }}" \
               'BEGIN{FS=OFS="="} /^IMAGE_TAG=/{$2=tag} 1' .env > .env.tmp \
@@ -125,8 +146,10 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | \
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Pull new images and restart with zero manual intervention
-            docker compose -f docker-compose.prod.yml pull
+            # Pull only app images (postgres is pinned — no need to pull every deploy)
+            docker compose -f docker-compose.prod.yml pull backend frontend
+
+            # Bring services up; postgres is only recreated if its config/image changed
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             # Remove dangling images to free disk space
@@ -146,7 +169,6 @@ jobs:
               sleep 10
               if [ "$i" = "3" ]; then
                 echo "Backend health check FAILED after 3 attempts"
-                docker compose -f docker-compose.prod.yml logs --tail=50 backend
                 exit 1
               fi
             done
