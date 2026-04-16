@@ -2,7 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
 import type { OrderDto } from '@pos/shared';
-import { PaymentMethod } from '@pos/shared';
+import { PaymentMethod, OrderType } from '@pos/shared';
 import type { CustomerPayload, PaymentEntry } from '../components/pos/PaymentModal';
 import { ordersApi } from '../api/orders.api';
 import { useCartStore } from '../store/cart.store';
@@ -30,7 +30,7 @@ export function PosPage() {
   const [showCart, setShowCart] = useState(false);
   const [lastOrder, setLastOrder] = useState<OrderDto | null>(null);
 
-  const { items, orderType, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
+  const { items, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
   const { currentBranchId } = useAuth();
   const { autoPrintKitchen, cashEnabled } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
@@ -57,7 +57,7 @@ export function PosPage() {
     setShowPayment(true);
   };
 
-  const handleConfirmPayment = async (payments: PaymentEntry[], customer: CustomerPayload) => {
+  const handleConfirmPayment = async (payments: PaymentEntry[], customer: CustomerPayload, orderType: OrderType) => {
     const hasCash = payments.some((p) => p.method === PaymentMethod.CASH);
     if (cashEnabled && hasCash && !isCashOpen()) {
       toast.error('No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo.', { duration: 4000 });
@@ -201,7 +201,7 @@ export function PosPage() {
         onClose={() => setShowPayment(false)}
         total={getTotal()}
         onConfirm={handleConfirmPayment}
-        onDeferPayment={async (customer) => {
+        onDeferPayment={async (customer, orderType) => {
           try {
             const order = await ordersApi.create({
               branchId: currentBranchId ?? undefined,

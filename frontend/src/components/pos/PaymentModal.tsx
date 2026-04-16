@@ -12,8 +12,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   total: number;
-  onConfirm: (payments: PaymentEntry[], customer: CustomerPayload) => Promise<void>;
-  onDeferPayment?: (customer: CustomerPayload) => Promise<void>;
+  onConfirm: (payments: PaymentEntry[], customer: CustomerPayload, orderType: OrderType) => Promise<void>;
+  onDeferPayment?: (customer: CustomerPayload, orderType: OrderType) => Promise<void>;
 }
 
 /* ─── Datos estáticos ────────────────────────────────────────────────────── */
@@ -222,13 +222,13 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
   /* ── Confirmar pedido ── */
   const handleConfirm = async () => {
     if (!canConfirm || !selectedType) return;
-    setOrderType(selectedType);
+    setOrderType(selectedType);   // persiste en el store para la próxima vez
     setLoading(true);
     try {
       const payments: PaymentEntry[] = splitMode
         ? splitPayments
         : [{ method: selectedMethod!, amount: total }];
-      await onConfirm(payments, customerValue);
+      await onConfirm(payments, customerValue, selectedType);  // pasa el tipo fresco
       resetState();
     } catch {
       // onConfirm already shows the error toast; just stop loading
@@ -240,9 +240,9 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
   const handleDefer = async () => {
     if (!onDeferPayment || !selectedType) return;
     if (!step1Done || !step2Done) return;
-    setOrderType(selectedType);
+    setOrderType(selectedType);   // persiste en el store para la próxima vez
     setLoading(true);
-    try { await onDeferPayment(customerValue); resetState(); } finally { setLoading(false); }
+    try { await onDeferPayment(customerValue, selectedType); resetState(); } finally { setLoading(false); }
   };
 
   /* ── Render ── */
