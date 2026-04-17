@@ -7,6 +7,7 @@ export interface TenantModules {
   teamEnabled: boolean;
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
+  rafflesEnabled: boolean;
 }
 
 export interface TenantSettings {
@@ -30,6 +31,7 @@ export class Tenant {
     public readonly teamEnabled: boolean,
     public readonly branchesEnabled: boolean,
     public readonly kitchenEnabled: boolean,
+    public readonly rafflesEnabled: boolean,
     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
     public readonly logoUrl: string | null = null,
     public readonly businessAddress: string | null = null,
@@ -38,11 +40,10 @@ export class Tenant {
   ) {}
 
   static create(name: string, slug: string): Tenant {
-    // New tenants start inactive — admin must activate after payment
     return new Tenant(
       uuidv4(), name, slug, false, new Date(),
       SaasPlan.BASICO,
-      true, true, true, true, false,
+      true, true, true, true, false, false,
       OrderNumberResetPeriod.DAILY,
       null, null, null, null,
     );
@@ -53,9 +54,9 @@ export class Tenant {
       this.id, this.name, this.slug, isActive, this.createdAt,
       this.plan,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
-      this.branchesEnabled, this.kitchenEnabled,
-      this.orderNumberResetPeriod, this.logoUrl,
-      this.businessAddress, this.businessPhone, this.receiptSlogan,
+      this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
+      this.orderNumberResetPeriod,
+      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -64,9 +65,9 @@ export class Tenant {
       this.id, this.name, this.slug, this.isActive, this.createdAt,
       plan,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
-      this.branchesEnabled, this.kitchenEnabled,
-      this.orderNumberResetPeriod, this.logoUrl,
-      this.businessAddress, this.businessPhone, this.receiptSlogan,
+      this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
+      this.orderNumberResetPeriod,
+      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -79,8 +80,9 @@ export class Tenant {
       modules.teamEnabled     ?? this.teamEnabled,
       modules.branchesEnabled ?? this.branchesEnabled,
       modules.kitchenEnabled  ?? this.kitchenEnabled,
-      this.orderNumberResetPeriod, this.logoUrl,
-      this.businessAddress, this.businessPhone, this.receiptSlogan,
+      modules.rafflesEnabled  ?? this.rafflesEnabled,
+      this.orderNumberResetPeriod,
+      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
     );
   }
 
@@ -89,12 +91,12 @@ export class Tenant {
       this.id, this.name, this.slug, this.isActive, this.createdAt,
       this.plan,
       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
-      this.branchesEnabled, this.kitchenEnabled,
+      this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
       settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
-      settings.logoUrl          !== undefined ? (settings.logoUrl          ?? null) : this.logoUrl,
-      settings.businessAddress  !== undefined ? (settings.businessAddress  ?? null) : this.businessAddress,
-      settings.businessPhone    !== undefined ? (settings.businessPhone    ?? null) : this.businessPhone,
-      settings.receiptSlogan    !== undefined ? (settings.receiptSlogan    ?? null) : this.receiptSlogan,
+      settings.logoUrl         !== undefined ? (settings.logoUrl         ?? null) : this.logoUrl,
+      settings.businessAddress !== undefined ? (settings.businessAddress ?? null) : this.businessAddress,
+      settings.businessPhone   !== undefined ? (settings.businessPhone   ?? null) : this.businessPhone,
+      settings.receiptSlogan   !== undefined ? (settings.receiptSlogan   ?? null) : this.receiptSlogan,
     );
   }
 
@@ -105,6 +107,7 @@ export class Tenant {
       teamEnabled:     this.teamEnabled,
       branchesEnabled: this.branchesEnabled,
       kitchenEnabled:  this.kitchenEnabled,
+      rafflesEnabled:  this.rafflesEnabled,
     };
   }
 

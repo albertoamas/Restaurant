@@ -3,7 +3,6 @@ export interface CustomerDto {
   name: string;
   phone: string | null;
   email: string | null;
-  ticketsDelivered: number;
   notes: string | null;
   createdAt: string;
 }
@@ -12,7 +11,6 @@ export interface CustomerStatsDto extends CustomerDto {
   purchaseCount: number;
   totalSpent: number;
   lastOrderAt: string | null;
-  ticketsDelivered: number;
 }
 
 export interface CustomerSearchResult {

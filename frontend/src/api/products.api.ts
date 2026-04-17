@@ -2,15 +2,21 @@ import client from './client';
 import type { ProductDto, CreateProductRequest, UpdateProductRequest } from '@pos/shared';
 
 export const productsApi = {
-  getAll: (categoryId?: string, includeInactive = false) =>
+  getAll: (params?: { categoryId?: string; includeInactive?: boolean; page?: number; limit?: number; q?: string }) =>
     client
-      .get<ProductDto[]>('/api/v1/products', {
+      .get('/api/v1/products', {
         params: {
-          ...(categoryId ? { categoryId } : {}),
-          ...(includeInactive ? { includeInactive: 'true' } : {}),
+          ...(params?.categoryId ? { categoryId: params.categoryId } : {}),
+          ...(params?.includeInactive ? { includeInactive: 'true' } : {}),
+          ...(params?.page ? { page: params.page } : {}),
+          ...(params?.limit ? { limit: params.limit } : {}),
+          ...(params?.q ? { q: params.q } : {}),
         },
       })
-      .then((r) => r.data),
+      .then((r) => ({
+        data: r.data as ProductDto[],
+        total: Number(r.headers['x-total-count'] ?? r.data.length),
+      })),
 
   getOne: (id: string) =>
     client.get<ProductDto>(`/api/v1/products/${id}`).then((r) => r.data),

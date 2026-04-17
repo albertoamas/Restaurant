@@ -68,6 +68,7 @@ export class LoginUseCase {
           teamEnabled:            tenant.teamEnabled,
           branchesEnabled:        tenant.branchesEnabled,
           kitchenEnabled:         tenant.kitchenEnabled,
+          rafflesEnabled:         tenant.rafflesEnabled,
           orderNumberResetPeriod: tenant.orderNumberResetPeriod,
         },
       },

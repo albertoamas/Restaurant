@@ -9,6 +9,7 @@ export class Plan {
     public readonly maxCashiers:    number,
     public readonly maxProducts:    number,
     public readonly kitchenEnabled: boolean,
+    public readonly rafflesEnabled: boolean = false,
   ) {}
 
   get limits(): PlanLimits {
@@ -27,6 +28,7 @@ export class Plan {
     maxCashiers?:    number;
     maxProducts?:    number;
     kitchenEnabled?: boolean;
+    rafflesEnabled?: boolean;
   }): Plan {
     return new Plan(
       this.id,
@@ -36,6 +38,7 @@ export class Plan {
       updates.maxCashiers    ?? this.maxCashiers,
       updates.maxProducts    ?? this.maxProducts,
       updates.kitchenEnabled ?? this.kitchenEnabled,
+      updates.rafflesEnabled ?? this.rafflesEnabled,
     );
   }
 }

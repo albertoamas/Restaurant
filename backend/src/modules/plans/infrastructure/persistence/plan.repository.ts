@@ -13,6 +13,7 @@ function toDomain(row: any): Plan {
     row.maxCashiers,
     row.maxProducts,
     row.kitchenEnabled,
+    row.rafflesEnabled,
   );
 }
 
@@ -43,6 +44,7 @@ export class PlanRepository implements PlanRepositoryPort {
         ...(updates.maxCashiers    !== undefined && { maxCashiers:    updates.maxCashiers }),
         ...(updates.maxProducts    !== undefined && { maxProducts:    updates.maxProducts }),
         ...(updates.kitchenEnabled !== undefined && { kitchenEnabled: updates.kitchenEnabled }),
+        ...(updates.rafflesEnabled !== undefined && { rafflesEnabled: updates.rafflesEnabled }),
       },
     });
     return toDomain(row);

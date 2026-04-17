@@ -5,31 +5,63 @@ import { useVisibilityRefresh } from './useVisibilityRefresh';
 import { useSocketEvent } from '../context/socket.context';
 import type { ProductDto } from '@pos/shared';
 
-export function useProducts(includeInactive = false) {
+export function useProducts(includeInactive = false, pageSize = 500) {
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [q, setQState] = useState('');
+  const [categoryId, setCategoryIdState] = useState<string | undefined>(undefined);
+  const [page, setPageState] = useState(1);
 
-  const load = useCallback(() => {
-    productsApi
-      .getAll(undefined, includeInactive)
-      .then(setProducts)
-      .catch(() => toast.error('Error al cargar productos'))
-      .finally(() => setLoading(false));
-  }, [includeInactive]);
+  const load = useCallback(
+    (query: string, catId: string | undefined, pg: number) => {
+      setLoading(true);
+      productsApi
+        .getAll({ includeInactive, q: query || undefined, categoryId: catId, page: pg, limit: pageSize })
+        .then((r) => { setProducts(r.data); setTotal(r.total); })
+        .catch(() => toast.error('Error al cargar productos'))
+        .finally(() => setLoading(false));
+    },
+    [includeInactive],
+  );
 
-  // Initial load + polling every 60s as fallback
   useEffect(() => {
-    load();
-    const id = setInterval(load, 60_000);
-    return () => clearInterval(id);
-  }, [load]);
+    load(q, categoryId, page);
+  }, [q, categoryId, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh when returning to the tab
-  useVisibilityRefresh(load);
+  function setQ(value: string) {
+    setQState(value);
+    setPageState(1);
+  }
 
-  // Real-time: reload instantly on any product change
-  useSocketEvent('product.created', load);
-  useSocketEvent('product.updated', load);
+  function setCategoryId(value: string | undefined) {
+    setCategoryIdState(value);
+    setPageState(1);
+  }
 
-  return { products, loading, reload: load };
+  function setPage(pg: number) {
+    setPageState(pg);
+  }
+
+  const reload = useCallback(() => load(q, categoryId, page), [q, categoryId, page, load]);
+
+  useVisibilityRefresh(reload);
+  useSocketEvent('product.created', reload);
+  useSocketEvent('product.updated', reload);
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return {
+    products,
+    loading,
+    reload,
+    total,
+    page,
+    totalPages,
+    setPage,
+    q,
+    setQ,
+    categoryId,
+    setCategoryId,
+  };
 }

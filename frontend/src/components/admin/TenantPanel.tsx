@@ -11,6 +11,7 @@ const MODULE_DEFS: ModuleDef[] = [
   { key: 'teamEnabled',     label: 'Equipo',     description: 'Gestión de cajeros y sus sucursales asignadas' },
   { key: 'branchesEnabled', label: 'Sucursales', description: 'Administración de múltiples locales' },
   { key: 'kitchenEnabled',  label: 'Cocina',     description: 'Panel de visualización de pedidos en cocina' },
+  { key: 'rafflesEnabled',  label: 'Sorteos',    description: 'Gestión de sorteos y tickets para clientes' },
 ];
 
 function ModuleToggleRow({ def, value, disabled, onChange }: {

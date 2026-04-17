@@ -18,6 +18,7 @@ model Plan {
   maxCashiers    Int      @map("max_cashiers")
   maxProducts    Int      @map("max_products")
   kitchenEnabled Boolean  @default(false)  @map("kitchen_enabled")
+  rafflesEnabled Boolean  @default(false)  @map("raffles_enabled")
   createdAt      DateTime @default(now())  @map("created_at")
   updatedAt      DateTime @updatedAt       @map("updated_at")
 
@@ -45,6 +46,7 @@ model Tenant {
   teamEnabled     Boolean @default(true)  @map("team_enabled")
   branchesEnabled Boolean @default(true)  @map("branches_enabled")
   kitchenEnabled  Boolean @default(false) @map("kitchen_enabled")
+  rafflesEnabled  Boolean @default(false) @map("raffles_enabled")
 
   // Order settings — configurable by the tenant owner
   orderNumberResetPeriod String  @default("DAILY") @map("order_number_reset_period")
@@ -65,6 +67,8 @@ model Tenant {
   customers            Customer[]
   orderPayments        OrderPayment[]
   branchOrderSequences BranchOrderSequence[]
+  raffles              Raffle[]
+  raffleTickets        RaffleTicket[]
 
   @@map("tenants")
 }
@@ -134,6 +138,7 @@ model Product {
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  raffles  Raffle[]
 
   @@index([tenantId, categoryId])
   @@map("products")
@@ -158,10 +163,11 @@ model Order {
 
   customerId    String?   @map("customer_id")
 
-  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  items    OrderItem[]
-  payments OrderPayment[]
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+  payments      OrderPayment[]
+  raffleTickets RaffleTicket[]
 
   @@index([tenantId, orderNumber])
   @@index([tenantId, createdAt])
@@ -270,20 +276,69 @@ model Expense {
 // ─── Customer ─────────────────────────────────────────────────
 
 model Customer {
-  id               String   @id @default(uuid())
-  tenantId         String   @map("tenant_id")
-  name             String   @db.VarChar(255)
-  phone            String?  @db.VarChar(50)
-  email            String?  @db.VarChar(255)
-  ticketsDelivered Int      @default(0) @map("tickets_delivered")
-  notes            String?
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String   @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  email     String?  @db.VarChar(255)
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orders Order[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  raffleTickets RaffleTicket[]
+  rafflesWon    Raffle[]       @relation("RaffleWinner")
 
   @@unique([tenantId, phone])
   @@index([tenantId, name])
   @@map("customers")
+}
+
+// ─── Raffle ───────────────────────────────────────────────────
+
+model Raffle {
+  id               String    @id @default(uuid())
+  tenantId         String    @map("tenant_id")
+  name             String    @db.VarChar(255)
+  description      String?   @db.VarChar(500)
+  status           String    @default("ACTIVE")
+  prizeDescription String?   @map("prize_description") @db.VarChar(500)
+  productId        String?   @map("product_id")
+  winnerCustomerId String?   @map("winner_customer_id")
+  winnerTicketId   String?   @map("winner_ticket_id")
+  drawnAt          DateTime? @map("drawn_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product        Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  winnerCustomer Customer?      @relation("RaffleWinner", fields: [winnerCustomerId], references: [id], onDelete: SetNull)
+  tickets        RaffleTicket[] @relation("RaffleTickets")
+
+  @@index([tenantId, status])
+  @@index([tenantId, productId])
+  @@map("raffles")
+}
+
+// ─── RaffleTicket ─────────────────────────────────────────────
+
+model RaffleTicket {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  raffleId     String   @map("raffle_id")
+  customerId   String   @map("customer_id")
+  ticketNumber Int      @map("ticket_number")
+  orderId      String?  @map("order_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle   @relation("RaffleTickets", fields: [raffleId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@unique([raffleId, ticketNumber])
+  @@index([tenantId, raffleId])
+  @@index([tenantId, customerId])
+  @@map("raffle_tickets")
 }

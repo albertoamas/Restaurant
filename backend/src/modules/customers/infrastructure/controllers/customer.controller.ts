@@ -2,15 +2,15 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -21,7 +21,6 @@ import { ListCustomersUseCase } from '../../application/use-cases/list-customers
 import { GetCustomerUseCase } from '../../application/use-cases/get-customer.use-case';
 import { UpdateCustomerUseCase } from '../../application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from '../../application/use-cases/search-customers.use-case';
-import { DeliverTicketUseCase } from '../../application/use-cases/deliver-ticket.use-case';
 import { CreateCustomerDto } from '../../application/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../application/dto/update-customer.dto';
 
@@ -34,7 +33,6 @@ export class CustomerController {
     private readonly getCustomer: GetCustomerUseCase,
     private readonly updateCustomer: UpdateCustomerUseCase,
     private readonly searchCustomers: SearchCustomersUseCase,
-    private readonly deliverTicketUseCase: DeliverTicketUseCase,
   ) {}
 
   // IMPORTANT: /search must be declared before /:id to avoid route collision
@@ -49,18 +47,21 @@ export class CustomerController {
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.OWNER)
-  findAll(
+  async findAll(
     @CurrentTenant() tenantId: string,
+    @Res({ passthrough: true }) res: Response,
     @Query('q') q?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.listCustomers.execute(
+    const result = await this.listCustomers.execute(
       tenantId,
       q,
       page ? Number(page) : undefined,
       limit ? Number(limit) : undefined,
     );
+    res.setHeader('X-Total-Count', result.total);
+    return result.data;
   }
 
   @Get(':id')
@@ -92,16 +93,5 @@ export class CustomerController {
     @Body() dto: UpdateCustomerDto,
   ) {
     return this.updateCustomer.execute(id, tenantId, dto);
-  }
-
-  @Post(':id/tickets/deliver')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.OWNER)
-  deliverTicket(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentTenant() tenantId: string,
-  ) {
-    return this.deliverTicketUseCase.execute(id, tenantId);
   }
 }

@@ -1,18 +1,16 @@
+import { BOLIVIA_TZ } from '@pos/shared';
 import { toBoliviaDateString } from './timezone';
 
-/**
- * Devuelve la fecha de hoy en formato "YYYY-MM-DD" usando la hora de Bolivia (UTC-4),
- * independiente del timezone configurado en el dispositivo.
- */
 export function today(): string {
   return toBoliviaDateString(new Date());
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('es-BO', {
+  return new Intl.DateTimeFormat('es-BO', {
+    timeZone: BOLIVIA_TZ,
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
-  });
+  }).format(new Date(iso));
 }
 
 export function elapsed(createdAt: string): string {
@@ -29,4 +27,12 @@ export function elapsedBetween(from: string, to: string): string {
   const m = Math.floor(diff / 60);
   const s = diff % 60;
   return `${m}m ${s}s`;
+}
+
+export function formatBoliviaTime(iso: string): string {
+  return new Intl.DateTimeFormat('es-BO', {
+    timeZone: BOLIVIA_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus, OrderType, PaymentMethod, TopProductDto } from '@pos/shared';
-import { BOLIVIA_OFFSET } from '../../../../common/utils/timezone.util';
+import { BOLIVIA_OFFSET, BOLIVIA_TZ } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
@@ -244,7 +244,7 @@ export class OrderRepository implements OrderRepositoryPort {
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
-          AND DATE(o.created_at AT TIME ZONE 'America/La_Paz') = ${date}::date
+          AND DATE(o.created_at AT TIME ZONE ${BOLIVIA_TZ}) = ${date}::date
           AND o.status != ${OrderStatus.CANCELLED}
           AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
       ),

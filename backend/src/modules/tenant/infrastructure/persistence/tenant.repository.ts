@@ -18,6 +18,7 @@ function toDomain(row: PrismaTenant): Tenant {
     row.teamEnabled,
     row.branchesEnabled,
     row.kitchenEnabled,
+    row.rafflesEnabled,
     (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
     row.logoUrl         ?? null,
     row.businessAddress ?? null,
@@ -53,6 +54,7 @@ export class TenantRepository implements TenantRepositoryPort {
       teamEnabled:             tenant.teamEnabled,
       branchesEnabled:         tenant.branchesEnabled,
       kitchenEnabled:          tenant.kitchenEnabled,
+      rafflesEnabled:          tenant.rafflesEnabled,
       orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
       logoUrl:                 tenant.logoUrl,
       businessAddress:         tenant.businessAddress,
@@ -102,6 +104,7 @@ export class TenantRepository implements TenantRepositoryPort {
         teamEnabled:     r.teamEnabled,
         branchesEnabled: r.branchesEnabled,
         kitchenEnabled:  r.kitchenEnabled,
+        rafflesEnabled:  r.rafflesEnabled,
       },
       settings: {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
@@ -139,6 +142,7 @@ export class TenantRepository implements TenantRepositoryPort {
         ...(modules.teamEnabled     !== undefined && { teamEnabled:     modules.teamEnabled }),
         ...(modules.branchesEnabled !== undefined && { branchesEnabled: modules.branchesEnabled }),
         ...(modules.kitchenEnabled  !== undefined && { kitchenEnabled:  modules.kitchenEnabled }),
+        ...(modules.rafflesEnabled  !== undefined && { rafflesEnabled:  modules.rafflesEnabled }),
       },
     });
     return toDomain(row);

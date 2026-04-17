@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { OrderStatus, PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { orderTypeLabels } from '../../utils/order';
-import { elapsed, elapsedBetween } from '../../utils/date';
+import { elapsed, elapsedBetween, formatBoliviaTime } from '../../utils/date';
 
 /* ─── Static data ────────────────────────────────────────────────────────── */
 
@@ -77,15 +77,19 @@ function ElapsedChip({ createdAt }: { createdAt: string }) {
   );
 }
 
-function PausedElapsedChip({ createdAt, updatedAt }: { createdAt: string; updatedAt: string }) {
-  const text = elapsedBetween(createdAt, updatedAt);
+function DeliveredAtChip({ createdAt, updatedAt }: { createdAt: string; updatedAt: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-gray-50 text-gray-500 border-gray-200">
-      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      {text}
+    <span className="inline-flex items-center gap-1.5">
+      <span className="text-xs font-medium text-gray-400 tabular-nums">
+        {formatBoliviaTime(updatedAt)}
+      </span>
+      <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-sky-50 text-sky-600 border-sky-200">
+        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M5 13l4 4L19 7" />
+        </svg>
+        {elapsedBetween(createdAt, updatedAt)}
+      </span>
     </span>
   );
 }
@@ -125,14 +129,14 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {isActive ? (
             <ElapsedChip createdAt={order.createdAt} />
           ) : order.status === OrderStatus.DELIVERED ? (
-            <PausedElapsedChip createdAt={order.createdAt} updatedAt={order.updatedAt} />
+            <DeliveredAtChip createdAt={order.createdAt} updatedAt={order.updatedAt} />
           ) : (
             <span className="text-xs text-gray-400 flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {new Date(order.createdAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+              {formatBoliviaTime(order.createdAt)}
             </span>
           )}
         </div>
@@ -158,6 +162,19 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           </span>
         ))}
       </div>
+
+      {/* Customer */}
+      {order.customer && (
+        <div className="px-4 pb-2 -mt-1">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
+            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            {order.customer.name}
+          </span>
+        </div>
+      )}
 
       {/* Notes */}
       {order.notes && (

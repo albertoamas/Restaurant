@@ -9,6 +9,7 @@ import { OrderStatus } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 
 @Injectable()
 export class UpdateOrderStatusUseCase {
@@ -16,6 +17,7 @@ export class UpdateOrderStatusUseCase {
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
     @Optional() private readonly eventsService?: EventsService,
+    @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
 
   async execute(id: string, tenantId: string, newStatus: OrderStatus): Promise<Order> {
@@ -33,6 +35,11 @@ export class UpdateOrderStatusUseCase {
 
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
+
+    if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
+      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id).catch(() => {});
+    }
+
     return saved;
   }
 }

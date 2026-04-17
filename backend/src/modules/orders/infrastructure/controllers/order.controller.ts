@@ -5,7 +5,6 @@ import {
   ForbiddenException,
   Get,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -66,11 +65,13 @@ export class OrderController {
     @Query('status') status?: OrderStatus,
     @Query('branchId') branchId?: string,
     @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
-    @Query('page',  new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page') pageStr?: string,
+    @Query('limit') limitStr?: string,
   ) {
     // Cashiers can only see their own branch; owners can filter or see all
     const effectiveBranchId = user.branchId ?? branchId;
+    const page  = pageStr  ? Number(pageStr)  : undefined;
+    const limit = limitStr ? Number(limitStr) : undefined;
     return this.listOrdersUseCase.execute(tenantId, { date, from, to, status, branchId: effectiveBranchId, customerId, page, limit });
   }
 
@@ -91,7 +92,6 @@ export class OrderController {
   @Post(':id/payments')
   registerPayments(
     @CurrentTenant() tenantId: string,
-    @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RegisterOrderPaymentDto,
   ) {

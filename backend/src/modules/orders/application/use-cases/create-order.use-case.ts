@@ -13,6 +13,7 @@ import { EventsService } from '../../../events/events.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { Customer } from '../../../customers/domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../../customers/domain/ports/customer-repository.port';
+import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 import { PaymentMethod } from '@pos/shared';
 
 @Injectable()
@@ -37,6 +38,8 @@ export class CreateOrderUseCase {
     private readonly customerRepository?: CustomerRepositoryPort,
 
     @Optional() private readonly eventsService?: EventsService,
+
+    @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CreateOrderDto): Promise<Order> {
@@ -176,6 +179,13 @@ export class CreateOrderUseCase {
     // 12. Persist and return
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToTenant(tenantId, 'order.created', saved);
+
+    // 13. Auto-assign raffle tickets (silent — never throws)
+    if (resolvedCustomerId && this.raffleAutoTicket) {
+      const raffleItems = dto.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
+      this.raffleAutoTicket.processOrder(tenantId, resolvedCustomerId, orderId, raffleItems).catch(() => {});
+    }
+
     return saved;
   }
 }

@@ -7,7 +7,7 @@ export interface CustomerRepositoryPort {
   save(customer: Customer): Promise<Customer>;
   findById(id: string, tenantId: string): Promise<Customer | null>;
   findByPhone(phone: string, tenantId: string): Promise<Customer | null>;
-  findAll(tenantId: string, q?: string, page?: number, limit?: number): Promise<CustomerStatsDto[]>;
+  findAll(tenantId: string, q?: string, page?: number, limit?: number): Promise<{ data: CustomerStatsDto[]; total: number }>;
   findOneWithStats(id: string, tenantId: string): Promise<CustomerStatsDto | null>;
   search(q: string, tenantId: string): Promise<CustomerSearchResult[]>;
 }

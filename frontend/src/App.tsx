@@ -17,6 +17,7 @@ import { OwnerRoute } from './routes/OwnerRoute';
 import { BranchesPage } from './pages/BranchesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { CustomersPage } from './pages/CustomersPage';
+import { RafflesPage } from './pages/RafflesPage';
 import { AdminPage } from './pages/AdminPage';
 import { LandingPage } from './pages/LandingPage';
 
@@ -30,7 +31,7 @@ function ModuleRoute({ enabled, element }: { enabled: boolean; element: React.Re
 }
 
 function AppRoutes() {
-  const { ordersEnabled, cashEnabled, teamEnabled, branchesEnabled, kitchenEnabled } =
+  const { ordersEnabled, cashEnabled, teamEnabled, branchesEnabled, kitchenEnabled, rafflesEnabled } =
     useSettingsStore();
 
   return (
@@ -62,6 +63,10 @@ function AppRoutes() {
             <Route path="/report"    element={<ReportPage />} />
             <Route path="/expenses"  element={<ExpensesPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            <Route
+              path="/raffles"
+              element={<ModuleRoute enabled={rafflesEnabled} element={<RafflesPage />} />}
+            />
             <Route path="/products"  element={<ProductsPage />} />
             <Route path="/settings"  element={<SettingsPage />} />
 

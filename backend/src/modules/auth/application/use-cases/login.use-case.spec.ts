@@ -36,6 +36,7 @@ function makeTenant(overrides: Partial<{ isActive: boolean }> = {}): Tenant {
     overrides.isActive ?? true,
     new Date(), SaasPlan.BASICO,
     true, true, true, true, true,
+    false,
     OrderNumberResetPeriod.DAILY, null,
   );
 }

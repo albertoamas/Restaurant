@@ -43,6 +43,7 @@ function makeTenant(): Tenant {
   return new Tenant(
     TENANT_ID, 'HamBurgos', 'hamburgos', true, new Date(),
     SaasPlan.BASICO, true, true, true, true, true,
+    false,
     OrderNumberResetPeriod.DAILY, null,
   );
 }

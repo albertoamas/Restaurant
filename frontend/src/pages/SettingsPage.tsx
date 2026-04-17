@@ -103,7 +103,6 @@ export function SettingsPage() {
   const { user } = useAuth();
   const {
     autoPrintKitchen, setAutoPrintKitchen,
-    raffleThreshold, setRaffleThreshold,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
     receiptSlogan, setReceiptSlogan,
@@ -253,21 +252,6 @@ export function SettingsPage() {
                 )}
               </div>
             </div>
-          </div>
-          <div className="py-4">
-            <Input
-              label="Bs por ficha de sorteo"
-              type="number"
-              min="1"
-              step="1"
-              value={String(raffleThreshold)}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                if (v > 0) setRaffleThreshold(v);
-              }}
-              placeholder="Ej: 100"
-            />
-            <p className="text-xs text-gray-400 mt-1.5">El cliente recibe una ficha por cada {raffleThreshold} Bs acumulados en compras</p>
           </div>
           <div className="py-4">
             <Input

@@ -7,6 +7,7 @@ export interface TenantModules {
   teamEnabled: boolean;
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
+  rafflesEnabled: boolean;
 }
 
 export interface TenantRow {
@@ -30,6 +31,7 @@ export interface PlanRow {
   maxCashiers: number;
   maxProducts: number;
   kitchenEnabled: boolean;
+  rafflesEnabled: boolean;
 }
 
 export interface CreateTenantPayload {

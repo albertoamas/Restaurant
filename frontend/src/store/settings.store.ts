@@ -16,18 +16,16 @@ interface SettingsState {
   cashEnabled: boolean;
   teamEnabled: boolean;
   branchesEnabled: boolean;
+  rafflesEnabled: boolean;
   setOrdersEnabled: (value: boolean) => void;
   setCashEnabled: (value: boolean) => void;
   setTeamEnabled: (value: boolean) => void;
   setBranchesEnabled: (value: boolean) => void;
+  setRafflesEnabled: (value: boolean) => void;
 
   // Numeración de pedidos (server-controlled — set by auth context on login/getMe)
   orderNumberResetPeriod: OrderNumberResetPeriod;
   setOrderNumberResetPeriod: (value: OrderNumberResetPeriod) => void;
-
-  // Sistema de fichas de sorteo
-  raffleThreshold: number;
-  setRaffleThreshold: (value: number) => void;
 
   // Datos del negocio (server-controlled — set by auth context on login/getMe)
   businessAddress: string;
@@ -62,16 +60,15 @@ export const useSettingsStore = create<SettingsState>()(
       cashEnabled: true,
       teamEnabled: true,
       branchesEnabled: true,
+      rafflesEnabled: false,
       setOrdersEnabled: (value) => set({ ordersEnabled: value }),
       setCashEnabled: (value) => set({ cashEnabled: value }),
       setTeamEnabled: (value) => set({ teamEnabled: value }),
       setBranchesEnabled: (value) => set({ branchesEnabled: value }),
+      setRafflesEnabled: (value) => set({ rafflesEnabled: value }),
 
       orderNumberResetPeriod: 'DAILY' as OrderNumberResetPeriod,
       setOrderNumberResetPeriod: (value) => set({ orderNumberResetPeriod: value }),
-
-      raffleThreshold: 100,
-      setRaffleThreshold: (value) => set({ raffleThreshold: value }),
 
       businessAddress: '',
       businessPhone: '',
@@ -91,12 +88,9 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'pos-settings',
       // Only persist local UI preferences.
-      // Module flags come from the server on every login/getMe — never from localStorage.
-      // Only persist local UI preferences.
-      // businessAddress/Phone/receiptSlogan come from server on every login — never from localStorage.
+      // Module flags, businessAddress/Phone/receiptSlogan come from the server on every login/getMe — never from localStorage.
       partialize: (state) => ({
         autoPrintKitchen: state.autoPrintKitchen,
-        raffleThreshold:  state.raffleThreshold,
       }),
     },
   ),

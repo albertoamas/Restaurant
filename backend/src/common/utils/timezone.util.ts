@@ -1,5 +1,5 @@
-export const BOLIVIA_TZ     = 'America/La_Paz';
-export const BOLIVIA_OFFSET = '-04:00';
+export { BOLIVIA_TZ, BOLIVIA_OFFSET } from '@pos/shared';
+import { BOLIVIA_TZ, BOLIVIA_OFFSET } from '@pos/shared';
 
 /**
  * Devuelve la fecha dada en hora Bolivia como "YYYY-MM-DD".

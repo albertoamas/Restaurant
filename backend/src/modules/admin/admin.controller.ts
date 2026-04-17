@@ -27,6 +27,7 @@ class UpdateModulesDto implements Partial<TenantModules> {
   @IsOptional() @IsBoolean() teamEnabled?:     boolean;
   @IsOptional() @IsBoolean() branchesEnabled?: boolean;
   @IsOptional() @IsBoolean() kitchenEnabled?:  boolean;
+  @IsOptional() @IsBoolean() rafflesEnabled?:  boolean;
 }
 
 class UpdatePlanDto {
@@ -41,6 +42,7 @@ class UpdatePlanLimitsDto {
   @IsOptional() @IsNumber() @Min(-1) maxCashiers?:    number;
   @IsOptional() @IsNumber() @Min(-1) maxProducts?:    number;
   @IsOptional() @IsBoolean() kitchenEnabled?: boolean;
+  @IsOptional() @IsBoolean() rafflesEnabled?: boolean;
 }
 
 @Controller('admin')

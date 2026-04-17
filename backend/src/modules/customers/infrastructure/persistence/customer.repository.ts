@@ -18,7 +18,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
@@ -27,7 +26,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
         name: customer.name,
         phone: customer.phone,
         email: customer.email,
-        ticketsDelivered: customer.ticketsDelivered,
         notes: customer.notes,
         updatedAt: customer.updatedAt,
       },
@@ -36,53 +34,52 @@ export class CustomerRepository implements CustomerRepositoryPort {
   }
 
   async findById(id: string, tenantId: string): Promise<Customer | null> {
-    const row = await this.prisma.customer.findFirst({
-      where: { id, tenantId },
-    });
+    const row = await this.prisma.customer.findFirst({ where: { id, tenantId } });
     return row ? this.toDomain(row) : null;
   }
 
   async findByPhone(phone: string, tenantId: string): Promise<Customer | null> {
-    const row = await this.prisma.customer.findFirst({
-      where: { phone, tenantId },
-    });
+    const row = await this.prisma.customer.findFirst({ where: { phone, tenantId } });
     return row ? this.toDomain(row) : null;
   }
 
-  async findAll(tenantId: string, q?: string, page = 1, limit = 50): Promise<CustomerStatsDto[]> {
+  async findAll(tenantId: string, q?: string, page = 1, limit = 50): Promise<{ data: CustomerStatsDto[]; total: number }> {
     const offset = (page - 1) * limit;
 
-    // Fragmento de búsqueda condicional usando Prisma.sql — todos los valores son parámetros
-    // enlazados por el driver de PostgreSQL. Nunca se interpola input del usuario en el SQL.
     const searchFilter = q
       ? Prisma.sql`AND (c.name ILIKE ${'%' + q + '%'} OR c.phone ILIKE ${'%' + q + '%'})`
       : Prisma.empty;
 
-    const rows = await this.prisma.$queryRaw<any[]>(Prisma.sql`
-      SELECT
-        c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.tickets_delivered AS "ticketsDelivered",
-        c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
-        COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount",
-        COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)), 0) AS "totalSpent",
-        MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "lastOrderAt"
-      FROM customers c
-      LEFT JOIN orders o ON o.customer_id = c.id
-      WHERE c.tenant_id = ${tenantId}
-      ${searchFilter}
-      GROUP BY c.id
-      ORDER BY c.name ASC
-      LIMIT ${limit} OFFSET ${offset}
-    `);
+    const [rows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT
+          c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
+          c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
+          COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount",
+          COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)), 0) AS "totalSpent",
+          MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "lastOrderAt"
+        FROM customers c
+        LEFT JOIN orders o ON o.customer_id = c.id
+        WHERE c.tenant_id = ${tenantId}
+        ${searchFilter}
+        GROUP BY c.id
+        ORDER BY c.name ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `),
+      this.prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
+        SELECT COUNT(*) AS count FROM customers c
+        WHERE c.tenant_id = ${tenantId}
+        ${searchFilter}
+      `),
+    ]);
 
-    return rows.map(this.toStatsDto);
+    return { data: rows.map(this.toStatsDto), total: Number(countRows[0].count) };
   }
 
   async findOneWithStats(id: string, tenantId: string): Promise<CustomerStatsDto | null> {
     const rows = await this.prisma.$queryRaw<any[]>`
       SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
-        c.tickets_delivered AS "ticketsDelivered",
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)) AS "purchaseCount",
         COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id)), 0) AS "totalSpent",
@@ -124,7 +121,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
       name: row.name,
       phone: row.phone ?? null,
       email: row.email ?? null,
-      ticketsDelivered: Number(row.ticketsDelivered ?? row.tickets_delivered ?? 0),
       notes: row.notes ?? null,
       createdAt: new Date(row.createdAt ?? row.created_at),
       updatedAt: new Date(row.updatedAt ?? row.updated_at),
@@ -137,7 +133,6 @@ export class CustomerRepository implements CustomerRepositoryPort {
       name: r.name,
       phone: r.phone ?? null,
       email: r.email ?? null,
-      ticketsDelivered: Number(r.ticketsDelivered ?? 0),
       notes: r.notes ?? null,
       createdAt: new Date(r.createdAt).toISOString(),
       purchaseCount: Number(r.purchaseCount ?? 0),

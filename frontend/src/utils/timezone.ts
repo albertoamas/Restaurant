@@ -1,11 +1,11 @@
-export const BOLIVIA_OFFSET = '-04:00';
+import { BOLIVIA_TZ, BOLIVIA_OFFSET } from '@pos/shared';
 
 /**
  * Devuelve la fecha dada en hora Bolivia como "YYYY-MM-DD".
  * Independiente del timezone configurado en el dispositivo del usuario.
  */
 export function toBoliviaDateString(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(date);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: BOLIVIA_TZ }).format(date);
 }
 
 /**

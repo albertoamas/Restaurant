@@ -42,6 +42,7 @@ export class GetProfileUseCase {
         teamEnabled:            tenant?.teamEnabled            ?? true,
         branchesEnabled:        tenant?.branchesEnabled        ?? true,
         kitchenEnabled:         tenant?.kitchenEnabled         ?? false,
+        rafflesEnabled:         tenant?.rafflesEnabled         ?? false,
         orderNumberResetPeriod: tenant?.orderNumberResetPeriod ?? 'DAILY',
       },
     };

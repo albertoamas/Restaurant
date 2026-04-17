@@ -6,7 +6,6 @@ export interface CustomerProps {
   name: string;
   phone: string | null;
   email: string | null;
-  ticketsDelivered: number;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -26,7 +25,6 @@ export class Customer {
   name: string;
   phone: string | null;
   email: string | null;
-  ticketsDelivered: number;
   notes: string | null;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -37,7 +35,6 @@ export class Customer {
     this.name = props.name;
     this.phone = props.phone;
     this.email = props.email;
-    this.ticketsDelivered = props.ticketsDelivered;
     this.notes = props.notes;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
@@ -51,7 +48,6 @@ export class Customer {
       name: props.name.trim(),
       phone: props.phone?.trim() || null,
       email: props.email?.trim() || null,
-      ticketsDelivered: 0,
       notes: props.notes?.trim() || null,
       createdAt: now,
       updatedAt: now,
@@ -67,11 +63,6 @@ export class Customer {
     if (patch.phone !== undefined) this.phone = patch.phone?.trim() || null;
     if (patch.email !== undefined) this.email = patch.email?.trim() || null;
     if (patch.notes !== undefined) this.notes = patch.notes?.trim() || null;
-    this.updatedAt = new Date();
-  }
-
-  deliverTicket(): void {
-    this.ticketsDelivered += 1;
     this.updatedAt = new Date();
   }
 }

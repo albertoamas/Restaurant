@@ -24,6 +24,7 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
       maxCashiers: p.maxCashiers,
       maxProducts: p.maxProducts,
       kitchenEnabled: p.kitchenEnabled,
+      rafflesEnabled: p.rafflesEnabled,
     });
   };
 
@@ -121,6 +122,15 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.kitchenEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
         </div>
+        <div className="flex items-center justify-between py-1.5">
+          <label className="text-sm font-medium text-gray-700">Sorteos</label>
+          <button
+            onClick={() => onFormChange((prev) => ({ ...prev, rafflesEnabled: !prev.rafflesEnabled }))}
+            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-gray-200'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.rafflesEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+          </button>
+        </div>
       </div>
       <div className="flex gap-2 pt-1">
         <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-700 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
@@ -173,6 +183,12 @@ function PlanViewCard({ plan, cfg, onEdit }: {
           <span className="text-gray-400">Cocina</span>
           <span className={`font-semibold ${plan.kitchenEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>
             {plan.kitchenEnabled ? 'Sí' : 'No'}
+          </span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-400">Sorteos</span>
+          <span className={`font-semibold ${plan.rafflesEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>
+            {plan.rafflesEnabled ? 'Sí' : 'No'}
           </span>
         </div>
       </div>

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -25,7 +26,6 @@ import { ToggleProductUseCase } from '../../application/use-cases/toggle-product
 import { CreateProductDto } from '../../application/dto/create-product.dto';
 import { UpdateProductDto } from '../../application/dto/update-product.dto';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
-import { Inject } from '@nestjs/common';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard)
@@ -47,6 +47,7 @@ export class ProductController {
     @Query('includeInactive') includeInactive?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('q') q?: string,
   ) {
     const result = await this.listProducts.execute(
       tenantId,
@@ -54,6 +55,7 @@ export class ProductController {
       includeInactive === 'true',
       page ? +page : 1,
       limit ? +limit : 100,
+      q,
     );
     res.setHeader('X-Total-Count', result.total);
     return result.data;

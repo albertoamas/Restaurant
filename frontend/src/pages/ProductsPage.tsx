@@ -13,7 +13,11 @@ import { ProductFormModal } from '../components/products/ProductFormModal';
 import { CategoryFormModal } from '../components/products/CategoryFormModal';
 
 export function ProductsPage() {
-  const { products, loading: prodsLoading, reload: reloadProducts } = useProducts(true);
+  const {
+    products, loading: prodsLoading, reload: reloadProducts,
+    total, page, totalPages, setPage,
+    q, setQ, categoryId, setCategoryId,
+  } = useProducts(true, 50);
   const { categories, loading: catsLoading, reload: reloadCategories } = useCategories();
   const loading = prodsLoading || catsLoading;
 
@@ -21,7 +25,8 @@ export function ProductsPage() {
   const [showCatModal, setShowCatModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDto | null>(null);
   const [editingCategory, setEditingCategory] = useState<CategoryDto | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchData = () => {
     reloadProducts();
@@ -51,11 +56,14 @@ export function ProductsPage() {
   const getCategoryName = (catId: string) =>
     categories.find((c) => c.id === catId)?.name || '-';
 
-  const filteredProducts = selectedCategory
-    ? products.filter((p) => p.categoryId === selectedCategory)
-    : products;
+  function handleSearchChange(val: string) {
+    setSearchInput(val);
+    if (searchTimer) clearTimeout(searchTimer);
+    const t = setTimeout(() => setQ(val), 350);
+    setSearchTimer(t);
+  }
 
-  if (loading) {
+  if (catsLoading && prodsLoading) {
     return <div className="flex justify-center py-12"><Spinner /></div>;
   }
 
@@ -72,7 +80,7 @@ export function ProductsPage() {
             <p className="text-xs text-gray-500 mt-0.5">Administra precios, estado y categorías con control total.</p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 w-fit">
-            {filteredProducts.length} productos
+            {total} producto{total !== 1 ? 's' : ''}
           </span>
         </div>
 
@@ -80,9 +88,9 @@ export function ProductsPage() {
         {/* Category filter chips */}
         <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
           <button
-            onClick={() => setSelectedCategory(null)}
+            onClick={() => setCategoryId(undefined)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-              selectedCategory === null ? activeClass : inactiveClass
+              categoryId === undefined ? activeClass : inactiveClass
             }`}
           >
             Todos
@@ -90,9 +98,9 @@ export function ProductsPage() {
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center gap-0.5">
               <button
-                onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+                onClick={() => setCategoryId(cat.id === categoryId ? undefined : cat.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-                  selectedCategory === cat.id ? activeClass : inactiveClass
+                  categoryId === cat.id ? activeClass : inactiveClass
                 }`}
               >
                 {cat.name}
@@ -116,9 +124,24 @@ export function ProductsPage() {
           <Button size="sm" variant="secondary" onClick={() => { setEditingCategory(null); setShowCatModal(true); }}>+ Agregar categoría</Button>
         </div>
         </div>
+
+        {/* Search */}
+        <div className="relative mt-3">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Buscar producto por nombre..."
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white/90"
+          />
+        </div>
       </div>
 
-      {filteredProducts.length === 0 ? (
+      {products.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-sm shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -126,14 +149,14 @@ export function ProductsPage() {
           </svg>
           <p className="text-sm font-semibold text-gray-500">Sin productos</p>
           <p className="text-xs mt-1">
-            {selectedCategory ? 'No hay productos en esta categoría' : 'Crea tu primer producto'}
+            {(categoryId || q) ? 'No hay productos con ese filtro' : 'Crea tu primer producto'}
           </p>
         </div>
       ) : (
         <>
           {/* Mobile card list — hidden on lg+ */}
           <div className="lg:hidden space-y-2">
-            {filteredProducts.map((p) => (
+            {products.map((p) => (
               <div
                 key={p.id}
                 className={`flex items-center gap-3 bg-white/90 rounded-2xl border border-white/70
@@ -200,7 +223,7 @@ export function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filteredProducts.map((p) => (
+                  {products.map((p) => (
                     <tr key={p.id} className={`transition-colors hover:bg-gray-50/60 ${!p.isActive ? 'opacity-60' : ''}`}>
                       <td className="px-4 py-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center shrink-0">
@@ -249,6 +272,56 @@ export function ProductsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && !loading && (
+        <div className="flex items-center justify-between mt-4 px-1">
+          <p className="text-xs text-gray-500">
+            Página {page} de {totalPages} · {total} productos
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Anterior
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let pg: number;
+              if (totalPages <= 7) {
+                pg = i + 1;
+              } else if (page <= 4) {
+                pg = i + 1;
+              } else if (page >= totalPages - 3) {
+                pg = totalPages - 6 + i;
+              } else {
+                pg = page - 3 + i;
+              }
+              return (
+                <button
+                  key={pg}
+                  onClick={() => setPage(pg)}
+                  className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
+                    pg === page
+                      ? 'bg-primary-500 border-primary-500 text-white'
+                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {pg}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
       )}
 
       <ProductFormModal

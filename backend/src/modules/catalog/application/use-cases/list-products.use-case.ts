@@ -8,7 +8,7 @@ export class ListProductsUseCase {
     private readonly productRepository: ProductRepositoryPort,
   ) {}
 
-  async execute(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100): Promise<ProductPage> {
-    return this.productRepository.findAllByTenant(tenantId, categoryId, includeInactive, page, limit);
+  async execute(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100, q?: string): Promise<ProductPage> {
+    return this.productRepository.findAllByTenant(tenantId, categoryId, includeInactive, page, limit, q);
   }
 }

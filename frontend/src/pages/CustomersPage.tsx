@@ -3,7 +3,6 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { useCustomers } from '../hooks/useCustomers';
-import { useSettingsStore } from '../store/settings.store';
 import { customersApi } from '../api/customers.api';
 import { ordersApi } from '../api/orders.api';
 import { handleApiError } from '../utils/api-error';
@@ -40,15 +39,6 @@ const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   [PaymentMethod.QR]: 'QR',
   [PaymentMethod.TRANSFER]: 'Transferencia',
 };
-
-// ── Raffle helpers ────────────────────────────────────────────────────────────
-
-function calcTickets(totalSpent: number, delivered: number, threshold: number) {
-  const earned = Math.floor(totalSpent / threshold);
-  const balance = Math.round(totalSpent % threshold * 100) / 100;
-  const pending = Math.max(0, earned - delivered);
-  return { earned, balance, pending };
-}
 
 // ── Order history ─────────────────────────────────────────────────────────────
 
@@ -95,12 +85,10 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
 
 function CustomerDetailModal({
   customer,
-  threshold,
   onClose,
   onUpdate,
 }: {
   customer: CustomerStatsDto;
-  threshold: number;
   onClose: () => void;
   onUpdate: () => void;
 }) {
@@ -110,10 +98,6 @@ function CustomerDetailModal({
   const [email, setEmail] = useState(customer.email ?? '');
   const [notes, setNotes] = useState(customer.notes ?? '');
   const [saving, setSaving] = useState(false);
-  const [ticketSaving, setTicketSaving] = useState(false);
-
-  const { earned, balance, pending } = calcTickets(customer.totalSpent, customer.ticketsDelivered, threshold);
-  const progressPct = threshold > 0 ? Math.min(100, (balance / threshold) * 100) : 0;
 
   async function handleSaveEdit() {
     setSaving(true);
@@ -133,18 +117,6 @@ function CustomerDetailModal({
     }
   }
 
-  async function handleDeliverTicket() {
-    setTicketSaving(true);
-    try {
-      await customersApi.deliverTicket(customer.id);
-      onUpdate();
-    } catch (err) {
-      handleApiError(err, 'Error al registrar entrega');
-    } finally {
-      setTicketSaving(false);
-    }
-  }
-
   return (
     <Modal isOpen onClose={onClose} title="Detalle del Cliente" size="sm">
       {/* Purchase stats */}
@@ -159,60 +131,6 @@ function CustomerDetailModal({
         </div>
       </div>
       <p className="text-xs text-gray-400 mb-4">Última compra: {formatDate(customer.lastOrderAt)}</p>
-
-      {/* Raffle ticket panel */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🎟️</span>
-            <p className="text-sm font-bold text-amber-900">Fichas de sorteo</p>
-          </div>
-          {pending > 0 && (
-            <span className="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-              {pending} pendiente{pending > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-          <div>
-            <p className="text-xl font-black text-amber-800">{earned}</p>
-            <p className="text-[10px] text-amber-600 font-medium">Ganadas</p>
-          </div>
-          <div>
-            <p className="text-xl font-black text-green-700">{customer.ticketsDelivered}</p>
-            <p className="text-[10px] text-green-600 font-medium">Entregadas</p>
-          </div>
-          <div>
-            <p className="text-xl font-black text-orange-600">{pending}</p>
-            <p className="text-[10px] text-orange-500 font-medium">Por entregar</p>
-          </div>
-        </div>
-
-        {/* Progress bar toward next ticket */}
-        <div className="mb-3">
-          <div className="flex justify-between text-[10px] text-amber-700 mb-1">
-            <span>Saldo hacia próxima ficha</span>
-            <span className="font-semibold">Bs {balance.toFixed(2)} / {threshold}</span>
-          </div>
-          <div className="h-2 bg-amber-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-amber-500 rounded-full transition-all duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-
-        <Button
-          variant="primary"
-          fullWidth
-          onClick={handleDeliverTicket}
-          loading={ticketSaving}
-          disabled={pending === 0}
-        >
-          {pending === 0 ? 'Sin fichas por entregar' : `Entregar ficha (quedan ${pending})`}
-        </Button>
-      </div>
 
       {/* Customer info */}
       {editMode ? (
@@ -308,8 +226,7 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function CustomersPage() {
-  const { customers, loading, q, setQ, reload } = useCustomers();
-  const { raffleThreshold } = useSettingsStore();
+  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage } = useCustomers();
   const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -329,7 +246,7 @@ export function CustomersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{customers.length} registrado{customers.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{total} registrado{total !== 1 ? 's' : ''}</p>
           </div>
           <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo cliente</Button>
         </div>
@@ -373,48 +290,77 @@ export function CustomersPage() {
       ) : (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</p>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Gastado</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Saldo</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">🎟️</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Compras</p>
           </div>
 
           {/* Rows */}
-          {customers.map((c) => {
-            const { balance, pending } = calcTickets(c.totalSpent, c.ticketsDelivered, raffleThreshold);
-            return (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className="w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-left"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{c.phone ?? c.email ?? '—'}</p>
-                </div>
-                <p className="text-sm text-gray-700 text-right self-center">Bs {c.totalSpent.toFixed(0)}</p>
-                <div className="text-right self-center">
-                  <p className="text-xs font-semibold text-gray-700">{balance.toFixed(0)} / {raffleThreshold}</p>
-                  <div className="h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
-                    <div
-                      className="h-full bg-amber-400 rounded-full"
-                      style={{ width: `${Math.min(100, (balance / raffleThreshold) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="self-center text-center">
-                  {pending > 0 ? (
-                    <span className="bg-amber-100 text-amber-700 text-xs font-bold px-1.5 py-0.5 rounded-full">
-                      {pending}
-                    </span>
-                  ) : (
-                    <span className="text-gray-200 text-base">—</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {customers.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setSelected(c)}
+              className="w-full grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
+                <p className="text-xs text-gray-400 truncate">{c.phone ?? c.email ?? '—'}</p>
+              </div>
+              <p className="text-sm text-gray-700 text-right self-center">Bs {c.totalSpent.toFixed(0)}</p>
+              <p className="text-sm font-semibold text-gray-900 text-right self-center">{c.purchaseCount}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && !loading && (
+        <div className="flex items-center justify-between mt-4 px-1">
+          <p className="text-xs text-gray-500">
+            Página {page} de {totalPages} · {total} clientes
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Anterior
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let pg: number;
+              if (totalPages <= 7) {
+                pg = i + 1;
+              } else if (page <= 4) {
+                pg = i + 1;
+              } else if (page >= totalPages - 3) {
+                pg = totalPages - 6 + i;
+              } else {
+                pg = page - 3 + i;
+              }
+              return (
+                <button
+                  key={pg}
+                  onClick={() => setPage(pg)}
+                  className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
+                    pg === page
+                      ? 'bg-primary-500 border-primary-500 text-white'
+                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {pg}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente →
+            </button>
+          </div>
         </div>
       )}
 
@@ -422,7 +368,6 @@ export function CustomersPage() {
       {selected && (
         <CustomerDetailModal
           customer={selected}
-          threshold={raffleThreshold}
           onClose={() => setSelected(null)}
           onUpdate={() => { reload(); setSelected(null); }}
         />

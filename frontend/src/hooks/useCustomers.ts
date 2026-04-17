@@ -5,33 +5,47 @@ import { useVisibilityRefresh } from './useVisibilityRefresh';
 import { useSocketEvent } from '../context/socket.context';
 import type { CustomerStatsDto } from '@pos/shared';
 
+const PAGE_SIZE = 50;
+
 export function useCustomers(initialQ = '') {
   const [customers, setCustomers] = useState<CustomerStatsDto[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState(initialQ);
+  const [q, setQState] = useState(initialQ);
+  const [page, setPageState] = useState(1);
 
   const load = useCallback(
-    (query = q) => {
+    (query: string, pg: number) => {
       setLoading(true);
       customersApi
-        .getAll({ q: query || undefined })
-        .then(setCustomers)
+        .getAll({ q: query || undefined, page: pg, limit: PAGE_SIZE })
+        .then((r) => { setCustomers(r.data); setTotal(r.total); })
         .catch(() => toast.error('Error al cargar clientes'))
         .finally(() => setLoading(false));
     },
-    [q],
+    [],
   );
 
   useEffect(() => {
-    load(q);
-  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+    load(q, page);
+  }, [q, page, load]);
 
-  // Refresh when returning to the tab
-  useVisibilityRefresh(load);
+  function setQ(value: string) {
+    setQState(value);
+    setPageState(1);
+  }
 
-  // Real-time: reload instantly on any customer change
-  useSocketEvent('customer.created', load);
-  useSocketEvent('customer.updated', load);
+  function setPage(pg: number) {
+    setPageState(pg);
+  }
 
-  return { customers, loading, q, setQ, reload: load };
+  const reload = useCallback(() => load(q, page), [q, page, load]);
+
+  useVisibilityRefresh(reload);
+  useSocketEvent('customer.created', reload);
+  useSocketEvent('customer.updated', reload);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  return { customers, loading, q, setQ, reload, total, page, totalPages, setPage };
 }

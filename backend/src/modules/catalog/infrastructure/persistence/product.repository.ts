@@ -21,13 +21,14 @@ function toDomain(row: PrismaProduct): Product {
 export class ProductRepository implements ProductRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllByTenant(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100): Promise<ProductPage> {
+  async findAllByTenant(tenantId: string, categoryId?: string, includeInactive = false, page = 1, limit = 100, q?: string): Promise<ProductPage> {
     const safeLimit = Math.min(limit, 200);
     const skip = (page - 1) * safeLimit;
     const where = {
       tenantId,
       ...(includeInactive ? {} : { isActive: true }),
       ...(categoryId ? { categoryId } : {}),
+      ...(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}),
     };
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
