@@ -5,6 +5,6 @@ import { ModuleGuard } from './guards/module.guard';
 @Module({
   imports: [TenantModule],
   providers: [ModuleGuard],
-  exports: [ModuleGuard],
+  exports: [ModuleGuard, 'TenantRepositoryPort'],
 })
 export class CommonModule {}
