@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { TenantModule } from '../tenant/tenant.module';
 import { PlansModule } from '../plans/plans.module';
 import { CommonModule } from '../../common/common.module';
 import { GetProfileUseCase } from './application/use-cases/get-profile.use-case';
@@ -30,7 +29,6 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
         },
       }),
     }),
-    TenantModule,
     PlansModule,
     CommonModule,
   ],

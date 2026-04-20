@@ -4,7 +4,6 @@ import { CatalogModule } from '../catalog/catalog.module';
 import { EventsModule } from '../events/events.module';
 import { CustomersModule } from '../customers/customers.module';
 import { CashSessionModule } from '../cash-session/cash-session.module';
-import { TenantModule } from '../tenant/tenant.module';
 import { RafflesModule } from '../raffles/raffles.module';
 import { CommonModule } from '../../common/common.module';
 import { OrderRepository } from './infrastructure/persistence/order.repository';
@@ -17,7 +16,7 @@ import { RegisterOrderPaymentUseCase } from './application/use-cases/register-or
 import { EditOrderUseCase } from './application/use-cases/edit-order.use-case';
 
 @Module({
-  imports: [BranchModule, CatalogModule, EventsModule, CustomersModule, CashSessionModule, TenantModule, RafflesModule, CommonModule],
+  imports: [BranchModule, CatalogModule, EventsModule, CustomersModule, CashSessionModule, RafflesModule, CommonModule],
   controllers: [OrderController],
   providers: [
     {

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TenantModule } from '../tenant/tenant.module';
 import { PlansModule } from '../plans/plans.module';
 import { CommonModule } from '../../common/common.module';
 import { BranchRepository } from './infrastructure/persistence/branch.repository';
@@ -10,7 +9,7 @@ import { UpdateBranchUseCase } from './application/use-cases/update-branch.use-c
 import { ToggleBranchUseCase } from './application/use-cases/toggle-branch.use-case';
 
 @Module({
-  imports: [TenantModule, PlansModule, CommonModule],
+  imports: [PlansModule, CommonModule],
   controllers: [BranchController],
   providers: [
     { provide: 'BranchRepositoryPort', useClass: BranchRepository },
