@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import { OrderStatus } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { ModuleGuard } from '../../../../common/guards/module.guard';
+import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import {
   CurrentTenant,
   CurrentUser,
@@ -30,7 +32,8 @@ import { EditOrderUseCase } from '../../application/use-cases/edit-order.use-cas
 import { EditOrderDto } from '../../application/dto/edit-order.dto';
 
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard)
+@RequiresModule('ordersEnabled')
 export class OrderController {
   constructor(
     private readonly createOrderUseCase: CreateOrderUseCase,

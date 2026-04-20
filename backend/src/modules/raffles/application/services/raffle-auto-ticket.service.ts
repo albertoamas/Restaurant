@@ -24,7 +24,6 @@ export class RaffleAutoTicketService {
     if (!activeRaffles.length) return;
 
     for (const raffle of activeRaffles) {
-      if (!raffle.productId) continue;
       const item = items.find((i) => i.productId === raffle.productId);
       if (!item) continue;
 

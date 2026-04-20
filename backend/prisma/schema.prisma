@@ -69,6 +69,7 @@ model Tenant {
   branchOrderSequences BranchOrderSequence[]
   raffles              Raffle[]
   raffleTickets        RaffleTicket[]
+  raffleWinners        RaffleWinner[]
 
   @@map("tenants")
 }
@@ -288,7 +289,7 @@ model Customer {
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   orders        Order[]
   raffleTickets RaffleTicket[]
-  rafflesWon    Raffle[]       @relation("RaffleWinner")
+  raffleWins    RaffleWinner[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, name])
@@ -298,27 +299,67 @@ model Customer {
 // ─── Raffle ───────────────────────────────────────────────────
 
 model Raffle {
-  id               String    @id @default(uuid())
-  tenantId         String    @map("tenant_id")
-  name             String    @db.VarChar(255)
-  description      String?   @db.VarChar(500)
-  status           String    @default("ACTIVE")
-  prizeDescription String?   @map("prize_description") @db.VarChar(500)
-  productId        String?   @map("product_id")
-  winnerCustomerId String?   @map("winner_customer_id")
-  winnerTicketId   String?   @map("winner_ticket_id")
-  drawnAt          DateTime? @map("drawn_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  name            String   @db.VarChar(255)
+  description     String?  @db.VarChar(500)
+  // ACTIVE → CLOSED → DRAWING (primer ganador sorteado) → DRAWN (todos sorteados)
+  status          String   @default("ACTIVE")
+  numberOfWinners Int      @default(1) @map("number_of_winners")
+  productId       String?  @map("product_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product        Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
-  winnerCustomer Customer?      @relation("RaffleWinner", fields: [winnerCustomerId], references: [id], onDelete: SetNull)
-  tickets        RaffleTicket[] @relation("RaffleTickets")
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  tickets RaffleTicket[] @relation("RaffleTickets")
+  prizes  RafflePrize[]
+  winners RaffleWinner[]
 
   @@index([tenantId, status])
   @@index([tenantId, productId])
   @@map("raffles")
+}
+
+// ─── RafflePrize ──────────────────────────────────────────────
+// Premio por posición, definido al crear el sorteo.
+// position 1 = primer lugar (el más importante).
+
+model RafflePrize {
+  id               String @id @default(uuid())
+  raffleId         String @map("raffle_id")
+  position         Int
+  prizeDescription String @map("prize_description") @db.VarChar(500)
+
+  raffle Raffle @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  @@unique([raffleId, position])
+  @@map("raffle_prizes")
+}
+
+// ─── RaffleWinner ─────────────────────────────────────────────
+// Un registro por cada lugar sorteado.
+// El sorteo avanza de la posición más alta (3°) a la más baja (1°).
+
+model RaffleWinner {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  raffleId         String   @map("raffle_id")
+  customerId       String   @map("customer_id")
+  ticketId         String   @map("ticket_id")
+  position         Int
+  prizeDescription String?  @map("prize_description") @db.VarChar(500)
+  drawnAt          DateTime @default(now()) @map("drawn_at")
+  voided           Boolean  @default(false) @map("voided")
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle       @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  customer Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  ticket   RaffleTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // @@unique([raffleId, position]) — reemplazado por índice parcial en DB (WHERE voided = false)
+  @@index([tenantId, raffleId])
+  @@map("raffle_winners")
 }
 
 // ─── RaffleTicket ─────────────────────────────────────────────
@@ -332,10 +373,11 @@ model RaffleTicket {
   orderId      String?  @map("order_id")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  raffle   Raffle   @relation("RaffleTickets", fields: [raffleId], references: [id], onDelete: Cascade)
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle        @relation("RaffleTickets", fields: [raffleId], references: [id], onDelete: Cascade)
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  winners  RaffleWinner[]
 
   @@unique([raffleId, ticketNumber])
   @@index([tenantId, raffleId])

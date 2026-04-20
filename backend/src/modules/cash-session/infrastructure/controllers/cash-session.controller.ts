@@ -1,7 +1,9 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { ModuleGuard } from '../../../../common/guards/module.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
+import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { UserRole } from '@pos/shared';
 import { OpenCashSessionDto } from '../../application/dto/open-cash-session.dto';
@@ -13,7 +15,8 @@ import { GetSessionHistoryUseCase } from '../../application/use-cases/get-sessio
 import { BadRequestException } from '@nestjs/common';
 
 @Controller('cash-sessions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard)
+@RequiresModule('cashEnabled')
 export class CashSessionController {
   constructor(
     private readonly openUseCase: OpenCashSessionUseCase,

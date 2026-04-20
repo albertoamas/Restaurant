@@ -10,8 +10,10 @@ export class DeleteRaffleUseCase {
 
   async execute(id: string, tenantId: string): Promise<void> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
-    if (!raffle) throw new NotFoundException(`Raffle ${id} not found`);
-    if (!raffle.isDeletable) throw new BadRequestException('No se puede eliminar un sorteo ya sorteado');
+    if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
+    if (!raffle.isDeletable) {
+      throw new BadRequestException('No se puede eliminar un sorteo que ya está siendo sorteado o que fue completado');
+    }
 
     await this.repo.deleteRaffle(id, tenantId);
   }

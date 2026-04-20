@@ -5,9 +5,7 @@ import { useRaffles } from '../hooks/useRaffles';
 import { RaffleCard } from '../components/raffles/RaffleCard';
 import { CreateRaffleModal } from '../components/raffles/CreateRaffleModal';
 import { RaffleDetailModal } from '../components/raffles/RaffleDetailModal';
-import { WinnerModal } from '../components/raffles/WinnerModal';
 import type { RaffleDto } from '@pos/shared';
-import type { DetailRaffle } from '../components/raffles/types';
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
@@ -31,14 +29,13 @@ export function RafflesPage() {
   const { raffles, setRaffles, loading, reload } = useRaffles();
   const [showCreate, setShowCreate] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [winner, setWinner] = useState<DetailRaffle | null>(null);
 
   function handleCreated(raffle: RaffleDto) {
     setRaffles((prev) => [raffle, ...prev]);
     setSelectedId(raffle.id);
   }
 
-  const activeCount = raffles.filter((r) => r.status === 'ACTIVE').length;
+  const activeCount = raffles.filter((r) => r.status === 'ACTIVE' || r.status === 'DRAWING').length;
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
@@ -80,12 +77,7 @@ export function RafflesPage() {
           raffleId={selectedId}
           onClose={() => setSelectedId(null)}
           onUpdate={reload}
-          onDraw={(r) => setWinner(r)}
         />
-      )}
-
-      {winner && (
-        <WinnerModal raffle={winner} onClose={() => { setWinner(null); reload(); }} />
       )}
     </div>
   );

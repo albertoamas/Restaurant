@@ -11,7 +11,7 @@ export class GetRaffleUseCase {
 
   async execute(id: string, tenantId: string): Promise<RaffleDto & { tickets: RaffleTicketDto[] }> {
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
-    if (!result) throw new NotFoundException(`Raffle ${id} not found`);
+    if (!result) throw new NotFoundException(`Sorteo ${id} no encontrado`);
     return result;
   }
 }

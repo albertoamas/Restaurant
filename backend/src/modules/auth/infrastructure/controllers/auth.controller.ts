@@ -16,7 +16,9 @@ import { Throttle } from '@nestjs/throttler';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { ModuleGuard } from '../../../../common/guards/module.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
+import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { LoginDto } from '../../application/dto/login.dto';
 import { CreateCashierDto } from '../../application/dto/create-cashier.dto';
@@ -69,14 +71,16 @@ export class AuthController {
   // ── Gestión de usuarios (solo OWNER) ─────────────────────────
 
   @Get('users')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
   @Roles(UserRole.OWNER)
   listUsers(@CurrentTenant() tenantId: string) {
     return this.listUsersUseCase.execute(tenantId);
   }
 
   @Post('users')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
   @Roles(UserRole.OWNER)
   createCashier(
     @CurrentTenant() tenantId: string,
@@ -86,7 +90,8 @@ export class AuthController {
   }
 
   @Patch('users/:id/branch')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
   @Roles(UserRole.OWNER)
   @HttpCode(HttpStatus.NO_CONTENT)
   updateUserBranch(
@@ -98,7 +103,8 @@ export class AuthController {
   }
 
   @Patch('users/:id/toggle')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
   @Roles(UserRole.OWNER)
   toggleUser(
     @Param('id', ParseUUIDPipe) id: string,

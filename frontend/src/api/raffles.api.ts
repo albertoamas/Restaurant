@@ -22,4 +22,7 @@ export const rafflesApi = {
 
   reopen: (id: string): Promise<RaffleDto> =>
     client.patch<RaffleDto>(`/api/v1/raffles/${id}/reopen`, {}).then((r) => r.data),
+
+  voidWinner: (raffleId: string, winnerId: string): Promise<RaffleDto & { tickets: RaffleTicketDto[] }> =>
+    client.patch<RaffleDto & { tickets: RaffleTicketDto[] }>(`/api/v1/raffles/${raffleId}/winners/${winnerId}/void`, {}).then((r) => r.data),
 };

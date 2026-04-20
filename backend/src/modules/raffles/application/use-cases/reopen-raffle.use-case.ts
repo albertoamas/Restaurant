@@ -11,8 +11,12 @@ export class ReopenRaffleUseCase {
 
   async execute(id: string, tenantId: string): Promise<RaffleDto> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
-    if (!raffle) throw new NotFoundException(`Raffle ${id} not found`);
-    if (raffle.status !== 'CLOSED') throw new BadRequestException('Solo se pueden reabrir sorteos cerrados');
+    if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
+    if (!raffle.isReopenable) {
+      throw new BadRequestException(
+        'Solo se pueden reabrir sorteos en estado CERRADO (no los que están en sorteo o ya terminados)',
+      );
+    }
 
     raffle.reopen();
     await this.repo.saveRaffle(raffle);

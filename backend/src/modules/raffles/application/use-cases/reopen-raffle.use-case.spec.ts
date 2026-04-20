@@ -4,10 +4,13 @@ import { ReopenRaffleUseCase } from './reopen-raffle.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
 
-function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWN' = 'ACTIVE'): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1');
-  if (status === 'CLOSED') r.close();
-  if (status === 'DRAWN')  { r.close(); r.draw('c', 't'); }
+const PRIZES = [{ position: 1, prizeDescription: 'Premio' }];
+
+function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'ACTIVE'): Raffle {
+  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1', 1, PRIZES);
+  if (status === 'CLOSED')  r.close();
+  if (status === 'DRAWING') { r.close(); r.startDrawing(); }
+  if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }
   return r;
 }
 
@@ -36,6 +39,11 @@ describe('ReopenRaffleUseCase', () => {
 
   it('lanza BadRequestException si el sorteo está ACTIVE (no cerrado)', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
+    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
+  });
+
+  it('lanza BadRequestException si el sorteo está DRAWING', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
   });
 

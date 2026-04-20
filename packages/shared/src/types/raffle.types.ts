@@ -1,18 +1,35 @@
-export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWN';
+export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
+
+export interface RafflePrizeDto {
+  position: number;
+  prizeDescription: string;
+}
+
+export interface RaffleWinnerDto {
+  id: string;
+  position: number;
+  prizeDescription: string | null;
+  customerId: string;
+  customer: { id: string; name: string; phone: string | null };
+  ticketId: string;
+  ticketNumber: number;
+  drawnAt: string;
+  voided: boolean;
+}
 
 export interface RaffleDto {
   id: string;
   name: string;
   description: string | null;
   status: RaffleStatus;
-  prizeDescription: string | null;
+  numberOfWinners: number;
   productId: string | null;
   productName: string | null;
-  winnerCustomerId: string | null;
-  winnerTicketId: string | null;
-  winnerCustomer: { id: string; name: string; phone: string | null } | null;
+  prizes: RafflePrizeDto[];
+  winners: RaffleWinnerDto[];
+  /** Posición que se sorteará en el próximo draw. null cuando status === 'DRAWN'. */
+  nextPositionToDraw: number | null;
   ticketCount: number;
-  drawnAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +47,7 @@ export interface RaffleTicketDto {
 export interface CreateRaffleRequest {
   name: string;
   description?: string;
-  prizeDescription?: string;
   productId: string;
+  numberOfWinners: number;
+  prizes: RafflePrizeDto[];
 }

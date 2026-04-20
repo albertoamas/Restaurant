@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EventsModule } from '../events/events.module';
+import { CommonModule } from '../../common/common.module';
 import { CashSessionRepository } from './infrastructure/persistence/cash-session.repository';
 import { CashSessionController } from './infrastructure/controllers/cash-session.controller';
 import { OpenCashSessionUseCase } from './application/use-cases/open-cash-session.use-case';
@@ -8,7 +9,7 @@ import { GetCurrentSessionUseCase } from './application/use-cases/get-current-se
 import { GetSessionHistoryUseCase } from './application/use-cases/get-session-history.use-case';
 
 @Module({
-  imports: [EventsModule],
+  imports: [EventsModule, CommonModule],
   controllers: [CashSessionController],
   providers: [
     { provide: 'CashSessionRepositoryPort', useClass: CashSessionRepository },

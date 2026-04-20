@@ -1,35 +1,63 @@
 import { Raffle } from './raffle.entity';
 
-function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWN' = 'ACTIVE'): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo Test', 'prod-1');
-  if (status === 'CLOSED') r.close();
-  if (status === 'DRAWN')  { r.close(); r.draw('cust-1', 'ticket-1'); }
+const PRIZES_1 = [{ position: 1, prizeDescription: '1er lugar' }];
+const PRIZES_3 = [
+  { position: 1, prizeDescription: '1er lugar' },
+  { position: 2, prizeDescription: '2do lugar' },
+  { position: 3, prizeDescription: '3er lugar' },
+];
+
+function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'ACTIVE'): Raffle {
+  const r = Raffle.create('tenant-1', 'Sorteo Test', 'prod-1', 1, PRIZES_1);
+  if (status === 'CLOSED')  { r.close(); }
+  if (status === 'DRAWING') { r.close(); r.startDrawing(); }
+  if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }
   return r;
 }
 
 describe('Raffle entity', () => {
   describe('create()', () => {
     it('inicia en ACTIVE con los campos correctos', () => {
-      const r = Raffle.create('tenant-1', '  Sorteo Navidad  ', 'prod-1', 'desc', 'premio');
+      const r = Raffle.create('tenant-1', '  Sorteo Navidad  ', 'prod-1', 1, PRIZES_1, 'desc');
       expect(r.status).toBe('ACTIVE');
       expect(r.name).toBe('Sorteo Navidad');
       expect(r.description).toBe('desc');
-      expect(r.prizeDescription).toBe('premio');
+      expect(r.numberOfWinners).toBe(1);
+      expect(r.prizes).toEqual(PRIZES_1);
       expect(r.productId).toBe('prod-1');
-      expect(r.winnerCustomerId).toBeNull();
-      expect(r.winnerTicketId).toBeNull();
-      expect(r.drawnAt).toBeNull();
     });
 
     it('recorta espacios del nombre', () => {
-      const r = Raffle.create('t', '  Nombre  ', 'p');
+      const r = Raffle.create('t', '  Nombre  ', 'p', 1, PRIZES_1);
       expect(r.name).toBe('Nombre');
     });
 
     it('genera un id único por instancia', () => {
-      const r1 = Raffle.create('t', 'A', 'p');
-      const r2 = Raffle.create('t', 'B', 'p');
+      const r1 = Raffle.create('t', 'A', 'p', 1, PRIZES_1);
+      const r2 = Raffle.create('t', 'B', 'p', 1, PRIZES_1);
       expect(r1.id).not.toBe(r2.id);
+    });
+
+    it('description vacía o ausente queda como null', () => {
+      const r1 = Raffle.create('t', 'A', 'p', 1, PRIZES_1, '');
+      const r2 = Raffle.create('t', 'A', 'p', 1, PRIZES_1);
+      expect(r1.description).toBeNull();
+      expect(r2.description).toBeNull();
+    });
+
+    it('admite múltiples ganadores y sus premios', () => {
+      const r = Raffle.create('t', 'Multi', 'p', 3, PRIZES_3);
+      expect(r.numberOfWinners).toBe(3);
+      expect(r.prizes).toHaveLength(3);
+    });
+
+    it('asigna createdAt y updatedAt al momento de creación', () => {
+      const before = new Date();
+      const r = Raffle.create('t', 'A', 'p', 1, PRIZES_1);
+      const after = new Date();
+      expect(r.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(r.createdAt.getTime()).toBeLessThanOrEqual(after.getTime());
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     });
   });
 
@@ -39,6 +67,13 @@ describe('Raffle entity', () => {
       r.close();
       expect(r.status).toBe('CLOSED');
     });
+
+    it('actualiza updatedAt al cerrar', () => {
+      const r = makeRaffle('ACTIVE');
+      const before = r.updatedAt;
+      r.close();
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    });
   });
 
   describe('reopen()', () => {
@@ -47,16 +82,55 @@ describe('Raffle entity', () => {
       r.reopen();
       expect(r.status).toBe('ACTIVE');
     });
+
+    it('actualiza updatedAt al reabrir', () => {
+      const r = makeRaffle('CLOSED');
+      const before = r.updatedAt;
+      r.reopen();
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    });
   });
 
-  describe('draw()', () => {
-    it('fija el ganador y cambia a DRAWN', () => {
+  describe('startDrawing() / finishDrawing()', () => {
+    it('startDrawing transiciona a DRAWING', () => {
       const r = makeRaffle('ACTIVE');
-      r.draw('cust-winner', 'ticket-winner');
+      r.startDrawing();
+      expect(r.status).toBe('DRAWING');
+    });
+
+    it('finishDrawing transiciona a DRAWN', () => {
+      const r = makeRaffle('DRAWING');
+      r.finishDrawing();
       expect(r.status).toBe('DRAWN');
-      expect(r.winnerCustomerId).toBe('cust-winner');
-      expect(r.winnerTicketId).toBe('ticket-winner');
-      expect(r.drawnAt).toBeInstanceOf(Date);
+    });
+
+    it('startDrawing actualiza updatedAt', () => {
+      const r = makeRaffle('ACTIVE');
+      const before = r.updatedAt;
+      r.startDrawing();
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    });
+
+    it('finishDrawing actualiza updatedAt', () => {
+      const r = makeRaffle('DRAWING');
+      const before = r.updatedAt;
+      r.finishDrawing();
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    });
+  });
+
+  describe('backToDrawing()', () => {
+    it('transiciona de DRAWN a DRAWING', () => {
+      const r = makeRaffle('DRAWN');
+      r.backToDrawing();
+      expect(r.status).toBe('DRAWING');
+    });
+
+    it('actualiza updatedAt al volver a DRAWING', () => {
+      const r = makeRaffle('DRAWN');
+      const before = r.updatedAt;
+      r.backToDrawing();
+      expect(r.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     });
   });
 
@@ -64,19 +138,29 @@ describe('Raffle entity', () => {
     it('isActive — true solo en ACTIVE', () => {
       expect(makeRaffle('ACTIVE').isActive).toBe(true);
       expect(makeRaffle('CLOSED').isActive).toBe(false);
+      expect(makeRaffle('DRAWING').isActive).toBe(false);
       expect(makeRaffle('DRAWN').isActive).toBe(false);
     });
 
-    it('isDrawable — true en ACTIVE y CLOSED, false en DRAWN', () => {
+    it('isDrawable — true en ACTIVE, CLOSED y DRAWING; false en DRAWN', () => {
       expect(makeRaffle('ACTIVE').isDrawable).toBe(true);
       expect(makeRaffle('CLOSED').isDrawable).toBe(true);
+      expect(makeRaffle('DRAWING').isDrawable).toBe(true);
       expect(makeRaffle('DRAWN').isDrawable).toBe(false);
     });
 
-    it('isDeletable — false solo en DRAWN', () => {
+    it('isDeletable — false en DRAWING y DRAWN, true en ACTIVE y CLOSED', () => {
       expect(makeRaffle('ACTIVE').isDeletable).toBe(true);
       expect(makeRaffle('CLOSED').isDeletable).toBe(true);
+      expect(makeRaffle('DRAWING').isDeletable).toBe(false);
       expect(makeRaffle('DRAWN').isDeletable).toBe(false);
+    });
+
+    it('isReopenable — true solo en CLOSED', () => {
+      expect(makeRaffle('ACTIVE').isReopenable).toBe(false);
+      expect(makeRaffle('CLOSED').isReopenable).toBe(true);
+      expect(makeRaffle('DRAWING').isReopenable).toBe(false);
+      expect(makeRaffle('DRAWN').isReopenable).toBe(false);
     });
   });
 });

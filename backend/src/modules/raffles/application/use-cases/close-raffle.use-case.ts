@@ -11,8 +11,8 @@ export class CloseRaffleUseCase {
 
   async execute(id: string, tenantId: string): Promise<RaffleDto> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
-    if (!raffle) throw new NotFoundException(`Raffle ${id} not found`);
-    if (!raffle.isActive) throw new BadRequestException('Raffle is not active');
+    if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
+    if (!raffle.isActive) throw new BadRequestException('Solo se pueden cerrar sorteos en estado ACTIVO');
 
     raffle.close();
     await this.repo.saveRaffle(raffle);

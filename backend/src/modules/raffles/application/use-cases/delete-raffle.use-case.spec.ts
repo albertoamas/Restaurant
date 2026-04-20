@@ -4,10 +4,13 @@ import { DeleteRaffleUseCase } from './delete-raffle.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
 
-function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWN' = 'ACTIVE'): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1');
-  if (status === 'CLOSED') r.close();
-  if (status === 'DRAWN')  { r.close(); r.draw('c', 't'); }
+const PRIZES = [{ position: 1, prizeDescription: 'Premio' }];
+
+function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'ACTIVE'): Raffle {
+  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1', 1, PRIZES);
+  if (status === 'CLOSED')  r.close();
+  if (status === 'DRAWING') { r.close(); r.startDrawing(); }
+  if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }
   return r;
 }
 
@@ -21,7 +24,7 @@ describe('DeleteRaffleUseCase', () => {
     repo.deleteRaffle.mockResolvedValue();
   });
 
-  it('elimina un sorteo ACTIVE', async () => {
+  it('elimina un sorteo ACTIVE y pasa id + tenantId al repositorio', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
     await useCase.execute('r1', 'tenant-1');
     expect(repo.deleteRaffle).toHaveBeenCalledWith('r1', 'tenant-1');
@@ -36,6 +39,13 @@ describe('DeleteRaffleUseCase', () => {
   it('lanza NotFoundException si no existe el sorteo', async () => {
     repo.findRaffleById.mockResolvedValue(null);
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(NotFoundException);
+    expect(repo.deleteRaffle).not.toHaveBeenCalled();
+  });
+
+  it('lanza BadRequestException si el sorteo está DRAWING', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
+    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
+    expect(repo.deleteRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el sorteo ya fue sorteado (DRAWN)', async () => {

@@ -1,6 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWN';
+export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
+
+export interface RafflePrize {
+  position: number;
+  prizeDescription: string;
+}
 
 export interface RaffleProps {
   id: string;
@@ -8,11 +13,9 @@ export interface RaffleProps {
   name: string;
   description: string | null;
   status: RaffleStatus;
-  prizeDescription: string | null;
+  numberOfWinners: number;
   productId: string | null;
-  winnerCustomerId: string | null;
-  winnerTicketId: string | null;
-  drawnAt: Date | null;
+  prizes: RafflePrize[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,11 +26,9 @@ export class Raffle {
   name: string;
   description: string | null;
   status: RaffleStatus;
-  prizeDescription: string | null;
+  numberOfWinners: number;
   productId: string | null;
-  winnerCustomerId: string | null;
-  winnerTicketId: string | null;
-  drawnAt: Date | null;
+  prizes: RafflePrize[];
   readonly createdAt: Date;
   updatedAt: Date;
 
@@ -39,8 +40,9 @@ export class Raffle {
     tenantId: string,
     name: string,
     productId: string,
+    numberOfWinners: number,
+    prizes: RafflePrize[],
     description?: string,
-    prizeDescription?: string,
   ): Raffle {
     const now = new Date();
     return new Raffle({
@@ -49,11 +51,9 @@ export class Raffle {
       name: name.trim(),
       description: description?.trim() || null,
       status: 'ACTIVE',
-      prizeDescription: prizeDescription?.trim() || null,
+      numberOfWinners,
       productId,
-      winnerCustomerId: null,
-      winnerTicketId: null,
-      drawnAt: null,
+      prizes,
       createdAt: now,
       updatedAt: now,
     });
@@ -73,11 +73,21 @@ export class Raffle {
     this.updatedAt = new Date();
   }
 
-  draw(winnerCustomerId: string, winnerTicketId: string): void {
+  /** Transiciona a DRAWING cuando se sortea el primer ganador. */
+  startDrawing(): void {
+    this.status = 'DRAWING';
+    this.updatedAt = new Date();
+  }
+
+  /** Transiciona a DRAWN cuando todos los lugares han sido sorteados. */
+  finishDrawing(): void {
     this.status = 'DRAWN';
-    this.winnerCustomerId = winnerCustomerId;
-    this.winnerTicketId = winnerTicketId;
-    this.drawnAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  /** Vuelve a DRAWING tras anular un ganador (desde DRAWN). */
+  backToDrawing(): void {
+    this.status = 'DRAWING';
     this.updatedAt = new Date();
   }
 
@@ -85,11 +95,17 @@ export class Raffle {
     return this.status === 'ACTIVE';
   }
 
+  /** Puede recibir el próximo ganador mientras no esté completamente terminado. */
   get isDrawable(): boolean {
-    return this.status === 'ACTIVE' || this.status === 'CLOSED';
+    return this.status === 'ACTIVE' || this.status === 'CLOSED' || this.status === 'DRAWING';
   }
 
+  /** No se puede eliminar si el sorteo ya comenzó o terminó. */
   get isDeletable(): boolean {
-    return this.status !== 'DRAWN';
+    return this.status !== 'DRAWN' && this.status !== 'DRAWING';
+  }
+
+  get isReopenable(): boolean {
+    return this.status === 'CLOSED';
   }
 }
