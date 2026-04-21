@@ -116,7 +116,7 @@ jobs:
           target:   /opt/pos
 
       - name: Deploy on VPS
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host:     ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
