@@ -5,6 +5,7 @@ import type { RaffleWinnerDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
 
 export const DRAW_DURATION_MS = 7000;
+export const WINNER_PAUSE_MS  = 2500;
 
 export function useRaffleDetail(
   raffleId: string,
@@ -15,7 +16,8 @@ export function useRaffleDetail(
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingPosition, setDrawingPosition] = useState<number | null>(null);
+  const [pendingWinnerName, setPendingWinnerName] = useState<string | null>(null);
   const [drawnWinner, setDrawnWinner] = useState<RaffleWinnerDto | null>(null);
   const [voidConfirmId, setVoidConfirmId] = useState<string | null>(null);
 
@@ -81,20 +83,25 @@ export function useRaffleDetail(
     if (!raffle || raffle.nextPositionToDraw === null) return;
     const positionBeingDrawn = raffle.nextPositionToDraw;
     setShowConfirm(false);
-    setIsDrawing(true);
+    setDrawingPosition(positionBeingDrawn);
+    setPendingWinnerName(null);
     setBusy('draw');
     try {
       const [updated] = await Promise.all([
         rafflesApi.draw(raffle.id),
         new Promise<void>((r) => setTimeout(r, DRAW_DURATION_MS)),
       ]);
-      setIsDrawing(false);
       const justDrawn = updated.winners.find((w) => w.position === positionBeingDrawn && !w.voided) ?? null;
+      if (justDrawn) setPendingWinnerName(justDrawn.customer.name);
+      await new Promise<void>((r) => setTimeout(r, WINNER_PAUSE_MS));
+      setDrawingPosition(null);
+      setPendingWinnerName(null);
       setRaffle(updated);
       onUpdate();
       if (justDrawn) setDrawnWinner(justDrawn);
     } catch (err) {
-      setIsDrawing(false);
+      setDrawingPosition(null);
+      setPendingWinnerName(null);
       handleApiError(err, 'Error al sortear');
     } finally {
       setBusy(null);
@@ -117,7 +124,8 @@ export function useRaffleDetail(
     busy,
     showConfirm,
     setShowConfirm,
-    isDrawing,
+    drawingPosition,
+    pendingWinnerName,
     drawnWinner,
     setDrawnWinner,
     voidConfirmId,

@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Stack
 
 **Monorepo** managed with pnpm workspaces (`pnpm-workspace.yaml`). Three packages:
-- `backend/` — NestJS 10 + Prisma 6 + PostgreSQL
-- `frontend/` — React 18 + Vite 5 + Tailwind CSS 4
+- `backend/` — NestJS 11 + Prisma 6 + PostgreSQL
+- `frontend/` — React 19 + Vite 5 + Tailwind CSS 4
 - `packages/shared/` — TypeScript types shared between front and back (`@pos/shared`)
 
 **Key versions:** TypeScript 5.6, React Router 6, Zustand 5, Socket.IO 4, JWT via `@nestjs/jwt` + `passport-jwt`.

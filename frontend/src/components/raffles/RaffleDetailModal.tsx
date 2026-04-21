@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { ParticipantsModal } from './ParticipantsModal';
 import { playDrawTick } from '../../utils/raffle-sounds';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import type { RaffleStatus } from '@pos/shared';
 import { StatusBadge } from './StatusBadge';
-import { IconTicket, IconPackage, IconGift, IconAward, IconStar, IconDice } from './RaffleIcons';
+import { IconTicket, IconPackage, IconGift, IconAward, IconDice } from './RaffleIcons';
 import { WinnerModal } from './WinnerModal';
 import { useRaffleDetail, DRAW_DURATION_MS } from './useRaffleDetail';
 
@@ -56,7 +57,7 @@ function ConfirmDrawModal({
   );
 }
 
-function DrawingModal({ position, names }: { position: number; names: string[] }) {
+function DrawingModal({ position, names, revealName }: { position: number; names: string[]; revealName?: string | null }) {
   const pool = names.length > 0 ? names : ['—'];
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * pool.length));
   const [phase, setPhase] = useState<'fast' | 'slowing' | 'stopped'>('fast');
@@ -126,29 +127,33 @@ function DrawingModal({ position, names }: { position: number; names: string[] }
               {pool[(idx - 1 + pool.length) % pool.length]}
             </span>
           </div>
-          <div className={`absolute inset-x-0 top-[68px] flex items-center justify-center h-[42px] rounded-2xl mx-2 transition-colors duration-200 ${
-            phase === 'stopped' ? 'bg-violet-50 border-2 border-violet-200' : 'bg-gray-50'
+          <div className={`absolute inset-x-0 top-[68px] flex items-center justify-center h-[42px] rounded-2xl mx-2 transition-colors duration-300 ${
+            revealName ? 'bg-amber-50 border-2 border-amber-300' : phase === 'stopped' ? 'bg-violet-50 border-2 border-violet-200' : 'bg-gray-50'
           }`}>
-            <span className={`font-black font-heading truncate px-4 transition-all duration-100 ${
-              phase === 'stopped' ? 'text-violet-700 text-xl' : 'text-gray-900 text-lg'
+            <span className={`font-black font-heading truncate px-4 transition-all duration-200 ${
+              revealName ? 'text-amber-700 text-xl' : phase === 'stopped' ? 'text-violet-700 text-xl' : 'text-gray-900 text-lg'
             }`}>
-              {pool[idx]}
+              {revealName ?? pool[idx]}
             </span>
           </div>
           <div className="absolute inset-x-0 top-[110px] flex items-center justify-center h-9">
             <span className="text-sm font-semibold text-gray-300 truncate px-4">
-              {pool[(idx + 1) % pool.length]}
+              {revealName ? '' : pool[(idx + 1) % pool.length]}
             </span>
           </div>
           <div className="absolute inset-x-0 top-[149px] flex items-center justify-center h-8">
             <span className="text-xs font-medium text-gray-200 truncate px-4">
-              {pool[(idx + 2) % pool.length]}
+              {revealName ? '' : pool[(idx + 2) % pool.length]}
             </span>
           </div>
         </div>
 
-        <div className="mt-5 flex justify-center gap-1.5">
-          {phase !== 'stopped' ? (
+        <div className="mt-5 flex justify-center gap-1.5 min-h-[20px]">
+          {revealName ? (
+            <span className="text-xs font-bold text-amber-600 animate-pulse tracking-wide uppercase">
+              ¡Ganador encontrado!
+            </span>
+          ) : phase !== 'stopped' ? (
             [0, 1, 2].map((i) => (
               <span
                 key={i}
@@ -179,7 +184,7 @@ export function RaffleDetailModal({
   const {
     raffle, loading, busy,
     showConfirm, setShowConfirm,
-    isDrawing,
+    drawingPosition, pendingWinnerName,
     drawnWinner, setDrawnWinner,
     voidConfirmId, setVoidConfirmId,
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
@@ -187,9 +192,11 @@ export function RaffleDetailModal({
     availableTickets, activeWinnersCount,
   } = useRaffleDetail(raffleId, onClose, onUpdate);
 
+  const [showParticipants, setShowParticipants] = useState(false);
+
   return (
     <>
-      <Modal isOpen onClose={onClose} title={raffle?.name ?? 'Sorteo'} size="lg">
+      <Modal isOpen onClose={onClose} title={raffle?.name ?? 'Sorteo'} size="xl">
         {loading || !raffle ? (
           <div className="flex justify-center py-12"><Spinner /></div>
         ) : (
@@ -299,48 +306,18 @@ export function RaffleDetailModal({
             </div>
 
             {/* Participantes */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Participantes</p>
-              {raffle.tickets.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
-                  Sin tickets aún
-                </div>
-              ) : (
-                <div className="space-y-1 max-h-52 overflow-y-auto pr-0.5">
-                  {raffle.tickets.map((t) => {
-                    const win = raffle.winners.find((w) => w.ticketId === t.id && !w.voided);
-                    return (
-                      <div
-                        key={t.id}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                          win ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'
-                        }`}
-                      >
-                        <span className={`text-[11px] font-mono font-bold shrink-0 w-8 text-center ${
-                          win ? 'text-amber-700' : 'text-gray-400'
-                        }`}>
-                          #{t.ticketNumber}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${win ? 'text-amber-900' : 'text-gray-800'}`}>
-                            {t.customer.name}
-                          </p>
-                          {t.customer.phone && (
-                            <p className="text-xs text-gray-400">{t.customer.phone}</p>
-                          )}
-                        </div>
-                        {win && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wide">
-                            <IconStar className="w-2.5 h-2.5" />
-                            {positionLabel(win.position)}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setShowParticipants(true)}
+              className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl px-4 py-3 group"
+            >
+              <span className="text-sm text-gray-600 font-medium">Ver participantes</span>
+              <span className="flex items-center gap-2 text-gray-400 group-hover:text-gray-600 transition-colors">
+                <span className="text-sm font-semibold text-gray-500">{raffle.tickets.length}</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </button>
 
             {/* Acciones */}
             {(isActive || isDrawable || isDeletable) && (
@@ -396,10 +373,11 @@ export function RaffleDetailModal({
         />
       )}
 
-      {isDrawing && raffle?.nextPositionToDraw !== null && raffle && (
+      {drawingPosition !== null && (
         <DrawingModal
-          position={raffle.nextPositionToDraw!}
+          position={drawingPosition}
           names={availableTickets.map((t) => t.customer.name)}
+          revealName={pendingWinnerName}
         />
       )}
 
@@ -409,6 +387,10 @@ export function RaffleDetailModal({
           winner={drawnWinner}
           onClose={() => setDrawnWinner(null)}
         />
+      )}
+
+      {showParticipants && raffle && (
+        <ParticipantsModal raffle={raffle} onClose={() => setShowParticipants(false)} />
       )}
     </>
   );
