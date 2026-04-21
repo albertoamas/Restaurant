@@ -1,21 +1,27 @@
-name: Build and Deploy
+name: CD
 
 on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # queue deploys; never kill a running deploy mid-flight
+
 env:
   IMAGE_BASE: ghcr.io/albertoamas/restaurant
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ── Build Docker images and push to GitHub Container Registry ────────────────
-  build-and-push:
+  build:
     name: Build & push images
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     permissions:
       contents: read
       packages: write
+
     outputs:
       image_tag: ${{ steps.tag.outputs.value }}
 
@@ -26,13 +32,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -43,10 +49,10 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter backend prisma:generate
 
-      - name: Type-check backend
+      - name: Typecheck backend
         run: pnpm --filter backend typecheck
 
-      - name: Type-check frontend
+      - name: Typecheck frontend
         run: pnpm --filter frontend typecheck
 
       - name: Set image tag (short SHA)
@@ -91,8 +97,12 @@ jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: build
+    timeout-minutes: 15
     environment: production
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout (for docker-compose.prod.yml)
@@ -138,8 +148,8 @@ jobs:
               exit 1
             fi
 
-            # Update IMAGE_TAG in .env — awk is safe with any SHA value (no special-char risks)
-            awk -v tag="${{ needs.build-and-push.outputs.image_tag }}" \
+            # Update IMAGE_TAG in .env
+            awk -v tag="${{ needs.build.outputs.image_tag }}" \
               'BEGIN{FS=OFS="="} /^IMAGE_TAG=/{$2=tag} 1' .env > .env.tmp \
               && mv .env.tmp .env
 
@@ -153,27 +163,22 @@ jobs:
             # Bring services up; postgres is only recreated if its config/image changed
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Remove ALL unused images (not just dangling) to prevent disk accumulation.
-            # Safe: only removes images with no running container — current images and
-            # postgres are kept because their containers are active.
+            # Remove ALL unused images to prevent disk accumulation.
             docker image prune -a -f
 
-            # ── Post-deploy health check ────────────────────────────────────
-            echo "Waiting for services to become healthy..."
-            sleep 20
-
-            # Verify backend responds (retries 3 times with 10s gap)
-            for i in 1 2 3; do
-              if docker exec pos-backend wget -qO- http://localhost:3000/health; then
-                echo "Backend health check PASSED"
+            # ── Post-deploy health check (no fixed sleep — retry immediately) ─
+            echo "Waiting for backend to become healthy..."
+            for i in 1 2 3 4 5; do
+              if docker exec pos-backend wget -qO- --timeout=10 http://localhost:3000/health; then
+                echo "Backend health check PASSED (attempt $i)"
                 break
+              fi
+              if [ "$i" = "5" ]; then
+                echo "Backend health check FAILED after 5 attempts"
+                exit 1
               fi
               echo "Attempt $i failed, retrying in 10s..."
               sleep 10
-              if [ "$i" = "3" ]; then
-                echo "Backend health check FAILED after 3 attempts"
-                exit 1
-              fi
             done
 
             # Verify all containers are running

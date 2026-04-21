@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main          # main is handled by cd.yml after merge
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Typecheck & Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @pos/shared build
+
+      - name: Generate Prisma client
+        run: pnpm --filter backend prisma:generate
+
+      - name: Typecheck backend
+        run: pnpm --filter backend typecheck
+
+      - name: Typecheck frontend
+        run: pnpm --filter frontend typecheck
+
+      - name: Test backend
+        run: pnpm --filter backend test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: backend.xml
+
+      - name: Test frontend
+        run: pnpm --filter frontend test:run -- --reporter=verbose --reporter=junit --outputFile=./test-results/frontend.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_id }}
+          path: |
+            backend/test-results/backend.xml
+            frontend/test-results/frontend.xml
+          retention-days: 30

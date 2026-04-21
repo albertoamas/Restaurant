@@ -2,8 +2,3 @@ packages:
   - 'packages/*'
   - 'backend'
   - 'frontend'
-allowBuilds:
-  '@nestjs/core': true
-  bcrypt: true
-  esbuild: true
-  sharp: true

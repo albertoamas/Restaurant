@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "POS SaaS for small food businesses",
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
