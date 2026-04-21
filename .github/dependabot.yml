@@ -1,0 +1,60 @@
+version: 2
+
+updates:
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/La_Paz
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: "chore(ci)"
+
+  # ── pnpm (backend) ───────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/La_Paz
+    labels: [dependencies, backend]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      nestjs:
+        patterns: ["@nestjs/*"]
+      prisma:
+        patterns: ["@prisma/*", "prisma"]
+
+  # ── pnpm (frontend) ──────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/La_Paz
+    labels: [dependencies, frontend]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react*"]
+      vite:
+        patterns: ["vite", "@vitejs/*", "vitest", "@vitest/*"]
+
+  # ── pnpm (shared) ────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/shared
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/La_Paz
+    labels: [dependencies, shared]
+    commit-message:
+      prefix: "chore(deps)"
