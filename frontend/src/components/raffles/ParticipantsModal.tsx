@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { IconStar } from './RaffleIcons';
-import type { RaffleDto } from '@pos/shared';
+import type { DetailRaffle } from './types';
 
 function positionLabel(position: number): string {
   if (position === 1) return '1er lugar';
@@ -14,7 +14,7 @@ export function ParticipantsModal({
   raffle,
   onClose,
 }: {
-  raffle: RaffleDto;
+  raffle: DetailRaffle;
   onClose: () => void;
 }) {
   const [search, setSearch] = useState('');
