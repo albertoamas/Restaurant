@@ -14,8 +14,8 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:status": "prisma migrate status",
     "prisma:studio": "prisma studio",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test":          "jest",
+    "test:watch":    "jest --watch",
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
@@ -60,7 +60,6 @@
     "@types/uuid": "^10.0.0",
     "dotenv": "^17.3.1",
     "jest": "^30.3.0",
-    "jest-junit": "^16.0.0",
     "jest-mock-extended": "^4.0.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",

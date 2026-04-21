@@ -22,13 +22,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.1.0
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
@@ -49,20 +49,7 @@ jobs:
         run: pnpm --filter frontend typecheck
 
       - name: Test backend
-        run: pnpm --filter backend test -- --ci --reporters=default --reporters=jest-junit
-        env:
-          JEST_JUNIT_OUTPUT_DIR: ./test-results
-          JEST_JUNIT_OUTPUT_NAME: backend.xml
+        run: pnpm --filter backend test -- --ci
 
       - name: Test frontend
-        run: pnpm --filter frontend test:run -- --reporter=verbose --reporter=junit --outputFile=./test-results/frontend.xml
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: test-results-${{ github.run_id }}
-          path: |
-            backend/test-results/backend.xml
-            frontend/test-results/frontend.xml
-          retention-days: 30
+        run: pnpm --filter frontend test:run
