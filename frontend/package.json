@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@pos/shared": "workspace:*",
-    "axios": "^1.7.0",
+    "axios": "^1.15.1",
     "react": "^19",
     "react-dom": "^19",
     "react-hot-toast": "^2.4.1",
