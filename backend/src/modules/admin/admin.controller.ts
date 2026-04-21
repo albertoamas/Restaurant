@@ -9,41 +9,18 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min,
-} from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
-import { SaasPlan } from '@pos/shared';
+import { PlanDto, SaasPlan, TENANT_MODULES_UPDATED_EVENT } from '@pos/shared';
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { TenantRepositoryPort } from '../tenant/domain/ports/tenant-repository.port';
-import { TenantModules } from '../tenant/domain/entities/tenant.entity';
 import { RegisterUseCase } from '../auth/application/use-cases/register.use-case';
 import { RegisterDto } from '../auth/application/dto/register.dto';
 import { PlanRepositoryPort } from '../plans/domain/ports/plan-repository.port';
-
-class UpdateModulesDto implements Partial<TenantModules> {
-  @IsOptional() @IsBoolean() ordersEnabled?:   boolean;
-  @IsOptional() @IsBoolean() cashEnabled?:     boolean;
-  @IsOptional() @IsBoolean() teamEnabled?:     boolean;
-  @IsOptional() @IsBoolean() branchesEnabled?: boolean;
-  @IsOptional() @IsBoolean() kitchenEnabled?:  boolean;
-  @IsOptional() @IsBoolean() rafflesEnabled?:  boolean;
-}
-
-class UpdatePlanDto {
-  @IsEnum(SaasPlan)
-  plan: SaasPlan;
-}
-
-class UpdatePlanLimitsDto {
-  @IsOptional() @IsString()  displayName?:    string;
-  @IsOptional() @IsNumber()  priceBs?:        number;
-  @IsOptional() @IsNumber() @Min(-1) maxBranches?:    number;
-  @IsOptional() @IsNumber() @Min(-1) maxCashiers?:    number;
-  @IsOptional() @IsNumber() @Min(-1) maxProducts?:    number;
-  @IsOptional() @IsBoolean() kitchenEnabled?: boolean;
-  @IsOptional() @IsBoolean() rafflesEnabled?: boolean;
-}
+import { UpdateModulesDto } from './dto/update-modules.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
+import { UpdatePlanLimitsDto } from './dto/update-plan-limits.dto';
+import { UpdateTenantPlanUseCase } from './application/use-cases/update-tenant-plan.use-case';
+import { EventsService } from '../events/events.service';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -55,6 +32,8 @@ export class AdminController {
     @Inject('PlanRepositoryPort')
     private readonly planRepository: PlanRepositoryPort,
     private readonly registerUseCase: RegisterUseCase,
+    private readonly updateTenantPlanUseCase: UpdateTenantPlanUseCase,
+    private readonly eventsService: EventsService,
   ) {}
 
   @Get('ping')
@@ -80,26 +59,31 @@ export class AdminController {
   }
 
   @Patch('tenants/:id/plan')
-  updateTenantPlan(
+  async updateTenantPlan(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePlanDto,
   ) {
-    return this.tenantRepository.updatePlan(id, dto.plan);
+    const result = await this.updateTenantPlanUseCase.execute(id, dto.plan);
+    this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
+    return result;
   }
 
   @Patch('tenants/:id/modules')
-  updateModules(
+  async updateModules(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateModulesDto,
   ) {
-    return this.tenantRepository.updateModules(id, dto);
+    const result = await this.tenantRepository.updateModules(id, dto);
+    this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
+    return result;
   }
 
   // ── Plans ──────────────────────────────────────────────────
 
   @Get('plans')
-  listPlans() {
-    return this.planRepository.findAll();
+  async listPlans(): Promise<PlanDto[]> {
+    const plans = await this.planRepository.findAll();
+    return plans.map((p) => p.toDto());
   }
 
   @Patch('plans/:id')

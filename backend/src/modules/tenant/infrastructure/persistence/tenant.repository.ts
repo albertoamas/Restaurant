@@ -108,6 +108,10 @@ export class TenantRepository implements TenantRepositoryPort {
       },
       settings: {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
+        logoUrl:         r.logoUrl         ?? null,
+        businessAddress: r.businessAddress ?? null,
+        businessPhone:   r.businessPhone   ?? null,
+        receiptSlogan:   r.receiptSlogan   ?? null,
       },
     }));
   }

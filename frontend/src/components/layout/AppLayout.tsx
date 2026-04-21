@@ -9,6 +9,7 @@ import { useCashSessionStore } from '../../store/cashSession.store';
 import { cashSessionApi } from '../../api/cash-session.api';
 import { branchesApi } from '../../api/branches.api';
 import type { BranchDto, CashSessionDto } from '@pos/shared';
+import { TENANT_MODULES_UPDATED_EVENT } from '@pos/shared';
 
 // Icon helpers (kept inline to avoid re-importing heavy icon libs)
 const Icons = {
@@ -27,7 +28,7 @@ const Icons = {
 };
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled, rafflesEnabled } = useSettingsStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [branches, setBranches] = useState<BranchDto[]>([]);
@@ -72,6 +73,9 @@ export function AppLayout() {
 
   useSocketEvent<CashSessionDto>('cash.opened', handleCashOpened);
   useSocketEvent<CashSessionDto>('cash.closed', handleCashClosed);
+
+  const handleModulesUpdated = useCallback(() => { refreshUser(); }, [refreshUser]);
+  useSocketEvent<void>(TENANT_MODULES_UPDATED_EVENT, handleModulesUpdated);
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
 

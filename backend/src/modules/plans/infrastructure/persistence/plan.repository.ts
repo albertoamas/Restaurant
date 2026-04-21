@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { SaasPlan } from '@pos/shared';
+import { PlanDto, SaasPlan } from '@pos/shared';
+import { Plan as PrismaPlan } from '@prisma/client';
 import { Plan } from '../../domain/entities/plan.entity';
 import { PlanRepositoryPort } from '../../domain/ports/plan-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-function toDomain(row: any): Plan {
+function toDomain(row: PrismaPlan): Plan {
   return new Plan(
     row.id as SaasPlan,
     row.displayName,
@@ -31,7 +32,7 @@ export class PlanRepository implements PlanRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
-  async update(id: SaasPlan, updates: Partial<Omit<Plan, 'id' | 'limits' | 'withUpdates'>>): Promise<Plan> {
+  async update(id: SaasPlan, updates: Partial<Omit<PlanDto, 'id'>>): Promise<Plan> {
     const existing = await this.prisma.plan.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Plan ${id} not found`);
 

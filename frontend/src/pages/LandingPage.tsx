@@ -1,4 +1,8 @@
 import { Link } from 'react-router-dom';
+import type { PlanDto } from '@pos/shared';
+import { SaasPlan } from '@pos/shared';
+import { usePlans } from '../hooks/usePlans';
+import { Spinner } from '../components/ui/Spinner';
 
 /* ─── Data ──────────────────────────────────────────────── */
 
@@ -39,80 +43,84 @@ const STATS = [
   { value: '< 3s', label: 'para crear un pedido' },
   { value: '100%', label: 'en la nube, sin instalación' },
   { value: '24/7', label: 'disponibilidad garantizada' },
-  { value: 'Multi', label: 'sucursal desde el día uno' },
+  { value: 'Tiempo real', label: 'actualizaciones vía WebSocket' },
 ];
 
-type PlanFeature = { text: string; included: boolean };
+const USD_RATE = 9;
 
-type Plan = {
-  name: string;
-  price: number;
-  usd: number;
+type PlanMeta = {
   description: string;
   highlight: boolean;
   badge?: string;
-  limits: string[];
-  features: PlanFeature[];
   cta: string;
 };
 
-const PLANS: Plan[] = [
-  {
-    name: 'Básico',
-    price: 220,
-    usd: 24,
+const PLAN_META: Record<SaasPlan, PlanMeta> = {
+  [SaasPlan.BASICO]: {
     description: 'Todo lo esencial para un restaurante que arranca.',
     highlight: false,
-    limits: ['1 sucursal', '2 cajeros', 'hasta 80 productos'],
-    features: [
-      { text: 'POS + pagos mixtos',        included: true },
-      { text: 'Gestión de caja y gastos',  included: true },
-      { text: 'Clientes y fidelización',   included: true },
-      { text: 'Reportes básicos',          included: true },
-      { text: 'Display de cocina',         included: false },
-      { text: 'Exportación PDF',           included: false },
-      { text: 'Descuentos en pedidos',     included: false },
-      { text: 'Gestión de mesas',          included: false },
-    ],
     cta: 'Empezar con Básico',
   },
-  {
-    name: 'Pro',
-    price: 399,
-    usd: 44,
+  [SaasPlan.PRO]: {
     description: 'Para restaurantes en operación que quieren escalar.',
     highlight: true,
     badge: 'Más popular',
-    limits: ['3 sucursales', '8 cajeros', 'productos ilimitados'],
-    features: [
-      { text: 'Todo lo del plan Básico',   included: true },
-      { text: 'Display de cocina',         included: true },
-      { text: 'Exportación PDF',           included: true },
-      { text: 'Descuentos en pedidos',     included: true },
-      { text: 'Gestión de mesas',          included: true },
-      { text: 'Control de inventario',     included: false },
-      { text: 'Estadísticas avanzadas',    included: false },
-      { text: 'Reportes por sucursal',     included: false },
-    ],
     cta: 'Empezar con Pro',
   },
-  {
-    name: 'Negocio',
-    price: 790,
-    usd: 88,
+  [SaasPlan.NEGOCIO]: {
     description: 'Para cadenas y franquicias con múltiples locales.',
     highlight: false,
-    limits: ['sucursales ilimitadas', 'cajeros ilimitados', 'productos ilimitados'],
-    features: [
-      { text: 'Todo lo del plan Pro',              included: true },
-      { text: 'Control de inventario',             included: true },
-      { text: 'Estadísticas avanzadas',            included: true },
-      { text: 'Reportes comparativos por sucursal',included: true },
-      { text: 'Sucursales y cajeros ilimitados',   included: true },
-    ],
     cta: 'Contactar',
   },
-];
+};
+
+const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
+
+function getLimits(plan: PlanDto): string[] {
+  const limits: string[] = [];
+  limits.push(plan.maxBranches >= 999 ? 'sucursales ilimitadas' : `${plan.maxBranches} sucursal${plan.maxBranches > 1 ? 'es' : ''}`);
+  limits.push(plan.maxCashiers >= 999 ? 'cajeros ilimitados' : `${plan.maxCashiers} cajero${plan.maxCashiers > 1 ? 's' : ''}`);
+  limits.push(plan.maxProducts >= 999 ? 'productos ilimitados' : `hasta ${plan.maxProducts} productos`);
+  return limits;
+}
+
+type PlanFeature = { text: string; included: boolean };
+
+function getFeatures(plan: PlanDto): PlanFeature[] {
+  if (plan.id === SaasPlan.BASICO) {
+    return [
+      { text: 'POS + pagos mixtos',                included: true },
+      { text: 'Pedidos con estados y seguimiento', included: true },
+      { text: 'Gestión de caja y gastos',          included: true },
+      { text: 'Clientes y fidelización',           included: true },
+      { text: 'Reportes de ventas',                included: true },
+      { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
+      { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
+      { text: 'Múltiples sucursales',              included: plan.maxBranches > 1 },
+    ];
+  }
+
+  if (plan.id === SaasPlan.PRO) {
+    return [
+      { text: 'Todo lo del plan Básico',           included: true },
+      { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
+      { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
+      { text: `Hasta ${plan.maxBranches} sucursales`, included: true },
+      { text: `Hasta ${plan.maxCashiers} cajeros`, included: true },
+      { text: 'Productos ilimitados',              included: plan.maxProducts >= 999 },
+      { text: 'Sucursales ilimitadas',             included: plan.maxBranches >= 999 },
+      { text: 'Cajeros ilimitados',                included: plan.maxCashiers >= 999 },
+    ];
+  }
+
+  // NEGOCIO
+  return [
+    { text: 'Todo lo del plan Pro',          included: true },
+    { text: 'Sucursales ilimitadas',         included: plan.maxBranches >= 999 },
+    { text: 'Cajeros ilimitados',            included: plan.maxCashiers >= 999 },
+    { text: 'Sin límite de escala',          included: true },
+  ];
+}
 
 /* ─── Mock POS ──────────────────────────────────────────── */
 function MockPOS() {
@@ -193,13 +201,17 @@ function MockPOS() {
 }
 
 /* ─── Pricing card ──────────────────────────────────────── */
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({ plan }: { plan: PlanDto }) {
   const primary = 'oklch(0.47 0.17 234)';
+  const meta    = PLAN_META[plan.id as SaasPlan] ?? PLAN_META[SaasPlan.BASICO];
+  const limits  = getLimits(plan);
+  const features = getFeatures(plan);
+  const usd     = Math.round(plan.priceBs / USD_RATE);
 
   return (
     <div
       className="relative flex flex-col rounded-2xl p-7 transition-all duration-200"
-      style={plan.highlight ? {
+      style={meta.highlight ? {
         background: 'white',
         border: `2px solid ${primary}`,
         boxShadow: `0 20px 60px oklch(0.47 0.17 234 / 0.15), 0 4px 16px oklch(0.47 0.17 234 / 0.10)`,
@@ -211,30 +223,30 @@ function PlanCard({ plan }: { plan: Plan }) {
       }}
     >
       {/* Badge */}
-      {plan.badge && (
+      {meta.badge && (
         <div
           className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap"
           style={{ background: primary, boxShadow: `0 4px 12px oklch(0.47 0.17 234 / 0.35)` }}
         >
-          ⭐ {plan.badge}
+          ⭐ {meta.badge}
         </div>
       )}
 
       {/* Header */}
       <div className="mb-6">
         <p className="font-heading font-black text-lg mb-1" style={{ color: 'oklch(0.13 0.012 260)' }}>
-          {plan.name}
+          {plan.displayName}
         </p>
         <p className="text-sm leading-relaxed" style={{ color: 'oklch(0.55 0.010 260)' }}>
-          {plan.description}
+          {meta.description}
         </p>
       </div>
 
       {/* Price */}
       <div className="mb-5">
         <div className="flex items-end gap-1.5">
-          <span className="font-heading font-black text-5xl leading-none" style={{ color: plan.highlight ? primary : 'oklch(0.13 0.012 260)' }}>
-            {plan.price}
+          <span className="font-heading font-black text-5xl leading-none" style={{ color: meta.highlight ? primary : 'oklch(0.13 0.012 260)' }}>
+            {plan.priceBs}
           </span>
           <div className="mb-1">
             <p className="text-sm font-bold" style={{ color: 'oklch(0.40 0.010 260)' }}>Bs</p>
@@ -242,23 +254,23 @@ function PlanCard({ plan }: { plan: Plan }) {
           </div>
         </div>
         <p className="text-xs mt-1.5" style={{ color: 'oklch(0.68 0.008 260)' }}>
-          ~${plan.usd} USD al tipo de cambio referencial
+          ~${usd} USD al tipo de cambio referencial
         </p>
       </div>
 
       {/* Limits */}
       <div
         className="flex flex-wrap gap-1.5 mb-6 p-3 rounded-xl"
-        style={{ background: plan.highlight ? 'oklch(0.97 0.013 225)' : 'oklch(0.975 0.006 252)' }}
+        style={{ background: meta.highlight ? 'oklch(0.97 0.013 225)' : 'oklch(0.975 0.006 252)' }}
       >
-        {plan.limits.map((l) => (
+        {limits.map((l) => (
           <span
             key={l}
             className="text-xs font-semibold px-2.5 py-1 rounded-lg"
             style={{
-              background: plan.highlight ? 'oklch(0.93 0.04 225)' : 'white',
-              color: plan.highlight ? 'oklch(0.39 0.15 236)' : 'oklch(0.45 0.010 260)',
-              border: plan.highlight ? '1px solid oklch(0.87 0.07 225)' : '1px solid oklch(0.91 0.008 252)',
+              background: meta.highlight ? 'oklch(0.93 0.04 225)' : 'white',
+              color: meta.highlight ? 'oklch(0.39 0.15 236)' : 'oklch(0.45 0.010 260)',
+              border: meta.highlight ? '1px solid oklch(0.87 0.07 225)' : '1px solid oklch(0.91 0.008 252)',
             }}
           >
             {l}
@@ -268,7 +280,7 @@ function PlanCard({ plan }: { plan: Plan }) {
 
       {/* Features */}
       <ul className="flex-1 space-y-2.5 mb-7">
-        {plan.features.map((f) => (
+        {features.map((f) => (
           <li key={f.text} className="flex items-start gap-2.5">
             {f.included ? (
               <span className="mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'oklch(0.92 0.08 145)' }}>
@@ -297,7 +309,7 @@ function PlanCard({ plan }: { plan: Plan }) {
       <Link
         to="/login"
         className="block text-center py-3 rounded-xl text-sm font-bold transition-all duration-150 active:scale-[0.98]"
-        style={plan.highlight ? {
+        style={meta.highlight ? {
           background: primary,
           color: 'white',
           boxShadow: `0 4px 16px oklch(0.47 0.17 234 / 0.30)`,
@@ -307,8 +319,41 @@ function PlanCard({ plan }: { plan: Plan }) {
           border: '1px solid oklch(0.88 0.010 252)',
         }}
       >
-        {plan.cta} →
+        {meta.cta} →
       </Link>
+    </div>
+  );
+}
+
+/* ─── Pricing section ───────────────────────────────────── */
+function PricingSection() {
+  const { plans, loading, error } = usePlans();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-24">
+        <Spinner size="md" color="primary" />
+      </div>
+    );
+  }
+
+  if (error || plans.length === 0) {
+    return (
+      <p className="text-center py-24 text-sm" style={{ color: 'oklch(0.55 0.010 260)' }}>
+        No se pudieron cargar los planes. Intenta de nuevo más tarde.
+      </p>
+    );
+  }
+
+  const ordered = PLAN_ORDER
+    .map((id) => plans.find((p) => p.id === id))
+    .filter((p): p is PlanDto => p !== undefined);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pt-5">
+      {ordered.map((plan) => (
+        <PlanCard key={plan.id} plan={plan} />
+      ))}
     </div>
   );
 }
@@ -451,14 +496,10 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pt-5">
-            {PLANS.map((plan) => (
-              <PlanCard key={plan.name} plan={plan} />
-            ))}
-          </div>
+          <PricingSection />
 
           <p className="text-center text-xs mt-10" style={{ color: 'oklch(0.65 0.008 260)' }}>
-            Tipo de cambio referencial: 1 USD ≈ 9 Bs · Los precios pueden ajustarse según variación del tipo de cambio
+            Tipo de cambio referencial: 1 USD ≈ {USD_RATE} Bs · Los precios pueden ajustarse según variación del tipo de cambio
           </p>
         </div>
       </section>

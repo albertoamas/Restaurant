@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SaasPlan } from '@pos/shared';
-import { adminApi, type TenantRow, type TenantModules, type PlanRow } from '../../api/admin.api';
+import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
 
 interface ModuleDef { key: keyof TenantModules; label: string; description: string; }
@@ -38,7 +38,7 @@ function ModuleToggleRow({ def, value, disabled, onChange }: {
 
 interface TenantPanelProps {
   tenant: TenantRow;
-  plans: PlanRow[];
+  plans: PlanDto[];
   onPlanUpdate: (id: string, plan: SaasPlan) => void;
   onModulesUpdate: (id: string, modules: TenantModules) => void;
 }
@@ -55,8 +55,16 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
   const handlePlanChange = async (plan: SaasPlan) => {
     setSavingPlan(true);
     try {
-      await adminApi.updateTenantPlan(tenant.id, plan);
+      const result: TenantPlanUpdateResponse = await adminApi.updateTenantPlan(tenant.id, plan);
       onPlanUpdate(tenant.id, plan);
+      onModulesUpdate(tenant.id, {
+        ordersEnabled:   result.ordersEnabled,
+        cashEnabled:     result.cashEnabled,
+        teamEnabled:     result.teamEnabled,
+        branchesEnabled: result.branchesEnabled,
+        kitchenEnabled:  result.kitchenEnabled,
+        rafflesEnabled:  result.rafflesEnabled,
+      });
     } finally {
       setSavingPlan(false);
     }

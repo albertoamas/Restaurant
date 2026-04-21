@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { SaasPlan } from '@pos/shared';
-import { adminApi, type PlanRow } from '../../api/admin.api';
+import { adminApi, type PlanDto } from '../../api/admin.api';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
 
 const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
 
 interface PlansSectionProps {
-  plans: PlanRow[];
-  onUpdate: (updated: PlanRow) => void;
+  plans: PlanDto[];
+  onUpdate: (updated: PlanDto) => void;
 }
 
 export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
   const [editing, setEditing] = useState<SaasPlan | null>(null);
-  const [form, setForm] = useState<Partial<PlanRow>>({});
+  const [form, setForm] = useState<Partial<PlanDto>>({});
   const [saving, setSaving] = useState(false);
 
-  const startEdit = (p: PlanRow) => {
+  const startEdit = (p: PlanDto) => {
     setEditing(p.id);
     setForm({
       displayName: p.displayName,
@@ -41,7 +41,7 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
 
   const sortedPlans = PLAN_ORDER
     .map((id) => plans.find((p) => p.id === id))
-    .filter(Boolean) as PlanRow[];
+    .filter(Boolean) as PlanDto[];
 
   return (
     <section className="mb-6">
@@ -76,7 +76,7 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
 
 // ─── Sub-components ───────────────────────────────────────────
 
-const PLAN_FIELDS: [keyof PlanRow, string, string][] = [
+const PLAN_FIELDS: [keyof PlanDto, string, string][] = [
   ['displayName',  'Nombre',                  'text'],
   ['priceBs',      'Precio (Bs)',              'number'],
   ['maxBranches',  'Máx sucursales (-1=∞)',    'number'],
@@ -85,10 +85,10 @@ const PLAN_FIELDS: [keyof PlanRow, string, string][] = [
 ];
 
 function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
-  plan: PlanRow;
-  form: Partial<PlanRow>;
+  plan: PlanDto;
+  form: Partial<PlanDto>;
   saving: boolean;
-  onFormChange: (updater: (prev: Partial<PlanRow>) => Partial<PlanRow>) => void;
+  onFormChange: (updater: (prev: Partial<PlanDto>) => Partial<PlanDto>) => void;
   onSave: () => void;
   onCancel: () => void;
 }) {
@@ -149,7 +149,7 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
 }
 
 function PlanViewCard({ plan, cfg, onEdit }: {
-  plan: PlanRow;
+  plan: PlanDto;
   cfg: typeof PLAN_CONFIG[SaasPlan];
   onEdit: () => void;
 }) {

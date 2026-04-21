@@ -1,4 +1,4 @@
-import { SaasPlan, PlanLimits } from '@pos/shared';
+import { SaasPlan, PlanLimits, PlanDto } from '@pos/shared';
 
 export class Plan {
   constructor(
@@ -18,6 +18,20 @@ export class Plan {
       maxCashiers:    this.maxCashiers,
       maxProducts:    this.maxProducts,
       kitchenEnabled: this.kitchenEnabled,
+      rafflesEnabled: this.rafflesEnabled,
+    };
+  }
+
+  toDto(): PlanDto {
+    return {
+      id:             this.id,
+      displayName:    this.displayName,
+      priceBs:        this.priceBs,
+      maxBranches:    this.maxBranches,
+      maxCashiers:    this.maxCashiers,
+      maxProducts:    this.maxProducts,
+      kitchenEnabled: this.kitchenEnabled,
+      rafflesEnabled: this.rafflesEnabled,
     };
   }
 

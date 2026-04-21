@@ -1,5 +1,5 @@
 import client from './client';
-import type { SaasPlan, PlanLimits } from '@pos/shared';
+import type { SaasPlan, PlanDto } from '@pos/shared';
 
 export interface TenantModules {
   ordersEnabled: boolean;
@@ -23,16 +23,19 @@ export interface TenantRow {
   cashierCount: number;
 }
 
-export interface PlanRow {
-  id: SaasPlan;
-  displayName: string;
-  priceBs: number;
-  maxBranches: number;
-  maxCashiers: number;
-  maxProducts: number;
+// Shape returned by PATCH /admin/tenants/:id/plan (Tenant domain entity serialized flat)
+export interface TenantPlanUpdateResponse {
+  id: string;
+  plan: SaasPlan;
+  ordersEnabled: boolean;
+  cashEnabled: boolean;
+  teamEnabled: boolean;
+  branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
 }
+
+export type { PlanDto };
 
 export interface CreateTenantPayload {
   businessName: string;
@@ -66,15 +69,15 @@ export const adminApi = {
     client.patch<{ id: string; isActive: boolean }>(`/api/v1/admin/tenants/${id}/toggle`, {}, { headers: adminHeaders() }).then((r) => r.data),
 
   updateTenantPlan: (id: string, plan: SaasPlan) =>
-    client.patch(`/api/v1/admin/tenants/${id}/plan`, { plan }, { headers: adminHeaders() }).then((r) => r.data),
+    client.patch<TenantPlanUpdateResponse>(`/api/v1/admin/tenants/${id}/plan`, { plan }, { headers: adminHeaders() }).then((r) => r.data),
 
   updateModules: (id: string, modules: Partial<TenantModules>) =>
     client.patch<TenantModules>(`/api/v1/admin/tenants/${id}/modules`, modules, { headers: adminHeaders() }).then((r) => r.data),
 
   // ── Plans ──────────────────────────────────────────────────
   getPlans: () =>
-    client.get<PlanRow[]>('/api/v1/admin/plans', { headers: adminHeaders() }).then((r) => r.data),
+    client.get<PlanDto[]>('/api/v1/admin/plans', { headers: adminHeaders() }).then((r) => r.data),
 
-  updatePlan: (id: SaasPlan, updates: Partial<Omit<PlanRow, 'id'> & PlanLimits>) =>
-    client.patch<PlanRow>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data),
+  updatePlan: (id: SaasPlan, updates: Partial<Omit<PlanDto, 'id'>>) =>
+    client.patch<PlanDto>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data),
 };

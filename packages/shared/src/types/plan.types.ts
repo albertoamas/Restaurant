@@ -5,6 +5,7 @@ export interface PlanLimits {
   maxCashiers:    number;
   maxProducts:    number;
   kitchenEnabled: boolean;
+  rafflesEnabled: boolean;
 }
 
 export interface PlanDto {
@@ -15,4 +16,5 @@ export interface PlanDto {
   maxCashiers:    number;
   maxProducts:    number;
   kitchenEnabled: boolean;
+  rafflesEnabled: boolean;
 }

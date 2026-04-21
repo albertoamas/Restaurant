@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SaasPlan } from '@pos/shared';
-import { adminApi, type TenantRow, type TenantModules, type PlanRow, type CreateTenantPayload } from '../api/admin.api';
+import { adminApi, type TenantRow, type TenantModules, type PlanDto, type CreateTenantPayload } from '../api/admin.api';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { AdminLogin } from '../components/admin/AdminLogin';
@@ -27,7 +27,7 @@ export function AdminPage() {
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState('');
   const [tenants, setTenants] = useState<TenantRow[]>([]);
-  const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [plans, setPlans] = useState<PlanDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export function AdminPage() {
   const updateTenantModules = (id: string, modules: TenantModules) =>
     setTenants((prev) => prev.map((t) => t.id === id ? { ...t, modules } : t));
 
-  const updatePlanRow = (updated: PlanRow) =>
+  const updatePlanDto = (updated: PlanDto) =>
     setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p));
 
   const activeCount = tenants.filter((t) => t.isActive).length;
@@ -202,7 +202,7 @@ export function AdminPage() {
 
         {/* Plans editor */}
         {plans.length > 0 && (
-          <PlansSection plans={plans} onUpdate={updatePlanRow} />
+          <PlansSection plans={plans} onUpdate={updatePlanDto} />
         )}
 
         {/* Tenant list */}

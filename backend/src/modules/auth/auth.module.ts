@@ -25,7 +25,8 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRATION', '7d'),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          expiresIn: configService.get('JWT_EXPIRATION', '7d') as any,
         },
       }),
     }),

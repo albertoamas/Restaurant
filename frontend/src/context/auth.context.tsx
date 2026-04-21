@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
 import { useSettingsStore } from '../store/settings.store';
@@ -36,6 +36,7 @@ interface AuthContextType {
   setCurrentBranch: (id: string) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -131,6 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/pos');
   }, [navigate, applyUser]);
 
+  const refreshingRef = useRef(false);
+  const refreshUser = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    try {
+      const u = await authApi.getMe();
+      applyUser(u as AuthUser);
+    } catch {
+      // Silently ignore — token may have expired; don't force logout on background refresh
+    } finally {
+      refreshingRef.current = false;
+    }
+  }, [applyUser]);
+
   const logout = useCallback(() => {
     localStorage.removeItem('pos_token');
     localStorage.removeItem('pos_branch');
@@ -150,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentBranch,
       login,
       logout,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

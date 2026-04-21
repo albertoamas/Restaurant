@@ -9,16 +9,21 @@
     "dev": "pnpm --filter @pos/shared build && pnpm run dev:backend & pnpm run dev:frontend",
     "build:backend": "pnpm --filter backend build",
     "build:frontend": "pnpm --filter frontend build",
-    "build":          "pnpm run build:backend && pnpm run build:frontend",
-    "test:backend":   "pnpm --filter backend test",
-    "test:frontend":  "pnpm --filter frontend test:run",
-    "test:e2e":       "playwright test"
+    "build": "pnpm run build:backend && pnpm run build:frontend",
+    "test:backend": "pnpm --filter backend test",
+    "test:frontend": "pnpm --filter frontend test:run",
+    "test:e2e": "playwright test"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@nestjs/core",
       "@prisma/engines",
       "@prisma/client",
+      "esbuild",
       "prisma"
+    ],
+    "ignoredBuiltDependencies": [
+      "unrs-resolver"
     ]
   },
   "devDependencies": {
