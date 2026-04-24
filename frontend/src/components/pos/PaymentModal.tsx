@@ -14,6 +14,7 @@ interface Props {
   total: number;
   onConfirm: (payments: PaymentEntry[], customer: CustomerPayload, orderType: OrderType) => Promise<void>;
   onDeferPayment?: (customer: CustomerPayload, orderType: OrderType) => Promise<void>;
+  allowCortesia?: boolean;
 }
 
 /* ─── Datos estáticos ────────────────────────────────────────────────────── */
@@ -60,10 +61,11 @@ const ORDER_TYPES = [
   },
 ];
 
-const PAYMENT_METHODS = [
+const BASE_PAYMENT_METHODS = [
   {
     value: PaymentMethod.CASH,
     label: 'Efectivo',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -78,6 +80,7 @@ const PAYMENT_METHODS = [
   {
     value: PaymentMethod.QR,
     label: 'QR',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -92,6 +95,7 @@ const PAYMENT_METHODS = [
   {
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -103,9 +107,24 @@ const PAYMENT_METHODS = [
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:bg-violet-50',
     splitActive: 'border-2 border-violet-400 bg-violet-100 text-violet-800',
   },
+  {
+    value: PaymentMethod.CORTESIA,
+    label: 'Cortesía',
+    cortesiaOnly: true,
+    icon: (
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+      </svg>
+    ),
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50/60 hover:text-amber-700',
+    active:      'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
+    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50',
+    splitActive: 'border-2 border-amber-400 bg-amber-100 text-amber-800',
+  },
 ];
 
-const methodMap = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.value, m]));
+const methodMap = Object.fromEntries(BASE_PAYMENT_METHODS.map((m) => [m.value, m]));
 
 /* ─── Sub-componente: encabezado de paso ─────────────────────────────────── */
 
@@ -135,8 +154,12 @@ function StepHeader({ n, label, done }: { n: number; label: string; done: boolea
 
 /* ─── Componente principal ───────────────────────────────────────────────── */
 
-export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment }: Props) {
+export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment, allowCortesia = false }: Props) {
   const { setOrderType } = useCartStore();
+
+  const PAYMENT_METHODS = BASE_PAYMENT_METHODS.filter((m) => !m.cortesiaOnly || allowCortesia);
+  // En split mode CORTESIA no aplica (es todo-o-nada)
+  const SPLIT_METHODS = PAYMENT_METHODS.filter((m) => m.value !== PaymentMethod.CORTESIA);
 
   // Paso 1 — tipo
   const [selectedType, setSelectedType] = useState<OrderType | null>(null);
@@ -247,295 +270,277 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
 
   /* ── Render ── */
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Nuevo pedido" size="2xl">
-      <div className="space-y-7">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Nuevo pedido" size="3xl">
+      {/* Desktop: 2 columnas. Mobile: apilado */}
+      <div className="flex flex-col lg:flex-row lg:gap-x-6">
 
-        {/* ════════════════════════════════════
-            PASO 1 — TIPO DE PEDIDO
-        ════════════════════════════════════ */}
-        <div>
-          <StepHeader n={1} label="Tipo de pedido" done={step1Done} />
-          <div className="grid grid-cols-3 gap-3">
-            {ORDER_TYPES.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setSelectedType(t.value)}
-                className={[
-                  'flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-all duration-150 text-center',
-                  selectedType === t.value ? t.active : t.idle,
-                ].join(' ')}
-              >
-                {t.icon}
-                <span className="text-sm font-bold leading-tight">{t.label}</span>
-                <span className="text-[11px] opacity-70 leading-tight hidden sm:block">{t.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* ══════════════════════════════════════
+            COLUMNA IZQUIERDA — Pasos 1 + 2
+        ══════════════════════════════════════ */}
+        <div className="flex-1 space-y-5 lg:border-r lg:border-gray-100 lg:pr-6">
 
-        <div className="border-t border-gray-100" />
-
-        {/* ════════════════════════════════════
-            PASO 2 — CLIENTE
-        ════════════════════════════════════ */}
-        <div>
-          <StepHeader n={2} label="Cliente" done={step2Done} />
-
-          {/* Si ya confirmó "sin cliente", mostrar chip */}
-          {customerConfirmed && customerValue === null ? (
-            <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 border-2 border-gray-200">
-              <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Sin cliente
-              </div>
-              <button
-                type="button"
-                onClick={() => { setCustomerConfirmed(false); setPickerKey((k) => k + 1); }}
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
-              >
-                Cambiar
-              </button>
+          {/* PASO 1 — TIPO DE PEDIDO */}
+          <div>
+            <StepHeader n={1} label="Tipo de pedido" done={step1Done} />
+            <div className="grid grid-cols-3 gap-2">
+              {ORDER_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setSelectedType(t.value)}
+                  className={[
+                    'flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all duration-150 text-center',
+                    selectedType === t.value ? t.active : t.idle,
+                  ].join(' ')}
+                >
+                  {t.icon}
+                  <span className="text-sm font-bold leading-tight">{t.label}</span>
+                  <span className="text-[11px] opacity-70 leading-tight hidden sm:block lg:hidden xl:block">{t.desc}</span>
+                </button>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-2.5">
-              <CustomerPicker key={pickerKey} onCustomerChange={handleCustomerChange} />
+          </div>
 
-              {/* Sin cliente — solo visible si no hay customer seleccionado en el picker */}
-              {!customerConfirmed && (
+          <div className="border-t border-gray-100" />
+
+          {/* PASO 2 — CLIENTE */}
+          <div>
+            <StepHeader n={2} label="Cliente" done={step2Done} />
+
+            {customerConfirmed && customerValue === null ? (
+              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 border-2 border-gray-200">
+                <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Sin cliente
+                </div>
                 <button
                   type="button"
-                  onClick={handleNoCustomer}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl
-                    border-2 border-gray-200 text-sm font-medium text-gray-400
-                    hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition-all duration-150"
+                  onClick={() => { setCustomerConfirmed(false); setPickerKey((k) => k + 1); }}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                  </svg>
-                  Sin cliente para este pedido
+                  Cambiar
                 </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-gray-100" />
-
-        {/* ════════════════════════════════════
-            PASO 3 — MÉTODO DE PAGO
-        ════════════════════════════════════ */}
-        <div>
-          <StepHeader n={3} label="Método de pago" done={step3Done} />
-
-          {!splitMode ? (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                {PAYMENT_METHODS.map((m) => (
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <CustomerPicker key={pickerKey} onCustomerChange={handleCustomerChange} />
+                {!customerConfirmed && (
                   <button
-                    key={m.value}
-                    onClick={() => setSelectedMethod(m.value)}
-                    className={[
-                      'flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl transition-all duration-150',
-                      selectedMethod === m.value ? m.active : m.idle,
-                    ].join(' ')}
+                    type="button"
+                    onClick={handleNoCustomer}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl
+                      border-2 border-gray-200 text-sm font-medium text-gray-400
+                      hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition-all duration-150"
                   >
-                    {m.icon}
-                    <span className="text-sm font-semibold">{m.label}</span>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    Sin cliente para este pedido
                   </button>
-                ))}
+                )}
               </div>
-
-              <button
-                onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
-                className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl
-                  text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
-                  border-2 border-gray-200 hover:border-primary-200 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Dividir pago entre varios métodos
-              </button>
-            </>
-          ) : (
-            /* ── Split mode ── */
-            <div className="space-y-4">
-
-              {/* Cabecera: título + volver */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Dividir pago
-                </span>
-                <button
-                  onClick={() => { setSplitMode(false); setSplitPayments([]); setSplitMethod(null); setSplitAmount(''); }}
-                  className="text-xs text-gray-400 hover:text-primary-600 transition-colors flex items-center gap-1"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Pago simple
-                </button>
-              </div>
-
-              {/* Barra de progreso */}
-              <div>
-                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min((assigned / total) * 100, 100)}%`,
-                      background: splitComplete
-                        ? 'oklch(0.55 0.18 145)'
-                        : 'oklch(0.75 0.15 85)',
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1.5 text-xs">
-                  <span className="text-gray-400">
-                    Asignado <span className="font-semibold text-gray-700">Bs {assigned.toFixed(2)}</span>
-                  </span>
-                  <span className={splitComplete ? 'text-emerald-600 font-bold' : 'text-amber-600 font-semibold'}>
-                    {splitComplete ? '¡Completo!' : `Restante Bs ${remaining.toFixed(2)}`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Chips de pagos ya agregados */}
-              {splitPayments.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {splitPayments.map((p, i) => {
-                    const m = methodMap[p.method];
-                    return (
-                      <div key={i} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-gray-100 border border-gray-200 text-sm">
-                        <span className="font-semibold text-gray-800">{m?.label ?? p.method}</span>
-                        <span className="text-gray-500">Bs {p.amount.toFixed(2)}</span>
-                        <button
-                          onClick={() => handleRemoveSplit(i)}
-                          className="w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 flex items-center justify-center text-white transition-colors ml-0.5"
-                          aria-label="Quitar"
-                        >
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Formulario para agregar — solo si no está completo */}
-              {!splitComplete && (
-                <div className="space-y-2.5">
-                  {/* Métodos */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {PAYMENT_METHODS.map((m) => (
-                      <button
-                        key={m.value}
-                        onClick={() => setSplitMethod(m.value)}
-                        className={[
-                          'py-2.5 rounded-xl text-sm font-semibold transition-all',
-                          splitMethod === m.value ? m.splitActive : m.splitIdle,
-                        ].join(' ')}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Monto + botón en fila */}
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">Bs</span>
-                      <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={splitAmount}
-                        onChange={(e) => setSplitAmount(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddSplit()}
-                        placeholder={remaining.toFixed(2)}
-                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white
-                          focus:outline-none focus:ring-0 focus:border-primary-400
-                          transition-[border-color]"
-                      />
-                    </div>
-                    <button
-                      onClick={handleAddSplit}
-                      disabled={!splitMethod || !splitAmount || parseFloat(splitAmount) <= 0}
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary-600 text-white
-                        hover:bg-primary-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      + Agregar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* ════════════════════════════════════
-            FOOTER — TOTAL + CONFIRMAR
-        ════════════════════════════════════ */}
-        <div className="border-t border-gray-100 pt-5 space-y-3">
-          <div className="flex items-baseline justify-between px-1">
-            <span className="text-sm font-semibold text-gray-500">Total</span>
-            <span className="font-heading font-black text-3xl text-gray-900">
-              Bs {total.toFixed(2)}
-            </span>
+        {/* ══════════════════════════════════════
+            COLUMNA DERECHA — Paso 3 + Footer
+        ══════════════════════════════════════ */}
+        <div className="flex-1 flex flex-col space-y-5 mt-7 lg:mt-0">
+
+          {/* PASO 3 — MÉTODO DE PAGO */}
+          <div className="flex-1">
+            <StepHeader n={3} label="Método de pago" done={step3Done} />
+
+            {!splitMode ? (
+              <>
+                <div className={`grid gap-2 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {PAYMENT_METHODS.map((m) => (
+                    <button
+                      key={m.value}
+                      onClick={() => setSelectedMethod(m.value)}
+                      className={[
+                        'flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-all duration-150',
+                        selectedMethod === m.value ? m.active : m.idle,
+                      ].join(' ')}
+                    >
+                      {m.icon}
+                      <span className="text-sm font-semibold">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedMethod !== PaymentMethod.CORTESIA && (
+                  <button
+                    onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl
+                      text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
+                      border-2 border-gray-200 hover:border-primary-200 transition-all"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Dividir pago entre varios métodos
+                  </button>
+                )}
+              </>
+            ) : (
+              /* ── Split mode ── */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dividir pago</span>
+                  <button
+                    onClick={() => { setSplitMode(false); setSplitPayments([]); setSplitMethod(null); setSplitAmount(''); }}
+                    className="text-xs text-gray-400 hover:text-primary-600 transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Pago simple
+                  </button>
+                </div>
+
+                <div>
+                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min((assigned / total) * 100, 100)}%`,
+                        background: splitComplete ? 'oklch(0.55 0.18 145)' : 'oklch(0.75 0.15 85)',
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1.5 text-xs">
+                    <span className="text-gray-400">
+                      Asignado <span className="font-semibold text-gray-700">Bs {assigned.toFixed(2)}</span>
+                    </span>
+                    <span className={splitComplete ? 'text-emerald-600 font-bold' : 'text-amber-600 font-semibold'}>
+                      {splitComplete ? '¡Completo!' : `Restante Bs ${remaining.toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
+
+                {splitPayments.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {splitPayments.map((p, i) => {
+                      const m = methodMap[p.method];
+                      return (
+                        <div key={i} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-gray-100 border border-gray-200 text-sm">
+                          <span className="font-semibold text-gray-800">{m?.label ?? p.method}</span>
+                          <span className="text-gray-500">Bs {p.amount.toFixed(2)}</span>
+                          <button
+                            onClick={() => handleRemoveSplit(i)}
+                            className="w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 flex items-center justify-center text-white transition-colors ml-0.5"
+                            aria-label="Quitar"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {!splitComplete && (
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-3 gap-2">
+                      {SPLIT_METHODS.map((m) => (
+                        <button
+                          key={m.value}
+                          onClick={() => setSplitMethod(m.value)}
+                          className={[
+                            'py-2.5 rounded-xl text-sm font-semibold transition-all',
+                            splitMethod === m.value ? m.splitActive : m.splitIdle,
+                          ].join(' ')}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">Bs</span>
+                        <input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={splitAmount}
+                          onChange={(e) => setSplitAmount(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddSplit()}
+                          placeholder={remaining.toFixed(2)}
+                          className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white
+                            focus:outline-none focus:ring-0 focus:border-primary-400 transition-[border-color]"
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddSplit}
+                        disabled={!splitMethod || !splitAmount || parseFloat(splitAmount) <= 0}
+                        className="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary-600 text-white
+                          hover:bg-primary-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Pasos pendientes — guía visual */}
-          {!canConfirm && (
-            <div className="flex flex-wrap gap-1.5 px-1">
-              {!step1Done && (
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                  Selecciona tipo de pedido
-                </span>
-              )}
-              {!step2Done && (
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                  Confirma el cliente
-                </span>
-              )}
-              {!step3Done && (
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                  Elige método de pago
-                </span>
-              )}
+          {/* FOOTER — TOTAL + CONFIRMAR */}
+          <div className="border-t border-gray-100 pt-4 space-y-3">
+            <div className="flex items-baseline justify-between px-1">
+              <span className="text-sm font-semibold text-gray-500">Total</span>
+              <span className="font-heading font-black text-3xl text-gray-900">
+                Bs {total.toFixed(2)}
+              </span>
             </div>
-          )}
 
-          <button
-            onClick={handleConfirm}
-            disabled={!canConfirm}
-            className={[
-              'w-full py-4 rounded-2xl text-base font-bold transition-all duration-200',
-              canConfirm
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_oklch(0.55_0.18_145/0.30)] active:scale-[0.98]'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed',
-            ].join(' ')}
-          >
-            {loading ? 'Procesando…' : canConfirm ? `Confirmar pedido · Bs ${total.toFixed(2)}` : 'Confirmar pedido'}
-          </button>
+            {!canConfirm && (
+              <div className="flex flex-wrap gap-1.5 px-1">
+                {!step1Done && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Selecciona tipo de pedido</span>
+                )}
+                {!step2Done && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Confirma el cliente</span>
+                )}
+                {!step3Done && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Elige método de pago</span>
+                )}
+              </div>
+            )}
 
-          {onDeferPayment && step1Done && step2Done && (
             <button
-              onClick={handleDefer}
-              disabled={loading}
+              onClick={handleConfirm}
+              disabled={!canConfirm}
               className={[
-                'w-full py-4 rounded-2xl text-base font-bold transition-all duration-200 disabled:opacity-50',
-                'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]',
+                'w-full py-4 rounded-2xl text-base font-bold transition-all duration-200',
+                canConfirm
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_oklch(0.55_0.18_145/0.30)] active:scale-[0.98]'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed',
               ].join(' ')}
             >
-              {loading ? 'Procesando…' : 'Cobrar después · dejar pendiente'}
+              {loading ? 'Procesando…' : canConfirm ? `Confirmar pedido · Bs ${total.toFixed(2)}` : 'Confirmar pedido'}
             </button>
-          )}
+
+            {onDeferPayment && step1Done && step2Done && (
+              <button
+                onClick={handleDefer}
+                disabled={loading}
+                className={[
+                  'w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-200 disabled:opacity-50',
+                  'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]',
+                ].join(' ')}
+              >
+                {loading ? 'Procesando…' : 'Cobrar después · dejar pendiente'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </Modal>

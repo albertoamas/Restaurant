@@ -31,7 +31,7 @@ export function PosPage() {
   const [lastOrder, setLastOrder] = useState<OrderDto | null>(null);
 
   const { items, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
-  const { currentBranchId } = useAuth();
+  const { currentBranchId, user } = useAuth();
   const { autoPrintKitchen, cashEnabled } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
 
@@ -201,6 +201,7 @@ export function PosPage() {
         onClose={() => setShowPayment(false)}
         total={getTotal()}
         onConfirm={handleConfirmPayment}
+        allowCortesia={user?.role === 'OWNER'}
         onDeferPayment={async (customer, orderType) => {
           try {
             const order = await ordersApi.create({

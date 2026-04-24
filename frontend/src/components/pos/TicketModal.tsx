@@ -21,6 +21,7 @@ const paymentLabel: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'Efectivo',
   [PaymentMethod.QR]: 'QR',
   [PaymentMethod.TRANSFER]: 'Transferencia',
+  [PaymentMethod.CORTESIA]: 'Cortesía',
 };
 
 function formatDateTime(iso: string) {

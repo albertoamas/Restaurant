@@ -31,9 +31,10 @@ export const statusLabel: Record<string, string> = {
 };
 
 const paymentLabel: Record<string, string> = {
-  [PaymentMethod.CASH]:     'Efectivo',
-  [PaymentMethod.QR]:       'QR',
-  [PaymentMethod.TRANSFER]: 'Transferencia',
+  [PaymentMethod.CASH]:      'Efectivo',
+  [PaymentMethod.QR]:        'QR',
+  [PaymentMethod.TRANSFER]:  'Transferencia',
+  [PaymentMethod.CORTESIA]:  'Cortesía',
 };
 
 const actionConfig: Record<string, { label: string; nextStatus: OrderStatus; color: string } | null> = {
