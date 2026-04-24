@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus, OrderType, PaymentMethod, TopProductDto } from '@pos/shared';
+import { OrderStatus, OrderType, PaymentMethod, TopCustomerDto, TopProductDto } from '@pos/shared';
 import { BOLIVIA_OFFSET, BOLIVIA_TZ } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
@@ -240,7 +240,11 @@ export class OrderRepository implements OrderRepositoryPort {
 
     const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
       WITH filtered_orders AS (
-        SELECT o.id, o.total, o.type
+        SELECT o.id, o.total, o.type,
+          NOT EXISTS (
+            SELECT 1 FROM order_payments op
+            WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
+          ) AS is_courtesy
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
@@ -250,19 +254,20 @@ export class OrderRepository implements OrderRepositoryPort {
       ),
       order_stats AS (
         SELECT
-          COALESCE(SUM(total), 0)                                                   AS "totalSales",
-          COUNT(*)                                                                   AS "orderCount",
-          COALESCE(AVG(total), 0)                                                   AS "averageTicket",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+          COALESCE(SUM(CASE WHEN NOT is_courtesy THEN total ELSE 0 END), 0)                                                   AS "totalSales",
+          COUNT(CASE WHEN NOT is_courtesy THEN 1 END)                                                                          AS "orderCount",
+          COALESCE(AVG(CASE WHEN NOT is_courtesy THEN total END), 0)                                                           AS "averageTicket",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "dineInCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "deliveryCount"
         FROM filtered_orders
       ),
       payment_stats AS (
         SELECT
           COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CASH}     THEN op.amount ELSE 0 END), 0) AS "cashSales",
           COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.QR}       THEN op.amount ELSE 0 END), 0) AS "qrSales",
-          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales"
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CORTESIA} THEN op.amount ELSE 0 END), 0) AS "courtesySales"
         FROM order_payments op
         WHERE op.order_id IN (SELECT id FROM filtered_orders)
       )
@@ -287,7 +292,11 @@ export class OrderRepository implements OrderRepositoryPort {
 
     const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
       WITH filtered_orders AS (
-        SELECT o.id, o.total, o.type
+        SELECT o.id, o.total, o.type,
+          NOT EXISTS (
+            SELECT 1 FROM order_payments op
+            WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
+          ) AS is_courtesy
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
@@ -297,19 +306,20 @@ export class OrderRepository implements OrderRepositoryPort {
       ),
       order_stats AS (
         SELECT
-          COALESCE(SUM(total), 0)                                                   AS "totalSales",
-          COUNT(*)                                                                   AS "orderCount",
-          COALESCE(AVG(total), 0)                                                   AS "averageTicket",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  THEN 1 ELSE 0 END), 0) AS "dineInCount",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  THEN 1 ELSE 0 END), 0) AS "takeoutCount",
-          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} THEN 1 ELSE 0 END), 0) AS "deliveryCount"
+          COALESCE(SUM(CASE WHEN NOT is_courtesy THEN total ELSE 0 END), 0)                                                   AS "totalSales",
+          COUNT(CASE WHEN NOT is_courtesy THEN 1 END)                                                                          AS "orderCount",
+          COALESCE(AVG(CASE WHEN NOT is_courtesy THEN total END), 0)                                                           AS "averageTicket",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DINE_IN}  AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "dineInCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.TAKEOUT}  AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "takeoutCount",
+          COALESCE(SUM(CASE WHEN type = ${OrderType.DELIVERY} AND NOT is_courtesy THEN 1 ELSE 0 END), 0) AS "deliveryCount"
         FROM filtered_orders
       ),
       payment_stats AS (
         SELECT
           COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CASH}     THEN op.amount ELSE 0 END), 0) AS "cashSales",
           COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.QR}       THEN op.amount ELSE 0 END), 0) AS "qrSales",
-          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales"
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.TRANSFER} THEN op.amount ELSE 0 END), 0) AS "transferSales",
+          COALESCE(SUM(CASE WHEN op.method = ${PaymentMethod.CORTESIA} THEN op.amount ELSE 0 END), 0) AS "courtesySales"
         FROM order_payments op
         WHERE op.order_id IN (SELECT id FROM filtered_orders)
       )
@@ -420,6 +430,60 @@ export class OrderRepository implements OrderRepositoryPort {
     }));
   }
 
+  async getTopCustomers(
+    tenantId: string,
+    branchId: string | null,
+    from: string,
+    to: string,
+  ): Promise<TopCustomerDto[]> {
+    const fromTs = new Date(from);
+    const toTs   = new Date(to);
+
+    type RawRow = {
+      customerId:    string;
+      customerName:  string;
+      customerPhone: string | null;
+      orderCount:    bigint;
+      totalSpent:    unknown;
+    };
+
+    // Una orden es "de cortesía" cuando TODOS sus pagos son CORTESIA.
+    // Esas órdenes se excluyen del gasto real del cliente, igual que en los reportes de ventas.
+    const branchFilter = branchId
+      ? Prisma.sql`AND o.branch_id = ${branchId}`
+      : Prisma.sql``;
+
+    const rows = await this.prisma.$queryRaw<RawRow[]>`
+      SELECT
+        c.id          AS "customerId",
+        c.name        AS "customerName",
+        c.phone       AS "customerPhone",
+        COUNT(o.id)::bigint                  AS "orderCount",
+        COALESCE(SUM(o.total), 0)            AS "totalSpent"
+      FROM customers c
+      JOIN orders o ON o.customer_id = c.id
+      WHERE o.tenant_id  = ${tenantId}
+        AND c.tenant_id  = ${tenantId}
+        ${branchFilter}
+        AND o.created_at BETWEEN ${fromTs} AND ${toTs}
+        AND o.status     != ${OrderStatus.CANCELLED}
+        AND NOT (
+          EXISTS     (SELECT 1 FROM order_payments op  WHERE op.order_id = o.id)
+          AND NOT EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id AND op2.method != ${PaymentMethod.CORTESIA})
+        )
+      GROUP BY c.id, c.name, c.phone
+      ORDER BY "totalSpent" DESC
+      LIMIT 10`;
+
+    return rows.map((r) => ({
+      customerId:    r.customerId,
+      customerName:  r.customerName,
+      customerPhone: r.customerPhone ?? null,
+      orderCount:    Number(r.orderCount),
+      totalSpent:    Number(r.totalSpent),
+    }));
+  }
+
   private mapReport(row: Record<string, unknown>): DailyReportResult {
     return {
       totalSales:    Number(row.totalSales   ?? 0),
@@ -429,6 +493,7 @@ export class OrderRepository implements OrderRepositoryPort {
         cash:     Number(row.cashSales     ?? 0),
         qr:       Number(row.qrSales       ?? 0),
         transfer: Number(row.transferSales ?? 0),
+        cortesia: Number(row.courtesySales ?? 0),
       },
       ordersByType: {
         dineIn:   Number(row.dineInCount   ?? 0),

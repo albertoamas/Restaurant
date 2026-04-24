@@ -1,6 +1,6 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { PaymentMethod } from '@pos/shared';
+import { PaymentMethod, UserRole } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
@@ -8,6 +8,7 @@ import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/ca
 import { EventsService } from '../../../events/events.service';
 import { RegisterOrderPaymentDto } from '../dto/register-order-payment.dto';
 import { OrderStatus } from '@pos/shared';
+import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 
 @Injectable()
 export class RegisterOrderPaymentUseCase {
@@ -19,9 +20,10 @@ export class RegisterOrderPaymentUseCase {
     private readonly cashSessionRepository: CashSessionRepositoryPort,
 
     @Optional() private readonly eventsService?: EventsService,
+    @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
 
-  async execute(tenantId: string, orderId: string, dto: RegisterOrderPaymentDto): Promise<Order> {
+  async execute(tenantId: string, orderId: string, role: UserRole, dto: RegisterOrderPaymentDto): Promise<Order> {
     // 1. Load order
     const order = await this.orderRepository.findById(orderId, tenantId);
     if (!order) {
@@ -44,6 +46,19 @@ export class RegisterOrderPaymentUseCase {
       throw new BadRequestException(
         `La suma de pagos (${paymentsSum}) no coincide con el total del pedido (${order.total})`,
       );
+    }
+
+    const hasCortesia = dto.payments.some((p) => p.method === PaymentMethod.CORTESIA);
+    if (hasCortesia && role !== UserRole.OWNER) {
+      throw new ForbiddenException('Solo el propietario puede registrar pedidos de cortesía');
+    }
+    if (hasCortesia && dto.payments.length > 1) {
+      throw new BadRequestException('Cortesía no puede combinarse con otros métodos de pago');
+    }
+
+    // Revoke any raffle tickets already assigned to this order (deferred-payment CORTESIA path)
+    if (hasCortesia && this.raffleAutoTicket) {
+      this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId).catch(() => {});
     }
 
     // 5. Cash session check if any payment is CASH

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { toBoliviaDateString } from '../../../../common/utils/timezone.util';
 import { Order } from '../../domain/entities/order.entity';
@@ -14,7 +14,7 @@ import { CreateOrderDto } from '../dto/create-order.dto';
 import { Customer } from '../../../customers/domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../../customers/domain/ports/customer-repository.port';
 import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
-import { PaymentMethod } from '@pos/shared';
+import { PaymentMethod, UserRole } from '@pos/shared';
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -42,7 +42,7 @@ export class CreateOrderUseCase {
     @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
 
-  async execute(tenantId: string, branchId: string, userId: string, dto: CreateOrderDto): Promise<Order> {
+  async execute(tenantId: string, branchId: string, userId: string, role: UserRole, dto: CreateOrderDto): Promise<Order> {
     // 1. Verificar que la sucursal existe y pertenece a este tenant.
     //    Previene que un OWNER envíe un branchId de otro tenant en el request body.
     const branch = await this.branchRepository.findById(branchId, tenantId);
@@ -135,12 +135,20 @@ export class CreateOrderUseCase {
     // 8. Validate that payments sum matches the order total (tolerance ±0.01 for rounding)
     //    Skip validation when no payments provided (deferred payment flow)
     const subtotal = Math.round(items.reduce((sum, i) => sum + i.subtotal, 0) * 100) / 100;
+    const hasCortesia = (dto.payments ?? []).some((p) => p.method === PaymentMethod.CORTESIA);
     if (dto.payments && dto.payments.length > 0) {
       const paymentsSum = Math.round(dto.payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
       if (Math.abs(paymentsSum - subtotal) > 0.01) {
         throw new BadRequestException(
           `La suma de pagos (${paymentsSum}) no coincide con el total del pedido (${subtotal})`,
         );
+      }
+
+      if (hasCortesia && role !== UserRole.OWNER) {
+        throw new ForbiddenException('Solo el propietario puede registrar pedidos de cortesía');
+      }
+      if (hasCortesia && dto.payments.length > 1) {
+        throw new BadRequestException('Cortesía no puede combinarse con otros métodos de pago');
       }
     }
 
@@ -180,8 +188,8 @@ export class CreateOrderUseCase {
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToTenant(tenantId, 'order.created', saved);
 
-    // 13. Auto-assign raffle tickets (silent — never throws)
-    if (resolvedCustomerId && this.raffleAutoTicket) {
+    // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
+    if (resolvedCustomerId && this.raffleAutoTicket && !hasCortesia) {
       const raffleItems = dto.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
       this.raffleAutoTicket.processOrder(tenantId, resolvedCustomerId, orderId, raffleItems).catch(() => {});
     }

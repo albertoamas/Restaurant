@@ -55,7 +55,7 @@ export class OrderController {
     if (!branchId) {
       throw new BadRequestException('branchId is required. Select a branch before creating an order.');
     }
-    return this.createOrderUseCase.execute(tenantId, branchId, user.sub, dto);
+    return this.createOrderUseCase.execute(tenantId, branchId, user.sub, user.role, dto);
   }
 
   @Get()
@@ -95,10 +95,11 @@ export class OrderController {
   @Post(':id/payments')
   registerPayments(
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RegisterOrderPaymentDto,
   ) {
-    return this.registerOrderPaymentUseCase.execute(tenantId, id, dto);
+    return this.registerOrderPaymentUseCase.execute(tenantId, id, user.role, dto);
   }
 
   @Patch(':id')

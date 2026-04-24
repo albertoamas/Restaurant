@@ -20,6 +20,7 @@ export enum PaymentMethod {
   CASH = 'CASH',
   QR = 'QR',
   TRANSFER = 'TRANSFER',
+  CORTESIA = 'CORTESIA',
 }
 
 export enum CashSessionStatus {

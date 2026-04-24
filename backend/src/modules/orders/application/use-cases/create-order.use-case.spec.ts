@@ -1,6 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
-import { OrderType, PaymentMethod, OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
+import { OrderType, PaymentMethod, UserRole, OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
 import { CreateOrderUseCase } from './create-order.use-case';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
@@ -93,7 +93,7 @@ describe('CreateOrderUseCase', () => {
   });
 
   it('crea una orden exitosamente con pago único', async () => {
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, makeDto());
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, makeDto());
     expect(order).toBeInstanceOf(Order);
     expect(order.total).toBe(100); // 2 × 50
     expect(order.orderNumber).toBe(1);
@@ -108,25 +108,25 @@ describe('CreateOrderUseCase', () => {
     });
     // Sin sesión de caja previa → cash no requiere sesión abierta
     cashSessionRepo.findByBranch.mockResolvedValue([]);
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto);
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto);
     expect(order.payments).toHaveLength(2);
   });
 
   it('lanza BadRequestException si la sucursal no existe', async () => {
     branchRepo.findById.mockResolvedValue(null);
-    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, makeDto()))
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, makeDto()))
       .rejects.toThrow(BadRequestException);
   });
 
   it('lanza BadRequestException si un producto no existe en el tenant', async () => {
     productRepo.findByIds.mockResolvedValue([]); // ninguno encontrado
-    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, makeDto()))
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, makeDto()))
       .rejects.toThrow(BadRequestException);
   });
 
   it('lanza BadRequestException si la suma de pagos no cuadra con el total (fuera de ±0.01)', async () => {
     const dto = makeDto({ payments: [{ method: PaymentMethod.QR, amount: 50 }] }); // total es 100
-    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto))
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto))
       .rejects.toThrow(BadRequestException);
   });
 
@@ -137,7 +137,7 @@ describe('CreateOrderUseCase', () => {
       items:    [{ productId: PRODUCT_ID, quantity: 1 }],
       payments: [{ method: PaymentMethod.QR, amount: 10.009 }],
     });
-    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto)).resolves.toBeDefined();
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto)).resolves.toBeDefined();
   });
 
   it('lanza BadRequestException si hay pago CASH y existe sesión pero está cerrada', async () => {
@@ -145,7 +145,7 @@ describe('CreateOrderUseCase', () => {
     cashSessionRepo.findByBranch.mockResolvedValue([{ id: 'old-session' } as any]);
     cashSessionRepo.findOpenByBranch.mockResolvedValue(null);
     const dto = makeDto({ payments: [{ method: PaymentMethod.CASH, amount: 100 }] });
-    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto))
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto))
       .rejects.toThrow(BadRequestException);
   });
 
@@ -153,7 +153,7 @@ describe('CreateOrderUseCase', () => {
     customerRepo.findByPhone.mockResolvedValue(null);
     customerRepo.save.mockImplementation(async (c) => c);
     const dto = makeDto({ createCustomer: { name: 'Juan Pérez', phone: '71234567' } });
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto);
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto);
     expect(customerRepo.save).toHaveBeenCalledTimes(1);
     expect(order.customerId).toBeTruthy();
   });
@@ -162,22 +162,45 @@ describe('CreateOrderUseCase', () => {
     const existingCustomer = { id: 'cust-existing', tenantId: TENANT_ID } as any;
     customerRepo.findByPhone.mockResolvedValue(existingCustomer);
     const dto = makeDto({ createCustomer: { name: 'Juan Pérez', phone: '71234567' } });
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto);
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto);
     expect(customerRepo.save).not.toHaveBeenCalled();
     expect(order.customerId).toBe('cust-existing');
   });
 
   it('asigna el orderNumber devuelto por el repositorio', async () => {
     orderRepo.getNextOrderNumber.mockResolvedValue(42);
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, makeDto());
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, makeDto());
     expect(order.orderNumber).toBe(42);
   });
 
   it('captura el precio del producto en el momento del pedido (snapshot)', async () => {
     productRepo.findByIds.mockResolvedValue([makeProduct(99)]);
     const dto = makeDto({ payments: [{ method: PaymentMethod.QR, amount: 198 }] });
-    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, dto);
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto);
     expect(order.items[0].unitPrice).toBe(99);
     expect(order.total).toBe(198);
+  });
+
+  it('OWNER puede crear un pedido de cortesía', async () => {
+    const dto = makeDto({ payments: [{ method: PaymentMethod.CORTESIA, amount: 100 }] });
+    const order = await useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto);
+    expect(order.payments[0].method).toBe(PaymentMethod.CORTESIA);
+  });
+
+  it('lanza ForbiddenException si CASHIER intenta usar CORTESIA', async () => {
+    const dto = makeDto({ payments: [{ method: PaymentMethod.CORTESIA, amount: 100 }] });
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.CASHIER, dto))
+      .rejects.toThrow(ForbiddenException);
+  });
+
+  it('lanza BadRequestException si CORTESIA se combina con otro método de pago', async () => {
+    const dto = makeDto({
+      payments: [
+        { method: PaymentMethod.CORTESIA, amount: 50 },
+        { method: PaymentMethod.CASH,     amount: 50 },
+      ],
+    });
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto))
+      .rejects.toThrow(BadRequestException);
   });
 });

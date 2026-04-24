@@ -72,6 +72,7 @@ export interface DailyReportDto {
     cash: number;
     qr: number;
     transfer: number;
+    cortesia: number;
   };
   ordersByType: {
     dineIn: number;
@@ -87,4 +88,12 @@ export interface TopProductDto {
   categoryName: string | null;
   totalQuantity: number;
   totalRevenue: number;
+}
+
+export interface TopCustomerDto {
+  customerId: string;
+  customerName: string;
+  customerPhone: string | null;
+  orderCount: number;
+  totalSpent: number;
 }
