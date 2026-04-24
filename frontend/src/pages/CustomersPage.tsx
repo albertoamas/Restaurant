@@ -38,7 +38,44 @@ const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'Efectivo',
   [PaymentMethod.QR]: 'QR',
   [PaymentMethod.TRANSFER]: 'Transferencia',
+  [PaymentMethod.CORTESIA]: 'Cortesía',
 };
+
+// ── Sort header ───────────────────────────────────────────────────────────────
+
+type SortBy = 'name' | 'totalSpent' | 'purchaseCount';
+type SortDir = 'asc' | 'desc';
+
+function SortHeader({
+  label, col, sortBy, sortDir, onSort, align = 'left',
+}: {
+  label: string;
+  col: SortBy;
+  sortBy: SortBy;
+  sortDir: SortDir;
+  onSort: (col: SortBy) => void;
+  align?: 'left' | 'right';
+}) {
+  const active = sortBy === col;
+  return (
+    <button
+      onClick={() => onSort(col)}
+      className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide transition-colors select-none ${
+        active ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'
+      } ${align === 'right' ? 'justify-end w-full' : ''}`}
+    >
+      {label}
+      <span className="flex flex-col gap-[1px]">
+        <svg className={`w-2.5 h-2.5 ${active && sortDir === 'asc' ? 'text-primary-500' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
+          <path d="M5 0L10 6H0z" />
+        </svg>
+        <svg className={`w-2.5 h-2.5 ${active && sortDir === 'desc' ? 'text-primary-500' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
+          <path d="M5 6L0 0h10z" />
+        </svg>
+      </span>
+    </button>
+  );
+}
 
 // ── Order history ─────────────────────────────────────────────────────────────
 
@@ -226,7 +263,7 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function CustomersPage() {
-  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage } = useCustomers();
+  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort } = useCustomers();
   const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -291,9 +328,9 @@ export function CustomersPage() {
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Gastado</p>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Compras</p>
+            <SortHeader label="Nombre" col="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
+            <SortHeader label="Gastado" col="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
+            <SortHeader label="Compras" col="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
           </div>
 
           {/* Rows */}

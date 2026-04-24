@@ -11,7 +11,7 @@ export const customersApi = {
   search: (q: string): Promise<CustomerSearchResult[]> =>
     client.get('/api/v1/customers/search', { params: { q } }).then((r) => r.data),
 
-  getAll: (params?: { q?: string; page?: number; limit?: number }): Promise<{ data: CustomerStatsDto[]; total: number }> =>
+  getAll: (params?: { q?: string; page?: number; limit?: number; sortBy?: string; sortDir?: string }): Promise<{ data: CustomerStatsDto[]; total: number }> =>
     client.get('/api/v1/customers', { params }).then((r) => ({
       data: r.data as CustomerStatsDto[],
       total: Number(r.headers['x-total-count'] ?? r.data.length),

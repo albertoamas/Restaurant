@@ -53,12 +53,20 @@ export class CustomerController {
     @Query('q') q?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
   ) {
+    const validSortBy = ['name', 'totalSpent', 'purchaseCount'].includes(sortBy ?? '')
+      ? (sortBy as 'name' | 'totalSpent' | 'purchaseCount')
+      : undefined;
+    const validSortDir = sortDir === 'desc' ? 'desc' : 'asc';
     const result = await this.listCustomers.execute(
       tenantId,
       q,
       page ? Number(page) : undefined,
       limit ? Number(limit) : undefined,
+      validSortBy,
+      validSortDir,
     );
     res.setHeader('X-Total-Count', result.total);
     return result.data;

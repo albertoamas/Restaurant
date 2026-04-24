@@ -9,7 +9,7 @@ export class ListCustomersUseCase {
     private readonly repo: CustomerRepositoryPort,
   ) {}
 
-  async execute(tenantId: string, q?: string, page?: number, limit?: number): Promise<{ data: CustomerStatsDto[]; total: number }> {
-    return this.repo.findAll(tenantId, q, page, limit);
+  async execute(tenantId: string, q?: string, page?: number, limit?: number, sortBy?: 'name' | 'totalSpent' | 'purchaseCount', sortDir?: 'asc' | 'desc'): Promise<{ data: CustomerStatsDto[]; total: number }> {
+    return this.repo.findAll(tenantId, q, page, limit, sortBy, sortDir);
   }
 }
