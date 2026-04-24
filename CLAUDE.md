@@ -112,10 +112,11 @@ Shared database / shared schema. Every table has `tenant_id`. The JWT payload ca
 
 ### Authorization
 
-Three guards in `backend/src/common/guards/`:
+Four guards in `backend/src/common/guards/`:
 
 - `JwtAuthGuard` — verifies JWT, required on almost all endpoints
 - `RolesGuard` + `@Roles(UserRole.OWNER)` — restricts endpoints to owners
+- `ModuleGuard` + `@RequiresModule('rafflesEnabled')` — checks the tenant's module flag; returns 403 if disabled
 - `AdminGuard` — checks `x-admin-key` header against `ADMIN_SECRET`; no JWT; used only on `/admin/*`
 
 ### Real-time (WebSockets)
@@ -138,6 +139,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
 | `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
+| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
@@ -154,7 +156,7 @@ hooks/       ← custom hooks: fetch + state (useProducts, useOrders, …)
 store/       ← Zustand stores: cart.store.ts, settings.store.ts, cashSession.store.ts
 context/     ← auth.context.tsx (user/token/branchId), socket.context.tsx
 pages/       ← route-level components
-components/  ← ui/, layout/, pos/, orders/, products/, cash/, expenses/
+components/  ← ui/, layout/, pos/, orders/, products/, cash/, expenses/, raffles/
 utils/       ← date.ts (today, formatDate, elapsed), api-error.ts, print.ts, order.ts
 routes/      ← PrivateRoute, OwnerRoute
 ```
@@ -170,7 +172,7 @@ routes/      ← PrivateRoute, OwnerRoute
   /pos       /orders    /cash      ← CASHIER + OWNER
   /report    /expenses  /customers
   /products  /team      /branches  ← OWNER only
-  /settings
+  /raffles   /settings
 ```
 
 Unknown routes redirect to `/`. No public self-registration.
@@ -191,16 +193,20 @@ Unknown routes redirect to `/`. No public self-registration.
 
 ## Data Model
 
-12 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
+17 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
 
 ```
 Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional branchId)
                            ├── Branch
+                           ├── BranchOrderSequence  (atomic order# per branch+period)
                            ├── Category ── Product (price, imageUrl)
                            ├── Order ──┬── OrderItem  (productName + unitPrice snapshot)
                            │           └── OrderPayment  (method, amount — N per order)
                            ├── CashSession ── Expense (category, amount, description)
-                           └── Customer (name, phone, email, ticketsDelivered)
+                           ├── Customer (name, phone, email)
+                           └── Raffle ──┬── RafflePrize  (position, prizeDescription)
+                                        ├── RaffleTicket  (customer, order link)
+                                        └── RaffleWinner  (position, voided flag)
 ```
 
 Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings in DB.
@@ -213,11 +219,15 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 `Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Each plan defines capacity limits (`maxBranches`, `maxCashiers`, `maxProducts`, `kitchenEnabled`). Use cases check these limits before creating branches, cashiers, or products.
 
-`Tenant` also has per-tenant module flags set exclusively by the admin (not the tenant owner): `ordersEnabled`, `cashEnabled`, `teamEnabled`, `branchesEnabled`, `kitchenEnabled`. These are read by `GET /auth/me` and applied client-side via `applyModules()` in `auth.context.tsx` every login — they populate `settings.store.ts` but are **not** persisted to localStorage.
+`Tenant` also has per-tenant module flags set exclusively by the admin (not the tenant owner): `ordersEnabled`, `cashEnabled`, `teamEnabled`, `branchesEnabled`, `kitchenEnabled`, `rafflesEnabled`. These are read by `GET /auth/me` and applied client-side via `applyModules()` in `auth.context.tsx` every login — they populate `settings.store.ts` but are **not** persisted to localStorage.
+
+Each `Plan` also defines `kitchenEnabled` and `rafflesEnabled` as defaults; the per-tenant flags take precedence when set by the admin.
 
 ### Tenant settings
 
-`Tenant.orderNumberResetPeriod` (DAILY | MONTHLY) controls when `order_number` resets to 1. The SQL uses `DATE()` for daily and `DATE_TRUNC('month', …)` for monthly.
+`Tenant.orderNumberResetPeriod` (DAILY | MONTHLY) controls when `order_number` resets to 1. The SQL uses `DATE()` for daily and `DATE_TRUNC('month', …)` for monthly. Order sequences are stored atomically in `BranchOrderSequence` to avoid race conditions.
+
+Branding fields on `Tenant`: `logoUrl`, `businessAddress`, `businessPhone`, `receiptSlogan` — configurable by the owner via `PATCH /tenants/settings`.
 
 Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/utils/timezone.util.ts` uses `America/La_Paz` (UTC-4) for all date calculations including order number resets.
 
@@ -264,3 +274,9 @@ Migrations run automatically on backend container start (`prisma migrate deploy`
 - nginx proxies `/api/`, `/uploads/`, `/socket.io/` to backend; stays on HTTP internally.
 - `/uploads/<uuid>.<ext>` files are **publicly accessible** — any URL is guessable if the UUID leaks. Acceptable for product/logo images; do not store sensitive files here.
 - TLS: Cloudflare orange-cloud proxy, SSL/TLS set to "Full".
+
+## Reference Docs
+
+- `docs/linked-cuddling-mountain.md` — VPS initial deployment steps
+- `docs/plan-auditoria-360.md` — pre-sale multi-restaurant audit plan
+- `docs/cierre-ejecutivo-readiness.md` — executive readiness checklist
