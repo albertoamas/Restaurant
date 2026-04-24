@@ -260,6 +260,12 @@ export function CashPage() {
         subtitle={session ? `Abierta el ${formatDate(session.openedAt)}` : undefined}
         amountLabel="Efectivo contado al cierre"
         confirmLabel="Cerrar caja"
+        defaultAmount={session ? session.openingAmount + (session.cashSales ?? 0) : undefined}
+        breakdown={session ? {
+          openingAmount: session.openingAmount,
+          cashSales: session.cashSales ?? 0,
+          expectedAmount: session.openingAmount + (session.cashSales ?? 0),
+        } : undefined}
       />
 
       <HistoryModal

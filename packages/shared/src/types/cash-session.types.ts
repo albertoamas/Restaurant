@@ -14,6 +14,8 @@ export interface CashSessionDto {
   openedAt: string;
   closedAt: string | null;
   notes: string | null;
+  /** Ventas en efectivo durante la sesión. Solo presente en la respuesta de /current (sesión abierta). */
+  cashSales?: number;
 }
 
 export interface OpenCashSessionRequest {
