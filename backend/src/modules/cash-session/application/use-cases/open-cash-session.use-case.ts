@@ -13,6 +13,7 @@ export class OpenCashSessionUseCase {
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: OpenCashSessionDto): Promise<CashSession> {
+    // Rechazo rápido en la capa de aplicación (mayoría de casos, sin tocar el índice).
     const existing = await this.repo.findOpenByBranch(tenantId, branchId);
     if (existing) {
       throw new ConflictException('Ya existe una caja abierta para esta sucursal');
@@ -23,8 +24,18 @@ export class OpenCashSessionUseCase {
       openingAmount: dto.openingAmount, notes: dto.notes,
     });
 
-    const saved = await this.repo.save(session);
-    this.eventsService?.emitToTenant(tenantId, 'cash.opened', saved);
-    return saved;
+    try {
+      const saved = await this.repo.save(session);
+      this.eventsService?.emitToTenant(tenantId, 'cash.opened', saved);
+      return saved;
+    } catch (err: any) {
+      // El índice único parcial uq_one_open_session_per_branch rechaza el segundo
+      // INSERT cuando dos requests pasan el check anterior de forma simultánea.
+      // P2002 = unique constraint violation en Prisma.
+      if (err?.code === 'P2002') {
+        throw new ConflictException('Ya existe una caja abierta para esta sucursal');
+      }
+      throw err;
+    }
   }
 }
