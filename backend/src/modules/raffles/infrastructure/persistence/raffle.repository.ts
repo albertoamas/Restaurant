@@ -5,7 +5,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { Raffle, RafflePrize, RaffleProps, RaffleStatus } from '../../domain/entities/raffle.entity';
 import { RaffleTicket, RaffleTicketProps } from '../../domain/entities/raffle-ticket.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
-import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
+import { NewTicketInput, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 
 @Injectable()
 export class RaffleRepository implements RaffleRepositoryPort {
@@ -13,11 +13,10 @@ export class RaffleRepository implements RaffleRepositoryPort {
 
   // ─── Raffle ────────────────────────────────────────────────────────────────
 
-  async saveRaffle(raffle: Raffle): Promise<Raffle> {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.raffle.upsert({
-        where: { id: raffle.id },
-        create: {
+  async createRaffle(raffle: Raffle): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.raffle.create({
+        data: {
           id: raffle.id,
           tenantId: raffle.tenantId,
           name: raffle.name,
@@ -28,32 +27,30 @@ export class RaffleRepository implements RaffleRepositoryPort {
           createdAt: raffle.createdAt,
           updatedAt: raffle.updatedAt,
         },
-        update: {
-          name: raffle.name,
-          description: raffle.description,
-          status: raffle.status,
-          numberOfWinners: raffle.numberOfWinners,
-          productId: raffle.productId,
-          updatedAt: raffle.updatedAt,
-        },
-      });
+      }),
+      this.prisma.rafflePrize.createMany({
+        data: raffle.prizes.map((p) => ({
+          id: randomUUID(),
+          raffleId: raffle.id,
+          position: p.position,
+          prizeDescription: p.prizeDescription,
+        })),
+      }),
+    ]);
+  }
 
-      // Si el sorteo viene con premios definidos, sincronizamos raffle_prizes.
-      // Esto solo ocurre al crear (prizes.length > 0). En updates de estado, prizes = [].
-      if (raffle.prizes.length > 0) {
-        await tx.rafflePrize.deleteMany({ where: { raffleId: raffle.id } });
-        await tx.rafflePrize.createMany({
-          data: raffle.prizes.map((p) => ({
-            id: randomUUID(),
-            raffleId: raffle.id,
-            position: p.position,
-            prizeDescription: p.prizeDescription,
-          })),
-        });
-      }
+  async saveRaffle(raffle: Raffle): Promise<void> {
+    await this.prisma.raffle.update({
+      where: { id: raffle.id },
+      data: {
+        name: raffle.name,
+        description: raffle.description,
+        status: raffle.status,
+        numberOfWinners: raffle.numberOfWinners,
+        productId: raffle.productId,
+        updatedAt: raffle.updatedAt,
+      },
     });
-
-    return raffle;
   }
 
   async findRaffleById(id: string, tenantId: string): Promise<Raffle | null> {
@@ -131,31 +128,35 @@ export class RaffleRepository implements RaffleRepositoryPort {
 
   // ─── Tickets ───────────────────────────────────────────────────────────────
 
-  async getNextTicketNumber(raffleId: string): Promise<number> {
-    const result = await this.prisma.raffleTicket.aggregate({
-      where: { raffleId },
-      _max: { ticketNumber: true },
-    });
-    return (result._max.ticketNumber ?? 0) + 1;
-  }
+  /**
+   * Inserta los tickets asignando números secuenciales de forma atómica.
+   * SELECT FOR UPDATE sobre la fila del sorteo serializa inserciones concurrentes
+   * para el mismo sorteo, evitando colisiones en UNIQUE(raffleId, ticketNumber).
+   */
+  async addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<void> {
+    if (!inputs.length) return;
 
-  async addTickets(tickets: RaffleTicket[]): Promise<RaffleTicket[]> {
-    const rows = await Promise.all(
-      tickets.map((t) =>
-        this.prisma.raffleTicket.create({
-          data: {
-            id: t.id,
-            tenantId: t.tenantId,
-            raffleId: t.raffleId,
-            customerId: t.customerId,
-            ticketNumber: t.ticketNumber,
-            orderId: t.orderId,
-            createdAt: t.createdAt,
-          },
-        }),
-      ),
-    );
-    return rows.map(this.ticketToDomain);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT id FROM raffles WHERE id = ${raffleId} FOR UPDATE`;
+
+      const agg = await tx.raffleTicket.aggregate({
+        where: { raffleId },
+        _max: { ticketNumber: true },
+      });
+      const base = (agg._max.ticketNumber ?? 0) + 1;
+
+      await tx.raffleTicket.createMany({
+        data: inputs.map((t, i) => ({
+          id: t.id,
+          tenantId: t.tenantId,
+          raffleId: t.raffleId,
+          customerId: t.customerId,
+          ticketNumber: base + i,
+          orderId: t.orderId,
+          createdAt: t.createdAt,
+        })),
+      });
+    });
   }
 
   async deleteTicketsByOrderId(tenantId: string, orderId: string): Promise<void> {

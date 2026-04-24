@@ -41,7 +41,7 @@ export class CreateRaffleUseCase {
       dto.description,
     );
 
-    await this.repo.saveRaffle(raffle);
+    await this.repo.createRaffle(raffle);
 
     const result = await this.repo.findRaffleWithTickets(raffle.id, tenantId);
     return result!;

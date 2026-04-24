@@ -35,28 +35,28 @@ describe('CreateRaffleUseCase', () => {
     productRepo = mock<ProductRepositoryPort>();
     useCase     = new CreateRaffleUseCase(raffleRepo, productRepo);
 
-    raffleRepo.saveRaffle.mockResolvedValue({} as any);
+    raffleRepo.createRaffle.mockResolvedValue();
     raffleRepo.findRaffleWithTickets.mockResolvedValue({ id: 'r1', tickets: [], numberOfWinners: 3 } as any);
   });
 
   it('crea el sorteo cuando el producto existe y está activo', async () => {
     productRepo.findById.mockResolvedValue(makeProduct());
     const result = await useCase.execute('tenant-1', DTO);
-    expect(raffleRepo.saveRaffle).toHaveBeenCalledTimes(1);
+    expect(raffleRepo.createRaffle).toHaveBeenCalledTimes(1);
     expect(result).toBeDefined();
   });
 
   it('el sorteo guardado tiene el numberOfWinners correcto', async () => {
     productRepo.findById.mockResolvedValue(makeProduct());
     await useCase.execute('tenant-1', DTO);
-    const saved = raffleRepo.saveRaffle.mock.calls[0][0];
+    const saved = raffleRepo.createRaffle.mock.calls[0][0];
     expect(saved.numberOfWinners).toBe(3);
   });
 
   it('el sorteo guardado tiene los premios correctos', async () => {
     productRepo.findById.mockResolvedValue(makeProduct());
     await useCase.execute('tenant-1', DTO);
-    const saved = raffleRepo.saveRaffle.mock.calls[0][0];
+    const saved = raffleRepo.createRaffle.mock.calls[0][0];
     expect(saved.prizes).toHaveLength(3);
     expect(saved.prizes[0]).toEqual({ position: 1, prizeDescription: 'Celular' });
   });
@@ -65,7 +65,7 @@ describe('CreateRaffleUseCase', () => {
     productRepo.findById.mockResolvedValue(makeProduct());
     const bad: CreateRaffleDto = { ...DTO, numberOfWinners: 2 };
     await expect(useCase.execute('tenant-1', bad)).rejects.toThrow(BadRequestException);
-    expect(raffleRepo.saveRaffle).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si las posiciones no son consecutivas (ej. [1, 3])', async () => {
@@ -79,7 +79,7 @@ describe('CreateRaffleUseCase', () => {
       ],
     };
     await expect(useCase.execute('tenant-1', bad)).rejects.toThrow(BadRequestException);
-    expect(raffleRepo.saveRaffle).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si las posiciones no empiezan en 1 (ej. [2, 3])', async () => {
@@ -93,18 +93,18 @@ describe('CreateRaffleUseCase', () => {
       ],
     };
     await expect(useCase.execute('tenant-1', bad)).rejects.toThrow(BadRequestException);
-    expect(raffleRepo.saveRaffle).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza NotFoundException si el producto no existe', async () => {
     productRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute('tenant-1', DTO)).rejects.toThrow(NotFoundException);
-    expect(raffleRepo.saveRaffle).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el producto está inactivo', async () => {
     productRepo.findById.mockResolvedValue(makeProduct(false));
     await expect(useCase.execute('tenant-1', DTO)).rejects.toThrow(BadRequestException);
-    expect(raffleRepo.saveRaffle).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
   });
 });

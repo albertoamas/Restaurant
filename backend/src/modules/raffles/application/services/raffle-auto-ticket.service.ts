@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
-import { RaffleTicket } from '../../domain/entities/raffle-ticket.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
 
 @Injectable()
 export class RaffleAutoTicketService {
@@ -27,17 +27,17 @@ export class RaffleAutoTicketService {
       const item = items.find((i) => i.productId === raffle.productId);
       if (!item) continue;
 
-      const baseNumber = await this.repo.getNextTicketNumber(raffle.id);
-      const tickets = Array.from({ length: item.quantity }, (_, i) =>
-        RaffleTicket.create({
-          tenantId,
-          raffleId: raffle.id,
-          customerId,
-          ticketNumber: baseNumber + i,
-          orderId,
-        }),
-      );
-      await this.repo.addTickets(tickets);
+      const now = new Date();
+      const inputs: NewTicketInput[] = Array.from({ length: item.quantity }, () => ({
+        id: uuidv4(),
+        tenantId,
+        raffleId: raffle.id,
+        customerId,
+        orderId,
+        createdAt: now,
+      }));
+
+      await this.repo.addTickets(raffle.id, inputs);
     }
   }
 }

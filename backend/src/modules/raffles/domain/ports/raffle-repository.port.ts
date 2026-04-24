@@ -1,28 +1,42 @@
 import { RaffleDto, RaffleTicketDto } from '@pos/shared';
 import { Raffle } from '../entities/raffle.entity';
-import { RaffleTicket } from '../entities/raffle-ticket.entity';
 import { RaffleWinner } from '../entities/raffle-winner.entity';
 
 export const RAFFLE_REPOSITORY_PORT = 'RaffleRepositoryPort';
 
+/** Datos mínimos para crear un ticket — el número secuencial lo asigna el repositorio. */
+export interface NewTicketInput {
+  id: string;
+  tenantId: string;
+  raffleId: string;
+  customerId: string;
+  orderId: string | null;
+  createdAt: Date;
+}
+
 export interface RaffleRepositoryPort {
-  saveRaffle(raffle: Raffle): Promise<Raffle>;
+  /** Persiste un sorteo nuevo junto con sus premios en una sola transacción. */
+  createRaffle(raffle: Raffle): Promise<void>;
+
+  /** Actualiza estado y metadatos del sorteo. No toca la tabla de premios. */
+  saveRaffle(raffle: Raffle): Promise<void>;
+
   findRaffleById(id: string, tenantId: string): Promise<Raffle | null>;
   findAllRaffles(tenantId: string): Promise<RaffleDto[]>;
   findRaffleWithTickets(id: string, tenantId: string): Promise<(RaffleDto & { tickets: RaffleTicketDto[] }) | null>;
   findActiveRafflesForProducts(tenantId: string, productIds: string[]): Promise<Raffle[]>;
 
-  addTickets(tickets: RaffleTicket[]): Promise<RaffleTicket[]>;
+  /**
+   * Inserta tickets asignando números secuenciales de forma atómica.
+   * Usa SELECT FOR UPDATE sobre la fila del sorteo para serializar
+   * inserciones concurrentes y evitar colisiones en el índice UNIQUE(raffleId, ticketNumber).
+   */
+  addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<void>;
+
   deleteRaffle(id: string, tenantId: string): Promise<void>;
   deleteTicketsByOrderId(tenantId: string, orderId: string): Promise<void>;
-  getNextTicketNumber(raffleId: string): Promise<number>;
 
-  /** Persiste un ganador y devuelve la entidad con id y drawnAt asignados. */
   addWinner(winner: RaffleWinner): Promise<RaffleWinner>;
-
-  /** Retorna todos los ganadores ya sorteados de un sorteo, ordenados por posición desc. */
   findWinnersByRaffleId(raffleId: string): Promise<RaffleWinner[]>;
-
-  /** Marca un ganador como anulado y actualiza el estado del sorteo si es necesario. */
   voidWinner(winnerId: string, raffleId: string, tenantId: string): Promise<void>;
 }
