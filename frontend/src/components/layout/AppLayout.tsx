@@ -126,6 +126,7 @@ export function AppLayout() {
       {/* Mobile drawer overlay */}
       {drawerOpen && (
         <div
+          data-print-hide
           className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
           onClick={() => setDrawerOpen(false)}
         />
@@ -133,6 +134,7 @@ export function AppLayout() {
 
       {/* Mobile drawer */}
       <div
+        data-print-hide
         className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -272,7 +274,7 @@ export function AppLayout() {
         </div>
       </div>
 
-      <div className="lg:ml-60 flex flex-col min-h-screen">
+      <div data-print-main className="lg:ml-60 flex flex-col min-h-screen">
         <Header onMenuOpen={() => setDrawerOpen(true)} />
         <main className="flex-1 overflow-auto">
           <Outlet />

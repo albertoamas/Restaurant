@@ -220,3 +220,32 @@
     background: oklch(0.68 0.015 260);
   }
 }
+
+/* ─── Print styles ───────────────────────────────────────── */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  /* Ensure colors and backgrounds render in print */
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Remove page background decoration */
+  body, body::before {
+    background: white !important;
+  }
+
+  /* Hide app chrome */
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Remove sidebar left margin from main content */
+  [data-print-main] {
+    margin-left: 0 !important;
+  }
+}

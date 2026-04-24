@@ -135,6 +135,7 @@ export function Sidebar() {
 
   return (
     <aside
+      data-print-hide
       className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-white/5"
       style={{
         background: 'linear-gradient(165deg, oklch(0.36 0.16 236) 0%, oklch(0.20 0.09 252) 100%)',

@@ -1,5 +1,5 @@
 import client from './client';
-import type { DailyReportDto, TopProductDto } from '@pos/shared';
+import type { DailyReportDto, TopCustomerDto, TopProductDto } from '@pos/shared';
 
 export const reportsApi = {
   getDaily: (date?: string) =>
@@ -23,6 +23,13 @@ export const reportsApi = {
           ...(branchId ? { branchId } : {}),
           ...(categoryId ? { categoryId } : {}),
         },
+      })
+      .then((r) => r.data),
+
+  getTopCustomers: (from: string, to: string, branchId?: string) =>
+    client
+      .get<TopCustomerDto[]>('/api/v1/reports/top-customers', {
+        params: { from, to, ...(branchId ? { branchId } : {}) },
       })
       .then((r) => r.data),
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import type { DailyReportDto, TopProductDto, CategoryDto, ExpenseSummaryDto } from '@pos/shared';
+import type { DailyReportDto, TopCustomerDto, TopProductDto, CategoryDto, ExpenseSummaryDto } from '@pos/shared';
 import { UserRole, ExpenseCategory, SaasPlan } from '@pos/shared';
 import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
@@ -12,7 +12,7 @@ import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
 import { today } from '../utils/date';
 import { getBoliviaDayBounds } from '../utils/timezone';
-import { downloadCsv } from '../utils/csv';
+import { downloadExcel } from '../utils/excel';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
 
@@ -77,8 +77,10 @@ export function ReportPage() {
 
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [topProducts, setTopProducts] = useState<TopProductDto[]>([]);
-  const [topLoading, setTopLoading] = useState(false);
+  const [topProducts, setTopProducts]   = useState<TopProductDto[]>([]);
+  const [topLoading, setTopLoading]     = useState(false);
+  const [topCustomers, setTopCustomers] = useState<TopCustomerDto[]>([]);
+  const [custLoading, setCustLoading]   = useState(false);
 
   const [expenseSummary, setExpenseSummary] = useState<ExpenseSummaryDto | null>(null);
 
@@ -123,6 +125,16 @@ export function ReportPage() {
       .finally(() => setTopLoading(false));
   }, [utcFrom, utcTo, currentBranchId, user?.role, selectedCategory]);
 
+  // Load top customers
+  useEffect(() => {
+    setCustLoading(true);
+    reportsApi
+      .getTopCustomers(utcFrom, utcTo, branchParam)
+      .then(setTopCustomers)
+      .catch(() => toast.error('Error al cargar clientes'))
+      .finally(() => setCustLoading(false));
+  }, [utcFrom, utcTo, currentBranchId, user?.role]);
+
   // Refresh all report data when returning to the tab
   const reloadAll = useCallback(() => {
     setLoading(true);
@@ -130,6 +142,8 @@ export function ReportPage() {
     expensesApi.getSummary(utcFrom, utcTo, branchParam).then(setExpenseSummary).catch(() => {});
     setTopLoading(true);
     reportsApi.getTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined).then(setTopProducts).catch(() => {}).finally(() => setTopLoading(false));
+    setCustLoading(true);
+    reportsApi.getTopCustomers(utcFrom, utcTo, branchParam).then(setTopCustomers).catch(() => {}).finally(() => setCustLoading(false));
   }, [utcFrom, utcTo, currentBranchId, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
   useVisibilityRefresh(reloadAll);
 
@@ -142,66 +156,15 @@ export function ReportPage() {
     [ExpenseCategory.OTHER]:       'Otro',
   };
 
-  const handleExport = () => {
+  const handleExportExcel = () => {
     if (!report) return;
     const filename = from === to
-      ? `reporte_${from}.csv`
-      : `reporte_${from}_${to}.csv`;
-
-    const totalExpenses = expenseSummary?.total ?? 0;
-    const netProfit     = report.totalSales - totalExpenses;
-
-    downloadCsv(filename, [
-      {
-        title: `Reporte de ventas — ${rangeLabel}`,
-        headers: [
-          'Ventas Totales (Bs)',
-          'Pedidos',
-          'Ticket Promedio (Bs)',
-          'Efectivo (Bs)',
-          'QR (Bs)',
-          'Transferencia (Bs)',
-          'Local',
-          'Para Llevar',
-          'Delivery',
-          'Gastos (Bs)',
-          'Ganancia Neta (Bs)',
-        ],
-        rows: [[
-          report.totalSales.toFixed(2),
-          report.orderCount,
-          report.averageTicket.toFixed(2),
-          report.paymentBreakdown.cash.toFixed(2),
-          report.paymentBreakdown.qr.toFixed(2),
-          report.paymentBreakdown.transfer.toFixed(2),
-          report.ordersByType.dineIn,
-          report.ordersByType.takeout,
-          report.ordersByType.delivery,
-          totalExpenses.toFixed(2),
-          netProfit.toFixed(2),
-        ]],
-      },
-      {
-        title: 'Productos más vendidos',
-        headers: ['Posición', 'Producto', 'Categoría', 'Unidades', 'Ingresos (Bs)'],
-        rows: topProducts.map((p, i) => [
-          i + 1,
-          p.productName,
-          p.categoryName ?? '—',
-          p.totalQuantity,
-          p.totalRevenue.toFixed(2),
-        ]),
-      },
-      ...(expenseSummary && expenseSummary.total > 0 ? [{
-        title: 'Desglose de gastos',
-        headers: ['Categoría', 'Monto (Bs)'],
-        rows: (Object.entries(expenseSummary.byCategory) as [ExpenseCategory, number][])
-          .filter(([, amount]) => amount > 0)
-          .sort(([, a], [, b]) => b - a)
-          .map(([cat, amount]) => [EXPENSE_LABELS[cat] ?? cat, amount.toFixed(2)]),
-      }] : []),
-    ]);
+      ? `reporte_${from}.xlsx`
+      : `reporte_${from}_${to}.xlsx`;
+    downloadExcel(rangeLabel, report, topProducts, topCustomers, expenseSummary, filename);
   };
+
+  const handlePrint = () => window.print();
 
   const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
   const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
@@ -210,8 +173,15 @@ export function ReportPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+      {/* Print-only header — hidden on screen */}
+      <div className="hidden print:block mb-6 pb-4 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-900">{user?.tenantName ?? 'Reporte de Ventas'}</h1>
+        <p className="text-sm text-gray-600 mt-0.5">Reporte de Ventas · {rangeLabel}</p>
+        <p className="text-xs text-gray-400 mt-0.5">Generado el {new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+      </div>
+
       {/* Header + Period selector */}
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+      <div data-print-hide className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Reporte y Rendimiento</h2>
@@ -222,18 +192,32 @@ export function ReportPage() {
               {rangeLabel}
             </span>
             {canExport ? (
-              <button
-                onClick={handleExport}
-                disabled={!report || loading}
-                title="Exportar a CSV"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Exportar CSV
-              </button>
+              <>
+                <button
+                  onClick={handleExportExcel}
+                  disabled={!report || loading}
+                  title="Exportar a Excel"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Excel
+                </button>
+                <button
+                  onClick={handlePrint}
+                  disabled={!report || loading}
+                  title="Imprimir / Guardar como PDF"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  PDF
+                </button>
+              </>
             ) : (
               <div className="relative group">
                 <button
@@ -244,7 +228,7 @@ export function ReportPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  Exportar CSV
+                  Exportar
                 </button>
                 <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-gray-200 bg-white shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug">
                   Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
@@ -271,7 +255,7 @@ export function ReportPage() {
 
       {/* Custom range inputs */}
       {period === 'custom' && (
-        <div className="flex items-center gap-2 mb-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
+        <div data-print-hide className="flex items-center gap-2 mb-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
           <input
             type="date" value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
@@ -288,11 +272,11 @@ export function ReportPage() {
         </div>
       )}
 
-        <p className="text-xs text-gray-400 mb-6 font-medium">Comparativa activa: {rangeLabel}</p>
+        <p data-print-hide className="text-xs text-gray-400 mb-6 font-medium">Comparativa activa: {rangeLabel}</p>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : !report || report.orderCount === 0 ? (
+      ) : !report || (report.orderCount === 0 && report.paymentBreakdown.cortesia === 0) ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -339,6 +323,9 @@ export function ReportPage() {
                 <PaymentBar label="Efectivo" amount={report.paymentBreakdown.cash} total={report.totalSales} color="bg-emerald-500" />
                 <PaymentBar label="QR" amount={report.paymentBreakdown.qr} total={report.totalSales} color="bg-primary-500" />
                 <PaymentBar label="Transferencia" amount={report.paymentBreakdown.transfer} total={report.totalSales} color="bg-violet-500" />
+                {report.paymentBreakdown.cortesia > 0 && (
+                  <PaymentBar label="Cortesía" amount={report.paymentBreakdown.cortesia} total={report.totalSales + report.paymentBreakdown.cortesia} color="bg-amber-400" />
+                )}
               </div>
             </Card>
             <Card variant="panel">
@@ -352,11 +339,12 @@ export function ReportPage() {
           </div>
 
           {/* Top products */}
-          <Card variant="elevated">
+          <Card variant="default">
             <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
               <h3 className="text-sm font-bold text-gray-700 font-heading">Productos Más Vendidos</h3>
               {categories.length > 0 && (
                 <select
+                  data-print-hide
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="text-xs border border-gray-200 rounded-xl px-3 py-1.5 bg-white text-gray-600
@@ -389,6 +377,34 @@ export function ReportPage() {
                     rank={index + 1}
                     product={product}
                     maxQty={maxQty}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Top customers */}
+          <Card variant="default" className="mt-4">
+            <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Clientes Más Frecuentes</h3>
+
+            {custLoading ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : topCustomers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <svg className="w-8 h-8 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <p className="text-xs font-medium text-gray-500">Sin clientes registrados en este período</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topCustomers.map((customer, index) => (
+                  <TopCustomerRow
+                    key={customer.customerId}
+                    rank={index + 1}
+                    customer={customer}
+                    maxSpent={topCustomers[0].totalSpent}
                   />
                 ))}
               </div>
@@ -519,6 +535,48 @@ const RANK_COLORS = [
   'bg-gray-300',
   'bg-amber-600',
 ];
+
+function TopCustomerRow({ rank, customer, maxSpent }: { rank: number; customer: TopCustomerDto; maxSpent: number }) {
+  const pct    = maxSpent > 0 ? (customer.totalSpent / maxSpent) * 100 : 0;
+  const isTop3 = rank <= 3;
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black
+        ${isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-gray-100 text-gray-400'}`}
+      >
+        {rank}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <div className="min-w-0">
+            <span className="text-sm font-semibold text-gray-800 truncate leading-tight block">
+              {customer.customerName}
+            </span>
+            {customer.customerPhone && (
+              <span className="text-[10px] text-gray-400 font-medium">{customer.customerPhone}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-gray-400 tabular-nums">{customer.orderCount} ped.</span>
+            <span className="font-heading font-bold text-sm text-gray-900 tabular-nums w-24 text-right">
+              Bs {customer.totalSpent.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-[width] duration-700 ${
+              rank === 1 ? 'bg-emerald-500' : rank === 2 ? 'bg-emerald-400' : rank === 3 ? 'bg-emerald-300' : 'bg-gray-300'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TopProductRow({ rank, product, maxQty }: { rank: number; product: TopProductDto; maxQty: number }) {
   const pct = maxQty > 0 ? (product.totalQuantity / maxQty) * 100 : 0;

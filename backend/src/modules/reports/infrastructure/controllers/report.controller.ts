@@ -63,7 +63,6 @@ export class ReportController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    // Default: inicio y fin del día de hoy en hora Bolivia
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.orderRepository.getTopProducts(
@@ -72,6 +71,26 @@ export class ReportController {
       from || defaultStart,
       to   || defaultEnd,
       categoryId,
+    );
+  }
+
+  @Get('top-customers')
+  getTopCustomers(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.orderRepository.getTopCustomers(
+      tenantId,
+      effectiveBranchId,
+      from || defaultStart,
+      to   || defaultEnd,
     );
   }
 }

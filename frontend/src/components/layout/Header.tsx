@@ -39,7 +39,7 @@ export function Header({ onMenuOpen }: HeaderProps) {
   const userInitial = (user?.name ?? '?')[0].toUpperCase();
 
   return (
-    <header className="h-14 bg-white/90 backdrop-blur-lg border-b border-gray-200/80 px-5 flex items-center justify-between shrink-0 relative z-10">
+    <header data-print-hide className="h-14 bg-white/90 backdrop-blur-lg border-b border-gray-200/80 px-5 flex items-center justify-between shrink-0 relative z-10">
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
         <button
