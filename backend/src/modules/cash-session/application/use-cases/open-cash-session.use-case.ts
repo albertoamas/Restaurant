@@ -28,11 +28,11 @@ export class OpenCashSessionUseCase {
       const saved = await this.repo.save(session);
       this.eventsService?.emitToTenant(tenantId, 'cash.opened', saved);
       return saved;
-    } catch (err: any) {
+    } catch (err: unknown) {
       // El índice único parcial uq_one_open_session_per_branch rechaza el segundo
       // INSERT cuando dos requests pasan el check anterior de forma simultánea.
       // P2002 = unique constraint violation en Prisma.
-      if (err?.code === 'P2002') {
+      if (err !== null && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
         throw new ConflictException('Ya existe una caja abierta para esta sucursal');
       }
       throw err;
