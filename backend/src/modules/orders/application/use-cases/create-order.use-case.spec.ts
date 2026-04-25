@@ -158,6 +158,13 @@ describe('CreateOrderUseCase', () => {
     expect(order.customerId).toBeTruthy();
   });
 
+  it('lanza BadRequestException si customerId es provisto pero el cliente no existe', async () => {
+    customerRepo.findById.mockResolvedValue(null);
+    const dto = makeDto({ customerId: 'cust-ghost' });
+    await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, dto))
+      .rejects.toThrow(BadRequestException);
+  });
+
   it('reutiliza cliente existente si el teléfono ya existe en el tenant', async () => {
     const existingCustomer = { id: 'cust-existing', tenantId: TENANT_ID } as any;
     customerRepo.findByPhone.mockResolvedValue(existingCustomer);

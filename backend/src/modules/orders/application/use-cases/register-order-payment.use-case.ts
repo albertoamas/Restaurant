@@ -2,7 +2,6 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { v4 as uuidv4 } from 'uuid';
 import { PaymentMethod, UserRole } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
-import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';

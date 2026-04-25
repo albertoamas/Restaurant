@@ -15,7 +15,6 @@ import { PrismaClient } from '@prisma/client';
 if (process.env.NODE_ENV !== 'production') {
   const backendEnvPath = path.resolve(__dirname, '../.env');
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('dotenv').config({ path: backendEnvPath });
 }
 

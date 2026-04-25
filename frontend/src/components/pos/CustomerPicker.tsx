@@ -113,8 +113,8 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
         <span className="text-sm text-emerald-800 font-medium flex-1 truncate">{label}</span>
-        <button type="button" onClick={clearSelection} className="text-emerald-400 hover:text-emerald-600 transition-colors">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button type="button" onClick={clearSelection} aria-label="Quitar cliente" className="text-emerald-400 hover:text-emerald-600 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -180,8 +180,8 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
             placeholder="Buscar cliente por nombre o teléfono..."
             className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
           />
-          <button type="button" onClick={handleCollapse} className="text-gray-300 hover:text-gray-500 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button type="button" onClick={handleCollapse} aria-label="Cancelar búsqueda" className="text-gray-300 hover:text-gray-500 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

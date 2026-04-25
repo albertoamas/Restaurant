@@ -134,10 +134,10 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
               <button
                 type="button"
                 onClick={handleRemoveImage}
+                aria-label="Quitar imagen"
                 className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors border border-gray-100"
-                title="Quitar imagen"
               >
-                <svg className="w-3.5 h-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

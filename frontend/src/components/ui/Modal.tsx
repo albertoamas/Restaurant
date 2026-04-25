@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -30,6 +30,8 @@ export function Modal({
   size = 'md',
   variant = 'dialog',
 }: ModalProps) {
+  const titleId = useId();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -47,20 +49,27 @@ export function Modal({
         <div
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           onClick={onClose}
+          aria-hidden="true"
         />
-        <div className="relative w-full bg-white rounded-t-2xl shadow-[0_-8px_32px_oklch(0.13_0.012_260/0.15)] z-10 animate-slide-sheet">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? titleId : undefined}
+          className="relative w-full bg-white rounded-t-2xl shadow-[0_-8px_32px_oklch(0.13_0.012_260/0.15)] z-10 animate-slide-sheet"
+        >
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            <div className="w-10 h-1 bg-gray-200 rounded-full" aria-hidden="true" />
           </div>
           {title && (
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900 font-heading">{title}</h2>
+              <h2 id={titleId} className="text-base font-bold text-gray-900 font-heading">{title}</h2>
               <button
                 onClick={onClose}
+                aria-label="Cerrar"
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -78,21 +87,27 @@ export function Modal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className={[
-        'relative bg-white rounded-2xl w-full z-10 animate-in',
-        'shadow-[0_20px_60px_oklch(0.13_0.012_260/0.15),0_4px_16px_oklch(0.13_0.012_260/0.08)]',
-        'ring-1 ring-black/5',
-        sizes[size],
-      ].join(' ')}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        className={[
+          'relative bg-white rounded-2xl w-full z-10 animate-in',
+          'shadow-[0_20px_60px_oklch(0.13_0.012_260/0.15),0_4px_16px_oklch(0.13_0.012_260/0.08)]',
+          'ring-1 ring-black/5',
+          sizes[size],
+        ].join(' ')}
+      >
         {title && (
           <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 className="text-base font-bold text-gray-900 font-heading">{title}</h2>
+            <h2 id={titleId} className="text-base font-bold text-gray-900 font-heading">{title}</h2>
             <button
               onClick={onClose}
+              aria-label="Cerrar"
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
