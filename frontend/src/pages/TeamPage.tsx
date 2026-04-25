@@ -158,7 +158,8 @@ function CreateCashierModal({
       await onSubmit(payload);
       setForm({ name: '', email: '', password: '', branchId: '' });
     } catch (err) {
-      setError((err as any)?.response?.data?.message || 'Error al crear cajero');
+      handleApiError(err, 'Error al crear cajero');
+      setError('Error al crear cajero');
     } finally {
       setLoading(false);
     }

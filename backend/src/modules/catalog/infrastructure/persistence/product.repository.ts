@@ -51,7 +51,7 @@ export class ProductRepository implements ProductRepositoryPort {
 
   async findByIds(ids: string[], tenantId: string): Promise<Product[]> {
     const rows = await this.prisma.product.findMany({
-      where: { id: { in: ids }, tenantId },
+      where: { id: { in: ids }, tenantId, isActive: true },
     });
     return rows.map(toDomain);
   }

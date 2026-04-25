@@ -1,9 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Customer as PrismaCustomer } from '@prisma/client';
 import { CustomerSearchResult, CustomerStatsDto } from '@pos/shared';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Customer, CustomerProps } from '../../domain/entities/customer.entity';
 import { CustomerRepositoryPort } from '../../domain/ports/customer-repository.port';
+
+interface CustomerStatsRow {
+  id: string;
+  tenantId: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  purchaseCount: bigint | number;
+  totalSpent: bigint | number | string;
+  lastOrderAt: Date | string | null;
+}
 
 @Injectable()
 export class CustomerRepository implements CustomerRepositoryPort {
@@ -58,7 +72,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
     const orderBy = orderByMap[sortBy ?? 'name']?.[sortDir ?? 'asc'] ?? Prisma.sql`ORDER BY c.name ASC`;
 
     const [rows, countRows] = await Promise.all([
-      this.prisma.$queryRaw<any[]>(Prisma.sql`
+      this.prisma.$queryRaw<CustomerStatsRow[]>(Prisma.sql`
         SELECT
           c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
           c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
@@ -84,7 +98,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
   }
 
   async findOneWithStats(id: string, tenantId: string): Promise<CustomerStatsDto | null> {
-    const rows = await this.prisma.$queryRaw<any[]>`
+    const rows = await this.prisma.$queryRaw<CustomerStatsRow[]>`
       SELECT
         c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
         c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
@@ -100,7 +114,7 @@ export class CustomerRepository implements CustomerRepositoryPort {
   }
 
   async search(q: string, tenantId: string): Promise<CustomerSearchResult[]> {
-    const rows = await this.prisma.$queryRaw<any[]>`
+    const rows = await this.prisma.$queryRaw<{ id: string; name: string; phone: string | null; purchaseCount: bigint }[]>`
       SELECT
         c.id, c.name, c.phone,
         COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA')) AS "purchaseCount"
@@ -121,20 +135,20 @@ export class CustomerRepository implements CustomerRepositoryPort {
     }));
   }
 
-  private toDomain(row: any): Customer {
+  private toDomain(row: PrismaCustomer): Customer {
     return Customer.reconstitute({
       id: row.id,
-      tenantId: row.tenantId ?? row.tenant_id,
+      tenantId: row.tenantId,
       name: row.name,
       phone: row.phone ?? null,
       email: row.email ?? null,
       notes: row.notes ?? null,
-      createdAt: new Date(row.createdAt ?? row.created_at),
-      updatedAt: new Date(row.updatedAt ?? row.updated_at),
+      createdAt: new Date(row.createdAt),
+      updatedAt: new Date(row.updatedAt),
     } as CustomerProps);
   }
 
-  private toStatsDto(r: any): CustomerStatsDto {
+  private toStatsDto(r: CustomerStatsRow): CustomerStatsDto {
     return {
       id: r.id,
       name: r.name,

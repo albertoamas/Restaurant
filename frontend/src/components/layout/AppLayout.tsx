@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -6,6 +6,7 @@ import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 import { useSocketEvent } from '../../context/socket.context';
 import { useCashSessionStore } from '../../store/cashSession.store';
+import { useCartStore } from '../../store/cart.store';
 import { cashSessionApi } from '../../api/cash-session.api';
 import { branchesApi } from '../../api/branches.api';
 import type { BranchDto, CashSessionDto } from '@pos/shared';
@@ -36,6 +37,8 @@ export function AppLayout() {
   const { currentBranchId, setCurrentBranch } = useAuth();
 
   const isOwner = user?.role === 'OWNER';
+  const clearCart = useCartStore((s) => s.clear);
+  const prevBranchRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isOwner) {
@@ -52,6 +55,14 @@ export function AppLayout() {
     }
   }, [isOwner]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clear cart when OWNER switches branches — items from branch A must not carry to branch B
+  useEffect(() => {
+    if (prevBranchRef.current !== null && prevBranchRef.current !== currentBranchId) {
+      clearCart();
+    }
+    prevBranchRef.current = currentBranchId;
+  }, [currentBranchId, clearCart]);
+
   // Sync cash session state globally so every page can read it
   const { setSession: setCashSession } = useCashSessionStore();
 
@@ -62,13 +73,14 @@ export function AppLayout() {
       .catch(() => setCashSession(null));
   }, [currentBranchId, setCashSession]);
 
+  // Only update the global store when the event belongs to the currently selected branch
   const handleCashOpened = useCallback(
-    (s: CashSessionDto) => setCashSession(s),
-    [setCashSession],
+    (s: CashSessionDto) => { if (s.branchId === currentBranchId) setCashSession(s); },
+    [setCashSession, currentBranchId],
   );
   const handleCashClosed = useCallback(
-    (s: CashSessionDto) => setCashSession(s),
-    [setCashSession],
+    (s: CashSessionDto) => { if (s.branchId === currentBranchId) setCashSession(s); },
+    [setCashSession, currentBranchId],
   );
 
   useSocketEvent<CashSessionDto>('cash.opened', handleCashOpened);

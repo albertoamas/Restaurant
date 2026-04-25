@@ -1,5 +1,8 @@
 import { BadRequestException, Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
+import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { OrderRepositoryPort } from '../../../orders/domain/ports/order-repository.port';
 import { toBoliviaDateString, getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
@@ -10,7 +13,8 @@ function validateISODate(val: string | undefined, name: string): void {
 }
 
 @Controller('reports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.OWNER)
 export class ReportController {
   constructor(
     @Inject('OrderRepositoryPort')

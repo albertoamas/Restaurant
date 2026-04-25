@@ -155,7 +155,8 @@ function BranchModal({
       onSaved(saved);
       toast.success(branch ? 'Sucursal actualizada' : 'Sucursal creada');
     } catch (err) {
-      setError((err as any)?.response?.data?.message || 'Error al guardar sucursal');
+      handleApiError(err, 'Error al guardar sucursal');
+      setError('Error al guardar sucursal');
     } finally {
       setLoading(false);
     }

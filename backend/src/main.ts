@@ -47,7 +47,7 @@ async function bootstrap() {
   // before NestJS installs its catch-all 404 handler
   const prisma = app.get(PrismaService);
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('/health', async (_req: unknown, res: any) => {
+  expressApp.get('/health', async (_req: unknown, res: import('express').Response) => {
     try {
       await prisma.$queryRaw`SELECT 1`;
       res.json({ status: 'ok', timestamp: new Date().toISOString() });

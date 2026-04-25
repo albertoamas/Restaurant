@@ -172,6 +172,7 @@ model Order {
 
   @@index([tenantId, orderNumber])
   @@index([tenantId, createdAt])
+  @@index([tenantId, branchId, createdAt])
   @@index([tenantId, status])
   @@index([tenantId, customerId])
   @@map("orders")
@@ -190,6 +191,7 @@ model OrderItem {
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@index([orderId])
   @@map("order_items")
 }
 

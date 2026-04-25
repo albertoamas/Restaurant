@@ -3,8 +3,8 @@
  * Uso: pnpm --filter backend seed
  *
  * Credenciales:
- *   OWNER:   jimmy75122919@gmail.com  / demo123  (Jimmy Burgos Romero)
- *   CASHIER: armijom566@gmail.com     / demo123  (Miguel Angel Armijo)
+ *   OWNER:   admin@hamburgos.com   / demo123
+ *   CASHIER: cajero@hamburgos.com  / demo123
  *   Negocio: HamBurgos               (1 sucursal)
  */
 
@@ -93,26 +93,26 @@ async function seed() {
   await prisma.user.create({
     data: {
       tenantId:     tenant.id,
-      email:        'jimmy75122919@gmail.com',
+      email:        'admin@hamburgos.com',
       passwordHash: PASSWORD_HASH,
-      name:         'Jimmy Burgos Romero',
+      name:         'Admin HamBurgos',
       role:         'OWNER',
     },
   });
-  console.log('Usuario OWNER creado: jimmy75122919@gmail.com / demo123');
+  console.log('Usuario OWNER creado: admin@hamburgos.com / demo123');
 
   // ── Cajero ───────────────────────────────────────────────────
   await prisma.user.create({
     data: {
       tenantId:     tenant.id,
       branchId:     branch.id,
-      email:        'armijom566@gmail.com',
+      email:        'cajero@hamburgos.com',
       passwordHash: PASSWORD_HASH,
-      name:         'Miguel Angel Armijo',
+      name:         'Cajero Demo',
       role:         'CASHIER',
     },
   });
-  console.log('Usuario CASHIER creado: armijom566@gmail.com / demo123');
+  console.log('Usuario CASHIER creado: cajero@hamburgos.com / demo123');
 
   // ── Categorías ───────────────────────────────────────────────
   const categoriesData = [
@@ -185,8 +185,8 @@ async function seed() {
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
-  console.log('  OWNER:   jimmy75122919@gmail.com / demo123');
-  console.log('  CASHIER: armijom566@gmail.com    / demo123');
+  console.log('  OWNER:   admin@hamburgos.com / demo123');
+  console.log('  CASHIER: cajero@hamburgos.com    / demo123');
   console.log('  Negocio: HamBurgos (plan BASICO, reset MONTHLY)');
   console.log('──────────────────────────────────────────────');
 }
