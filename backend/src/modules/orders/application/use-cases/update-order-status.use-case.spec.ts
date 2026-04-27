@@ -85,7 +85,10 @@ describe('UpdateOrderStatusUseCase', () => {
 
     await useCase.execute(order.id, 'tenant-1', OrderStatus.CANCELLED);
 
-    expect(raffleAutoTicket.cancelOrderTickets).toHaveBeenCalledWith('tenant-1', order.id);
+    expect(raffleAutoTicket.cancelOrderTickets).toHaveBeenCalledWith('tenant-1', order.id, {
+      customerId: order.customerId ?? undefined,
+      orderTotal: order.total,
+    });
   });
 
   it('no llama a cancelOrderTickets si el nuevo estado no es CANCELLED', async () => {

@@ -4,6 +4,7 @@ import { DrawWinnerUseCase } from './draw-winner.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
+import type { RaffleWinnerDto } from '@pos/shared';
 
 const PRIZES_3 = [
   { position: 1, prizeDescription: '1er lugar' },
@@ -12,7 +13,11 @@ const PRIZES_3 = [
 ];
 
 function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'ACTIVE', winners = 3): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1', winners, PRIZES_3.slice(0, winners));
+  const r = Raffle.create({
+    tenantId: 'tenant-1', name: 'Sorteo', ticketMode: 'PRODUCT_MATCH',
+    productId: 'prod-1', spendingThreshold: null, numberOfWinners: winners,
+    prizes: PRIZES_3.slice(0, winners),
+  });
   if (status === 'CLOSED')  r.close();
   if (status === 'DRAWING') { r.close(); r.startDrawing(); }
   if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }
@@ -31,6 +36,25 @@ function makeTickets(n: number) {
   }));
 }
 
+/** Crea un RaffleWinnerDto para embeber en findRaffleWithTickets. */
+function makeWinnerDto(overrides: Partial<RaffleWinnerDto> = {}): RaffleWinnerDto {
+  return {
+    id: 'winner-1',
+    tenantId: 'tenant-1',
+    raffleId: 'r1',
+    customerId: 'cust-0',
+    customer: { id: 'cust-0', name: 'Cliente 0', phone: null },
+    ticketId: 'ticket-0',
+    ticketNumber: 1,
+    position: 3,
+    prizeDescription: '3er lugar',
+    drawnAt: new Date().toISOString(),
+    voided: false,
+    ...overrides,
+  } as RaffleWinnerDto;
+}
+
+/** Crea un RaffleWinner (entidad) — usado solo para verificar addWinner calls. */
 function makeWinner(overrides: Partial<RaffleWinner> = {}): RaffleWinner {
   return RaffleWinner.reconstitute({
     id: 'winner-1',
@@ -55,15 +79,14 @@ describe('DrawWinnerUseCase', () => {
     useCase = new DrawWinnerUseCase(repo);
     repo.saveRaffle.mockResolvedValue({} as any);
     repo.addWinner.mockResolvedValue({} as any);
-    repo.findWinnersByRaffleId.mockResolvedValue([]);
   });
 
   describe('sorteo de primera posición', () => {
     it('sortea el 3er lugar primero y queda en DRAWING cuando hay más posiciones', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 3));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -76,8 +99,8 @@ describe('DrawWinnerUseCase', () => {
     it('sorteo de 1 ganador — posición 1, queda DRAWN directamente', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -90,8 +113,8 @@ describe('DrawWinnerUseCase', () => {
     it('puede sortear desde estado CLOSED (isDrawable lo permite)', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED', 1));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -103,12 +126,12 @@ describe('DrawWinnerUseCase', () => {
     it('2do draw sortea posición 2 cuando posición 3 ya tiene ganador activo', async () => {
       const raffle = makeRaffle('DRAWING', 3);
       repo.findRaffleById.mockResolvedValue(raffle);
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 3 }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(5), spendings: [],
+          winners: [makeWinnerDto({ ticketId: 'ticket-0', position: 3 })],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -122,13 +145,15 @@ describe('DrawWinnerUseCase', () => {
     it('3er draw sortea posición 1 y transiciona a DRAWN', async () => {
       const raffle = makeRaffle('DRAWING', 3);
       repo.findRaffleById.mockResolvedValue(raffle);
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 3 }),
-        makeWinner({ id: 'w2', ticketId: 'ticket-1', position: 2 }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(5), spendings: [],
+          winners: [
+            makeWinnerDto({ ticketId: 'ticket-0', position: 3 }),
+            makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 2 }),
+          ],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -143,13 +168,15 @@ describe('DrawWinnerUseCase', () => {
     it('el ticket de un ganador anulado vuelve al pool disponible', async () => {
       const raffle = makeRaffle('DRAWING', 3);
       repo.findRaffleById.mockResolvedValue(raffle);
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 3, voided: true }),
-        makeWinner({ id: 'w2', ticketId: 'ticket-1', position: 2, voided: false }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(3), spendings: [],
+          winners: [
+            makeWinnerDto({ ticketId: 'ticket-0', position: 3, voided: true }),
+            makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 2, voided: false }),
+          ],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(3), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -162,13 +189,15 @@ describe('DrawWinnerUseCase', () => {
       const raffle = makeRaffle('DRAWING', 3);
       repo.findRaffleById.mockResolvedValue(raffle);
       // pos 3 activo, pos 2 anulado → nextPosition debe ser 2
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 3, voided: false }),
-        makeWinner({ id: 'w2', ticketId: 'ticket-1', position: 2, voided: true }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(5), spendings: [],
+          winners: [
+            makeWinnerDto({ ticketId: 'ticket-0', position: 3, voided: false }),
+            makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 2, voided: true }),
+          ],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -180,14 +209,16 @@ describe('DrawWinnerUseCase', () => {
       const raffle = makeRaffle('DRAWING', 3);
       repo.findRaffleById.mockResolvedValue(raffle);
       // pos 1 activo, pos 3 y 2 anulados → nextPosition = 3
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 1, voided: false }),
-        makeWinner({ id: 'w2', ticketId: 'ticket-1', position: 3, voided: true }),
-        makeWinner({ id: 'w3', ticketId: 'ticket-2', position: 2, voided: true }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(5), spendings: [],
+          winners: [
+            makeWinnerDto({ ticketId: 'ticket-0', position: 1, voided: false }),
+            makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 3, voided: true }),
+            makeWinnerDto({ id: 'w3', ticketId: 'ticket-2', position: 2, voided: true }),
+          ],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(5), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -199,13 +230,15 @@ describe('DrawWinnerUseCase', () => {
       const raffle = makeRaffle('DRAWING', 2);
       repo.findRaffleById.mockResolvedValue(raffle);
       // pos 2 activo, pos 1 anulado → redraw pos 1 → DRAWN
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 2, voided: false }),
-        makeWinner({ id: 'w2', ticketId: 'ticket-1', position: 1, voided: true }),
-      ]);
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(4), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(4), winners: [] } as any);
+        .mockResolvedValueOnce({
+          id: 'r1', tickets: makeTickets(4), spendings: [],
+          winners: [
+            makeWinnerDto({ ticketId: 'ticket-0', position: 2, voided: false }),
+            makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 1, voided: true }),
+          ],
+        } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(4), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -218,8 +251,8 @@ describe('DrawWinnerUseCase', () => {
     it('asigna tenantId y raffleId correctos al ganador', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -231,8 +264,8 @@ describe('DrawWinnerUseCase', () => {
     it('asigna la prizeDescription correcta según la posición', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -243,8 +276,8 @@ describe('DrawWinnerUseCase', () => {
     it('el ganador tiene voided en false por defecto', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
       repo.findRaffleWithTickets
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any)
-        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [] } as any);
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any)
+        .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any);
 
       await useCase.execute('r1', 'tenant-1');
 
@@ -267,7 +300,7 @@ describe('DrawWinnerUseCase', () => {
 
     it('lanza BadRequestException si el sorteo no tiene tickets', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
-      repo.findRaffleWithTickets.mockResolvedValueOnce({ id: 'r1', tickets: [], winners: [] } as any);
+      repo.findRaffleWithTickets.mockResolvedValueOnce({ id: 'r1', tickets: [], winners: [], spendings: [] } as any);
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
       expect(repo.addWinner).not.toHaveBeenCalled();
     });
@@ -275,17 +308,26 @@ describe('DrawWinnerUseCase', () => {
     it('lanza BadRequestException si todos los tickets activos ya ganaron', async () => {
       const raffle = makeRaffle('DRAWING', 2);
       repo.findRaffleById.mockResolvedValue(raffle);
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ ticketId: 'ticket-0', position: 2, voided: false }),
-      ]);
       repo.findRaffleWithTickets.mockResolvedValueOnce({
-        id: 'r1',
+        id: 'r1', spendings: [],
         tickets: [makeTickets(1)[0]],
-        winners: [],
+        winners: [makeWinnerDto({ ticketId: 'ticket-0', position: 2, voided: false })],
       } as any);
 
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
       expect(repo.addWinner).not.toHaveBeenCalled();
     });
+  });
+
+  // Aseguramos que findWinnersByRaffleId ya no se llama en el flujo normal
+  it('no llama a findWinnersByRaffleId en ningún caso', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
+    repo.findRaffleWithTickets
+      .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any)
+      .mockResolvedValueOnce({ id: 'r1', tickets: makeTickets(2), winners: [], spendings: [] } as any);
+
+    await useCase.execute('r1', 'tenant-1');
+
+    expect(repo.findWinnersByRaffleId).not.toHaveBeenCalled();
   });
 });

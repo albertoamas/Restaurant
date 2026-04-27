@@ -1,21 +1,18 @@
 /**
- * Seed script — datos para HamBurgos
+ * Seed script — tenant de demostración genérico
  * Uso: pnpm --filter backend seed
  *
  * Credenciales:
- *   OWNER:   admin@hamburgos.com   / demo123
- *   CASHIER: cajero@hamburgos.com  / demo123
- *   Negocio: HamBurgos               (1 sucursal)
+ *   OWNER:   owner@demo.com  / demo123
+ *   CASHIER: cajero@demo.com / demo123
+ *   Negocio: Restaurante Demo (plan PRO, 1 sucursal)
  */
 
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
 
-// Load .env only in local development; in production vars come from Docker
 if (process.env.NODE_ENV !== 'production') {
-  const backendEnvPath = path.resolve(__dirname, '../.env');
-
-  require('dotenv').config({ path: backendEnvPath });
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 }
 
 const prisma = new PrismaClient();
@@ -26,15 +23,12 @@ const PASSWORD_HASH = '$2b$10$8oTvGty7u4u2obh4a0r9Leq529hbsloH60MXuIlDy6zQEvRwAi
 async function seed() {
   console.log('Conectado a la base de datos');
 
-  // ── Reset ────────────────────────────────────────────────────
-  // Borrar tenant cascadea automáticamente a: users, branches, categories,
-  // products, orders (→ items, payments), cashSessions (→ expenses),
-  // customers y branchOrderSequences. No quedan huérfanos.
-  console.log('Limpiando datos...');
+  // Reset — borrar tenant cascadea a todas las tablas relacionadas
+  console.log('Limpiando datos anteriores...');
   await prisma.tenant.deleteMany();
   await prisma.plan.deleteMany();
 
-  // ── Planes (globales, sin tenant_id) ─────────────────────────
+  // ── Planes globales ──────────────────────────────────────────────────────────
   console.log('Creando planes...');
   await prisma.plan.createMany({
     data: [
@@ -46,6 +40,7 @@ async function seed() {
         maxCashiers:    2,
         maxProducts:    80,
         kitchenEnabled: false,
+        rafflesEnabled: false,
       },
       {
         id:             'PRO',
@@ -55,6 +50,7 @@ async function seed() {
         maxCashiers:    8,
         maxProducts:    -1,
         kitchenEnabled: true,
+        rafflesEnabled: true,
       },
       {
         id:             'NEGOCIO',
@@ -64,117 +60,112 @@ async function seed() {
         maxCashiers:    -1,
         maxProducts:    -1,
         kitchenEnabled: true,
+        rafflesEnabled: true,
       },
     ],
   });
 
-  // ── Tenant ───────────────────────────────────────────────────
+  // ── Tenant demo ──────────────────────────────────────────────────────────────
   const tenant = await prisma.tenant.create({
     data: {
-      name:                   'HamBurgos',
-      slug:                   'hamburgos',
-      plan:                   'BASICO',
-      orderNumberResetPeriod: 'MONTHLY',
+      name:                   'Restaurante Demo',
+      slug:                   'demo',
+      plan:                   'PRO',
+      orderNumberResetPeriod: 'DAILY',
+      // Todos los módulos habilitados para que el demo muestre todas las funciones
+      ordersEnabled:          true,
+      cashEnabled:            true,
+      teamEnabled:            true,
+      branchesEnabled:        true,
+      kitchenEnabled:         true,
+      rafflesEnabled:         true,
     },
   });
-  console.log(`Tenant creado: HamBurgos (${tenant.id})`);
+  console.log(`Tenant creado: ${tenant.name} (${tenant.id})`);
 
-  // ── Sucursal ─────────────────────────────────────────────────
+  // ── Sucursal ─────────────────────────────────────────────────────────────────
   const branch = await prisma.branch.create({
     data: {
       tenantId: tenant.id,
-      name:     'HamBurgos',
+      name:     'Principal',
     },
   });
-  console.log('Sucursal creada: HamBurgos');
+  console.log(`Sucursal creada: ${branch.name}`);
 
-  // ── Owner ────────────────────────────────────────────────────
+  // ── Usuarios ─────────────────────────────────────────────────────────────────
   await prisma.user.create({
     data: {
       tenantId:     tenant.id,
-      email:        'admin@hamburgos.com',
+      email:        'owner@demo.com',
       passwordHash: PASSWORD_HASH,
-      name:         'Admin HamBurgos',
+      name:         'Administrador',
       role:         'OWNER',
     },
   });
-  console.log('Usuario OWNER creado: admin@hamburgos.com / demo123');
 
-  // ── Cajero ───────────────────────────────────────────────────
   await prisma.user.create({
     data: {
       tenantId:     tenant.id,
       branchId:     branch.id,
-      email:        'cajero@hamburgos.com',
+      email:        'cajero@demo.com',
       passwordHash: PASSWORD_HASH,
-      name:         'Cajero Demo',
+      name:         'Cajero',
       role:         'CASHIER',
     },
   });
-  console.log('Usuario CASHIER creado: cajero@hamburgos.com / demo123');
+  console.log('Usuarios creados: owner@demo.com, cajero@demo.com');
 
-  // ── Categorías ───────────────────────────────────────────────
-  const categoriesData = [
-    { name: 'Hamburguesas', sortOrder: 1 },
-    { name: 'HB',           sortOrder: 2 },
-    { name: 'Extras',       sortOrder: 3 },
-    { name: 'Bebidas',      sortOrder: 4 },
-    { name: 'Combos',       sortOrder: 5 },
+  // ── Categorías ───────────────────────────────────────────────────────────────
+  const categoryNames = [
+    { name: 'Platos principales', sortOrder: 1 },
+    { name: 'Entradas',           sortOrder: 2 },
+    { name: 'Bebidas',            sortOrder: 3 },
+    { name: 'Postres',            sortOrder: 4 },
+    { name: 'Extras',             sortOrder: 5 },
   ];
 
-  const categoryIds: Record<string, string> = {};
-  for (const cat of categoriesData) {
+  const catId: Record<string, string> = {};
+  for (const cat of categoryNames) {
     const created = await prisma.category.create({
       data: { tenantId: tenant.id, name: cat.name, sortOrder: cat.sortOrder },
     });
-    categoryIds[cat.name] = created.id;
+    catId[cat.name] = created.id;
   }
-  console.log(`Categorías creadas: ${categoriesData.map((c) => c.name).join(', ')}`);
+  console.log(`Categorías creadas: ${categoryNames.map((c) => c.name).join(', ')}`);
 
-  // ── Productos ────────────────────────────────────────────────
+  // ── Productos ────────────────────────────────────────────────────────────────
   const products = [
-    // Hamburguesas
-    { cat: 'Hamburguesas', name: 'HB Original',   price: 25 },
-    { cat: 'Hamburguesas', name: 'HB Doble',       price: 35 },
-    { cat: 'Hamburguesas', name: 'Desmechada',     price: 35 },
-    { cat: 'Hamburguesas', name: '4 Quesos',       price: 50 },
-    { cat: 'Hamburguesas', name: 'La XXX',         price: 50 },
-    { cat: 'Hamburguesas', name: 'Big Mama',       price: 55 },
+    // Platos principales
+    { cat: 'Platos principales', name: 'Pollo a la plancha',   price: 55 },
+    { cat: 'Platos principales', name: 'Milanesa de res',      price: 50 },
+    { cat: 'Platos principales', name: 'Pasta al pesto',       price: 45 },
+    { cat: 'Platos principales', name: 'Hamburguesa clásica',  price: 42 },
 
-    // HB (sándwiches)
-    { cat: 'HB', name: 'Lomito HB',    price: 35 },
-    { cat: 'HB', name: 'Milanesa HB',  price: 35 },
-
-    // Extras
-    { cat: 'Extras', name: 'Jamón',                        price: 3  },
-    { cat: 'Extras', name: 'Bacon',                        price: 5  },
-    { cat: 'Extras', name: 'Huevo',                        price: 4  },
-    { cat: 'Extras', name: 'Papas Fritas',                 price: 10 },
-    { cat: 'Extras', name: 'Papas Fritas + Crispy Tocino', price: 15 },
+    // Entradas
+    { cat: 'Entradas', name: 'Ensalada mixta', price: 22 },
+    { cat: 'Entradas', name: 'Sopa del día',   price: 18 },
 
     // Bebidas
-    { cat: 'Bebidas', name: 'Gaseosa Mini',    price: 3  },
-    { cat: 'Bebidas', name: 'Gaseosa Popular', price: 7  },
-    { cat: 'Bebidas', name: 'Gaseosa Litro',   price: 10 },
-    { cat: 'Bebidas', name: 'Soda 2 Litros',   price: 15 },
-    { cat: 'Bebidas', name: 'Vaso Refresco',   price: 5  },
-    { cat: 'Bebidas', name: 'Refresco',        price: 15 },
-    { cat: 'Bebidas', name: 'Paceña 235ml',    price: 7  },
-    { cat: 'Bebidas', name: 'Paceña Litro',    price: 25 },
+    { cat: 'Bebidas', name: 'Agua mineral',    price:  8 },
+    { cat: 'Bebidas', name: 'Refresco',        price: 12 },
+    { cat: 'Bebidas', name: 'Jugo natural',    price: 15 },
+    { cat: 'Bebidas', name: 'Cerveza',         price: 20 },
 
-    // Combos
-    { cat: 'Combos', name: 'Dúo Original (2 Originales + gaseosa 500ml)',          price: 55  },
-    { cat: 'Combos', name: 'Dúo Doble (2 Dobles + gaseosa 500ml)',                 price: 75  },
-    { cat: 'Combos', name: 'Familiar Original (4 Originales + gaseosa 1L)',        price: 107 },
-    { cat: 'Combos', name: 'Familiar Doble (4 Dobles + gaseosa 1L)',               price: 147 },
-    { cat: 'Combos', name: 'Combo Loco (XXX + 4 Quesos + Big Mama + gaseosa 2L)', price: 167 },
+    // Postres
+    { cat: 'Postres', name: 'Helado 2 bochas', price: 15 },
+    { cat: 'Postres', name: 'Torta del día',   price: 18 },
+
+    // Extras
+    { cat: 'Extras', name: 'Porción de papas', price: 12 },
+    { cat: 'Extras', name: 'Salsa adicional',  price:  4 },
+    { cat: 'Extras', name: 'Pan adicional',    price:  5 },
   ];
 
   for (const p of products) {
     await prisma.product.create({
       data: {
         tenantId:   tenant.id,
-        categoryId: categoryIds[p.cat],
+        categoryId: catId[p.cat],
         name:       p.name,
         price:      p.price,
       },
@@ -184,9 +175,9 @@ async function seed() {
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
-  console.log('  OWNER:   admin@hamburgos.com / demo123');
-  console.log('  CASHIER: cajero@hamburgos.com    / demo123');
-  console.log('  Negocio: HamBurgos (plan BASICO, reset MONTHLY)');
+  console.log('  OWNER:   owner@demo.com  / demo123');
+  console.log('  CASHIER: cajero@demo.com / demo123');
+  console.log('  Negocio: Restaurante Demo (plan PRO, reset DAILY)');
   console.log('──────────────────────────────────────────────');
 }
 

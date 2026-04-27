@@ -26,7 +26,7 @@ pnpm --filter backend seed
 pnpm dev
 ```
 
-**Demo credentials** (after seed): `admin@hamburgos.com / demo123` (OWNER), `cajero@hamburgos.com / demo123` (CASHIER). Business: "HamBurgos", branches: Centro · Norte.
+**Demo credentials** (after seed): `owner@demo.com / demo123` (OWNER), `cajero@demo.com / demo123` (CASHIER). Business: "Restaurante Demo" (plan PRO), branch: Principal.
 
 > **WARNING:** Never run `seed` in production. It creates a demo tenant with well-known credentials.
 
@@ -52,8 +52,8 @@ pnpm --filter backend typecheck
 pnpm --filter frontend typecheck
 
 # Tests
-pnpm test:backend                        # Jest (38 unit/integration tests)
-pnpm test:frontend                       # Vitest (30 unit tests)
+pnpm test:backend                        # Jest (173 unit tests)
+pnpm test:frontend                       # Vitest (33 unit tests)
 pnpm test:e2e                            # Playwright (9 E2E tests — requires pnpm dev running)
 
 # Run a single backend test file
@@ -139,7 +139,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
 | `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
-| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN |
+| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
@@ -193,7 +193,7 @@ Unknown routes redirect to `/`. No public self-registration.
 
 ## Data Model
 
-17 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
+18 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
 
 ```
 Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional branchId)
@@ -205,8 +205,9 @@ Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional bran
                            ├── CashSession ── Expense (category, amount, description)
                            ├── Customer (name, phone, email)
                            └── Raffle ──┬── RafflePrize  (position, prizeDescription)
-                                        ├── RaffleTicket  (customer, order link)
-                                        └── RaffleWinner  (position, voided flag)
+                                        ├── RaffleTicket  (customer, order link — orderId null for SPENDING_THRESHOLD)
+                                        ├── RaffleWinner  (position, voided flag)
+                                        └── CustomerRaffleSpending  (totalSpent per customer per raffle — SPENDING_THRESHOLD only)
 ```
 
 Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings in DB.

@@ -38,7 +38,7 @@ export function useRaffleDetail(
     setBusy('close');
     try {
       const updated = await rafflesApi.close(raffle.id);
-      setRaffle({ ...updated, tickets: raffle.tickets });
+      setRaffle(updated);
       onUpdate();
     } catch (err) { handleApiError(err, 'Error al cerrar sorteo'); }
     finally { setBusy(null); }
@@ -49,7 +49,7 @@ export function useRaffleDetail(
     setBusy('reopen');
     try {
       const updated = await rafflesApi.reopen(raffle.id);
-      setRaffle({ ...updated, tickets: raffle.tickets });
+      setRaffle(updated);
       onUpdate();
     } catch (err) { handleApiError(err, 'Error al reabrir sorteo'); }
     finally { setBusy(null); }

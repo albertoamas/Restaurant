@@ -16,6 +16,7 @@ function makeProduct(isActive = true): Product {
 
 const DTO: CreateRaffleDto = {
   name: 'Sorteo Navidad',
+  ticketMode: 'PRODUCT_MATCH',
   productId: 'prod-1',
   numberOfWinners: 3,
   prizes: [
@@ -23,6 +24,14 @@ const DTO: CreateRaffleDto = {
     { position: 2, prizeDescription: 'Televisor' },
     { position: 3, prizeDescription: 'Bicicleta' },
   ],
+};
+
+const SPENDING_DTO: CreateRaffleDto = {
+  name: 'Sorteo Acumulativo',
+  ticketMode: 'SPENDING_THRESHOLD',
+  spendingThreshold: 100,
+  numberOfWinners: 1,
+  prizes: [{ position: 1, prizeDescription: 'Premio' }],
 };
 
 describe('CreateRaffleUseCase', () => {
@@ -106,5 +115,25 @@ describe('CreateRaffleUseCase', () => {
     productRepo.findById.mockResolvedValue(makeProduct(false));
     await expect(useCase.execute('tenant-1', DTO)).rejects.toThrow(BadRequestException);
     expect(raffleRepo.createRaffle).not.toHaveBeenCalled();
+  });
+
+  it('crea sorteo SPENDING_THRESHOLD sin consultar producto', async () => {
+    await useCase.execute('tenant-1', SPENDING_DTO);
+    expect(productRepo.findById).not.toHaveBeenCalled();
+    expect(raffleRepo.createRaffle).toHaveBeenCalledTimes(1);
+    const saved = raffleRepo.createRaffle.mock.calls[0][0];
+    expect(saved.ticketMode).toBe('SPENDING_THRESHOLD');
+    expect(saved.spendingThreshold).toBe(100);
+    expect(saved.productId).toBeNull();
+  });
+
+  it('lanza BadRequestException para PRODUCT_MATCH sin productId', async () => {
+    const bad: CreateRaffleDto = { ...DTO, productId: undefined };
+    await expect(useCase.execute('tenant-1', bad)).rejects.toThrow(BadRequestException);
+  });
+
+  it('lanza BadRequestException para SPENDING_THRESHOLD sin spendingThreshold', async () => {
+    const bad: CreateRaffleDto = { ...SPENDING_DTO, spendingThreshold: undefined };
+    await expect(useCase.execute('tenant-1', bad)).rejects.toThrow(BadRequestException);
   });
 });

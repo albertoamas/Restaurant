@@ -1,6 +1,6 @@
 import { randomInt } from 'crypto';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDto } from '@pos/shared';
+import { RaffleDetailDto } from '@pos/shared';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 
@@ -11,7 +11,7 @@ export class DrawWinnerUseCase {
     private readonly repo: RaffleRepositoryPort,
   ) {}
 
-  async execute(id: string, tenantId: string): Promise<RaffleDto> {
+  async execute(id: string, tenantId: string): Promise<RaffleDetailDto> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
     if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
     if (!raffle.isDrawable) {
@@ -23,9 +23,8 @@ export class DrawWinnerUseCase {
       throw new BadRequestException('No se puede sortear — el sorteo no tiene tickets');
     }
 
-    // Obtenemos los ganadores ya registrados para este sorteo.
-    const allWinners = await this.repo.findWinnersByRaffleId(id);
-    const activeWinners = allWinners.filter((w) => !w.voided);
+    // withTickets.winners ya incluye todos los ganadores del sorteo.
+    const activeWinners = withTickets.winners.filter((w) => !w.voided);
     const activeTicketIds = new Set(activeWinners.map((w) => w.ticketId));
 
     // Pool: tickets que no pertenecen a un ganador activo.

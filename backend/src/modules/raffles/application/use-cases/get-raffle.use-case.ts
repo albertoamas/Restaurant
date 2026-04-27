@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDto, RaffleTicketDto } from '@pos/shared';
+import { RaffleDetailDto } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 
 @Injectable()
@@ -9,7 +9,7 @@ export class GetRaffleUseCase {
     private readonly repo: RaffleRepositoryPort,
   ) {}
 
-  async execute(id: string, tenantId: string): Promise<RaffleDto & { tickets: RaffleTicketDto[] }> {
+  async execute(id: string, tenantId: string): Promise<RaffleDetailDto> {
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
     if (!result) throw new NotFoundException(`Sorteo ${id} no encontrado`);
     return result;

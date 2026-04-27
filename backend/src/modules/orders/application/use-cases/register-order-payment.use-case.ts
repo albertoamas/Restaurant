@@ -57,7 +57,10 @@ export class RegisterOrderPaymentUseCase {
 
     // Revoke any raffle tickets already assigned to this order (deferred-payment CORTESIA path)
     if (hasCortesia && this.raffleAutoTicket) {
-      this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId).catch(() => {});
+      this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId, {
+        customerId: order.customerId ?? undefined,
+        orderTotal: order.total,
+      }).catch(() => {});
     }
 
     // 5. Cash session check if any payment is CASH

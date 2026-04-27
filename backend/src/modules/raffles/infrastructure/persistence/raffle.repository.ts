@@ -1,11 +1,11 @@
 import { randomUUID } from 'crypto';
 import { Injectable } from '@nestjs/common';
-import { RaffleDto, RaffleTicketDto, RaffleWinnerDto } from '@pos/shared';
+import { RaffleDetailDto, RaffleDto, RaffleSpendingDto, RaffleTicketDto, RaffleTicketMode, RaffleWinnerDto } from '@pos/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Raffle, RafflePrize, RaffleProps, RaffleStatus } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
-import { NewTicketInput, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
+import { NewTicketInput, RaffleRepositoryPort, SpendingResult } from '../../domain/ports/raffle-repository.port';
 
 type RaffleWithRelations = Prisma.RaffleGetPayload<{
   include: {
@@ -34,6 +34,10 @@ type RaffleWithTickets = Prisma.RaffleGetPayload<{
       include: { customer: { select: { id: true; name: true; phone: true } } };
       orderBy: { ticketNumber: 'asc' };
     };
+    customerSpendings: {
+      include: { customer: { select: { id: true; name: true; phone: true } } };
+      orderBy: { totalSpent: 'desc' };
+    };
     _count: { select: { tickets: true } };
   };
 }>;
@@ -54,6 +58,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
           description: raffle.description,
           status: raffle.status,
           numberOfWinners: raffle.numberOfWinners,
+          ticketMode: raffle.ticketMode,
+          spendingThreshold: raffle.spendingThreshold,
           productId: raffle.productId,
           createdAt: raffle.createdAt,
           updatedAt: raffle.updatedAt,
@@ -113,10 +119,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
     return rows.map((r) => this.rowToRaffleDto(r));
   }
 
-  async findRaffleWithTickets(
-    id: string,
-    tenantId: string,
-  ): Promise<(RaffleDto & { tickets: RaffleTicketDto[] }) | null> {
+  async findRaffleWithTickets(id: string, tenantId: string): Promise<RaffleDetailDto | null> {
     const row = await this.prisma.raffle.findFirst({
       where: { id, tenantId },
       include: {
@@ -133,10 +136,22 @@ export class RaffleRepository implements RaffleRepositoryPort {
           include: { customer: { select: { id: true, name: true, phone: true } } },
           orderBy: { ticketNumber: 'asc' },
         },
+        customerSpendings: {
+          include: { customer: { select: { id: true, name: true, phone: true } } },
+          orderBy: { totalSpent: 'desc' },
+        },
         _count: { select: { tickets: true } },
       },
     });
     if (!row) return null;
+
+    const threshold = row.spendingThreshold ?? 1;
+    const spendings: RaffleSpendingDto[] = row.customerSpendings.map((s) => ({
+      customerId: s.customerId,
+      customer: { id: s.customer.id, name: s.customer.name, phone: s.customer.phone },
+      totalSpent: Number(s.totalSpent),
+      ticketsEarned: Math.floor(Number(s.totalSpent) / threshold),
+    }));
 
     return {
       ...this.rowToRaffleDto(row),
@@ -149,12 +164,21 @@ export class RaffleRepository implements RaffleRepositoryPort {
         orderId: t.orderId,
         createdAt: t.createdAt.toISOString(),
       })),
+      spendings,
     };
   }
 
   async findActiveRafflesForProducts(tenantId: string, productIds: string[]): Promise<Raffle[]> {
     const rows = await this.prisma.raffle.findMany({
-      where: { tenantId, status: 'ACTIVE', productId: { in: productIds } },
+      where: { tenantId, status: 'ACTIVE', ticketMode: 'PRODUCT_MATCH', productId: { in: productIds } },
+      include: { prizes: { orderBy: { position: 'asc' } } },
+    });
+    return rows.map((r) => this.raffleToDomain(r));
+  }
+
+  async findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]> {
+    const rows = await this.prisma.raffle.findMany({
+      where: { tenantId, status: 'ACTIVE', ticketMode: 'SPENDING_THRESHOLD' },
       include: { prizes: { orderBy: { position: 'asc' } } },
     });
     return rows.map((r) => this.raffleToDomain(r));
@@ -199,7 +223,6 @@ export class RaffleRepository implements RaffleRepositoryPort {
       include: { raffle: { select: { status: true } } },
     });
 
-    // No eliminamos tickets de sorteos que ya están en sorteo o terminados.
     const eligible = tickets.filter(
       (t) => t.raffle.status !== 'DRAWING' && t.raffle.status !== 'DRAWN',
     );
@@ -262,6 +285,78 @@ export class RaffleRepository implements RaffleRepositoryPort {
     await this.prisma.raffle.deleteMany({ where: { id, tenantId } });
   }
 
+  // ─── Spending threshold ────────────────────────────────────────────────────
+
+  async addCustomerSpending(
+    tenantId: string,
+    raffleId: string,
+    customerId: string,
+    amount: number,
+  ): Promise<SpendingResult> {
+    const result = await this.prisma.customerRaffleSpending.upsert({
+      where: { raffleId_customerId: { raffleId, customerId } },
+      create: { id: randomUUID(), tenantId, raffleId, customerId, totalSpent: amount },
+      update: { totalSpent: { increment: amount } },
+    });
+    return { newTotal: Number(result.totalSpent) };
+  }
+
+  async subtractCustomerSpending(
+    tenantId: string,
+    raffleId: string,
+    customerId: string,
+    amount: number,
+  ): Promise<SpendingResult> {
+    return this.prisma.$transaction(async (tx) => {
+      // SELECT FOR UPDATE serializa escrituras concurrentes sobre la misma fila.
+      await tx.$executeRaw`
+        SELECT id FROM customer_raffle_spendings
+        WHERE raffle_id = ${raffleId} AND customer_id = ${customerId}
+        FOR UPDATE
+      `;
+      const record = await tx.customerRaffleSpending.findUnique({
+        where: { raffleId_customerId: { raffleId, customerId } },
+      });
+      if (!record) return { newTotal: 0 };
+
+      const newTotal = Math.max(0, Number(record.totalSpent) - amount);
+      await tx.customerRaffleSpending.update({
+        where: { raffleId_customerId: { raffleId, customerId } },
+        data: { totalSpent: newTotal },
+      });
+      return { newTotal };
+    });
+  }
+
+  async countTicketsByCustomer(tenantId: string, raffleId: string, customerId: string): Promise<number> {
+    return this.prisma.raffleTicket.count({ where: { tenantId, raffleId, customerId } });
+  }
+
+  async deleteExcessTicketsByCustomer(
+    tenantId: string,
+    raffleId: string,
+    customerId: string,
+    excessCount: number,
+  ): Promise<void> {
+    const raffle = await this.prisma.raffle.findUnique({
+      where: { id: raffleId },
+      select: { status: true },
+    });
+    if (!raffle || raffle.status === 'DRAWING' || raffle.status === 'DRAWN') return;
+
+    const toDelete = await this.prisma.raffleTicket.findMany({
+      where: { tenantId, raffleId, customerId },
+      orderBy: { createdAt: 'desc' },
+      take: excessCount,
+      select: { id: true },
+    });
+    if (!toDelete.length) return;
+
+    await this.prisma.raffleTicket.deleteMany({
+      where: { id: { in: toDelete.map((t) => t.id) } },
+    });
+  }
+
   // ─── Mappers ───────────────────────────────────────────────────────────────
 
   private rowToRaffleDto(row: RaffleWithRelations | RaffleWithTickets): RaffleDto {
@@ -284,7 +379,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
       customerId: w.customerId,
       customer: { id: w.customer.id, name: w.customer.name, phone: w.customer.phone },
       ticketId: w.ticketId,
-      ticketNumber: w.ticket?.ticketNumber ?? 0,
+      ticketNumber: w.ticket!.ticketNumber,
       drawnAt: w.drawnAt.toISOString(),
       voided: w.voided ?? false,
     }));
@@ -300,6 +395,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
       description: row.description ?? null,
       status: row.status as RaffleStatus,
       numberOfWinners,
+      ticketMode: (row.ticketMode ?? 'PRODUCT_MATCH') as RaffleTicketMode,
+      spendingThreshold: row.spendingThreshold ?? null,
       productId: row.product?.id ?? null,
       productName: row.product?.name ?? null,
       prizes: (row.prizes ?? []).map((p) => ({
@@ -322,6 +419,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
       description: row.description ?? null,
       status: row.status as RaffleStatus,
       numberOfWinners: row.numberOfWinners ?? 1,
+      ticketMode: (row.ticketMode ?? 'PRODUCT_MATCH') as RaffleTicketMode,
+      spendingThreshold: row.spendingThreshold ?? null,
       productId: row.productId ?? null,
       prizes: (row.prizes ?? []).map((p): RafflePrize => ({
         position: p.position,
@@ -331,5 +430,4 @@ export class RaffleRepository implements RaffleRepositoryPort {
       updatedAt: new Date(row.updatedAt),
     } as RaffleProps);
   }
-
 }

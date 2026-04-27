@@ -1,6 +1,6 @@
 import type { RaffleDto, RaffleStatus } from '@pos/shared';
 import { STATUS_CONFIG, StatusBadge } from './StatusBadge';
-import { IconTicket, IconPackage, IconAward, IconGift } from './RaffleIcons';
+import { IconTicket, IconPackage, IconAward, IconGift, IconCoins } from './RaffleIcons';
 
 export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: () => void }) {
   const cfg = STATUS_CONFIG[raffle.status as RaffleStatus] ?? STATUS_CONFIG['CLOSED'];
@@ -26,12 +26,19 @@ export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: ()
             <StatusBadge status={raffle.status as RaffleStatus} />
           </div>
 
-          {raffle.productName && (
+          {raffle.ticketMode === 'SPENDING_THRESHOLD' ? (
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <IconCoins className="w-3 h-3 text-amber-500 shrink-0" />
+              <span className="text-xs text-amber-700 font-medium truncate">
+                Cada {raffle.spendingThreshold} Bs = 1 ticket
+              </span>
+            </div>
+          ) : raffle.productName ? (
             <div className="flex items-center gap-1.5 mb-1.5">
               <IconPackage className="w-3 h-3 text-gray-400 shrink-0" />
               <span className="text-xs text-gray-500 truncate">{raffle.productName}</span>
             </div>
-          )}
+          ) : null}
 
           {firstPrize && (
             <div className="flex items-center gap-1.5 mb-1.5">

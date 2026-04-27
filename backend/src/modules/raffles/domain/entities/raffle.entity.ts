@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { RaffleTicketMode } from '@pos/shared';
 
 export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
 
@@ -14,10 +15,23 @@ export interface RaffleProps {
   description: string | null;
   status: RaffleStatus;
   numberOfWinners: number;
+  ticketMode: RaffleTicketMode;
+  spendingThreshold: number | null;
   productId: string | null;
   prizes: RafflePrize[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CreateRaffleOptions {
+  tenantId: string;
+  name: string;
+  description?: string;
+  ticketMode: RaffleTicketMode;
+  productId: string | null;
+  spendingThreshold: number | null;
+  numberOfWinners: number;
+  prizes: RafflePrize[];
 }
 
 export class Raffle {
@@ -27,6 +41,8 @@ export class Raffle {
   description: string | null;
   status: RaffleStatus;
   numberOfWinners: number;
+  readonly ticketMode: RaffleTicketMode;
+  readonly spendingThreshold: number | null;
   productId: string | null;
   prizes: RafflePrize[];
   readonly createdAt: Date;
@@ -36,24 +52,19 @@ export class Raffle {
     Object.assign(this, props);
   }
 
-  static create(
-    tenantId: string,
-    name: string,
-    productId: string,
-    numberOfWinners: number,
-    prizes: RafflePrize[],
-    description?: string,
-  ): Raffle {
+  static create(opts: CreateRaffleOptions): Raffle {
     const now = new Date();
     return new Raffle({
       id: uuidv4(),
-      tenantId,
-      name: name.trim(),
-      description: description?.trim() || null,
+      tenantId: opts.tenantId,
+      name: opts.name.trim(),
+      description: opts.description?.trim() || null,
       status: 'ACTIVE',
-      numberOfWinners,
-      productId,
-      prizes,
+      numberOfWinners: opts.numberOfWinners,
+      ticketMode: opts.ticketMode,
+      spendingThreshold: opts.spendingThreshold,
+      productId: opts.productId,
+      prizes: opts.prizes,
       createdAt: now,
       updatedAt: now,
     });

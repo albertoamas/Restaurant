@@ -67,9 +67,10 @@ model Tenant {
   customers            Customer[]
   orderPayments        OrderPayment[]
   branchOrderSequences BranchOrderSequence[]
-  raffles              Raffle[]
-  raffleTickets        RaffleTicket[]
-  raffleWinners        RaffleWinner[]
+  raffles                 Raffle[]
+  raffleTickets           RaffleTicket[]
+  raffleWinners           RaffleWinner[]
+  customerRaffleSpending  CustomerRaffleSpending[]
 
   @@map("tenants")
 }
@@ -288,10 +289,11 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orders        Order[]
-  raffleTickets RaffleTicket[]
-  raffleWins    RaffleWinner[]
+  tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders                 Order[]
+  raffleTickets          RaffleTicket[]
+  raffleWins             RaffleWinner[]
+  customerRaffleSpending CustomerRaffleSpending[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, name])
@@ -308,15 +310,20 @@ model Raffle {
   // ACTIVE → CLOSED → DRAWING (primer ganador sorteado) → DRAWN (todos sorteados)
   status          String   @default("ACTIVE")
   numberOfWinners Int      @default(1) @map("number_of_winners")
-  productId       String?  @map("product_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  // PRODUCT_MATCH: tickets por compra de producto específico
+  // SPENDING_THRESHOLD: tickets por gasto acumulado (cada N Bs = 1 ticket)
+  ticketMode        String  @default("PRODUCT_MATCH") @map("ticket_mode")
+  spendingThreshold Int?    @map("spending_threshold")
+  productId         String? @map("product_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
-  tickets RaffleTicket[] @relation("RaffleTickets")
-  prizes  RafflePrize[]
-  winners RaffleWinner[]
+  tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product                Product?                 @relation(fields: [productId], references: [id], onDelete: SetNull)
+  tickets                RaffleTicket[]           @relation("RaffleTickets")
+  prizes                 RafflePrize[]
+  winners                RaffleWinner[]
+  customerSpendings      CustomerRaffleSpending[]
 
   @@index([tenantId, status])
   @@index([tenantId, productId])
@@ -385,4 +392,25 @@ model RaffleTicket {
   @@index([tenantId, raffleId])
   @@index([tenantId, customerId])
   @@map("raffle_tickets")
+}
+
+// ─── CustomerRaffleSpending ───────────────────────────────────
+// Acumulado de gasto por cliente por sorteo de tipo SPENDING_THRESHOLD.
+// Un registro por par (raffleId, customerId); se actualiza por upsert.
+// tickets_earned = floor(totalSpent / raffle.spendingThreshold)
+
+model CustomerRaffleSpending {
+  id          String  @id @default(uuid())
+  tenantId    String  @map("tenant_id")
+  raffleId    String  @map("raffle_id")
+  customerId  String  @map("customer_id")
+  totalSpent  Decimal @default(0) @map("total_spent") @db.Decimal(10, 2)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([raffleId, customerId])
+  @@index([tenantId, raffleId])
+  @@map("customer_raffle_spending")
 }

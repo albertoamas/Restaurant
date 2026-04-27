@@ -1,3 +1,3 @@
-import type { RaffleDto, RaffleTicketDto } from '@pos/shared';
+import type { RaffleDetailDto } from '@pos/shared';
 
-export type DetailRaffle = RaffleDto & { tickets: RaffleTicketDto[] };
+export type DetailRaffle = RaffleDetailDto;

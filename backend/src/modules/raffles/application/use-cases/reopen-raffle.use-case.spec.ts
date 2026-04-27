@@ -7,7 +7,10 @@ import { Raffle } from '../../domain/entities/raffle.entity';
 const PRIZES = [{ position: 1, prizeDescription: 'Premio' }];
 
 function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'ACTIVE'): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1', 1, PRIZES);
+  const r = Raffle.create({
+    tenantId: 'tenant-1', name: 'Sorteo', ticketMode: 'PRODUCT_MATCH',
+    productId: 'prod-1', spendingThreshold: null, numberOfWinners: 1, prizes: PRIZES,
+  });
   if (status === 'CLOSED')  r.close();
   if (status === 'DRAWING') { r.close(); r.startDrawing(); }
   if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }

@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDto } from '@pos/shared';
+import { RaffleDetailDto } from '@pos/shared';
 import { Raffle } from '../../domain/entities/raffle.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { PRODUCT_REPOSITORY_PORT, ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
@@ -14,10 +14,24 @@ export class CreateRaffleUseCase {
     private readonly productRepo: ProductRepositoryPort,
   ) {}
 
-  async execute(tenantId: string, dto: CreateRaffleDto): Promise<RaffleDto> {
-    const product = await this.productRepo.findById(dto.productId, tenantId);
-    if (!product) throw new NotFoundException(`Producto ${dto.productId} no encontrado`);
-    if (!product.isActive) throw new BadRequestException('El producto seleccionado no está activo');
+  async execute(tenantId: string, dto: CreateRaffleDto): Promise<RaffleDetailDto> {
+    const { ticketMode } = dto;
+
+    // Validación de campos condicionales por modo
+    if (ticketMode === 'PRODUCT_MATCH') {
+      if (!dto.productId) {
+        throw new BadRequestException('productId es requerido para el modo PRODUCT_MATCH');
+      }
+      const product = await this.productRepo.findById(dto.productId, tenantId);
+      if (!product) throw new NotFoundException(`Producto ${dto.productId} no encontrado`);
+      if (!product.isActive) throw new BadRequestException('El producto seleccionado no está activo');
+    }
+
+    if (ticketMode === 'SPENDING_THRESHOLD') {
+      if (!dto.spendingThreshold || dto.spendingThreshold < 1) {
+        throw new BadRequestException('spendingThreshold debe ser un entero mayor a 0 para el modo SPENDING_THRESHOLD');
+      }
+    }
 
     if (dto.prizes.length !== dto.numberOfWinners) {
       throw new BadRequestException(
@@ -32,14 +46,16 @@ export class CreateRaffleUseCase {
       }
     }
 
-    const raffle = Raffle.create(
+    const raffle = Raffle.create({
       tenantId,
-      dto.name,
-      dto.productId,
-      dto.numberOfWinners,
-      dto.prizes.map((p) => ({ position: p.position, prizeDescription: p.prizeDescription })),
-      dto.description,
-    );
+      name: dto.name,
+      description: dto.description,
+      ticketMode,
+      productId: dto.productId ?? null,
+      spendingThreshold: dto.spendingThreshold ?? null,
+      numberOfWinners: dto.numberOfWinners,
+      prizes: dto.prizes.map((p) => ({ position: p.position, prizeDescription: p.prizeDescription })),
+    });
 
     await this.repo.createRaffle(raffle);
 

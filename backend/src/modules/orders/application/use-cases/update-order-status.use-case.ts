@@ -37,7 +37,10 @@ export class UpdateOrderStatusUseCase {
     this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
 
     if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
-      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id).catch(() => {});
+      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id, {
+        customerId: order.customerId ?? undefined,
+        orderTotal: order.total,
+      }).catch(() => {});
     }
 
     return saved;

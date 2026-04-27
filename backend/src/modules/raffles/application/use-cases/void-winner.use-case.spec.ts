@@ -11,7 +11,10 @@ const PRIZES = [
 ];
 
 function makeRaffle(status: 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN' = 'DRAWN'): Raffle {
-  const r = Raffle.create('tenant-1', 'Sorteo', 'prod-1', 2, PRIZES);
+  const r = Raffle.create({
+    tenantId: 'tenant-1', name: 'Sorteo', ticketMode: 'PRODUCT_MATCH',
+    productId: 'prod-1', spendingThreshold: null, numberOfWinners: 2, prizes: PRIZES,
+  });
   if (status === 'CLOSED')  r.close();
   if (status === 'DRAWING') { r.close(); r.startDrawing(); }
   if (status === 'DRAWN')   { r.close(); r.finishDrawing(); }

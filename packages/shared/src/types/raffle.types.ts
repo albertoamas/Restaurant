@@ -1,5 +1,7 @@
 export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
 
+export type RaffleTicketMode = 'PRODUCT_MATCH' | 'SPENDING_THRESHOLD';
+
 export interface RafflePrizeDto {
   position: number;
   prizeDescription: string;
@@ -23,6 +25,8 @@ export interface RaffleDto {
   description: string | null;
   status: RaffleStatus;
   numberOfWinners: number;
+  ticketMode: RaffleTicketMode;
+  spendingThreshold: number | null;
   productId: string | null;
   productName: string | null;
   prizes: RafflePrizeDto[];
@@ -44,10 +48,27 @@ export interface RaffleTicketDto {
   createdAt: string;
 }
 
+export interface RaffleSpendingDto {
+  customerId: string;
+  customer: { id: string; name: string; phone: string | null };
+  totalSpent: number;
+  ticketsEarned: number;
+}
+
+/** Retorno de GET /raffles/:id — incluye tickets y, para SPENDING_THRESHOLD, acumulados por cliente. */
+export type RaffleDetailDto = RaffleDto & {
+  tickets: RaffleTicketDto[];
+  spendings: RaffleSpendingDto[];
+};
+
 export interface CreateRaffleRequest {
   name: string;
   description?: string;
-  productId: string;
+  ticketMode: RaffleTicketMode;
+  /** Requerido cuando ticketMode === 'PRODUCT_MATCH'. */
+  productId?: string;
+  /** Requerido cuando ticketMode === 'SPENDING_THRESHOLD'. Monto en Bs entero positivo. */
+  spendingThreshold?: number;
   numberOfWinners: number;
   prizes: RafflePrizeDto[];
 }
