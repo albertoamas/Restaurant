@@ -1,4 +1,4 @@
-import { OrderStatus } from '@pos/shared';
+import { OrderStatus, UserRole } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
 import { useSocketEvent } from '../context/socket.context';
@@ -12,6 +12,7 @@ import { OrderCard } from '../components/orders/OrderCard';
 import { PayOrderModal } from '../components/orders/PayOrderModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { EditOrderModal } from '../components/orders/EditOrderModal';
+import { useAuth } from '../context/auth.context';
 
 const statusFilters = [
   { value: '', label: 'Todos' },
@@ -21,14 +22,17 @@ const statusFilters = [
 ];
 
 export function OrdersPage() {
+  const { currentBranchId, user } = useAuth();
+  const allowCortesia = user?.role === UserRole.OWNER;
   const [date, setDate] = useState(today());
   const [statusFilter, setStatusFilter] = useState('');
   const [payingOrder, setPayingOrder] = useState<OrderDto | null>(null);
   const [paidOrder, setPaidOrder] = useState<OrderDto | null>(null);
   const [editingOrder, setEditingOrder] = useState<OrderDto | null>(null);
-  const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } = useOrders(date, statusFilter);
+  const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } = useOrders(date, statusFilter, currentBranchId);
 
   useSocketEvent<OrderDto>('order.created', (order) => {
+    if (order.branchId !== currentBranchId) return;
     const d = order.createdAt.split('T')[0];
     if (d !== date) return;
     if (statusFilter && order.status !== statusFilter) return;
@@ -94,7 +98,16 @@ export function OrdersPage() {
       </div>
 
       {/* Orders list */}
-      {loading ? (
+      {!currentBranchId ? (
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <p className="text-sm font-semibold text-gray-500">Selecciona una sucursal</p>
+          <p className="text-xs mt-1 text-gray-400">Elige una sucursal en el menú lateral para ver sus pedidos</p>
+        </div>
+      ) : loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -149,6 +162,7 @@ export function OrdersPage() {
           order={payingOrder}
           onClose={() => setPayingOrder(null)}
           onPaid={(order) => { setPayingOrder(null); setPaidOrder(order); fetchOrders(); }}
+          allowCortesia={allowCortesia}
         />
       )}
 

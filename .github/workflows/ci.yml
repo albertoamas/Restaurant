@@ -56,7 +56,7 @@ jobs:
         run: pnpm --filter frontend typecheck
 
       - name: Test backend
-        run: pnpm --filter backend test -- --ci
+        run: pnpm --filter backend test:ci
 
       - name: Test frontend
         run: pnpm --filter frontend test:run

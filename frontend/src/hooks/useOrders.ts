@@ -7,7 +7,7 @@ import { getBoliviaDayBounds } from '../utils/timezone';
 
 const PAGE_SIZE = 50;
 
-export function useOrders(date: string, statusFilter: string) {
+export function useOrders(date: string, statusFilter: string, branchId: string | null) {
   const [orders, setOrders]           = useState<OrderDto[]>([]);
   const [total, setTotal]             = useState(0);
   const [loading, setLoading]         = useState(true);
@@ -17,16 +17,23 @@ export function useOrders(date: string, statusFilter: string) {
   const buildParams = useCallback((p: number): OrdersParams => {
     const { start, end } = getBoliviaDayBounds(date);
     return {
-      from:  start,
-      to:    end,
-      page:  p,
-      limit: PAGE_SIZE,
+      from:     start,
+      to:       end,
+      page:     p,
+      limit:    PAGE_SIZE,
+      branchId: branchId ?? undefined,
       ...(statusFilter ? { status: statusFilter as OrderStatus } : {}),
     };
-  }, [date, statusFilter]);
+  }, [date, statusFilter, branchId]);
 
   // Full refresh — always replaces the list and resets to page 1
   const fetchOrders = useCallback(async () => {
+    if (!branchId) {
+      setOrders([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const result = await ordersApi.getAll(buildParams(1));
@@ -38,7 +45,7 @@ export function useOrders(date: string, statusFilter: string) {
     } finally {
       setLoading(false);
     }
-  }, [buildParams]);
+  }, [buildParams, branchId]);
 
   // Append next page without replacing existing orders
   const loadMore = useCallback(async () => {

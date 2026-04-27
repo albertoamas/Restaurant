@@ -10,6 +10,7 @@ interface Props {
   onClose: () => void;
   order: OrderDto;
   onPaid: (order: OrderDto) => void;
+  allowCortesia?: boolean;
 }
 
 type PaymentEntry = { method: PaymentMethod; amount: number };
@@ -22,10 +23,11 @@ const ORDER_TYPE_LABEL: Record<OrderType, string> = {
   [OrderType.DELIVERY]: 'Delivery',
 };
 
-const PAYMENT_METHODS = [
+const ALL_PAYMENT_METHODS = [
   {
     value: PaymentMethod.CASH,
     label: 'Efectivo',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -40,6 +42,7 @@ const PAYMENT_METHODS = [
   {
     value: PaymentMethod.QR,
     label: 'QR',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -54,6 +57,7 @@ const PAYMENT_METHODS = [
   {
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
+    cortesiaOnly: false,
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -65,14 +69,33 @@ const PAYMENT_METHODS = [
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:bg-violet-50',
     splitActive: 'border-2 border-violet-400 bg-violet-100 text-violet-800',
   },
+  {
+    value: PaymentMethod.CORTESIA,
+    label: 'Cortesía',
+    cortesiaOnly: true,
+    icon: (
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+      </svg>
+    ),
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50/60 hover:text-amber-700',
+    active:      'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
+    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50',
+    splitActive: 'border-2 border-amber-400 bg-amber-100 text-amber-800',
+  },
 ];
-
-const methodMap = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.value, m]));
 
 /* ─── Componente ─────────────────────────────────────────────────────────── */
 
-export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
+export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = false }: Props) {
   const total = order.total;
+
+  const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter((m) => !m.cortesiaOnly || allowCortesia);
+  // Cortesía es todo-o-nada — no aplica en split
+  const SPLIT_METHODS = PAYMENT_METHODS.filter((m) => m.value !== PaymentMethod.CORTESIA);
+
+  const methodMap = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.value, m]));
 
   const [loading, setLoading]               = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -169,7 +192,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
 
           {!splitMode ? (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className={`grid gap-3 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {PAYMENT_METHODS.map((m) => (
                   <button
                     key={m.value}
@@ -186,22 +209,23 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
                 ))}
               </div>
 
-              <button
-                onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
-                className="mt-3 w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl
-                  text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
-                  border-2 border-gray-200 hover:border-primary-200 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Dividir pago entre varios métodos
-              </button>
+              {selectedMethod !== PaymentMethod.CORTESIA && (
+                <button
+                  onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl
+                    text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
+                    border-2 border-gray-200 hover:border-primary-200 transition-all"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Dividir pago entre varios métodos
+                </button>
+              )}
             </>
           ) : (
             /* ── Split mode ── */
             <div className="space-y-4">
-              {/* Cabecera */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dividir pago</span>
                 <button
@@ -215,7 +239,6 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
                 </button>
               </div>
 
-              {/* Barra de progreso */}
               <div>
                 <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
@@ -236,7 +259,6 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
                 </div>
               </div>
 
-              {/* Chips de pagos agregados */}
               {splitPayments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {splitPayments.map((p, i) => {
@@ -260,11 +282,10 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid }: Props) {
                 </div>
               )}
 
-              {/* Formulario — solo si no está completo */}
               {!splitComplete && (
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-3 gap-2">
-                    {PAYMENT_METHODS.map((m) => (
+                    {SPLIT_METHODS.map((m) => (
                       <button
                         key={m.value}
                         onClick={() => setSplitMethod(m.value)}

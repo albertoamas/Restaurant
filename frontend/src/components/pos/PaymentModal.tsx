@@ -528,13 +528,15 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
               {loading ? 'Procesando…' : canConfirm ? `Confirmar pedido · Bs ${total.toFixed(2)}` : 'Confirmar pedido'}
             </button>
 
-            {onDeferPayment && step1Done && step2Done && (
+            {onDeferPayment && (
               <button
                 onClick={handleDefer}
-                disabled={loading}
+                disabled={!step1Done || !step2Done || loading}
                 className={[
-                  'w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-200 disabled:opacity-50',
-                  'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]',
+                  'w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-200',
+                  step1Done && step2Done && !loading
+                    ? 'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed',
                 ].join(' ')}
               >
                 {loading ? 'Procesando…' : 'Cobrar después · dejar pendiente'}
