@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useAuth } from '../../context/auth.context';
+import { useSettingsStore } from '../../store/settings.store';
 import { ParticipantsModal } from './ParticipantsModal';
-import { playDrawTick } from '../../utils/raffle-sounds';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
@@ -8,8 +9,10 @@ import type { RaffleStatus } from '@pos/shared';
 import { StatusBadge } from './StatusBadge';
 import { IconTicket, IconPackage, IconGift, IconAward, IconDice, IconCoins } from './RaffleIcons';
 import { WinnerModal } from './WinnerModal';
-import { useRaffleDetail, DRAW_DURATION_MS } from './useRaffleDetail';
-import { positionLabel } from './raffle-utils';
+import { DrawingScreen } from './DrawingScreen';
+import { useRaffleDetail } from '../../hooks/useRaffleDetail';
+import { positionLabel } from '../../utils/raffle-utils';
+import { printWinnerCertificate } from '../../utils/raffle-certificate';
 
 // ─── Confirm draw ─────────────────────────────────────────────────────────────
 
@@ -44,95 +47,6 @@ function ConfirmDrawModal({
   );
 }
 
-// ─── Drawing animation ────────────────────────────────────────────────────────
-
-function DrawingModal({ position, names, revealName }: {
-  position: number; names: string[]; revealName?: string | null;
-}) {
-  const pool = names.length > 0 ? names : ['—'];
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * pool.length));
-  const [phase, setPhase] = useState<'fast' | 'slowing' | 'stopped'>('fast');
-  const startRef = React.useRef(Date.now());
-
-  useEffect(() => {
-    let cancelled = false;
-    startRef.current = Date.now();
-    const spin = () => {
-      if (cancelled) return;
-      const elapsed = Date.now() - startRef.current;
-      const progress = Math.min(elapsed / DRAW_DURATION_MS, 1);
-      const delay = 85 + 865 * (progress * progress * progress);
-      setIdx((i) => (i + 1) % pool.length);
-      playDrawTick(progress);
-      if (progress < 0.42) setPhase('fast');
-      else if (progress < 0.93) setPhase('slowing');
-      if (progress < 0.97) { setTimeout(spin, delay); } else { setPhase('stopped'); }
-    };
-    const id = setTimeout(spin, 85);
-    return () => { cancelled = true; clearTimeout(id); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Modal isOpen onClose={() => {}} title="" size="sm">
-      <div className="text-center pb-6 pt-4 px-2 select-none">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-500 mb-1">Sorteando</p>
-        <p className="text-base font-black font-heading text-gray-900 mb-5">{positionLabel(position)}</p>
-        <div className="relative w-20 h-20 mx-auto mb-5">
-          <div className="absolute inset-0 rounded-full border-4 border-violet-100" />
-          <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-violet-500 animate-spin" />
-          <div className="absolute inset-1.5 rounded-full border-2 border-transparent border-b-violet-300 animate-spin"
-            style={{ animationDirection: 'reverse', animationDuration: '0.5s' }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <IconDice className="w-6 h-6 text-violet-400" />
-          </div>
-        </div>
-        <div className="relative mx-auto w-full max-w-[300px] overflow-hidden" style={{ height: '160px' }}>
-          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
-          {[
-            { top: 'top-0', h: 'h-8', cls: 'text-xs font-medium text-gray-200', offset: -2 },
-            { top: 'top-8', h: 'h-9', cls: 'text-sm font-semibold text-gray-300', offset: -1 },
-          ].map(({ top, h, cls, offset }) => (
-            <div key={offset} className={`absolute inset-x-0 ${top} flex items-center justify-center ${h}`}>
-              <span className={`${cls} truncate px-4`}>{pool[(idx + offset + pool.length) % pool.length]}</span>
-            </div>
-          ))}
-          <div className={`absolute inset-x-0 top-[68px] flex items-center justify-center h-[42px] rounded-2xl mx-2 transition-colors duration-300 ${
-            revealName ? 'bg-amber-50 border-2 border-amber-300' : phase === 'stopped' ? 'bg-violet-50 border-2 border-violet-200' : 'bg-gray-50'
-          }`}>
-            <span className={`font-black font-heading truncate px-4 transition-all duration-200 ${
-              revealName ? 'text-amber-700 text-xl' : phase === 'stopped' ? 'text-violet-700 text-xl' : 'text-gray-900 text-lg'
-            }`}>
-              {revealName ?? pool[idx]}
-            </span>
-          </div>
-          {[
-            { top: 'top-[110px]', h: 'h-9', cls: 'text-sm font-semibold text-gray-300', offset: 1 },
-            { top: 'top-[149px]', h: 'h-8', cls: 'text-xs font-medium text-gray-200', offset: 2 },
-          ].map(({ top, h, cls, offset }) => (
-            <div key={offset} className={`absolute inset-x-0 ${top} flex items-center justify-center ${h}`}>
-              <span className={`${cls} truncate px-4`}>{revealName ? '' : pool[(idx + offset) % pool.length]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 flex justify-center gap-1.5 min-h-[20px]">
-          {revealName ? (
-            <span className="text-xs font-bold text-amber-600 animate-pulse tracking-wide uppercase">¡Ganador encontrado!</span>
-          ) : phase !== 'stopped' ? (
-            [0, 1, 2].map((i) => (
-              <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce"
-                style={{ animationDelay: `${i * 160}ms` }} />
-            ))
-          ) : (
-            <span className="text-xs font-semibold text-violet-500 animate-pulse">Calculando resultado…</span>
-          )}
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 // ─── Position medal ───────────────────────────────────────────────────────────
 
 const MEDAL: Record<number, string> = {
@@ -158,6 +72,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
   const {
     raffle, loading, busy,
     showConfirm, setShowConfirm,
+    deleteConfirm, setDeleteConfirm,
     drawingPosition, pendingWinnerName,
     drawnWinner, setDrawnWinner,
     voidConfirmId, setVoidConfirmId,
@@ -167,6 +82,14 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
   } = useRaffleDetail(raffleId, onClose, onUpdate);
 
   const [showParticipants, setShowParticipants] = useState(false);
+
+  const { user } = useAuth();
+  const { businessAddress, businessPhone } = useSettingsStore();
+  const business = {
+    name:    user?.tenantName ?? '',
+    address: businessAddress || undefined,
+    phone:   businessPhone   || undefined,
+  };
 
   const isSpending = raffle?.ticketMode === 'SPENDING_THRESHOLD';
   const participantCount = isSpending ? (raffle?.spendings.length ?? 0) : (raffle?.tickets.length ?? 0);
@@ -233,15 +156,27 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                               <div className="flex items-center gap-1.5">
                                 <IconAward className="w-3 h-3 text-amber-500 shrink-0" />
                                 <span className="text-xs font-semibold text-amber-800 truncate">{activeWinner.customer.name}</span>
-                                {canVoid && (
+                                <div className="ml-auto flex items-center gap-0.5">
                                   <button
-                                    onClick={() => setVoidConfirmId(activeWinner.id)}
-                                    disabled={!!busy}
-                                    className="ml-auto text-[10px] text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40"
+                                    onClick={() => printWinnerCertificate(activeWinner, raffle.name, business)}
+                                    title="Imprimir certificado"
+                                    className="text-gray-300 hover:text-primary-500 p-1 rounded-lg transition-colors"
                                   >
-                                    Anular
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                      <path strokeLinecap="round" strokeLinejoin="round"
+                                        d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 21h6v-6H9v6z" />
+                                    </svg>
                                   </button>
-                                )}
+                                  {canVoid && (
+                                    <button
+                                      onClick={() => setVoidConfirmId(activeWinner.id)}
+                                      disabled={!!busy}
+                                      className="text-[10px] text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40"
+                                    >
+                                      Anular
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             )}
 
@@ -361,15 +296,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                       Reabrir sorteo
                     </Button>
                   )}
-                  {isDeletable && (
-                    <button
-                      onClick={handleDelete}
-                      disabled={!!busy}
-                      className="ml-auto text-xs text-gray-400 hover:text-red-500 disabled:opacity-40 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
-                    >
-                      Eliminar sorteo
-                    </button>
-                  )}
+                  {/* Eliminar sorteo — oculto temporalmente */}
                 </div>
               </div>
             )}
@@ -389,7 +316,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
       )}
 
       {drawingPosition !== null && (
-        <DrawingModal
+        <DrawingScreen
           position={drawingPosition}
           names={availableTickets.map((t) => t.customer.name)}
           revealName={pendingWinnerName}
@@ -402,6 +329,43 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
 
       {showParticipants && raffle && (
         <ParticipantsModal raffle={raffle} onClose={() => setShowParticipants(false)} />
+      )}
+
+      {deleteConfirm && raffle && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirm(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">¿Eliminar sorteo?</h3>
+                <p className="text-xs text-gray-500 mt-0.5">"{raffle.name}"</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Se eliminarán todos los tickets y acumulados asociados. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={busy === 'delete'}
+                className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {busy === 'delete' ? 'Eliminando…' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

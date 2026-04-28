@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { rafflesApi } from '../../api/raffles.api';
-import { handleApiError } from '../../utils/api-error';
+import { rafflesApi } from '../api/raffles.api';
+import { handleApiError } from '../utils/api-error';
 import type { RaffleWinnerDto } from '@pos/shared';
-import type { DetailRaffle } from './types';
+import type { DetailRaffle } from '../components/raffles/types';
 
 export const DRAW_DURATION_MS = 7000;
-export const WINNER_PAUSE_MS  = 2500;
+export const WINNER_PAUSE_MS  = 4000;
 
 export function useRaffleDetail(
   raffleId: string,
@@ -16,6 +16,7 @@ export function useRaffleDetail(
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [drawingPosition, setDrawingPosition] = useState<number | null>(null);
   const [pendingWinnerName, setPendingWinnerName] = useState<string | null>(null);
   const [drawnWinner, setDrawnWinner] = useState<RaffleWinnerDto | null>(null);
@@ -69,7 +70,7 @@ export function useRaffleDetail(
 
   async function handleDelete() {
     if (!raffle) return;
-    if (!window.confirm(`¿Eliminar el sorteo "${raffle.name}"? Se eliminarán todos los tickets acumulados.`)) return;
+    setDeleteConfirm(false);
     setBusy('delete');
     try {
       await rafflesApi.delete(raffle.id);
@@ -124,6 +125,8 @@ export function useRaffleDetail(
     busy,
     showConfirm,
     setShowConfirm,
+    deleteConfirm,
+    setDeleteConfirm,
     drawingPosition,
     pendingWinnerName,
     drawnWinner,

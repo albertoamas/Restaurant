@@ -1,9 +1,24 @@
 let ctx: AudioContext | null = null;
+let noiseBuffer: AudioBuffer | null = null;
 
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
-  if (ctx.state === 'suspended') ctx.resume();
+  if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
+}
+
+// Pre-baked noise buffer shared across all tick calls.
+// AudioBufferSourceNode is one-shot but AudioBuffer (the data) is reusable.
+// This eliminates the 2000-iteration Math.random() loop that ran on the main
+// thread inside every RAF callback, which was the primary source of jank.
+function getNoiseBuffer(ac: AudioContext): AudioBuffer {
+  if (!noiseBuffer) {
+    const bufLen = Math.floor(ac.sampleRate * 0.045);
+    noiseBuffer = ac.createBuffer(1, bufLen, ac.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuffer;
 }
 
 /**
@@ -19,7 +34,7 @@ export function playDrawTick(progress: number): void {
     const osc = ac.createOscillator();
     const oscGain = ac.createGain();
     osc.type = 'sine';
-    osc.frequency.value = 1100 - 500 * progress; // agudo → grave
+    osc.frequency.value = 1100 - 500 * progress;
     oscGain.gain.setValueAtTime(0.14, now);
     oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
     osc.connect(oscGain);
@@ -27,14 +42,9 @@ export function playDrawTick(progress: number): void {
     osc.start(now);
     osc.stop(now + 0.07);
 
-    // Capa de ruido para textura de "bolilla"
-    const bufLen = Math.floor(ac.sampleRate * 0.045);
-    const buf = ac.createBuffer(1, bufLen, ac.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
-
+    // Capa de ruido — buffer pre-generado, solo se instancia un nuevo SourceNode
     const noise = ac.createBufferSource();
-    noise.buffer = buf;
+    noise.buffer = getNoiseBuffer(ac);
     const filter = ac.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = 2800;
@@ -62,7 +72,7 @@ export function playWinnerFanfare(): void {
 
     // 1) Redoble de tambor (8 golpes acelerando en 0.7 s)
     for (let i = 0; i < 8; i++) {
-      const t = now + i * i * 0.012; // acelera exponencialmente
+      const t = now + i * i * 0.012;
       const bLen = Math.floor(ac.sampleRate * 0.055);
       const b = ac.createBuffer(1, bLen, ac.sampleRate);
       const d = b.getChannelData(0);
@@ -79,10 +89,9 @@ export function playWinnerFanfare(): void {
       src.start(t); src.stop(t + 0.06);
     }
 
-    // 2) Explosión de impacto en t=0.72 s (bombo + chasquido)
+    // 2) Explosión de impacto en t=0.72 s
     const boom = now + 0.72;
 
-    // Bombo profundo
     const kick = ac.createOscillator();
     const kickGain = ac.createGain();
     kick.type = 'sine';
@@ -93,7 +102,6 @@ export function playWinnerFanfare(): void {
     kick.connect(kickGain); kickGain.connect(ac.destination);
     kick.start(boom); kick.stop(boom + 0.36);
 
-    // Chasquido de impacto
     const snapLen = Math.floor(ac.sampleRate * 0.08);
     const snapBuf = ac.createBuffer(1, snapLen, ac.sampleRate);
     const snapData = snapBuf.getChannelData(0);
@@ -109,7 +117,7 @@ export function playWinnerFanfare(): void {
     snapSrc.connect(snapHpf); snapHpf.connect(snapGain); snapGain.connect(ac.destination);
     snapSrc.start(boom); snapSrc.stop(boom + 0.09);
 
-    // 3) Fanfarria de trompeta (Do5-Mi5-Sol5-Do6) con timbre metálico
+    // 3) Fanfarria de trompeta
     const fanfare: Array<[number, number, number]> = [
       [523.25, boom + 0.02, 0.18],
       [659.25, boom + 0.17, 0.18],
@@ -117,12 +125,11 @@ export function playWinnerFanfare(): void {
       [1046.5, boom + 0.47, 0.55],
     ];
     fanfare.forEach(([freq, t, dur]) => {
-      // Oscilador principal
       const o1 = ac.createOscillator();
-      const o2 = ac.createOscillator(); // armónico para timbre metálico
+      const o2 = ac.createOscillator();
       const g = ac.createGain();
       o1.type = 'sawtooth'; o1.frequency.value = freq;
-      o2.type = 'sawtooth'; o2.frequency.value = freq * 2.01; // leve detune
+      o2.type = 'sawtooth'; o2.frequency.value = freq * 2.01;
       const o2g = ac.createGain(); o2g.gain.value = 0.3;
       o2.connect(o2g); o2g.connect(g);
       o1.connect(g); g.connect(ac.destination);
@@ -134,7 +141,7 @@ export function playWinnerFanfare(): void {
       o2.start(t); o2.stop(t + dur + 0.01);
     });
 
-    // 4) Acorde sostenido (Do Mayor: Do4-Mi4-Sol4-Do5) que resuena
+    // 4) Acorde sostenido
     const sustain = boom + 0.47 + 0.1;
     [261.63, 329.63, 392.0, 523.25].forEach((freq) => {
       const o = ac.createOscillator();

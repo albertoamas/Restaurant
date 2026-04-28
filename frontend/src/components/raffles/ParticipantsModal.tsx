@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { IconStar, IconCoins, IconTicket } from './RaffleIcons';
 import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
-import { positionLabel } from './raffle-utils';
+import { positionLabel } from '../../utils/raffle-utils';
 
 interface SpendingTicket {
   id: string;
@@ -53,7 +53,6 @@ function SpendingRow({
 }) {
   const progressInBracket = spending.totalSpent % threshold;
   const pct = Math.round((progressInBracket / threshold) * 100);
-  const bsToNext = threshold - progressInBracket;
 
   return (
     <div className={`rounded-xl px-4 py-3 ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
@@ -107,13 +106,8 @@ function SpendingRow({
             <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
               style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-[10px] font-medium text-gray-400 tabular-nums shrink-0">{pct}%</span>
+          <span className="text-[10px] font-medium text-gray-400 tabular-nums shrink-0">{progressInBracket}/{threshold} Bs</span>
         </div>
-        <p className="text-[10px] text-gray-400 leading-relaxed">
-          {progressInBracket > 0
-            ? `${progressInBracket} Bs acumulados de ${threshold} Bs · faltan ${bsToNext} Bs para el ticket #${spending.ticketsEarned + 1}`
-            : `Total acumulado: ${spending.totalSpent} Bs · comenzando nuevo bracket de ${threshold} Bs`}
-        </p>
       </div>
     </div>
   );
