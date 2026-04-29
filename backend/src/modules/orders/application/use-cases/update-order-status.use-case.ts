@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
@@ -13,6 +14,8 @@ import { RaffleAutoTicketService } from '../../../raffles/application/services/r
 
 @Injectable()
 export class UpdateOrderStatusUseCase {
+  private readonly logger = new Logger(UpdateOrderStatusUseCase.name);
+
   constructor(
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
@@ -40,7 +43,7 @@ export class UpdateOrderStatusUseCase {
       await this.raffleAutoTicket.cancelOrderTickets(tenantId, id, {
         customerId: order.customerId ?? undefined,
         orderTotal: order.total,
-      }).catch(() => {});
+      }).catch((err) => this.logger.error(`cancelOrderTickets failed orderId=${id} tenantId=${tenantId}`, err?.stack));
     }
 
     return saved;

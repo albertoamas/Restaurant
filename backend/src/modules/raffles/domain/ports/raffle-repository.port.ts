@@ -35,6 +35,9 @@ export interface RaffleRepositoryPort {
   /** Retorna sorteos ACTIVE con ticketMode SPENDING_THRESHOLD. */
   findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]>;
 
+  /** Retorna sorteos ACTIVE o CLOSED con ticketMode SPENDING_THRESHOLD (para revertir al cancelar). */
+  findRevertibleSpendingRaffles(tenantId: string): Promise<Raffle[]>;
+
   /**
    * Inserta tickets asignando números secuenciales de forma atómica.
    * Usa SELECT FOR UPDATE sobre la fila del sorteo para serializar

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
 
@@ -11,6 +11,8 @@ export interface CancelTicketsOptions {
 
 @Injectable()
 export class RaffleAutoTicketService {
+  private readonly logger = new Logger(RaffleAutoTicketService.name);
+
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
@@ -46,6 +48,7 @@ export class RaffleAutoTicketService {
     opts?: CancelTicketsOptions,
   ): Promise<void> {
     await this.repo.deleteTicketsByOrderId(tenantId, orderId);
+    this.logger.log(`Tickets PRODUCT_MATCH eliminados orderId=${orderId} tenantId=${tenantId}`);
 
     if (opts?.customerId && opts?.orderTotal) {
       await this.revertSpendingTickets(tenantId, opts.customerId, opts.orderTotal);
@@ -119,7 +122,7 @@ export class RaffleAutoTicketService {
     customerId: string,
     orderTotal: number,
   ): Promise<void> {
-    const spendingRaffles = await this.repo.findActiveSpendingRaffles(tenantId);
+    const spendingRaffles = await this.repo.findRevertibleSpendingRaffles(tenantId);
     if (!spendingRaffles.length) return;
 
     for (const raffle of spendingRaffles) {

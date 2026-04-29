@@ -184,6 +184,14 @@ export class RaffleRepository implements RaffleRepositoryPort {
     return rows.map((r) => this.raffleToDomain(r));
   }
 
+  async findRevertibleSpendingRaffles(tenantId: string): Promise<Raffle[]> {
+    const rows = await this.prisma.raffle.findMany({
+      where: { tenantId, status: { in: ['ACTIVE', 'CLOSED'] }, ticketMode: 'SPENDING_THRESHOLD' },
+      include: { prizes: { orderBy: { position: 'asc' } } },
+    });
+    return rows.map((r) => this.raffleToDomain(r));
+  }
+
   // ─── Tickets ───────────────────────────────────────────────────────────────
 
   /**

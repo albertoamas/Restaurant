@@ -28,6 +28,7 @@ describe('RaffleAutoTicketService', () => {
     service = new RaffleAutoTicketService(repo);
     repo.addTickets.mockResolvedValue();
     repo.findActiveSpendingRaffles.mockResolvedValue([]);
+    repo.findRevertibleSpendingRaffles.mockResolvedValue([]);
     repo.findActiveRafflesForProducts.mockResolvedValue([]);
   });
 
@@ -189,7 +190,7 @@ describe('RaffleAutoTicketService', () => {
     it('revierte gasto acumulado cuando se proveen customerId y orderTotal', async () => {
       const raffle = makeSpendingRaffle(100);
       repo.deleteTicketsByOrderId.mockResolvedValue();
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
+      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
       repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 50 });
       repo.countTicketsByCustomer.mockResolvedValue(1);
 
@@ -201,10 +202,28 @@ describe('RaffleAutoTicketService', () => {
       expect(repo.subtractCustomerSpending).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 50);
     });
 
+    it('revierte gasto en sorteo CLOSED (no solo ACTIVE)', async () => {
+      const raffle = makeSpendingRaffle(50);
+      repo.deleteTicketsByOrderId.mockResolvedValue();
+      // findRevertibleSpendingRaffles incluye ACTIVE y CLOSED
+      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
+      repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 0 });
+      repo.countTicketsByCustomer.mockResolvedValue(1);
+      repo.deleteExcessTicketsByCustomer.mockResolvedValue();
+
+      await service.cancelOrderTickets('tenant-1', 'order-1', {
+        customerId: 'cust-1',
+        orderTotal: 50,
+      });
+
+      expect(repo.subtractCustomerSpending).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 50);
+      expect(repo.deleteExcessTicketsByCustomer).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 1);
+    });
+
     it('borra tickets en exceso cuando el revertido baja por debajo del umbral', async () => {
       const raffle = makeSpendingRaffle(100);
       repo.deleteTicketsByOrderId.mockResolvedValue();
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
+      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
       // Antes de revertir: total 200 → 2 tickets; tras revertir 150: total 50 → 0 tickets
       repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 50 });
       repo.countTicketsByCustomer.mockResolvedValue(2);
@@ -224,7 +243,7 @@ describe('RaffleAutoTicketService', () => {
       await service.cancelOrderTickets('tenant-1', 'order-1');
 
       expect(repo.subtractCustomerSpending).not.toHaveBeenCalled();
-      expect(repo.findActiveSpendingRaffles).not.toHaveBeenCalled();
+      expect(repo.findRevertibleSpendingRaffles).not.toHaveBeenCalled();
     });
   });
 });
