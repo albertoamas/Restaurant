@@ -43,6 +43,6 @@ export interface OrderRepositoryPort {
   ): Promise<Order>;
   getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult>;
   getReportByRange(tenantId: string, branchId: string | null, from: string, to: string): Promise<DailyReportResult>;
-  getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string): Promise<TopProductDto[]>;
-  getTopCustomers(tenantId: string, branchId: string | null, from: string, to: string): Promise<TopCustomerDto[]>;
+  getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string, limit?: number): Promise<TopProductDto[]>;
+  getTopCustomers(tenantId: string, branchId: string | null, from: string, to: string, limit?: number): Promise<TopCustomerDto[]>;
 }

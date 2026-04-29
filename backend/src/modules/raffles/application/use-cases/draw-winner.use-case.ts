@@ -1,5 +1,5 @@
 import { randomInt } from 'crypto';
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { RaffleDetailDto } from '@pos/shared';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
@@ -10,6 +10,8 @@ export class DrawWinnerUseCase {
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
   ) {}
+
+  private readonly logger = new Logger(DrawWinnerUseCase.name);
 
   async execute(id: string, tenantId: string): Promise<RaffleDetailDto> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
@@ -63,6 +65,7 @@ export class DrawWinnerUseCase {
 
     // Inserción atómica: advisory lock + re-check de estado + insert winner + update status
     await this.repo.drawWinnerAtomic(id, tenantId, winner, raffle.status);
+    this.logger.log(`draw success raffleId=${id} tenantId=${tenantId} position=${nextPosition} ticketId=${winnerTicket.id} newStatus=${raffle.status}`);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
     return result!;

@@ -6,7 +6,6 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { Raffle, RafflePrize, RaffleProps, RaffleStatus } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import { NewTicketInput, RaffleRepositoryPort, SpendingResult } from '../../domain/ports/raffle-repository.port';
-import { RaffleStatus } from '../../domain/entities/raffle.entity';
 
 type RaffleWithRelations = Prisma.RaffleGetPayload<{
   include: {

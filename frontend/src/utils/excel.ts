@@ -91,6 +91,23 @@ function buildExpensesSheet(summary: ExpenseSummaryDto): XLSX.WorkSheet {
   return ws;
 }
 
+export interface ExcelSheet {
+  title: string;
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+export function downloadExcelSheets(filename: string, sheets: ExcelSheet[]): void {
+  const wb = XLSX.utils.book_new();
+  for (const sheet of sheets) {
+    const data = [sheet.headers, ...sheet.rows];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = sheet.headers.map(() => ({ wch: 22 }));
+    XLSX.utils.book_append_sheet(wb, ws, sheet.title.slice(0, 31));
+  }
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+}
+
 export function downloadExcel(
   rangeLabel: string,
   report: DailyReportDto,

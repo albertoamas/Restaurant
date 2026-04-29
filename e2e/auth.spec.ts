@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Seed credentials (demo tenant created by `pnpm --filter backend seed`)
-const OWNER_EMAIL    = 'jimmy75122919@gmail.com';
+const OWNER_EMAIL    = 'owner@demo.com';
 const OWNER_PASSWORD = 'demo123';
 
 test.describe('Autenticación', () => {

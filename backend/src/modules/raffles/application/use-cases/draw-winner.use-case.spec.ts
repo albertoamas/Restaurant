@@ -77,8 +77,7 @@ describe('DrawWinnerUseCase', () => {
   beforeEach(() => {
     repo    = mock<RaffleRepositoryPort>();
     useCase = new DrawWinnerUseCase(repo);
-    repo.saveRaffle.mockResolvedValue({} as any);
-    repo.addWinner.mockResolvedValue({} as any);
+    repo.drawWinnerAtomic.mockResolvedValue();
   });
 
   describe('sorteo de primera posición', () => {
@@ -90,10 +89,10 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(3);
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWING');
+      const newStatus = repo.drawWinnerAtomic.mock.calls[0][3];
+      expect(newStatus).toBe('DRAWING');
     });
 
     it('sorteo de 1 ganador — posición 1, queda DRAWN directamente', async () => {
@@ -104,10 +103,10 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(1);
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWN');
+      const newStatus = repo.drawWinnerAtomic.mock.calls[0][3];
+      expect(newStatus).toBe('DRAWN');
     });
 
     it('puede sortear desde estado CLOSED (isDrawable lo permite)', async () => {
@@ -118,7 +117,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      expect(repo.addWinner).toHaveBeenCalledTimes(1);
+      expect(repo.drawWinnerAtomic).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -135,11 +134,11 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(2);
       expect(winner.ticketId).not.toBe('ticket-0');
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWING');
+      const newStatus = repo.drawWinnerAtomic.mock.calls[0][3];
+      expect(newStatus).toBe('DRAWING');
     });
 
     it('3er draw sortea posición 1 y transiciona a DRAWN', async () => {
@@ -157,10 +156,10 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(1);
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWN');
+      const newStatus = repo.drawWinnerAtomic.mock.calls[0][3];
+      expect(newStatus).toBe('DRAWN');
     });
   });
 
@@ -180,7 +179,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.ticketId).not.toBe('ticket-1');
       expect(['ticket-0', 'ticket-2']).toContain(winner.ticketId);
     });
@@ -201,7 +200,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(2);
     });
 
@@ -222,7 +221,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.position).toBe(3);
     });
 
@@ -242,8 +241,8 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWN');
+      const newStatus = repo.drawWinnerAtomic.mock.calls[0][3];
+      expect(newStatus).toBe('DRAWN');
     });
   });
 
@@ -256,7 +255,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.tenantId).toBe('tenant-1');
       expect(winner.raffleId).toBe('r1');
     });
@@ -269,7 +268,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.prizeDescription).toBe('1er lugar');
     });
 
@@ -281,7 +280,7 @@ describe('DrawWinnerUseCase', () => {
 
       await useCase.execute('r1', 'tenant-1');
 
-      const winner = repo.addWinner.mock.calls[0][0];
+      const winner = repo.drawWinnerAtomic.mock.calls[0][2];
       expect(winner.voided).toBe(false);
     });
   });
@@ -295,14 +294,14 @@ describe('DrawWinnerUseCase', () => {
     it('lanza BadRequestException si el sorteo ya fue completado (DRAWN)', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-      expect(repo.addWinner).not.toHaveBeenCalled();
+      expect(repo.drawWinnerAtomic).not.toHaveBeenCalled();
     });
 
     it('lanza BadRequestException si el sorteo no tiene tickets', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE', 1));
       repo.findRaffleWithTickets.mockResolvedValueOnce({ id: 'r1', tickets: [], winners: [], spendings: [] } as any);
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-      expect(repo.addWinner).not.toHaveBeenCalled();
+      expect(repo.drawWinnerAtomic).not.toHaveBeenCalled();
     });
 
     it('lanza BadRequestException si todos los tickets activos ya ganaron', async () => {
@@ -315,7 +314,7 @@ describe('DrawWinnerUseCase', () => {
       } as any);
 
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-      expect(repo.addWinner).not.toHaveBeenCalled();
+      expect(repo.drawWinnerAtomic).not.toHaveBeenCalled();
     });
   });
 

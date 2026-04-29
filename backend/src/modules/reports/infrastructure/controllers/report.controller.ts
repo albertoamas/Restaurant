@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Inject, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Inject, ParseIntPipe, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -64,9 +64,11 @@ export class ReportController {
     @Query('to') to?: string,
     @Query('branchId') branchId?: string,
     @Query('categoryId', new ParseUUIDPipe({ optional: true })) categoryId?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
+    const effectiveLimit = Math.min(limit ?? 20, 100);
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.orderRepository.getTopProducts(
@@ -75,6 +77,7 @@ export class ReportController {
       from || defaultStart,
       to   || defaultEnd,
       categoryId,
+      effectiveLimit,
     );
   }
 
@@ -85,9 +88,11 @@ export class ReportController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('branchId') branchId?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
+    const effectiveLimit = Math.min(limit ?? 20, 100);
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.orderRepository.getTopCustomers(
@@ -95,6 +100,7 @@ export class ReportController {
       effectiveBranchId,
       from || defaultStart,
       to   || defaultEnd,
+      effectiveLimit,
     );
   }
 }

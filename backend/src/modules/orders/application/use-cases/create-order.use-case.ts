@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, Optional } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { toBoliviaDateString } from '../../../../common/utils/timezone.util';
 import { Order } from '../../domain/entities/order.entity';
@@ -41,6 +41,8 @@ export class CreateOrderUseCase {
 
     @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
+
+  private readonly logger = new Logger(CreateOrderUseCase.name);
 
   async execute(tenantId: string, branchId: string, userId: string, role: UserRole, dto: CreateOrderDto): Promise<Order> {
     // 1. Verificar que la sucursal existe y pertenece a este tenant.
@@ -191,7 +193,7 @@ export class CreateOrderUseCase {
     // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
     if (resolvedCustomerId && this.raffleAutoTicket && !hasCortesia) {
       const raffleItems = dto.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
-      this.raffleAutoTicket.processOrder(tenantId, resolvedCustomerId, orderId, raffleItems, order.total).catch((err) => console.error('[RaffleAutoTicket]', err?.message));
+      this.raffleAutoTicket.processOrder(tenantId, resolvedCustomerId, orderId, raffleItems, order.total).catch((err) => this.logger.error(`RaffleAutoTicket failed orderId=${orderId} tenantId=${tenantId}`, err?.stack));
     }
 
     return saved;

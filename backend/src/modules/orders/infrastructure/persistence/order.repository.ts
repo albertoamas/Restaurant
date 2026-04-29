@@ -335,6 +335,7 @@ export class OrderRepository implements OrderRepositoryPort {
     from: string,
     to: string,
     categoryId?: string,
+    limit = 20,
   ): Promise<TopProductDto[]> {
     const fromTs = new Date(from);
     const toTs   = new Date(to);
@@ -367,7 +368,7 @@ export class OrderRepository implements OrderRepositoryPort {
           AND c.id = ${categoryId}
         GROUP BY oi.product_id, oi.product_name, c.id, c.name
         ORDER BY "totalQuantity" DESC
-        LIMIT 20`;
+        LIMIT ${limit}`;
     } else if (branchId) {
       rows = await this.prisma.$queryRaw<RawRow[]>`
         SELECT oi.product_id AS "productId", oi.product_name AS "productName",
@@ -384,7 +385,7 @@ export class OrderRepository implements OrderRepositoryPort {
           AND o.status != ${OrderStatus.CANCELLED}
         GROUP BY oi.product_id, oi.product_name, c.id, c.name
         ORDER BY "totalQuantity" DESC
-        LIMIT 20`;
+        LIMIT ${limit}`;
     } else if (categoryId) {
       rows = await this.prisma.$queryRaw<RawRow[]>`
         SELECT oi.product_id AS "productId", oi.product_name AS "productName",
@@ -401,7 +402,7 @@ export class OrderRepository implements OrderRepositoryPort {
           AND c.id = ${categoryId}
         GROUP BY oi.product_id, oi.product_name, c.id, c.name
         ORDER BY "totalQuantity" DESC
-        LIMIT 20`;
+        LIMIT ${limit}`;
     } else {
       rows = await this.prisma.$queryRaw<RawRow[]>`
         SELECT oi.product_id AS "productId", oi.product_name AS "productName",
@@ -417,7 +418,7 @@ export class OrderRepository implements OrderRepositoryPort {
           AND o.status != ${OrderStatus.CANCELLED}
         GROUP BY oi.product_id, oi.product_name, c.id, c.name
         ORDER BY "totalQuantity" DESC
-        LIMIT 20`;
+        LIMIT ${limit}`;
     }
 
     return rows.map((r) => ({
@@ -435,6 +436,7 @@ export class OrderRepository implements OrderRepositoryPort {
     branchId: string | null,
     from: string,
     to: string,
+    limit = 20,
   ): Promise<TopCustomerDto[]> {
     const fromTs = new Date(from);
     const toTs   = new Date(to);
@@ -473,7 +475,7 @@ export class OrderRepository implements OrderRepositoryPort {
         )
       GROUP BY c.id, c.name, c.phone
       ORDER BY "totalSpent" DESC
-      LIMIT 10`;
+      LIMIT ${limit}`;
 
     return rows.map((r) => ({
       customerId:    r.customerId,

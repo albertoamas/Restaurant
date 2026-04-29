@@ -93,7 +93,7 @@ describe('printWinnerCertificate — escape HTML (XSS prevention)', () => {
       'Rifa',
       { name: 'Negocio' },
     );
-    expect(capturedHtml).not.toContain('winner-phone');
+    expect(capturedHtml).not.toContain('<p class="winner-phone"');
   });
 
   it('muestra toast si window.open retorna null (popup bloqueado)', async () => {

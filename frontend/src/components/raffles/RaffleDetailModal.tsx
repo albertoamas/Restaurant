@@ -13,6 +13,7 @@ import { DrawingScreen } from './DrawingScreen';
 import { useRaffleDetail } from '../../hooks/useRaffleDetail';
 import { positionLabel } from '../../utils/raffle-utils';
 import { printWinnerCertificate } from '../../utils/raffle-certificate';
+import { downloadExcelSheets } from '../../utils/excel';
 
 // ─── Confirm draw ─────────────────────────────────────────────────────────────
 
@@ -265,7 +266,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
             </div>
 
             {/* ── Acciones ─────────────────────────────────────────────────── */}
-            {(isActive || isReopenable || isDrawable || isDeletable) && (
+            {(isActive || isReopenable || isDrawable || isDeletable || activeWinnersCount > 0) && (
               <div className="pt-1 border-t border-gray-100 space-y-2">
                 {/* Botón principal de sorteo */}
                 {isDrawable && raffle.nextPositionToDraw !== null && (
@@ -283,7 +284,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                 )}
 
                 {/* Acciones secundarias */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {isActive && (
                     <Button variant="secondary" size="sm" onClick={handleClose}
                       loading={busy === 'close'} disabled={!!busy}>
@@ -294,6 +295,31 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                     <Button variant="secondary" size="sm" onClick={handleReopen}
                       loading={busy === 'reopen'} disabled={!!busy}>
                       Reabrir sorteo
+                    </Button>
+                  )}
+                  {activeWinnersCount > 0 && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const activeWinners = raffle.winners
+                          .filter((w) => !w.voided)
+                          .sort((a, b) => a.position - b.position);
+                        downloadExcelSheets(`ganadores-${raffle.name}`, [{
+                          title: 'Ganadores',
+                          headers: ['Posición', 'Nombre', 'Teléfono', 'Nro. Ticket', 'Fecha sorteo', 'Premio'],
+                          rows: activeWinners.map((w) => [
+                            positionLabel(w.position),
+                            w.customer.name,
+                            w.customer.phone ?? '—',
+                            String(w.ticketNumber),
+                            new Date(w.drawnAt).toLocaleDateString('es-BO'),
+                            w.prizeDescription ?? '—',
+                          ]),
+                        }]);
+                      }}
+                    >
+                      Exportar ganadores
                     </Button>
                   )}
                   {/* Eliminar sorteo — oculto temporalmente */}

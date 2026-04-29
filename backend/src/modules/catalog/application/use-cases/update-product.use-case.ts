@@ -30,6 +30,8 @@ export class UpdateProductUseCase {
       }
     }
 
+    const oldImageUrl = product.imageUrl;
+
     product.update({
       categoryId: dto.categoryId,
       name: dto.name,
@@ -37,7 +39,6 @@ export class UpdateProductUseCase {
       imageUrl: dto.imageUrl,
     });
 
-    const oldImageUrl = product.imageUrl;
     const saved = await this.productRepository.save(product);
     this.eventsService?.emitToTenant(tenantId, 'product.updated', saved);
 
