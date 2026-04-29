@@ -26,7 +26,7 @@ export interface UpdateProductRequest {
   categoryId?: string;
   name?: string;
   price?: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
 }
 
 export interface CreateCategoryRequest {

@@ -58,7 +58,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
     e.preventDefault();
     setUploading(true);
     try {
-      let finalImageUrl = form.imageUrl || undefined;
+      let finalImageUrl: string | null | undefined = form.imageUrl || null;
       if (imageFile) {
         finalImageUrl = await uploadsApi.image(imageFile);
       }
