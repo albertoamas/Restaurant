@@ -1,3 +1,5 @@
+import { unlink } from 'fs/promises';
+import { join, basename } from 'path';
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
 import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/ports/category-repository.port';
@@ -35,8 +37,14 @@ export class UpdateProductUseCase {
       imageUrl: dto.imageUrl,
     });
 
+    const oldImageUrl = product.imageUrl;
     const saved = await this.productRepository.save(product);
     this.eventsService?.emitToTenant(tenantId, 'product.updated', saved);
+
+    if (dto.imageUrl !== undefined && oldImageUrl && dto.imageUrl !== oldImageUrl) {
+      unlink(join(process.cwd(), 'uploads', basename(oldImageUrl))).catch(() => {});
+    }
+
     return saved;
   }
 }

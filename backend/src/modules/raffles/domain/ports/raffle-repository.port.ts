@@ -1,5 +1,5 @@
 import { RaffleDetailDto, RaffleDto } from '@pos/shared';
-import { Raffle } from '../entities/raffle.entity';
+import { Raffle, RaffleStatus } from '../entities/raffle.entity';
 import { RaffleWinner } from '../entities/raffle-winner.entity';
 
 export const RAFFLE_REPOSITORY_PORT = 'RaffleRepositoryPort';
@@ -50,6 +50,13 @@ export interface RaffleRepositoryPort {
   addWinner(winner: RaffleWinner): Promise<RaffleWinner>;
   findWinnersByRaffleId(raffleId: string): Promise<RaffleWinner[]>;
   voidWinner(winnerId: string, raffleId: string, tenantId: string): Promise<void>;
+
+  /**
+   * Inserta un ganador y actualiza el estado del sorteo de forma atómica.
+   * Usa advisory lock de PostgreSQL para serializar sorteos concurrentes.
+   * Lanza ConflictException si la posición ya tiene un ganador activo.
+   */
+  drawWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void>;
 
   // ── Spending threshold ────────────────────────────────────────────────────
 

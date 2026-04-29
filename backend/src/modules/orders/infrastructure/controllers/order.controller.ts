@@ -99,7 +99,12 @@ export class OrderController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RegisterOrderPaymentDto,
   ) {
-    return this.registerOrderPaymentUseCase.execute(tenantId, id, user.role, dto);
+    return this.getOrderUseCase.execute(id, tenantId).then((order) => {
+      if (user.branchId && order.branchId !== user.branchId) {
+        throw new ForbiddenException('No tienes permisos para cobrar pedidos de otra sucursal');
+      }
+      return this.registerOrderPaymentUseCase.execute(tenantId, id, user.role, dto);
+    });
   }
 
   @Patch(':id')

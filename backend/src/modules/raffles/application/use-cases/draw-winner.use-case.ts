@@ -53,16 +53,16 @@ export class DrawWinnerUseCase {
       prizeDescription: prize?.prizeDescription ?? null,
     });
 
-    await this.repo.addWinner(winner);
-
-    // Determinamos si ya se sortearon todos los lugares.
+    // Determinamos el nuevo estado antes de persistir atómicamente
     const totalWinnersAfter = activeWinners.length + 1;
     if (totalWinnersAfter >= raffle.numberOfWinners) {
       raffle.finishDrawing();
     } else {
       raffle.startDrawing();
     }
-    await this.repo.saveRaffle(raffle);
+
+    // Inserción atómica: advisory lock + re-check de estado + insert winner + update status
+    await this.repo.drawWinnerAtomic(id, tenantId, winner, raffle.status);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
     return result!;

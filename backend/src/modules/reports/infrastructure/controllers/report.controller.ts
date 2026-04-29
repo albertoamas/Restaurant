@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Inject, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -63,7 +63,7 @@ export class ReportController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('branchId') branchId?: string,
-    @Query('categoryId') categoryId?: string,
+    @Query('categoryId', new ParseUUIDPipe({ optional: true })) categoryId?: string,
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Inject,
+  Logger,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -26,6 +27,8 @@ import { EventsService } from '../events/events.service';
 @UseGuards(AdminGuard)
 @Throttle({ default: { ttl: 60000, limit: 10 } })
 export class AdminController {
+  private readonly logger = new Logger(AdminController.name);
+
   constructor(
     @Inject('TenantRepositoryPort')
     private readonly tenantRepository: TenantRepositoryPort,
@@ -54,8 +57,10 @@ export class AdminController {
   }
 
   @Patch('tenants/:id/toggle')
-  toggleTenant(@Param('id', ParseUUIDPipe) id: string) {
-    return this.tenantRepository.toggleActive(id);
+  async toggleTenant(@Param('id', ParseUUIDPipe) id: string) {
+    const result = await this.tenantRepository.toggleActive(id);
+    this.logger.log(`toggleTenant tenantId=${id} isActive=${result.isActive}`);
+    return result;
   }
 
   @Patch('tenants/:id/plan')
@@ -64,6 +69,7 @@ export class AdminController {
     @Body() dto: UpdatePlanDto,
   ) {
     const result = await this.updateTenantPlanUseCase.execute(id, dto.plan);
+    this.logger.log(`updateTenantPlan tenantId=${id} plan=${dto.plan}`);
     this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
     return result;
   }
@@ -74,6 +80,7 @@ export class AdminController {
     @Body() dto: UpdateModulesDto,
   ) {
     const result = await this.tenantRepository.updateModules(id, dto);
+    this.logger.log(`updateModules tenantId=${id} ${JSON.stringify(dto)}`);
     this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
     return result;
   }

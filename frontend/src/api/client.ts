@@ -4,6 +4,7 @@ const TOKEN_KEY = 'pos_token';
 
 const client = axios.create({
   baseURL: '',
+  timeout: 15000,
 });
 
 client.interceptors.request.use((config) => {

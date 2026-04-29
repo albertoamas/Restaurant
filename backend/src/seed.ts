@@ -21,6 +21,11 @@ const prisma = new PrismaClient();
 const PASSWORD_HASH = '$2b$10$8oTvGty7u4u2obh4a0r9Leq529hbsloH60MXuIlDy6zQEvRwAiVTu';
 
 async function seed() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ ABORTADO: seed no puede ejecutarse en NODE_ENV=production');
+    process.exit(1);
+  }
+
   console.log('Conectado a la base de datos');
 
   // Reset — borrar tenant cascadea a todas las tablas relacionadas

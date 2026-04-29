@@ -1,11 +1,12 @@
 import { randomUUID } from 'crypto';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { RaffleDetailDto, RaffleDto, RaffleSpendingDto, RaffleTicketDto, RaffleTicketMode, RaffleWinnerDto } from '@pos/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Raffle, RafflePrize, RaffleProps, RaffleStatus } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import { NewTicketInput, RaffleRepositoryPort, SpendingResult } from '../../domain/ports/raffle-repository.port';
+import { RaffleStatus } from '../../domain/entities/raffle.entity';
 
 type RaffleWithRelations = Prisma.RaffleGetPayload<{
   include: {
@@ -276,6 +277,49 @@ export class RaffleRepository implements RaffleRepositoryPort {
     await this.prisma.raffleWinner.updateMany({
       where: { id: winnerId, raffleId, tenantId },
       data: { voided: true },
+    });
+  }
+
+  async drawWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Advisory lock por raffle — serializa sorteos concurrentes del mismo sorteo
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`draw-${id}`}))`;
+
+      // Re-verificar estado dentro de la transacción (después de adquirir el lock)
+      const current = await tx.raffle.findFirst({
+        where: { id, tenantId },
+        select: { status: true },
+      });
+      if (!current || (current.status !== 'CLOSED' && current.status !== 'DRAWING')) {
+        throw new ConflictException('El sorteo ya fue completado o está en estado inválido');
+      }
+
+      // Verificar que esta posición no tenga ya un ganador activo
+      const existing = await tx.raffleWinner.findFirst({
+        where: { raffleId: id, position: winner.position, voided: false },
+      });
+      if (existing) {
+        throw new ConflictException(`La posición ${winner.position} ya tiene un ganador activo`);
+      }
+
+      await tx.raffleWinner.create({
+        data: {
+          id: winner.id,
+          tenantId: winner.tenantId,
+          raffleId: winner.raffleId,
+          customerId: winner.customerId,
+          ticketId: winner.ticketId,
+          position: winner.position,
+          prizeDescription: winner.prizeDescription,
+          drawnAt: winner.drawnAt,
+          voided: false,
+        },
+      });
+
+      await tx.raffle.update({
+        where: { id },
+        data: { status: newStatus, updatedAt: new Date() },
+      });
     });
   }
 
