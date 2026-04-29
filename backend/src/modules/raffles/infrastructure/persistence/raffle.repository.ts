@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { ConflictException, Injectable } from '@nestjs/common';
-import { RaffleDetailDto, RaffleDto, RaffleSpendingDto, RaffleTicketDto, RaffleTicketMode, RaffleWinnerDto } from '@pos/shared';
+import { RaffleDetailDto, RaffleDto, RaffleSpendingDto, RaffleTicketMode, RaffleWinnerDto } from '@pos/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Raffle, RafflePrize, RaffleProps, RaffleStatus } from '../../domain/entities/raffle.entity';
@@ -289,7 +289,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
         where: { id, tenantId },
         select: { status: true },
       });
-      if (!current || (current.status !== 'CLOSED' && current.status !== 'DRAWING')) {
+      if (!current || (current.status !== 'ACTIVE' && current.status !== 'CLOSED' && current.status !== 'DRAWING')) {
         throw new ConflictException('El sorteo ya fue completado o está en estado inválido');
       }
 
@@ -345,7 +345,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   }
 
   async subtractCustomerSpending(
-    tenantId: string,
+    _tenantId: string,
     raffleId: string,
     customerId: string,
     amount: number,
