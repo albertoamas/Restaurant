@@ -361,7 +361,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
     return this.prisma.$transaction(async (tx) => {
       // SELECT FOR UPDATE serializa escrituras concurrentes sobre la misma fila.
       await tx.$executeRaw`
-        SELECT id FROM customer_raffle_spendings
+        SELECT id FROM customer_raffle_spending
         WHERE raffle_id = ${raffleId} AND customer_id = ${customerId}
         FOR UPDATE
       `;
