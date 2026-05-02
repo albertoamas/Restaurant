@@ -51,7 +51,7 @@ export interface RaffleRepositoryPort {
   deleteTicketsByOrderId(tenantId: string, orderId: string): Promise<void>;
 
   addWinner(winner: RaffleWinner): Promise<RaffleWinner>;
-  findWinnersByRaffleId(raffleId: string): Promise<RaffleWinner[]>;
+  findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]>;
   voidWinner(winnerId: string, raffleId: string, tenantId: string): Promise<void>;
 
   /**

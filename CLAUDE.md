@@ -83,6 +83,12 @@ The Vite dev server proxies `/api`, `/uploads`, and `/socket.io` to `localhost:3
 - **`prisma generate` EPERM**: The Prisma binary is locked while the backend is running. Stop `pnpm dev:backend` first, generate, then restart.
 - **pnpm strict hoisting**: Installing a new package can rewrite `backend/package.json`'s `onlyBuiltDependencies` array, removing Prisma entries. After `pnpm add`, always check that `@prisma/engines`, `@prisma/client`, and `prisma` are still listed there; revert with `git checkout -- backend/package.json` if needed.
 
+## Key Conventions
+
+- Keep changes small and scoped to the requested module — avoid unsolicited global refactors.
+- All TypeScript; avoid `any` except where justified.
+- Validate changes with `typecheck` (and manual flow testing for affected screens) — the automated test suite is not comprehensive.
+
 ## Backend Architecture
 
 ### Hexagonal (ports & adapters) per module
@@ -139,9 +145,16 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
 | `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
-| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). |
-| `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT |
+| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. |
+| `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `PATCH /admin/tenants/:id/modules`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT. `/modules` sets per-tenant feature flags (`ordersEnabled`, `cashEnabled`, `rafflesEnabled`, etc.) |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
+
+### Global app configuration
+
+- **API prefix**: all routes are under `/api/v1` (set via `setGlobalPrefix` in `main.ts`). Health check `GET /health` runs before the prefix.
+- **ValidationPipe**: `whitelist: true, forbidNonWhitelisted: true, transform: true` — strips unknown fields, rejects requests with extra properties, and auto-transforms primitives.
+- **Error responses**: `HttpExceptionFilter` in `common/filters/` normalizes all HTTP errors to `{ statusCode, message, error, timestamp }`. Use case errors are thrown as NestJS `BadRequestException` / `ForbiddenException` with Spanish messages.
+- **CORS**: in development allows all origins; in production requires `FRONTEND_URL` to be set.
 
 ### Rate Limiting
 
@@ -236,7 +249,7 @@ Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/ut
 
 `packages/shared/src/` exports enums and DTO types. **The backend imports from the compiled `dist/` folder** (via tsconfig paths). Always run `pnpm --filter @pos/shared build` after editing shared types before typechecking the backend.
 
-Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`.
+Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`, `RaffleStatus` (ACTIVE | CLOSED | DRAWING | DRAWN), `RaffleTicketMode` (PRODUCT_MATCH | SPENDING_THRESHOLD).
 
 ## Environment Variables (backend)
 

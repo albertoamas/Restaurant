@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { useRaffles } from '../hooks/useRaffles';
 import { RaffleCard } from '../components/raffles/RaffleCard';
 import { CreateRaffleModal } from '../components/raffles/CreateRaffleModal';
-import { RaffleDetailModal } from '../components/raffles/RaffleDetailModal';
 import type { RaffleDto } from '@pos/shared';
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
@@ -26,13 +26,13 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 }
 
 export function RafflesPage() {
-  const { raffles, setRaffles, loading, reload } = useRaffles();
+  const navigate = useNavigate();
+  const { raffles, setRaffles, loading } = useRaffles();
   const [showCreate, setShowCreate] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   function handleCreated(raffle: RaffleDto) {
     setRaffles((prev) => [raffle, ...prev]);
-    setSelectedId(raffle.id);
+    navigate(`/raffles/${raffle.id}`);
   }
 
   const activeCount = raffles.filter((r) => r.status === 'ACTIVE' || r.status === 'DRAWING').length;
@@ -63,21 +63,13 @@ export function RafflesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {raffles.map((raffle) => (
-            <RaffleCard key={raffle.id} raffle={raffle} onClick={() => setSelectedId(raffle.id)} />
+            <RaffleCard key={raffle.id} raffle={raffle} onClick={() => navigate(`/raffles/${raffle.id}`)} />
           ))}
         </div>
       )}
 
       {showCreate && (
         <CreateRaffleModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
-      )}
-
-      {selectedId && (
-        <RaffleDetailModal
-          raffleId={selectedId}
-          onClose={() => setSelectedId(null)}
-          onUpdate={reload}
-        />
       )}
     </div>
   );

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Modal } from '../ui/Modal';
 import { IconStar, IconCoins, IconTicket } from './RaffleIcons';
 import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
@@ -20,7 +19,6 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
       </svg>
       <input
         type="text"
-        autoFocus
         placeholder="Buscar por nombre o teléfono…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -79,7 +77,6 @@ function SpendingRow({
         </div>
       </div>
 
-      {/* Números de ticket individuales */}
       {customerTickets.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {customerTickets.map((t) => (
@@ -99,7 +96,6 @@ function SpendingRow({
         </div>
       )}
 
-      {/* Barra de progreso hacia el siguiente ticket */}
       <div className="mt-1.5">
         <div className="flex items-center gap-2 mb-1">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -113,10 +109,11 @@ function SpendingRow({
   );
 }
 
-export function ParticipantsModal({ raffle, onClose }: { raffle: DetailRaffle; onClose: () => void }) {
+// ─── Lista embebible (sin modal wrapper) ──────────────────────────────────────
+
+export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
   const [search, setSearch] = useState('');
   const q = search.toLowerCase().trim();
-
   const isSpending = raffle.ticketMode === 'SPENDING_THRESHOLD';
 
   if (isSpending) {
@@ -134,51 +131,49 @@ export function ParticipantsModal({ raffle, onClose }: { raffle: DetailRaffle; o
     const winnerByTicket = new Map(activeWinners.map((w) => [w.ticketId, w.position]));
 
     return (
-      <Modal isOpen onClose={onClose} title={`Participantes — ${raffle.name}`} size="full">
-        <div className="space-y-3">
-          <SearchBox value={search} onChange={setSearch} />
+      <div className="space-y-3">
+        <SearchBox value={search} onChange={setSearch} />
 
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-400">
-              {filtered.length === raffle.spendings.length
-                ? `${raffle.spendings.length} cliente${raffle.spendings.length !== 1 ? 's' : ''}`
-                : `${filtered.length} de ${raffle.spendings.length} clientes`}
-            </p>
-            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
-              <IconCoins className="w-3 h-3" />
-              Cada {threshold} Bs = 1 ticket
-            </span>
-          </div>
-
-          {raffle.spendings.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
-              Sin acumulados aún
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 text-sm">
-              Sin resultados para "{search}"
-            </div>
-          ) : (
-            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-0.5">
-              {filtered.map((s) => {
-                const customerTickets: SpendingTicket[] = (raffle.tickets ?? [])
-                  .filter((t) => t.customerId === s.customerId)
-                  .map((t) => ({ id: t.id, ticketNumber: t.ticketNumber, winnerPosition: winnerByTicket.get(t.id) }));
-                return (
-                  <SpendingRow
-                    key={s.customerId}
-                    spending={s}
-                    threshold={threshold}
-                    isWinner={winnerByCustomer.has(s.customerId)}
-                    winnerPosition={winnerByCustomer.get(s.customerId)}
-                    customerTickets={customerTickets}
-                  />
-                );
-              })}
-            </div>
-          )}
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-400">
+            {filtered.length === raffle.spendings.length
+              ? `${raffle.spendings.length} cliente${raffle.spendings.length !== 1 ? 's' : ''}`
+              : `${filtered.length} de ${raffle.spendings.length} clientes`}
+          </p>
+          <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+            <IconCoins className="w-3 h-3" />
+            Cada {threshold} Bs = 1 ticket
+          </span>
         </div>
-      </Modal>
+
+        {raffle.spendings.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
+            Sin acumulados aún
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">
+            Sin resultados para "{search}"
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {filtered.map((s) => {
+              const customerTickets: SpendingTicket[] = (raffle.tickets ?? [])
+                .filter((t) => t.customerId === s.customerId)
+                .map((t) => ({ id: t.id, ticketNumber: t.ticketNumber, winnerPosition: winnerByTicket.get(t.id) }));
+              return (
+                <SpendingRow
+                  key={s.customerId}
+                  spending={s}
+                  threshold={threshold}
+                  isWinner={winnerByCustomer.has(s.customerId)}
+                  winnerPosition={winnerByCustomer.get(s.customerId)}
+                  customerTickets={customerTickets}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -193,57 +188,56 @@ export function ParticipantsModal({ raffle, onClose }: { raffle: DetailRaffle; o
     : raffle.tickets;
 
   return (
-    <Modal isOpen onClose={onClose} title={`Participantes — ${raffle.name}`} size="full">
-      <div className="space-y-3">
-        <SearchBox value={search} onChange={setSearch} />
+    <div className="space-y-3">
+      <SearchBox value={search} onChange={setSearch} />
 
-        <p className="text-xs text-gray-400">
-          {filtered.length === raffle.tickets.length
-            ? `${raffle.tickets.length} participante${raffle.tickets.length !== 1 ? 's' : ''}`
-            : `${filtered.length} de ${raffle.tickets.length} participantes`}
-        </p>
+      <p className="text-xs text-gray-400">
+        {filtered.length === raffle.tickets.length
+          ? `${raffle.tickets.length} participante${raffle.tickets.length !== 1 ? 's' : ''}`
+          : `${filtered.length} de ${raffle.tickets.length} participantes`}
+      </p>
 
-        {raffle.tickets.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
-            Sin tickets aún
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">
-            Sin resultados para "{search}"
-          </div>
-        ) : (
-          <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-0.5">
-            {filtered.map((t) => {
-              const win = raffle.winners.find((w) => w.ticketId === t.id && !w.voided);
-              return (
-                <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
-                  win ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'
+      {raffle.tickets.length === 0 ? (
+        <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
+          Sin tickets aún
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-10 text-gray-400 text-sm">
+          Sin resultados para "{search}"
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {filtered.map((t) => {
+            const win = raffle.winners.find((w) => w.ticketId === t.id && !w.voided);
+            return (
+              <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
+                win ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'
+              }`}>
+                <span className={`text-xs font-mono font-bold shrink-0 w-9 text-center ${
+                  win ? 'text-amber-700' : 'text-gray-400'
                 }`}>
-                  <span className={`text-xs font-mono font-bold shrink-0 w-9 text-center ${
-                    win ? 'text-amber-700' : 'text-gray-400'
-                  }`}>
-                    #{t.ticketNumber}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${win ? 'text-amber-900' : 'text-gray-800'}`}>
-                      {t.customer.name}
-                    </p>
-                    {t.customer.phone && (
-                      <p className="text-xs text-gray-400 mt-0.5">{t.customer.phone}</p>
-                    )}
-                  </div>
-                  {win && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wide">
-                      <IconStar className="w-2.5 h-2.5" />
-                      {positionLabel(win.position)}
-                    </span>
+                  #{t.ticketNumber}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold truncate ${win ? 'text-amber-900' : 'text-gray-800'}`}>
+                    {t.customer.name}
+                  </p>
+                  {t.customer.phone && (
+                    <p className="text-xs text-gray-400 mt-0.5">{t.customer.phone}</p>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </Modal>
+                {win && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wide">
+                    <IconStar className="w-2.5 h-2.5" />
+                    {positionLabel(win.position)}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
+

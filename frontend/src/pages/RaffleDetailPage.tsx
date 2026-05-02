@@ -1,19 +1,18 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/auth.context';
-import { useSettingsStore } from '../../store/settings.store';
-import { ParticipantsModal } from './ParticipantsModal';
-import { Modal } from '../ui/Modal';
-import { Button } from '../ui/Button';
-import { Spinner } from '../ui/Spinner';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/auth.context';
+import { useSettingsStore } from '../store/settings.store';
+import { ParticipantsList } from '../components/raffles/ParticipantsModal';
+import { Button } from '../components/ui/Button';
+import { Spinner } from '../components/ui/Spinner';
 import type { RaffleStatus } from '@pos/shared';
-import { StatusBadge } from './StatusBadge';
-import { IconTicket, IconPackage, IconGift, IconAward, IconDice, IconCoins } from './RaffleIcons';
-import { WinnerModal } from './WinnerModal';
-import { DrawingScreen } from './DrawingScreen';
-import { useRaffleDetail } from '../../hooks/useRaffleDetail';
-import { positionLabel } from '../../utils/raffle-utils';
-import { printWinnerCertificate } from '../../utils/raffle-certificate';
-import { downloadExcelSheets } from '../../utils/excel';
+import { StatusBadge } from '../components/raffles/StatusBadge';
+import { IconTicket, IconPackage, IconGift, IconAward, IconDice, IconCoins } from '../components/raffles/RaffleIcons';
+import { WinnerModal } from '../components/raffles/WinnerModal';
+import { DrawingScreen } from '../components/raffles/DrawingScreen';
+import { useRaffleDetail } from '../hooks/useRaffleDetail';
+import { positionLabel } from '../utils/raffle-utils';
+import { printWinnerCertificate } from '../utils/raffle-certificate';
+import { downloadExcelSheets } from '../utils/excel';
 
 // ─── Confirm draw ─────────────────────────────────────────────────────────────
 
@@ -24,8 +23,12 @@ function ConfirmDrawModal({
   onConfirm: () => void; onCancel: () => void; loading: boolean;
 }) {
   return (
-    <Modal isOpen onClose={onCancel} title={`Sortear ${positionLabel(nextPosition)}`} size="sm">
-      <div className="space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+        <h3 className="text-base font-bold text-gray-900">
+          Sortear {positionLabel(nextPosition)}
+        </h3>
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
           <p className="text-sm font-semibold text-amber-900 mb-1.5">Esta acción no se puede deshacer</p>
           <p className="text-xs text-amber-700 leading-relaxed">
@@ -44,7 +47,7 @@ function ConfirmDrawModal({
           </Button>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 
@@ -65,13 +68,24 @@ function PositionMedal({ position }: { position: number }) {
   );
 }
 
-// ─── Main modal ───────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────────
 
-export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
-  raffleId: string; onClose: () => void; onUpdate: () => void;
-}) {
+export function RaffleDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  if (!id) {
+    navigate('/raffles', { replace: true });
+    return null;
+  }
+  return <RaffleDetailContent id={id} />;
+}
+
+function RaffleDetailContent({ id }: { id: string }) {
+  const navigate = useNavigate();
+  const goBack = () => navigate('/raffles');
+
   const {
-    raffle, loading, busy,
+    raffle, loading, error, busy, deleted,
     showConfirm, setShowConfirm,
     deleteConfirm, setDeleteConfirm,
     drawingPosition, pendingWinnerName,
@@ -80,16 +94,15 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
     isDrawable, isDeletable, isActive, isReopenable, canVoid,
     availableTickets, activeWinnersCount,
-  } = useRaffleDetail(raffleId, onClose, onUpdate);
-
-  const [showParticipants, setShowParticipants] = useState(false);
+  } = useRaffleDetail(id, goBack, () => {});
 
   const { user } = useAuth();
-  const { businessAddress, businessPhone } = useSettingsStore();
+  const { businessAddress, businessPhone, tenantLogo } = useSettingsStore();
   const business = {
     name:    user?.tenantName ?? '',
     address: businessAddress || undefined,
     phone:   businessPhone   || undefined,
+    logoUrl: tenantLogo,
   };
 
   const isSpending = raffle?.ticketMode === 'SPENDING_THRESHOLD';
@@ -97,41 +110,86 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
 
   return (
     <>
-      <Modal isOpen onClose={onClose} title={raffle?.name ?? 'Sorteo'} size="xl">
-        {loading || !raffle ? (
-          <div className="flex justify-center py-12"><Spinner /></div>
+      <div className="p-4 lg:p-6 max-w-3xl mx-auto">
+
+        {/* ── Navegación — Fix 5: deshabilitado durante operaciones ───────── */}
+        <button
+          onClick={goBack}
+          disabled={!!busy}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5 group transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver a Sorteos
+        </button>
+
+        {/* Fix 3: lógica tristate — loading / error / contenido */}
+        {loading ? (
+          <div className="flex justify-center py-20"><Spinner /></div>
+        ) : error || !raffle ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center">
+            <p className="text-sm font-semibold text-red-700 mb-1">No se pudo cargar el sorteo</p>
+            <p className="text-xs text-red-500 mb-4">Es posible que haya sido eliminado o no tengas acceso.</p>
+            <button
+              onClick={goBack}
+              className="text-sm font-medium text-red-600 hover:text-red-800 underline underline-offset-2"
+            >
+              Volver a Sorteos
+            </button>
+          </div>
         ) : (
           <div className="space-y-5">
 
-            {/* ── Badges de estado y modo ─────────────────────────────────── */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusBadge status={raffle.status as RaffleStatus} />
+            {/* ── Encabezado de la página ──────────────────────────────────── */}
+            <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h1 className="text-2xl font-black text-gray-900 font-heading leading-tight">
+                  {raffle.name}
+                </h1>
+                {isDeletable && (
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    disabled={!!busy}
+                    className="shrink-0 text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                    title="Eliminar sorteo"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+              </div>
 
-              {isSpending ? (
-                <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full font-medium">
-                  <IconCoins className="w-3 h-3 text-amber-500" />
-                  Cada {raffle.spendingThreshold} Bs = 1 ticket
-                </span>
-              ) : raffle.productName ? (
-                <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-                  <IconPackage className="w-3 h-3 text-gray-400" />
-                  {raffle.productName}
-                </span>
-              ) : null}
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusBadge status={raffle.status as RaffleStatus} />
 
-              <span className="ml-auto text-xs text-gray-400 font-medium tabular-nums">
-                {activeWinnersCount} / {raffle.numberOfWinners} sorteados
-              </span>
+                {isSpending ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full font-medium">
+                    <IconCoins className="w-3 h-3 text-amber-500" />
+                    Cada {raffle.spendingThreshold} Bs = 1 ticket
+                  </span>
+                ) : raffle.productName ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                    <IconPackage className="w-3 h-3 text-gray-400" />
+                    {raffle.productName}
+                  </span>
+                ) : null}
+
+                <span className="ml-auto text-xs text-gray-400 font-medium tabular-nums">
+                  {activeWinnersCount} / {raffle.numberOfWinners} sorteados
+                </span>
+              </div>
+
+              {raffle.description && (
+                <p className="text-sm text-gray-500 leading-relaxed mt-3">{raffle.description}</p>
+              )}
             </div>
 
-            {raffle.description && (
-              <p className="text-sm text-gray-500 leading-relaxed -mt-1">{raffle.description}</p>
-            )}
-
-            {/* ── Premios ─────────────────────────────────────────────────── */}
+            {/* ── Premios ──────────────────────────────────────────────────── */}
             {raffle.prizes.length > 0 && (
-              <section>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Premios</p>
+              <section className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Premios</p>
                 <div className="space-y-2">
                   {raffle.prizes.map((p) => {
                     const activeWinner = raffle.winners.find((w) => w.position === p.position && !w.voided);
@@ -221,10 +279,9 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
               </section>
             )}
 
-            {/* ── Stats + participantes ────────────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Tickets en ánfora */}
-              <div className="bg-gray-50 rounded-xl px-4 py-3.5">
+            {/* ── Stats ────────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] px-5 py-4">
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isDrawable && !isActive ? 'Tickets disponibles' : 'Tickets en ánfora'}
                 </p>
@@ -242,33 +299,27 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                 </div>
               </div>
 
-              {/* Participantes → abre modal */}
-              <button
-                onClick={() => setShowParticipants(true)}
-                className="bg-gray-50 hover:bg-gray-100 rounded-xl px-4 py-3.5 text-left group transition-colors"
-              >
+              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] px-5 py-4">
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isSpending ? 'Clientes' : 'Participantes'}
                 </p>
-                <div className="flex items-end justify-between">
-                  <span className="font-heading font-black text-3xl text-gray-900 leading-none">
-                    {participantCount}
-                  </span>
-                  <svg className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors mb-0.5"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1.5 group-hover:text-violet-500 transition-colors">
-                  Ver detalle →
-                </p>
-              </button>
+                <span className="font-heading font-black text-3xl text-gray-900 leading-none">
+                  {participantCount}
+                </span>
+              </div>
             </div>
 
+            {/* ── Participantes (inline) ────────────────────────────────────── */}
+            <section className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
+                {isSpending ? 'Clientes y acumulados' : 'Participantes'}
+              </p>
+              <ParticipantsList raffle={raffle} />
+            </section>
+
             {/* ── Acciones ─────────────────────────────────────────────────── */}
-            {(isActive || isReopenable || isDrawable || isDeletable || activeWinnersCount > 0) && (
-              <div className="pt-1 border-t border-gray-100 space-y-2">
-                {/* Botón principal de sorteo */}
+            {(isActive || isReopenable || isDrawable || activeWinnersCount > 0) && (
+              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5 space-y-3">
                 {isDrawable && raffle.nextPositionToDraw !== null && (
                   <Button
                     variant="primary"
@@ -283,7 +334,6 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                   </Button>
                 )}
 
-                {/* Acciones secundarias */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {isActive && (
                     <Button variant="secondary" size="sm" onClick={handleClose}
@@ -322,13 +372,15 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
                       Exportar ganadores
                     </Button>
                   )}
-                  {/* Eliminar sorteo — oculto temporalmente */}
                 </div>
               </div>
             )}
+
           </div>
         )}
-      </Modal>
+      </div>
+
+      {/* ── Overlays (se montan sobre la página igual que sobre el modal) ─── */}
 
       {showConfirm && raffle?.nextPositionToDraw !== null && raffle && (
         <ConfirmDrawModal
@@ -351,10 +403,6 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
 
       {drawnWinner && raffle && (
         <WinnerModal raffleName={raffle.name} winner={drawnWinner} onClose={() => setDrawnWinner(null)} />
-      )}
-
-      {showParticipants && raffle && (
-        <ParticipantsModal raffle={raffle} onClose={() => setShowParticipants(false)} />
       )}
 
       {deleteConfirm && raffle && (
@@ -384,7 +432,7 @@ export function RaffleDetailModal({ raffleId, onClose, onUpdate }: {
               </button>
               <button
                 onClick={handleDelete}
-                disabled={busy === 'delete'}
+                disabled={busy === 'delete' || deleted}
                 className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
               >
                 {busy === 'delete' ? 'Eliminando…' : 'Sí, eliminar'}

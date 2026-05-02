@@ -2,16 +2,24 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/auth.context';
 
 const pageTitles: Record<string, string> = {
-  '/pos':      'Punto de Venta',
-  '/orders':   'Pedidos',
-  '/report':   'Reporte Diario',
-  '/products': 'Productos',
-  '/kitchen':  'Cocina',
-  '/cash':     'Caja',
-  '/team':     'Equipo',
-  '/branches': 'Sucursales',
-  '/settings': 'Configuración',
+  '/pos':       'Punto de Venta',
+  '/orders':    'Pedidos',
+  '/report':    'Reporte Diario',
+  '/products':  'Productos',
+  '/kitchen':   'Cocina',
+  '/cash':      'Caja',
+  '/team':      'Equipo',
+  '/branches':  'Sucursales',
+  '/settings':  'Configuración',
+  '/expenses':  'Gastos',
+  '/customers': 'Clientes',
+  '/raffles':   'Sorteos',
 };
+
+function getTitle(pathname: string): string {
+  if (pathname.startsWith('/raffles/')) return 'Sorteos';
+  return pageTitles[pathname] ?? 'POS';
+}
 
 function formatDate(): string {
   return new Date().toLocaleDateString('es-BO', {
@@ -35,7 +43,7 @@ interface HeaderProps {
 export function Header({ onMenuOpen }: HeaderProps) {
   const location = useLocation();
   const { user } = useAuth();
-  const title = pageTitles[location.pathname] || 'POS';
+  const title = getTitle(location.pathname);
   const userInitial = (user?.name ?? '?')[0].toUpperCase();
 
   return (

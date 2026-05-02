@@ -18,6 +18,7 @@ import { BranchesPage } from './pages/BranchesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { RafflesPage } from './pages/RafflesPage';
+import { RaffleDetailPage } from './pages/RaffleDetailPage';
 import { AdminPage } from './pages/AdminPage';
 import { LandingPage } from './pages/LandingPage';
 
@@ -66,6 +67,10 @@ function AppRoutes() {
             <Route
               path="/raffles"
               element={<ModuleRoute enabled={rafflesEnabled} element={<RafflesPage />} />}
+            />
+            <Route
+              path="/raffles/:id"
+              element={<ModuleRoute enabled={rafflesEnabled} element={<RaffleDetailPage />} />}
             />
             <Route path="/products"  element={<ProductsPage />} />
             <Route path="/settings"  element={<SettingsPage />} />

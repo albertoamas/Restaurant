@@ -14,9 +14,11 @@ export function useRaffleDetail(
 ) {
   const [raffle, setRaffle] = useState<DetailRaffle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const [drawingPosition, setDrawingPosition] = useState<number | null>(null);
   const [pendingWinnerName, setPendingWinnerName] = useState<string | null>(null);
   const [drawnWinner, setDrawnWinner] = useState<RaffleWinnerDto | null>(null);
@@ -25,8 +27,10 @@ export function useRaffleDetail(
   const reload = useCallback(async () => {
     try {
       setRaffle(await rafflesApi.getOne(raffleId));
+      setError(false);
     } catch (err) {
       handleApiError(err, 'Error al cargar sorteo');
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -69,15 +73,18 @@ export function useRaffleDetail(
   }
 
   async function handleDelete() {
-    if (!raffle) return;
+    if (!raffle || deleted) return;
     setDeleteConfirm(false);
     setBusy('delete');
     try {
       await rafflesApi.delete(raffle.id);
+      setDeleted(true);
       onUpdate();
       onClose();
-    } catch (err) { handleApiError(err, 'Error al eliminar sorteo'); }
-    finally { setBusy(null); }
+    } catch (err) {
+      handleApiError(err, 'Error al eliminar sorteo');
+      setBusy(null);
+    }
   }
 
   async function handleDraw() {
@@ -122,7 +129,9 @@ export function useRaffleDetail(
   return {
     raffle,
     loading,
+    error,
     busy,
+    deleted,
     showConfirm,
     setShowConfirm,
     deleteConfirm,

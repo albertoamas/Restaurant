@@ -17,7 +17,7 @@ export class VoidWinnerUseCase {
       throw new BadRequestException('Solo se pueden anular ganadores de sorteos en curso o finalizados');
     }
 
-    const winners = await this.repo.findWinnersByRaffleId(raffleId);
+    const winners = await this.repo.findWinnersByRaffleId(raffleId, tenantId);
     const winner = winners.find((w) => w.id === winnerId && !w.voided);
     if (!winner) throw new NotFoundException(`Ganador ${winnerId} no encontrado o ya anulado`);
 

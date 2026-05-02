@@ -14,6 +14,10 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+export function resolveUploadUrl(url: string): string {
+  return url.startsWith('http') ? url : `${window.location.origin}${url}`;
+}
+
 const ORDER_TYPE_LABEL: Record<OrderType, string> = {
   [OrderType.DINE_IN]:  'LOCAL',
   [OrderType.TAKEOUT]:  'PARA LLEVAR',
@@ -203,11 +207,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   const customerLine = order.customer?.name
     ? `<div class="center" style="font-size:8pt">Cliente: ${escapeHtml(order.customer.name)}</div>` : '';
 
-  const logoSrc = settings.logoUrl
-    ? (settings.logoUrl.startsWith('http')
-        ? settings.logoUrl
-        : `${window.location.origin}${settings.logoUrl}`)
-    : null;
+  const logoSrc = settings.logoUrl ? resolveUploadUrl(settings.logoUrl) : null;
   const logoBlock = logoSrc
     ? `<div class="center" style="margin-bottom:4pt">
          <img src="${logoSrc}" alt="" style="width:40mm;height:auto;display:block;margin:0 auto"/>

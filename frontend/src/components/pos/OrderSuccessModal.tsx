@@ -3,8 +3,7 @@ import { OrderType } from '@pos/shared';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { printReceipt } from '../../utils/print';
-import { useSettingsStore } from '../../store/settings.store';
-import { useAuth } from '../../context/auth.context';
+import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 
 interface Props {
   isOpen: boolean;
@@ -29,16 +28,8 @@ const confettiPieces = [
 ];
 
 export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Creado!' }: Props) {
-  const { user } = useAuth();
-  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
-
-  const handlePrintReceipt = () => printReceipt(order, {
-    businessName: user?.tenantName ?? 'Mi Negocio',
-    businessAddress,
-    businessPhone,
-    receiptSlogan,
-    logoUrl: tenantLogo,
-  });
+  const receiptSettings = useReceiptSettings();
+  const handlePrintReceipt = () => printReceipt(order, receiptSettings);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">

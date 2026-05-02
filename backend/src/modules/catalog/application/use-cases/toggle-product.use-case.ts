@@ -17,6 +17,9 @@ export class ToggleProductUseCase {
       throw new NotFoundException(`Product ${id} not found`);
     }
 
+    // Nota: no se verifica si el producto está en uso en un sorteo ACTIVE/DRAWING
+    // porque CatalogModule ya es dependencia de RafflesModule — importarlo aquí crearía
+    // una dependencia circular. Limitación arquitectónica conocida y documentada en CLAUDE.md.
     product.isActive = !product.isActive;
 
     const saved = await this.productRepository.save(product);

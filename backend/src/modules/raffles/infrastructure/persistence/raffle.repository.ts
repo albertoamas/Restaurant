@@ -260,9 +260,9 @@ export class RaffleRepository implements RaffleRepositoryPort {
     return winner;
   }
 
-  async findWinnersByRaffleId(raffleId: string): Promise<RaffleWinner[]> {
+  async findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]> {
     const rows = await this.prisma.raffleWinner.findMany({
-      where: { raffleId },
+      where: { raffleId, tenantId },
       orderBy: { position: 'desc' },
     });
     return rows.map((r) =>
@@ -353,7 +353,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   }
 
   async subtractCustomerSpending(
-    _tenantId: string,
+    tenantId: string,
     raffleId: string,
     customerId: string,
     amount: number,
@@ -362,7 +362,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
       // SELECT FOR UPDATE serializa escrituras concurrentes sobre la misma fila.
       await tx.$executeRaw`
         SELECT id FROM customer_raffle_spending
-        WHERE raffle_id = ${raffleId} AND customer_id = ${customerId}
+        WHERE raffle_id = ${raffleId} AND customer_id = ${customerId} AND tenant_id = ${tenantId}
         FOR UPDATE
       `;
       const record = await tx.customerRaffleSpending.findUnique({
