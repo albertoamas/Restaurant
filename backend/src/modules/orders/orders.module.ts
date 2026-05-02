@@ -14,6 +14,7 @@ import { GetOrderUseCase } from './application/use-cases/get-order.use-case';
 import { UpdateOrderStatusUseCase } from './application/use-cases/update-order-status.use-case';
 import { RegisterOrderPaymentUseCase } from './application/use-cases/register-order-payment.use-case';
 import { EditOrderUseCase } from './application/use-cases/edit-order.use-case';
+import { ResetOrderSequenceUseCase } from './application/use-cases/reset-order-sequence.use-case';
 
 @Module({
   imports: [BranchModule, CatalogModule, EventsModule, CustomersModule, CashSessionModule, RafflesModule, CommonModule],
@@ -29,6 +30,7 @@ import { EditOrderUseCase } from './application/use-cases/edit-order.use-case';
     UpdateOrderStatusUseCase,
     RegisterOrderPaymentUseCase,
     EditOrderUseCase,
+    ResetOrderSequenceUseCase,
   ],
   exports: ['OrderRepositoryPort'],
 })

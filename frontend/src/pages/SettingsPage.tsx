@@ -6,6 +6,7 @@ import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
 import { adminApi } from '../api/admin.api';
 import { tenantsApi } from '../api/tenants.api';
+import { ordersApi } from '../api/orders.api';
 import { uploadsApi } from '../api/uploads.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -119,6 +120,8 @@ export function SettingsPage() {
   };
 
   const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
+  const [resetNowConfirm, setResetNowConfirm] = useState(false);
+  const [resetNowLoading, setResetNowLoading] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -341,6 +344,57 @@ export function SettingsPage() {
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          {!resetNowConfirm ? (
+            <button
+              type="button"
+              onClick={() => setResetNowConfirm(true)}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-amber-600 transition-colors group"
+            >
+              <svg className="w-4 h-4 group-hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reiniciar contador ahora
+            </button>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-900 mb-0.5">¿Reiniciar el contador ahora?</p>
+              <p className="text-xs text-amber-700 mb-3">
+                El próximo pedido empezará desde <strong>#1</strong>. Los pedidos existentes conservan su número.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setResetNowConfirm(false)}
+                  disabled={resetNowLoading}
+                  className="text-xs py-1.5 px-3 h-auto"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  loading={resetNowLoading}
+                  onClick={async () => {
+                    setResetNowLoading(true);
+                    try {
+                      await ordersApi.resetSequence();
+                      toast.success('Contador reiniciado — el próximo pedido será #1');
+                      setResetNowConfirm(false);
+                    } catch (err) {
+                      handleApiError(err, 'Error al reiniciar contador');
+                    } finally {
+                      setResetNowLoading(false);
+                    }
+                  }}
+                  className="text-xs py-1.5 px-3 h-auto"
+                >
+                  Sí, reiniciar
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 

@@ -486,6 +486,12 @@ export class OrderRepository implements OrderRepositoryPort {
     }));
   }
 
+  async resetOrderSequences(tenantId: string, periods: string[]): Promise<void> {
+    await this.prisma.branchOrderSequence.deleteMany({
+      where: { tenantId, period: { in: periods } },
+    });
+  }
+
   private mapReport(row: Record<string, unknown>): DailyReportResult {
     return {
       totalSales:    Number(row.totalSales   ?? 0),

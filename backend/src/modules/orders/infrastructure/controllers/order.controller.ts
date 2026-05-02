@@ -4,6 +4,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,8 +12,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { OrderStatus } from '@pos/shared';
+import { OrderStatus, UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { Roles } from '../../../../common/decorators/roles.decorator';
 import { ModuleGuard } from '../../../../common/guards/module.guard';
 import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import {
@@ -30,6 +33,7 @@ import { UpdateOrderStatusUseCase } from '../../application/use-cases/update-ord
 import { RegisterOrderPaymentUseCase } from '../../application/use-cases/register-order-payment.use-case';
 import { EditOrderUseCase } from '../../application/use-cases/edit-order.use-case';
 import { EditOrderDto } from '../../application/dto/edit-order.dto';
+import { ResetOrderSequenceUseCase } from '../../application/use-cases/reset-order-sequence.use-case';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, ModuleGuard)
@@ -42,6 +46,7 @@ export class OrderController {
     private readonly updateOrderStatusUseCase: UpdateOrderStatusUseCase,
     private readonly registerOrderPaymentUseCase: RegisterOrderPaymentUseCase,
     private readonly editOrderUseCase: EditOrderUseCase,
+    private readonly resetOrderSequenceUseCase: ResetOrderSequenceUseCase,
   ) {}
 
   @Post()
@@ -135,5 +140,13 @@ export class OrderController {
       }
       return this.updateOrderStatusUseCase.execute(id, tenantId, dto.status);
     });
+  }
+
+  @Post('reset-sequence')
+  @HttpCode(200)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.OWNER)
+  resetSequence(@CurrentTenant() tenantId: string) {
+    return this.resetOrderSequenceUseCase.execute(tenantId);
   }
 }

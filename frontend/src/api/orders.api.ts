@@ -38,4 +38,7 @@ export const ordersApi = {
 
   update: (id: string, data: EditOrderRequest) =>
     client.patch<OrderDto>(`/api/v1/orders/${id}`, data).then((r) => r.data),
+
+  resetSequence: () =>
+    client.post<{ reset: boolean }>('/api/v1/orders/reset-sequence').then((r) => r.data),
 };
