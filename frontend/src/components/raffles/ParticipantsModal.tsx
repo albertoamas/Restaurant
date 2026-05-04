@@ -5,6 +5,7 @@ import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
 import { positionLabel } from '../../utils/raffle-utils';
 import { rafflesApi } from '../../api/raffles.api';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 interface SpendingTicket {
   id: string;
@@ -57,6 +58,7 @@ function SpendingRow({
   onDeliver: (ticketIds: string[]) => Promise<void>;
 }) {
   const [delivering, setDelivering] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const progressInBracket = spending.totalSpent % threshold;
   const pct = Math.round((progressInBracket / threshold) * 100);
 
@@ -64,11 +66,12 @@ function SpendingRow({
   const pendingTickets = customerTickets.filter((t) => !isTicketDelivered(t));
   const allDelivered = customerTickets.length > 0 && pendingTickets.length === 0;
 
-  const handleDeliver = async () => {
+  const handleConfirmDeliver = async () => {
     if (!pendingTickets.length) return;
     setDelivering(true);
     try {
       await onDeliver(pendingTickets.map((t) => t.id));
+      setConfirmOpen(false);
     } finally {
       setDelivering(false);
     }
@@ -142,27 +145,31 @@ function SpendingRow({
             </p>
           ) : pendingTickets.length > 0 && (
             <button
-              onClick={handleDeliver}
-              disabled={delivering}
-              className="mb-1 text-[10px] font-semibold text-violet-600 hover:text-violet-800 disabled:opacity-50 flex items-center gap-1 transition-colors"
+              onClick={() => setConfirmOpen(true)}
+              className="mb-1 text-[10px] font-semibold text-violet-600 hover:text-violet-800 flex items-center gap-1 transition-colors"
             >
-              {delivering ? (
-                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-              ) : (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-              {delivering
-                ? 'Guardando…'
-                : pendingTickets.length === 1
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {pendingTickets.length === 1
                 ? 'Marcar ticket como entregado'
                 : `Marcar ${pendingTickets.length} tickets como entregados`}
             </button>
           )}
+
+          <ConfirmModal
+            isOpen={confirmOpen}
+            onClose={() => setConfirmOpen(false)}
+            onConfirm={handleConfirmDeliver}
+            loading={delivering}
+            title="Confirmar entrega"
+            message={
+              pendingTickets.length === 1
+                ? `¿Confirmas que entregaste el ticket #${pendingTickets[0]?.ticketNumber} a ${spending.customer.name}?`
+                : `¿Confirmas que entregaste ${pendingTickets.length} tickets a ${spending.customer.name}? Esta acción no se puede deshacer.`
+            }
+            confirmLabel="Sí, marcar como entregado"
+          />
         </>
       )}
 
