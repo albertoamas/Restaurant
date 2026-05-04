@@ -26,7 +26,9 @@ import { ReopenRaffleUseCase } from '../../application/use-cases/reopen-raffle.u
 import { DeleteRaffleUseCase } from '../../application/use-cases/delete-raffle.use-case';
 import { DrawWinnerUseCase } from '../../application/use-cases/draw-winner.use-case';
 import { VoidWinnerUseCase } from '../../application/use-cases/void-winner.use-case';
+import { DeliverTicketsUseCase } from '../../application/use-cases/deliver-tickets.use-case';
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
+import { DeliverTicketsDto } from '../../application/dto/deliver-tickets.dto';
 
 @Controller('raffles')
 @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
@@ -42,6 +44,7 @@ export class RaffleController {
     private readonly deleteRaffle: DeleteRaffleUseCase,
     private readonly drawWinner: DrawWinnerUseCase,
     private readonly voidWinner: VoidWinnerUseCase,
+    private readonly deliverTickets: DeliverTicketsUseCase,
   ) {}
 
   @Post()
@@ -102,5 +105,15 @@ export class RaffleController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.voidWinner.execute(id, winnerId, tenantId);
+  }
+
+  @Patch(':id/tickets/deliver')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deliver(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: DeliverTicketsDto,
+  ) {
+    return this.deliverTickets.execute(id, dto.ticketIds, tenantId);
   }
 }

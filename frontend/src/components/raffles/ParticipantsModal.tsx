@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { IconStar, IconCoins, IconTicket } from './RaffleIcons';
 import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
 import { positionLabel } from '../../utils/raffle-utils';
+import { rafflesApi } from '../../api/raffles.api';
 
 interface SpendingTicket {
   id: string;
   ticketNumber: number;
+  delivered: boolean;
   winnerPosition?: number;
 }
 
@@ -42,15 +45,34 @@ function SpendingRow({
   isWinner,
   winnerPosition,
   customerTickets = [],
+  localDelivered,
+  onDeliver,
 }: {
   spending: RaffleSpendingDto;
   threshold: number;
   isWinner: boolean;
   winnerPosition?: number;
   customerTickets?: SpendingTicket[];
+  localDelivered: Set<string>;
+  onDeliver: (ticketIds: string[]) => Promise<void>;
 }) {
+  const [delivering, setDelivering] = useState(false);
   const progressInBracket = spending.totalSpent % threshold;
   const pct = Math.round((progressInBracket / threshold) * 100);
+
+  const isTicketDelivered = (t: SpendingTicket) => t.delivered || localDelivered.has(t.id);
+  const pendingTickets = customerTickets.filter((t) => !isTicketDelivered(t));
+  const allDelivered = customerTickets.length > 0 && pendingTickets.length === 0;
+
+  const handleDeliver = async () => {
+    if (!pendingTickets.length) return;
+    setDelivering(true);
+    try {
+      await onDeliver(pendingTickets.map((t) => t.id));
+    } finally {
+      setDelivering(false);
+    }
+  };
 
   return (
     <div className={`rounded-xl px-4 py-3 ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
@@ -78,22 +100,70 @@ function SpendingRow({
       </div>
 
       {customerTickets.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {customerTickets.map((t) => (
-            <span
-              key={t.id}
-              title={t.winnerPosition !== undefined ? positionLabel(t.winnerPosition) : undefined}
-              className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
-                t.winnerPosition !== undefined
-                  ? 'bg-amber-200 text-amber-800'
-                  : 'bg-gray-200 text-gray-500'
-              }`}
+        <>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {customerTickets.map((t) => {
+              const delivered = isTicketDelivered(t);
+              return (
+                <span
+                  key={t.id}
+                  title={
+                    t.winnerPosition !== undefined
+                      ? positionLabel(t.winnerPosition)
+                      : delivered ? 'Entregado' : 'Pendiente de entrega'
+                  }
+                  className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                    t.winnerPosition !== undefined
+                      ? 'bg-amber-200 text-amber-800'
+                      : delivered
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  #{t.ticketNumber}
+                  {t.winnerPosition !== undefined && <IconStar className="w-2 h-2" />}
+                  {t.winnerPosition === undefined && delivered && (
+                    <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Delivery status + button */}
+          {allDelivered ? (
+            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mb-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Todos entregados
+            </p>
+          ) : pendingTickets.length > 0 && (
+            <button
+              onClick={handleDeliver}
+              disabled={delivering}
+              className="mb-1 text-[10px] font-semibold text-violet-600 hover:text-violet-800 disabled:opacity-50 flex items-center gap-1 transition-colors"
             >
-              #{t.ticketNumber}
-              {t.winnerPosition !== undefined && <IconStar className="w-2 h-2" />}
-            </span>
-          ))}
-        </div>
+              {delivering ? (
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              ) : (
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              {delivering
+                ? 'Guardando…'
+                : pendingTickets.length === 1
+                ? 'Marcar ticket como entregado'
+                : `Marcar ${pendingTickets.length} tickets como entregados`}
+            </button>
+          )}
+        </>
       )}
 
       <div className="mt-1.5">
@@ -113,8 +183,15 @@ function SpendingRow({
 
 export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
   const [search, setSearch] = useState('');
+  const [localDelivered, setLocalDelivered] = useState<Set<string>>(new Set());
   const q = search.toLowerCase().trim();
   const isSpending = raffle.ticketMode === 'SPENDING_THRESHOLD';
+
+  const handleDeliver = async (ticketIds: string[]) => {
+    await rafflesApi.deliverTickets(raffle.id, ticketIds);
+    setLocalDelivered((prev) => new Set([...prev, ...ticketIds]));
+    toast.success(ticketIds.length === 1 ? 'Ticket entregado' : `${ticketIds.length} tickets entregados`);
+  };
 
   if (isSpending) {
     const filtered = q
@@ -130,6 +207,12 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
     const winnerByCustomer = new Map(activeWinners.map((w) => [w.customerId, w.position]));
     const winnerByTicket = new Map(activeWinners.map((w) => [w.ticketId, w.position]));
 
+    // Contador global de pendientes para el header
+    const totalPending = (raffle.tickets ?? []).filter(
+      (t) => !t.delivered && !localDelivered.has(t.id),
+    ).length;
+    const totalTickets = (raffle.tickets ?? []).length;
+
     return (
       <div className="space-y-3">
         <SearchBox value={search} onChange={setSearch} />
@@ -140,10 +223,23 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
               ? `${raffle.spendings.length} cliente${raffle.spendings.length !== 1 ? 's' : ''}`
               : `${filtered.length} de ${raffle.spendings.length} clientes`}
           </p>
-          <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
-            <IconCoins className="w-3 h-3" />
-            Cada {threshold} Bs = 1 ticket
-          </span>
+          <div className="flex items-center gap-2">
+            {totalTickets > 0 && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                totalPending === 0
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                  : 'bg-orange-50 text-orange-600 border border-orange-100'
+              }`}>
+                {totalPending === 0
+                  ? '✓ Todos entregados'
+                  : `${totalTickets - totalPending}/${totalTickets} entregados`}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+              <IconCoins className="w-3 h-3" />
+              Cada {threshold} Bs = 1 ticket
+            </span>
+          </div>
         </div>
 
         {raffle.spendings.length === 0 ? (
@@ -159,7 +255,12 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
             {filtered.map((s) => {
               const customerTickets: SpendingTicket[] = (raffle.tickets ?? [])
                 .filter((t) => t.customerId === s.customerId)
-                .map((t) => ({ id: t.id, ticketNumber: t.ticketNumber, winnerPosition: winnerByTicket.get(t.id) }));
+                .map((t) => ({
+                  id: t.id,
+                  ticketNumber: t.ticketNumber,
+                  delivered: t.delivered,
+                  winnerPosition: winnerByTicket.get(t.id),
+                }));
               return (
                 <SpendingRow
                   key={s.customerId}
@@ -168,6 +269,8 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
                   isWinner={winnerByCustomer.has(s.customerId)}
                   winnerPosition={winnerByCustomer.get(s.customerId)}
                   customerTickets={customerTickets}
+                  localDelivered={localDelivered}
+                  onDeliver={handleDeliver}
                 />
               );
             })}
@@ -240,4 +343,3 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
     </div>
   );
 }
-

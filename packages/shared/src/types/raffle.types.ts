@@ -45,6 +45,8 @@ export interface RaffleTicketDto {
   customer: { id: string; name: string; phone: string | null };
   ticketNumber: number;
   orderId: string | null;
+  delivered: boolean;
+  deliveredAt: string | null;
   createdAt: string;
 }
 

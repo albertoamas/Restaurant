@@ -98,4 +98,7 @@ export interface RaffleRepositoryPort {
     customerId: string,
     excessCount: number,
   ): Promise<void>;
+
+  /** Marca los tickets indicados como entregados físicamente. Solo actualiza los no entregados aún. */
+  deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
 }

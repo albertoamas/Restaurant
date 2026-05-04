@@ -374,13 +374,15 @@ model RaffleWinner {
 // ─── RaffleTicket ─────────────────────────────────────────────
 
 model RaffleTicket {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  raffleId     String   @map("raffle_id")
-  customerId   String   @map("customer_id")
-  ticketNumber Int      @map("ticket_number")
-  orderId      String?  @map("order_id")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
+  raffleId     String    @map("raffle_id")
+  customerId   String    @map("customer_id")
+  ticketNumber Int       @map("ticket_number")
+  orderId      String?   @map("order_id")
+  delivered    Boolean   @default(false)
+  deliveredAt  DateTime? @map("delivered_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   raffle   Raffle        @relation("RaffleTickets", fields: [raffleId], references: [id], onDelete: Cascade)

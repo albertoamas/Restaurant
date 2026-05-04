@@ -13,6 +13,7 @@ import { ReopenRaffleUseCase } from './application/use-cases/reopen-raffle.use-c
 import { DeleteRaffleUseCase } from './application/use-cases/delete-raffle.use-case';
 import { DrawWinnerUseCase } from './application/use-cases/draw-winner.use-case';
 import { VoidWinnerUseCase } from './application/use-cases/void-winner.use-case';
+import { DeliverTicketsUseCase } from './application/use-cases/deliver-tickets.use-case';
 import { RaffleAutoTicketService } from './application/services/raffle-auto-ticket.service';
 
 @Module({
@@ -28,6 +29,7 @@ import { RaffleAutoTicketService } from './application/services/raffle-auto-tick
     DeleteRaffleUseCase,
     DrawWinnerUseCase,
     VoidWinnerUseCase,
+    DeliverTicketsUseCase,
     RaffleAutoTicketService,
   ],
   exports: [RaffleAutoTicketService],

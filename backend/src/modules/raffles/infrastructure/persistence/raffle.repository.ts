@@ -162,6 +162,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
         customer: { id: t.customer.id, name: t.customer.name, phone: t.customer.phone },
         ticketNumber: t.ticketNumber,
         orderId: t.orderId,
+        delivered: t.delivered,
+        deliveredAt: t.deliveredAt ? t.deliveredAt.toISOString() : null,
         createdAt: t.createdAt.toISOString(),
       })),
       spendings,
@@ -480,5 +482,12 @@ export class RaffleRepository implements RaffleRepositoryPort {
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
     } as RaffleProps);
+  }
+
+  async deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void> {
+    await this.prisma.raffleTicket.updateMany({
+      where: { id: { in: ticketIds }, raffleId, tenantId, delivered: false },
+      data:  { delivered: true, deliveredAt: new Date() },
+    });
   }
 }
