@@ -255,10 +255,17 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
  * trate cada uno como una "página" independiente en el rollo —
  * sin esto, tickets consecutivos salen pegados sin separación visual.
  */
+export interface RaffleTicketPrintSettings {
+  businessName:     string;
+  businessAddress?: string;
+  businessPhone?:   string;
+  receiptSlogan?:   string;
+}
+
 export function printRaffleTickets(
   tickets: Array<{ ticketNumber: number; customerName: string }>,
   raffleName: string,
-  businessName: string,
+  settings: RaffleTicketPrintSettings,
 ): void {
   if (!tickets.length) return;
 
@@ -266,12 +273,21 @@ export function printRaffleTickets(
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 
+  const addressLine = settings.businessAddress
+    ? `<div class="center" style="font-size:7pt">${escapeHtml(settings.businessAddress)}</div>` : '';
+  const phoneLine = settings.businessPhone
+    ? `<div class="center" style="font-size:7pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
+  const sloganLine = settings.receiptSlogan
+    ? `<div class="center" style="font-size:7pt;font-style:italic;margin-top:1pt">${escapeHtml(settings.receiptSlogan)}</div>` : '';
+
   const html = tickets
     .map((t, i) => {
       const isLast = i === tickets.length - 1;
       return `
         <div style="${isLast ? '' : 'page-break-after:always;break-after:page;'}padding-bottom:8pt">
-          <div class="center" style="font-size:8pt">${escapeHtml(businessName)}</div>
+          <div class="center" style="font-size:9pt;font-weight:900">${escapeHtml(settings.businessName)}</div>
+          ${addressLine}${phoneLine}${sloganLine}
+          <div class="divider"></div>
           <div class="center" style="font-size:9pt;font-weight:900;margin:2pt 0">${escapeHtml(raffleName)}</div>
           <div class="divider"></div>
           <div class="center" style="font-size:48pt;font-weight:900;line-height:1.1;letter-spacing:2pt">#${t.ticketNumber}</div>

@@ -97,12 +97,18 @@ function RaffleDetailContent({ id }: { id: string }) {
   } = useRaffleDetail(id, goBack, () => {});
 
   const { user } = useAuth();
-  const { businessAddress, businessPhone, tenantLogo } = useSettingsStore();
+  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
   const business = {
     name:    user?.tenantName ?? '',
     address: businessAddress || undefined,
     phone:   businessPhone   || undefined,
     logoUrl: tenantLogo,
+  };
+  const ticketPrintSettings = {
+    businessName:    user?.tenantName ?? '',
+    businessAddress: businessAddress || undefined,
+    businessPhone:   businessPhone   || undefined,
+    receiptSlogan:   receiptSlogan   || undefined,
   };
 
   const isSpending = raffle?.ticketMode === 'SPENDING_THRESHOLD';
@@ -314,7 +320,7 @@ function RaffleDetailContent({ id }: { id: string }) {
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
                 {isSpending ? 'Clientes y acumulados' : 'Participantes'}
               </p>
-              <ParticipantsList raffle={raffle} businessName={business.name} />
+              <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} />
             </section>
 
             {/* ── Acciones ─────────────────────────────────────────────────── */}

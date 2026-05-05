@@ -6,7 +6,7 @@ import type { DetailRaffle } from './types';
 import { positionLabel } from '../../utils/raffle-utils';
 import { rafflesApi } from '../../api/raffles.api';
 import { ConfirmModal } from '../ui/ConfirmModal';
-import { printRaffleTickets } from '../../utils/print';
+import { printRaffleTickets, type RaffleTicketPrintSettings } from '../../utils/print';
 
 interface SpendingTicket {
   id: string;
@@ -66,7 +66,7 @@ function SpendingRow({
   localDelivered,
   onDeliver,
   raffleName,
-  businessName,
+  printSettings,
 }: {
   spending: RaffleSpendingDto;
   threshold: number;
@@ -76,7 +76,7 @@ function SpendingRow({
   localDelivered: Set<string>;
   onDeliver: (ticketIds: string[]) => Promise<void>;
   raffleName: string;
-  businessName: string;
+  printSettings: RaffleTicketPrintSettings;
 }) {
   const [delivering, setDelivering] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -103,7 +103,7 @@ function SpendingRow({
     printRaffleTickets(
       customerTickets.map((t) => ({ ticketNumber: t.ticketNumber, customerName: spending.customer.name })),
       raffleName,
-      businessName,
+      printSettings,
     );
   };
 
@@ -224,7 +224,7 @@ function SpendingRow({
 
 // ─── Lista embebible (sin modal wrapper) ──────────────────────────────────────
 
-export function ParticipantsList({ raffle, businessName = '' }: { raffle: DetailRaffle; businessName?: string }) {
+export function ParticipantsList({ raffle, printSettings = { businessName: '' } }: { raffle: DetailRaffle; printSettings?: RaffleTicketPrintSettings }) {
   const [search, setSearch] = useState('');
   const [localDelivered, setLocalDelivered] = useState<Set<string>>(new Set());
   const q = search.toLowerCase().trim();
@@ -314,7 +314,7 @@ export function ParticipantsList({ raffle, businessName = '' }: { raffle: Detail
                   localDelivered={localDelivered}
                   onDeliver={handleDeliver}
                   raffleName={raffle.name}
-                  businessName={businessName}
+                  printSettings={printSettings}
                 />
               );
             })}
@@ -378,7 +378,7 @@ export function ParticipantsList({ raffle, businessName = '' }: { raffle: Detail
                     printRaffleTickets(
                       [{ ticketNumber: t.ticketNumber, customerName: t.customer.name }],
                       raffle.name,
-                      businessName,
+                      printSettings,
                     )
                   }
                   title={`Imprimir ticket #${t.ticketNumber} de ${t.customer.name}`}
