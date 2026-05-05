@@ -6,12 +6,29 @@ import type { DetailRaffle } from './types';
 import { positionLabel } from '../../utils/raffle-utils';
 import { rafflesApi } from '../../api/raffles.api';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { printRaffleTickets } from '../../utils/print';
 
 interface SpendingTicket {
   id: string;
   ticketNumber: number;
   delivered: boolean;
   winnerPosition?: number;
+}
+
+function PrintButton({ onClick, title }: { onClick: () => void; title: string }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors shrink-0"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <polyline points="6 9 6 2 18 2 18 9" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+        <rect x="6" y="14" width="12" height="8" />
+      </svg>
+    </button>
+  );
 }
 
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -48,6 +65,8 @@ function SpendingRow({
   customerTickets = [],
   localDelivered,
   onDeliver,
+  raffleName,
+  businessName,
 }: {
   spending: RaffleSpendingDto;
   threshold: number;
@@ -56,6 +75,8 @@ function SpendingRow({
   customerTickets?: SpendingTicket[];
   localDelivered: Set<string>;
   onDeliver: (ticketIds: string[]) => Promise<void>;
+  raffleName: string;
+  businessName: string;
 }) {
   const [delivering, setDelivering] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -77,6 +98,15 @@ function SpendingRow({
     }
   };
 
+  const handlePrint = () => {
+    if (!customerTickets.length) return;
+    printRaffleTickets(
+      customerTickets.map((t) => ({ ticketNumber: t.ticketNumber, customerName: spending.customer.name })),
+      raffleName,
+      businessName,
+    );
+  };
+
   return (
     <div className={`rounded-xl px-4 py-3 ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
       <div className="flex items-center gap-3 mb-2">
@@ -88,11 +118,17 @@ function SpendingRow({
             <p className="text-xs text-gray-400 mt-0.5">{spending.customer.phone}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
             <IconTicket className="w-3 h-3" />
             {spending.ticketsEarned}
           </span>
+          {customerTickets.length > 0 && (
+            <PrintButton
+              onClick={handlePrint}
+              title={`Imprimir ${customerTickets.length} ticket${customerTickets.length !== 1 ? 's' : ''} de ${spending.customer.name}`}
+            />
+          )}
           {isWinner && winnerPosition !== undefined && (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wide">
               <IconStar className="w-2.5 h-2.5" />
@@ -188,7 +224,7 @@ function SpendingRow({
 
 // ─── Lista embebible (sin modal wrapper) ──────────────────────────────────────
 
-export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
+export function ParticipantsList({ raffle, businessName = '' }: { raffle: DetailRaffle; businessName?: string }) {
   const [search, setSearch] = useState('');
   const [localDelivered, setLocalDelivered] = useState<Set<string>>(new Set());
   const q = search.toLowerCase().trim();
@@ -214,7 +250,6 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
     const winnerByCustomer = new Map(activeWinners.map((w) => [w.customerId, w.position]));
     const winnerByTicket = new Map(activeWinners.map((w) => [w.ticketId, w.position]));
 
-    // Contador global de pendientes para el header
     const totalPending = (raffle.tickets ?? []).filter(
       (t) => !t.delivered && !localDelivered.has(t.id),
     ).length;
@@ -278,6 +313,8 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
                   customerTickets={customerTickets}
                   localDelivered={localDelivered}
                   onDeliver={handleDeliver}
+                  raffleName={raffle.name}
+                  businessName={businessName}
                 />
               );
             })}
@@ -336,6 +373,16 @@ export function ParticipantsList({ raffle }: { raffle: DetailRaffle }) {
                     <p className="text-xs text-gray-400 mt-0.5">{t.customer.phone}</p>
                   )}
                 </div>
+                <PrintButton
+                  onClick={() =>
+                    printRaffleTickets(
+                      [{ ticketNumber: t.ticketNumber, customerName: t.customer.name }],
+                      raffle.name,
+                      businessName,
+                    )
+                  }
+                  title={`Imprimir ticket #${t.ticketNumber} de ${t.customer.name}`}
+                />
                 {win && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wide">
                     <IconStar className="w-2.5 h-2.5" />

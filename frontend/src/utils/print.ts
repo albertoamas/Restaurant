@@ -245,3 +245,44 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   // 650ms si hay logo (imagen async), 450ms si no
   printViaIframe(html, logoSrc ? 650 : 450);
 }
+
+/* ─── Tickets físicos de sorteo ──────────────────────────────────────────── */
+
+/**
+ * Imprime uno o varios tickets físicos de sorteo en impresora térmica.
+ *
+ * Cada ticket se separa con page-break-after:always para que el driver
+ * trate cada uno como una "página" independiente en el rollo —
+ * sin esto, tickets consecutivos salen pegados sin separación visual.
+ */
+export function printRaffleTickets(
+  tickets: Array<{ ticketNumber: number; customerName: string }>,
+  raffleName: string,
+  businessName: string,
+): void {
+  if (!tickets.length) return;
+
+  const today = new Date().toLocaleDateString('es-BO', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  });
+
+  const html = tickets
+    .map((t, i) => {
+      const isLast = i === tickets.length - 1;
+      return `
+        <div style="${isLast ? '' : 'page-break-after:always;break-after:page;'}padding-bottom:8pt">
+          <div class="center" style="font-size:8pt">${escapeHtml(businessName)}</div>
+          <div class="center" style="font-size:9pt;font-weight:900;margin:2pt 0">${escapeHtml(raffleName)}</div>
+          <div class="divider"></div>
+          <div class="center" style="font-size:48pt;font-weight:900;line-height:1.1;letter-spacing:2pt">#${t.ticketNumber}</div>
+          <div class="divider"></div>
+          <div class="center" style="font-size:11pt;font-weight:900">${escapeHtml(t.customerName)}</div>
+          <div class="center" style="font-size:8pt;margin-top:2pt">${today}</div>
+          <div class="center" style="margin-top:6pt;font-size:8pt;letter-spacing:4pt">- - - - - -</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  printViaIframe(html, 450);
+}

@@ -314,7 +314,7 @@ function RaffleDetailContent({ id }: { id: string }) {
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
                 {isSpending ? 'Clientes y acumulados' : 'Participantes'}
               </p>
-              <ParticipantsList raffle={raffle} />
+              <ParticipantsList raffle={raffle} businessName={business.name} />
             </section>
 
             {/* ── Acciones ─────────────────────────────────────────────────── */}
