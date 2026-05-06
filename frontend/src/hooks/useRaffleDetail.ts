@@ -128,6 +128,7 @@ export function useRaffleDetail(
 
   return {
     raffle,
+    setRaffle,
     loading,
     error,
     busy,

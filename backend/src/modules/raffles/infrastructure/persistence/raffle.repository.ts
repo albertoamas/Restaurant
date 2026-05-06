@@ -490,4 +490,32 @@ export class RaffleRepository implements RaffleRepositoryPort {
       data:  { delivered: true, deliveredAt: new Date() },
     });
   }
+
+  async updateRaffle(
+    id: string,
+    tenantId: string,
+    data: { name?: string; description?: string | null; prizes?: Array<{ position: number; prizeDescription: string }> },
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      if (data.name !== undefined || data.description !== undefined) {
+        await tx.raffle.update({
+          where: { id, tenantId },
+          data: {
+            ...(data.name !== undefined      && { name: data.name }),
+            ...(data.description !== undefined && { description: data.description }),
+          },
+        });
+      }
+      if (data.prizes?.length) {
+        await Promise.all(
+          data.prizes.map((p) =>
+            tx.rafflePrize.update({
+              where: { raffleId_position: { raffleId: id, position: p.position } },
+              data: { prizeDescription: p.prizeDescription },
+            }),
+          ),
+        );
+      }
+    });
+  }
 }

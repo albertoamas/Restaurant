@@ -1,5 +1,5 @@
 import client from './client';
-import type { RaffleDetailDto, RaffleDto, CreateRaffleRequest } from '@pos/shared';
+import type { RaffleDetailDto, RaffleDto, CreateRaffleRequest, UpdateRaffleRequest } from '@pos/shared';
 
 export const rafflesApi = {
   getAll: (): Promise<RaffleDto[]> =>
@@ -28,4 +28,7 @@ export const rafflesApi = {
 
   deliverTickets: (raffleId: string, ticketIds: string[]): Promise<void> =>
     client.patch(`/api/v1/raffles/${raffleId}/tickets/deliver`, { ticketIds }).then(() => {}),
+
+  update: (id: string, data: UpdateRaffleRequest): Promise<RaffleDetailDto> =>
+    client.patch<RaffleDetailDto>(`/api/v1/raffles/${id}`, data).then((r) => r.data),
 };

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
@@ -13,6 +14,7 @@ import { useRaffleDetail } from '../hooks/useRaffleDetail';
 import { positionLabel } from '../utils/raffle-utils';
 import { printWinnerCertificate } from '../utils/raffle-certificate';
 import { downloadExcelSheets } from '../utils/excel';
+import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
 
 // ─── Confirm draw ─────────────────────────────────────────────────────────────
 
@@ -83,9 +85,10 @@ export function RaffleDetailPage() {
 function RaffleDetailContent({ id }: { id: string }) {
   const navigate = useNavigate();
   const goBack = () => navigate('/raffles');
+  const [editOpen, setEditOpen] = useState(false);
 
   const {
-    raffle, loading, error, busy, deleted,
+    raffle, setRaffle, loading, error, busy, deleted,
     showConfirm, setShowConfirm,
     deleteConfirm, setDeleteConfirm,
     drawingPosition, pendingWinnerName,
@@ -153,18 +156,30 @@ function RaffleDetailContent({ id }: { id: string }) {
                 <h1 className="text-2xl font-black text-gray-900 font-heading leading-tight">
                   {raffle.name}
                 </h1>
-                {isDeletable && (
+                <div className="flex items-center gap-1 shrink-0">
                   <button
-                    onClick={() => setDeleteConfirm(true)}
+                    onClick={() => setEditOpen(true)}
                     disabled={!!busy}
-                    className="shrink-0 text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-40"
-                    title="Eliminar sorteo"
+                    className="text-gray-300 hover:text-violet-500 transition-colors p-1.5 rounded-lg hover:bg-violet-50 disabled:opacity-40"
+                    title="Editar sorteo"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </button>
-                )}
+                  {isDeletable && (
+                    <button
+                      onClick={() => setDeleteConfirm(true)}
+                      disabled={!!busy}
+                      className="text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                      title="Eliminar sorteo"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -409,6 +424,14 @@ function RaffleDetailContent({ id }: { id: string }) {
 
       {drawnWinner && raffle && (
         <WinnerModal raffleName={raffle.name} winner={drawnWinner} onClose={() => setDrawnWinner(null)} />
+      )}
+
+      {editOpen && raffle && (
+        <EditRaffleModal
+          raffle={raffle}
+          onClose={() => setEditOpen(false)}
+          onUpdated={(updated) => setRaffle(updated)}
+        />
       )}
 
       {deleteConfirm && raffle && (

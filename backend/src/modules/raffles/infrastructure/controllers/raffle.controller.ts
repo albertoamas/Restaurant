@@ -27,8 +27,10 @@ import { DeleteRaffleUseCase } from '../../application/use-cases/delete-raffle.u
 import { DrawWinnerUseCase } from '../../application/use-cases/draw-winner.use-case';
 import { VoidWinnerUseCase } from '../../application/use-cases/void-winner.use-case';
 import { DeliverTicketsUseCase } from '../../application/use-cases/deliver-tickets.use-case';
+import { UpdateRaffleUseCase } from '../../application/use-cases/update-raffle.use-case';
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
 import { DeliverTicketsDto } from '../../application/dto/deliver-tickets.dto';
+import { UpdateRaffleDto } from '../../application/dto/update-raffle.dto';
 
 @Controller('raffles')
 @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
@@ -45,6 +47,7 @@ export class RaffleController {
     private readonly drawWinner: DrawWinnerUseCase,
     private readonly voidWinner: VoidWinnerUseCase,
     private readonly deliverTickets: DeliverTicketsUseCase,
+    private readonly updateRaffle: UpdateRaffleUseCase,
   ) {}
 
   @Post()
@@ -63,6 +66,15 @@ export class RaffleController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.getRaffle.execute(id, tenantId);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: UpdateRaffleDto,
+  ) {
+    return this.updateRaffle.execute(id, tenantId, dto);
   }
 
   @Patch(':id/close')

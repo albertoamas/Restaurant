@@ -74,3 +74,10 @@ export interface CreateRaffleRequest {
   numberOfWinners: number;
   prizes: RafflePrizeDto[];
 }
+
+/** Solo name, description y los textos de premios son editables en cualquier estado. */
+export interface UpdateRaffleRequest {
+  name?: string;
+  description?: string;
+  prizes?: RafflePrizeDto[];
+}
