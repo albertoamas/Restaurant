@@ -127,7 +127,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
   );
 }
 
-// ─── Fila de cliente (modo SPENDING_THRESHOLD) ────────────────────────────────
+// ─── Fila de cliente colapsable (modo SPENDING_THRESHOLD) ────────────────────
 
 function SpendingRow({
   spending,
@@ -152,6 +152,7 @@ function SpendingRow({
   raffleName: string;
   printSettings: RaffleTicketPrintSettings;
 }) {
+  const [collapsed, setCollapsed] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [printSelectOpen, setPrintSelectOpen] = useState(false);
 
@@ -161,7 +162,9 @@ function SpendingRow({
   const isEffectivelyDelivered = (t: SpendingTicket) =>
     (t.delivered || localDelivered.has(t.id)) && !localUndelivered.has(t.id);
 
-  const allDelivered = customerTickets.length > 0 && customerTickets.every(isEffectivelyDelivered);
+  const deliveredCount = customerTickets.filter(isEffectivelyDelivered).length;
+  const allDelivered   = customerTickets.length > 0 && deliveredCount === customerTickets.length;
+  const hasTickets     = customerTickets.length > 0;
 
   const handleToggle = async (ticketId: string, deliver: boolean) => {
     setTogglingId(ticketId);
@@ -173,8 +176,17 @@ function SpendingRow({
   };
 
   return (
-    <div className={`rounded-xl px-4 py-3 ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
-      <div className="flex items-center gap-3 mb-2">
+    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50 border border-transparent'}`}>
+
+      {/* ── Cabecera — clic para expandir/colapsar ── */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => hasTickets && setCollapsed((c) => !c)}
+        onKeyDown={(e) => e.key === 'Enter' && hasTickets && setCollapsed((c) => !c)}
+        className={`flex items-center gap-3 px-4 py-3 ${hasTickets ? 'cursor-pointer select-none' : 'cursor-default'}`}
+      >
+        {/* Nombre + teléfono */}
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-semibold truncate ${isWinner ? 'text-amber-900' : 'text-gray-800'}`}>
             {spending.customer.name}
@@ -183,34 +195,81 @@ function SpendingRow({
             <p className="text-xs text-gray-400 mt-0.5">{spending.customer.phone}</p>
           )}
         </div>
+
+        {/* Badges + acciones */}
         <div className="flex items-center gap-1.5 shrink-0">
+
+          {/* Tickets ganados */}
           <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
             <IconTicket className="w-3 h-3" />
             {spending.ticketsEarned}
           </span>
-          {customerTickets.length > 0 && (
-            <PrintButton
-              onClick={() => setPrintSelectOpen(true)}
-              title={`Seleccionar tickets a imprimir de ${spending.customer.name}`}
-            />
+
+          {/* Resumen de entrega */}
+          {hasTickets && (
+            allDelivered ? (
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                ✓ todos
+              </span>
+            ) : deliveredCount > 0 ? (
+              <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                {deliveredCount}/{customerTickets.length}
+              </span>
+            ) : null
           )}
+
+          {/* Ganador */}
           {isWinner && winnerPosition !== undefined && (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wide">
               <IconStar className="w-2.5 h-2.5" />
               {positionLabel(winnerPosition)}
             </span>
           )}
+
+          {/* Imprimir — detiene propagación para no colapsar */}
+          {hasTickets && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <PrintButton
+                onClick={() => setPrintSelectOpen(true)}
+                title={`Seleccionar tickets a imprimir de ${spending.customer.name}`}
+              />
+            </div>
+          )}
+
+          {/* Chevron — solo si tiene tickets */}
+          {hasTickets && (
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ${collapsed ? '' : 'rotate-180'}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
         </div>
       </div>
 
-      {customerTickets.length > 0 && (
-        <div className="border-t border-gray-100 mt-1 pt-2 space-y-0.5">
+      {/* ── Barra de progreso (siempre visible) ── */}
+      <div className="px-4 pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
+              style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-[10px] font-medium text-gray-400 tabular-nums shrink-0">
+            {progressInBracket}/{threshold} Bs
+          </span>
+        </div>
+      </div>
+
+      {/* ── Lista de tickets (colapsable) ── */}
+      {!collapsed && hasTickets && (
+        <div className="border-t border-gray-200 px-4 pt-2 pb-3 space-y-0.5 bg-white/60">
           {customerTickets.map((t) => {
-            const delivered = isEffectivelyDelivered(t);
-            const isToggling = togglingId === t.id;
+            const delivered     = isEffectivelyDelivered(t);
+            const isToggling    = togglingId === t.id;
             const isWinnerTicket = t.winnerPosition !== undefined;
             return (
-              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-white transition-colors">
+              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white transition-colors">
                 <span className={`font-mono font-bold text-xs w-9 shrink-0 ${isWinnerTicket ? 'text-amber-700' : 'text-gray-500'}`}>
                   #{t.ticketNumber}
                 </span>
@@ -219,9 +278,7 @@ function SpendingRow({
                 }`}>
                   {isWinnerTicket
                     ? `★ ${positionLabel(t.winnerPosition!)}`
-                    : delivered
-                    ? '✓ Entregado'
-                    : 'Pendiente'}
+                    : delivered ? '✓ Entregado' : 'Pendiente'}
                 </span>
                 <button
                   onClick={() => handleToggle(t.id, !delivered)}
@@ -237,14 +294,6 @@ function SpendingRow({
               </div>
             );
           })}
-          {allDelivered && (
-            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 pt-1 px-1.5">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Todos entregados
-            </p>
-          )}
         </div>
       )}
 
@@ -259,16 +308,6 @@ function SpendingRow({
           onClose={() => setPrintSelectOpen(false)}
         />
       )}
-
-      <div className="mt-2">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
-              style={{ width: `${pct}%` }} />
-          </div>
-          <span className="text-[10px] font-medium text-gray-400 tabular-nums shrink-0">{progressInBracket}/{threshold} Bs</span>
-        </div>
-      </div>
     </div>
   );
 }
