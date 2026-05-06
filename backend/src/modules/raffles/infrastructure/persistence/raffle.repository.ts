@@ -491,6 +491,13 @@ export class RaffleRepository implements RaffleRepositoryPort {
     });
   }
 
+  async undeliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void> {
+    await this.prisma.raffleTicket.updateMany({
+      where: { id: { in: ticketIds }, raffleId, tenantId, delivered: true },
+      data:  { delivered: false, deliveredAt: null },
+    });
+  }
+
   async updateRaffle(
     id: string,
     tenantId: string,

@@ -27,6 +27,7 @@ import { DeleteRaffleUseCase } from '../../application/use-cases/delete-raffle.u
 import { DrawWinnerUseCase } from '../../application/use-cases/draw-winner.use-case';
 import { VoidWinnerUseCase } from '../../application/use-cases/void-winner.use-case';
 import { DeliverTicketsUseCase } from '../../application/use-cases/deliver-tickets.use-case';
+import { UndeliverTicketsUseCase } from '../../application/use-cases/undeliver-tickets.use-case';
 import { UpdateRaffleUseCase } from '../../application/use-cases/update-raffle.use-case';
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
 import { DeliverTicketsDto } from '../../application/dto/deliver-tickets.dto';
@@ -47,6 +48,7 @@ export class RaffleController {
     private readonly drawWinner: DrawWinnerUseCase,
     private readonly voidWinner: VoidWinnerUseCase,
     private readonly deliverTickets: DeliverTicketsUseCase,
+    private readonly undeliverTickets: UndeliverTicketsUseCase,
     private readonly updateRaffle: UpdateRaffleUseCase,
   ) {}
 
@@ -127,5 +129,15 @@ export class RaffleController {
     @Body() dto: DeliverTicketsDto,
   ) {
     return this.deliverTickets.execute(id, dto.ticketIds, tenantId);
+  }
+
+  @Patch(':id/tickets/undeliver')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  undeliver(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: DeliverTicketsDto,
+  ) {
+    return this.undeliverTickets.execute(id, dto.ticketIds, tenantId);
   }
 }

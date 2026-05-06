@@ -102,6 +102,9 @@ export interface RaffleRepositoryPort {
   /** Marca los tickets indicados como entregados físicamente. Solo actualiza los no entregados aún. */
   deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
 
+  /** Revierte la entrega de los tickets indicados. Solo actualiza los ya entregados. */
+  undeliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
+
   /** Actualiza nombre, descripción y/o textos de premios. No toca numberOfWinners, ticketMode ni posiciones. */
   updateRaffle(
     id: string,

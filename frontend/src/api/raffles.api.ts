@@ -29,6 +29,9 @@ export const rafflesApi = {
   deliverTickets: (raffleId: string, ticketIds: string[]): Promise<void> =>
     client.patch(`/api/v1/raffles/${raffleId}/tickets/deliver`, { ticketIds }).then(() => {}),
 
+  undeliverTickets: (raffleId: string, ticketIds: string[]): Promise<void> =>
+    client.patch(`/api/v1/raffles/${raffleId}/tickets/undeliver`, { ticketIds }).then(() => {}),
+
   update: (id: string, data: UpdateRaffleRequest): Promise<RaffleDetailDto> =>
     client.patch<RaffleDetailDto>(`/api/v1/raffles/${id}`, data).then((r) => r.data),
 };

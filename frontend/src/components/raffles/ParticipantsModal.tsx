@@ -5,7 +5,7 @@ import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
 import { positionLabel } from '../../utils/raffle-utils';
 import { rafflesApi } from '../../api/raffles.api';
-import { ConfirmModal } from '../ui/ConfirmModal';
+import { handleApiError } from '../../utils/api-error';
 import { Modal } from '../ui/Modal';
 import { printRaffleTickets, type RaffleTicketPrintSettings } from '../../utils/print';
 
@@ -22,6 +22,7 @@ function PrintSelectModal({
   tickets,
   customerName,
   localDelivered,
+  localUndelivered,
   raffleName,
   printSettings,
   onClose,
@@ -29,11 +30,13 @@ function PrintSelectModal({
   tickets: SpendingTicket[];
   customerName: string;
   localDelivered: Set<string>;
+  localUndelivered: Set<string>;
   raffleName: string;
   printSettings: RaffleTicketPrintSettings;
   onClose: () => void;
 }) {
-  const isDelivered = (t: SpendingTicket) => t.delivered || localDelivered.has(t.id);
+  const isDelivered = (t: SpendingTicket) =>
+    (t.delivered || localDelivered.has(t.id)) && !localUndelivered.has(t.id);
 
   const handlePrint = (t: SpendingTicket) => {
     printRaffleTickets([{ ticketNumber: t.ticketNumber, customerName }], raffleName, printSettings);
@@ -133,7 +136,8 @@ function SpendingRow({
   winnerPosition,
   customerTickets = [],
   localDelivered,
-  onDeliver,
+  localUndelivered,
+  onToggleDelivery,
   raffleName,
   printSettings,
 }: {
@@ -143,29 +147,28 @@ function SpendingRow({
   winnerPosition?: number;
   customerTickets?: SpendingTicket[];
   localDelivered: Set<string>;
-  onDeliver: (ticketIds: string[]) => Promise<void>;
+  localUndelivered: Set<string>;
+  onToggleDelivery: (ticketId: string, deliver: boolean) => Promise<void>;
   raffleName: string;
   printSettings: RaffleTicketPrintSettings;
 }) {
-  const [delivering, setDelivering] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [printSelectOpen, setPrintSelectOpen] = useState(false);
 
   const progressInBracket = spending.totalSpent % threshold;
   const pct = Math.round((progressInBracket / threshold) * 100);
 
-  const isTicketDelivered = (t: SpendingTicket) => t.delivered || localDelivered.has(t.id);
-  const pendingTickets = customerTickets.filter((t) => !isTicketDelivered(t));
-  const allDelivered = customerTickets.length > 0 && pendingTickets.length === 0;
+  const isEffectivelyDelivered = (t: SpendingTicket) =>
+    (t.delivered || localDelivered.has(t.id)) && !localUndelivered.has(t.id);
 
-  const handleConfirmDeliver = async () => {
-    if (!pendingTickets.length) return;
-    setDelivering(true);
+  const allDelivered = customerTickets.length > 0 && customerTickets.every(isEffectivelyDelivered);
+
+  const handleToggle = async (ticketId: string, deliver: boolean) => {
+    setTogglingId(ticketId);
     try {
-      await onDeliver(pendingTickets.map((t) => t.id));
-      setConfirmOpen(false);
+      await onToggleDelivery(ticketId, deliver);
     } finally {
-      setDelivering(false);
+      setTogglingId(null);
     }
   };
 
@@ -201,88 +204,64 @@ function SpendingRow({
       </div>
 
       {customerTickets.length > 0 && (
-        <>
-          <div className="flex flex-wrap gap-1 mb-2">
-            {customerTickets.map((t) => {
-              const delivered = isTicketDelivered(t);
-              return (
-                <span
-                  key={t.id}
-                  title={
-                    t.winnerPosition !== undefined
-                      ? positionLabel(t.winnerPosition)
-                      : delivered ? 'Entregado' : 'Pendiente de entrega'
-                  }
-                  className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
-                    t.winnerPosition !== undefined
-                      ? 'bg-amber-200 text-amber-800'
-                      : delivered
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-gray-200 text-gray-500'
+        <div className="border-t border-gray-100 mt-1 pt-2 space-y-0.5">
+          {customerTickets.map((t) => {
+            const delivered = isEffectivelyDelivered(t);
+            const isToggling = togglingId === t.id;
+            const isWinnerTicket = t.winnerPosition !== undefined;
+            return (
+              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-white transition-colors">
+                <span className={`font-mono font-bold text-xs w-9 shrink-0 ${isWinnerTicket ? 'text-amber-700' : 'text-gray-500'}`}>
+                  #{t.ticketNumber}
+                </span>
+                <span className={`text-[10px] font-medium flex-1 ${
+                  isWinnerTicket ? 'text-amber-700' : delivered ? 'text-emerald-600' : 'text-gray-400'
+                }`}>
+                  {isWinnerTicket
+                    ? `★ ${positionLabel(t.winnerPosition!)}`
+                    : delivered
+                    ? '✓ Entregado'
+                    : 'Pendiente'}
+                </span>
+                <button
+                  onClick={() => handleToggle(t.id, !delivered)}
+                  disabled={isToggling}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40 ${
+                    delivered
+                      ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                      : 'text-violet-600 hover:text-violet-800 hover:bg-violet-50'
                   }`}
                 >
-                  #{t.ticketNumber}
-                  {t.winnerPosition !== undefined && <IconStar className="w-2 h-2" />}
-                  {t.winnerPosition === undefined && delivered && (
-                    <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </span>
-              );
-            })}
-          </div>
-
-          {allDelivered ? (
-            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mb-1">
+                  {isToggling ? '…' : delivered ? '↩ Revertir' : '✓ Entregar'}
+                </button>
+              </div>
+            );
+          })}
+          {allDelivered && (
+            <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 pt-1 px-1.5">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
               Todos entregados
             </p>
-          ) : pendingTickets.length > 0 && (
-            <button
-              onClick={() => setConfirmOpen(true)}
-              className="mb-1 text-[10px] font-semibold text-violet-600 hover:text-violet-800 flex items-center gap-1 transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              {pendingTickets.length === 1
-                ? 'Marcar ticket como entregado'
-                : `Marcar ${pendingTickets.length} tickets como entregados`}
-            </button>
           )}
-
-          <ConfirmModal
-            isOpen={confirmOpen}
-            onClose={() => setConfirmOpen(false)}
-            onConfirm={handleConfirmDeliver}
-            loading={delivering}
-            title="Confirmar entrega"
-            message={
-              pendingTickets.length === 1
-                ? `¿Confirmas que entregaste el ticket #${pendingTickets[0]?.ticketNumber} a ${spending.customer.name}?`
-                : `¿Confirmas que entregaste ${pendingTickets.length} tickets a ${spending.customer.name}? Esta acción no se puede deshacer.`
-            }
-            confirmLabel="Sí, marcar como entregado"
-          />
-
-          {printSelectOpen && (
-            <PrintSelectModal
-              tickets={customerTickets}
-              customerName={spending.customer.name}
-              localDelivered={localDelivered}
-              raffleName={raffleName}
-              printSettings={printSettings}
-              onClose={() => setPrintSelectOpen(false)}
-            />
-          )}
-        </>
+        </div>
       )}
 
-      <div className="mt-1.5">
-        <div className="flex items-center gap-2 mb-1">
+      {printSelectOpen && (
+        <PrintSelectModal
+          tickets={customerTickets}
+          customerName={spending.customer.name}
+          localDelivered={localDelivered}
+          localUndelivered={localUndelivered}
+          raffleName={raffleName}
+          printSettings={printSettings}
+          onClose={() => setPrintSelectOpen(false)}
+        />
+      )}
+
+      <div className="mt-2">
+        <div className="flex items-center gap-2">
           <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
               style={{ width: `${pct}%` }} />
@@ -299,13 +278,31 @@ function SpendingRow({
 export function ParticipantsList({ raffle, printSettings = { businessName: '' } }: { raffle: DetailRaffle; printSettings?: RaffleTicketPrintSettings }) {
   const [search, setSearch] = useState('');
   const [localDelivered, setLocalDelivered] = useState<Set<string>>(new Set());
+  const [localUndelivered, setLocalUndelivered] = useState<Set<string>>(new Set());
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const q = search.toLowerCase().trim();
   const isSpending = raffle.ticketMode === 'SPENDING_THRESHOLD';
 
-  const handleDeliver = async (ticketIds: string[]) => {
-    await rafflesApi.deliverTickets(raffle.id, ticketIds);
-    setLocalDelivered((prev) => new Set([...prev, ...ticketIds]));
-    toast.success(ticketIds.length === 1 ? 'Ticket entregado' : `${ticketIds.length} tickets entregados`);
+  const isEffectivelyDelivered = (ticketId: string, serverDelivered: boolean) =>
+    (serverDelivered || localDelivered.has(ticketId)) && !localUndelivered.has(ticketId);
+
+  const handleToggleDelivery = async (ticketId: string, deliver: boolean) => {
+    try {
+      if (deliver) {
+        await rafflesApi.deliverTickets(raffle.id, [ticketId]);
+        setLocalDelivered((prev) => new Set([...prev, ticketId]));
+        setLocalUndelivered((prev) => { const next = new Set(prev); next.delete(ticketId); return next; });
+        toast.success('Ticket entregado');
+      } else {
+        await rafflesApi.undeliverTickets(raffle.id, [ticketId]);
+        setLocalUndelivered((prev) => new Set([...prev, ticketId]));
+        setLocalDelivered((prev) => { const next = new Set(prev); next.delete(ticketId); return next; });
+        toast.success('Entrega revertida');
+      }
+    } catch (err) {
+      handleApiError(err, deliver ? 'Error al marcar como entregado' : 'Error al revertir entrega');
+      throw err;
+    }
   };
 
   if (isSpending) {
@@ -323,7 +320,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
     const winnerByTicket = new Map(activeWinners.map((w) => [w.ticketId, w.position]));
 
     const totalPending = (raffle.tickets ?? []).filter(
-      (t) => !t.delivered && !localDelivered.has(t.id),
+      (t) => !isEffectivelyDelivered(t.id, t.delivered),
     ).length;
     const totalTickets = (raffle.tickets ?? []).length;
 
@@ -384,7 +381,8 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
                   winnerPosition={winnerByCustomer.get(s.customerId)}
                   customerTickets={customerTickets}
                   localDelivered={localDelivered}
-                  onDeliver={handleDeliver}
+                  localUndelivered={localUndelivered}
+                  onToggleDelivery={handleToggleDelivery}
                   raffleName={raffle.name}
                   printSettings={printSettings}
                 />
@@ -396,7 +394,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
     );
   }
 
-  // ── Vista por producto (PRODUCT_MATCH) — un ticket por fila, impresión directa ─
+  // ── Vista por producto (PRODUCT_MATCH) — un ticket por fila ──────────────────
 
   const filtered = q
     ? raffle.tickets.filter(
@@ -405,6 +403,15 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
           (t.customer.phone ?? '').toLowerCase().includes(q),
       )
     : raffle.tickets;
+
+  const handleToggleTicket = async (ticketId: string, deliver: boolean) => {
+    setTogglingId(ticketId);
+    try {
+      await handleToggleDelivery(ticketId, deliver);
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -428,6 +435,8 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
         <div className="space-y-1.5">
           {filtered.map((t) => {
             const win = raffle.winners.find((w) => w.ticketId === t.id && !w.voided);
+            const delivered = isEffectivelyDelivered(t.id, t.delivered);
+            const isToggling = togglingId === t.id;
             return (
               <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
                 win ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'
@@ -445,6 +454,18 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
                     <p className="text-xs text-gray-400 mt-0.5">{t.customer.phone}</p>
                   )}
                 </div>
+                <button
+                  onClick={() => handleToggleTicket(t.id, !delivered)}
+                  disabled={isToggling}
+                  title={delivered ? 'Revertir entrega' : 'Marcar como entregado'}
+                  className={`text-[10px] font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-40 shrink-0 ${
+                    delivered
+                      ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                      : 'text-violet-600 hover:text-violet-800 hover:bg-violet-50'
+                  }`}
+                >
+                  {isToggling ? '…' : delivered ? '↩' : '✓ Entregar'}
+                </button>
                 <PrintButton
                   onClick={() =>
                     printRaffleTickets(
