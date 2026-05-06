@@ -35,109 +35,46 @@ function PrintSelectModal({
 }) {
   const isDelivered = (t: SpendingTicket) => t.delivered || localDelivered.has(t.id);
 
-  // Pre-selecciona solo los pendientes de entrega
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(tickets.filter((t) => !isDelivered(t)).map((t) => t.id)),
-  );
-
-  const toggle = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
-  const selectAll   = () => setSelected(new Set(tickets.map((t) => t.id)));
-  const deselectAll = () => setSelected(new Set());
-
-  const handlePrint = () => {
-    const toPrint = tickets
-      .filter((t) => selected.has(t.id))
-      .map((t) => ({ ticketNumber: t.ticketNumber, customerName }));
-    printRaffleTickets(toPrint, raffleName, printSettings);
+  const handlePrint = (t: SpendingTicket) => {
+    printRaffleTickets([{ ticketNumber: t.ticketNumber, customerName }], raffleName, printSettings);
     onClose();
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={`Imprimir tickets — ${customerName}`} size="sm">
-      <div className="space-y-3">
-
-        {/* Controles bulk */}
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">
-            {selected.size} de {tickets.length} seleccionado{selected.size !== 1 ? 's' : ''}
-          </p>
-          <div className="flex gap-2 text-[11px] font-medium">
-            <button onClick={selectAll}   className="text-violet-600 hover:text-violet-800 transition-colors">Todos</button>
-            <span className="text-gray-200">|</span>
-            <button onClick={deselectAll} className="text-gray-500 hover:text-gray-700 transition-colors">Ninguno</button>
-          </div>
-        </div>
-
-        {/* Lista de tickets */}
-        <div className="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
-          {tickets.map((t) => {
-            const delivered = isDelivered(t);
-            const checked   = selected.has(t.id);
-            return (
-              <label
-                key={t.id}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors select-none ${
-                  checked ? 'bg-violet-50 border border-violet-100' : 'bg-gray-50 border border-transparent'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => toggle(t.id)}
-                  className="w-3.5 h-3.5 rounded accent-violet-600 shrink-0"
-                />
-                <span className="font-mono font-bold text-sm text-gray-700 w-10 shrink-0">
-                  #{t.ticketNumber}
-                </span>
-                <span className={`text-[11px] font-medium ml-auto ${
-                  t.winnerPosition !== undefined
-                    ? 'text-amber-700'
-                    : delivered
-                    ? 'text-emerald-600'
-                    : 'text-gray-400'
-                }`}>
-                  {t.winnerPosition !== undefined
-                    ? `★ ${positionLabel(t.winnerPosition)}`
-                    : delivered
-                    ? '✓ Entregado'
-                    : 'Pendiente'}
-                </span>
-              </label>
-            );
-          })}
-        </div>
-
-        {/* Acciones */}
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handlePrint}
-            disabled={selected.size === 0}
-            className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 rounded-xl transition-colors flex items-center justify-center gap-1.5"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
-            {selected.size === 0
-              ? 'Imprimir'
-              : selected.size === 1
-              ? 'Imprimir 1 ticket'
-              : `Imprimir ${selected.size} tickets`}
-          </button>
-        </div>
+    <Modal isOpen onClose={onClose} title={`Imprimir ticket — ${customerName}`} size="sm">
+      <div className="space-y-1.5">
+        {tickets.map((t) => {
+          const delivered = isDelivered(t);
+          return (
+            <button
+              key={t.id}
+              onClick={() => handlePrint(t)}
+              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-violet-50 hover:border-violet-100 border border-transparent transition-colors text-left"
+            >
+              <span className="font-mono font-bold text-sm text-gray-700 w-10 shrink-0">
+                #{t.ticketNumber}
+              </span>
+              <span className={`text-[11px] font-medium ${
+                t.winnerPosition !== undefined
+                  ? 'text-amber-700'
+                  : delivered
+                  ? 'text-emerald-600'
+                  : 'text-gray-400'
+              }`}>
+                {t.winnerPosition !== undefined
+                  ? `★ ${positionLabel(t.winnerPosition)}`
+                  : delivered
+                  ? '✓ Entregado'
+                  : 'Pendiente'}
+              </span>
+              <svg className="w-3.5 h-3.5 text-gray-300 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+            </button>
+          );
+        })}
       </div>
     </Modal>
   );
