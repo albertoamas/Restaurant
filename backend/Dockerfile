@@ -43,9 +43,10 @@ RUN pnpm install --frozen-lockfile --prod
 # Copy compiled shared package so require('@pos/shared') resolves at runtime
 COPY --from=builder /repo/packages/shared/dist /app/packages/shared/dist
 
-# Copy compiled output from builder
+# Copy compiled output from builder (seeds excluidos de producción)
 WORKDIR /app/backend
 COPY --from=builder /repo/backend/dist ./dist
+RUN find ./dist -name 'seed*.js' -delete
 COPY --from=builder /repo/backend/prisma ./prisma
 
 # Generate Prisma client for the runner platform (linux/alpine binary)

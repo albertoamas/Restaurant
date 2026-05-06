@@ -11,6 +11,9 @@ coverage/
 *.tsbuildinfo
 test-results/
 
+# Scripts de seed personales — seed.ts permanece (requerido para dev setup)
+backend/src/seed-*.ts
+
 # Uploads locales — en producción se almacenan en el volumen Docker uploads_data
 backend/uploads/*.webp
 backend/uploads/*.jpg
