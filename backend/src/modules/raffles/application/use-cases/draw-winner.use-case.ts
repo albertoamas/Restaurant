@@ -39,6 +39,9 @@ export class DrawWinnerUseCase {
     const activePositions = new Set(activeWinners.map((w) => w.position));
     const allPositions = Array.from({ length: raffle.numberOfWinners }, (_, i) => i + 1);
     const missingPositions = allPositions.filter((p) => !activePositions.has(p));
+    if (missingPositions.length === 0) {
+      throw new BadRequestException('El sorteo ya fue completado — todas las posiciones tienen ganador activo');
+    }
     const nextPosition = Math.max(...missingPositions);
 
     const winnerTicket = availableTickets[randomInt(0, availableTickets.length)];

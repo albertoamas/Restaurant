@@ -19,6 +19,11 @@ const INIT_OFFSET       = 30 * ITEM_H;   // 2160 px — fixed, pool-size indepen
 // d = SPEED * T / 2 makes startSpeed = SPEED (seamless handoff from fast phase).
 const DECEL_DIST = Math.round((SPEED * WINNER_PAUSE_MS) / 2000);
 
+// For pools larger than this, winner occurrences are spaced > DECEL_DIST apart.
+// Targeting the winner directly would cause jarring acceleration at decel start.
+// In that case we stop at DECEL_DIST ahead and reveal winner via overlay fade-in.
+const SMALL_POOL_THRESHOLD = Math.floor(DECEL_DIST / ITEM_H); // ≈ 20
+
 // ─── Light-theme tokens ───────────────────────────────────────────────────────
 
 const PAGE_BG   = 'oklch(0.972 0.005 255)';
@@ -115,21 +120,24 @@ export function DrawingScreen({
     if (!revealName || phase !== 'fast') return;
     if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
 
-    const wIdx = pool.indexOf(revealName) >= 0 ? pool.indexOf(revealName) : 0;
+    const from = offsetRef.current;
+    let to: number;
 
-    // Find the winner occurrence closest to DECEL_DIST ahead so easeOutQuad
-    // starts at ≈ SPEED — seamless handoff from the fast phase.
-    const from        = offsetRef.current;
-    const idealTarget = from + DECEL_DIST;
-    const idealCenter = CENTER + idealTarget / ITEM_H;
-    const k           = Math.round((idealCenter - wIdx) / pool.length);
-
-    // Clamp: always strictly forward, never backwards
-    const minCenter = CENTER + from / ITEM_H + 3;
-    const safeK     = Math.max(k, Math.ceil((minCenter - wIdx) / pool.length));
-
-    const targetCenter = safeK * pool.length + wIdx;
-    const to           = (targetCenter - CENTER) * ITEM_H;
+    if (pool.length <= SMALL_POOL_THRESHOLD) {
+      // Small pool: winner repeats within DECEL_DIST → decel directly onto winner name.
+      const wIdx        = pool.indexOf(revealName) >= 0 ? pool.indexOf(revealName) : 0;
+      const idealCenter = CENTER + (from + DECEL_DIST) / ITEM_H;
+      const k           = Math.round((idealCenter - wIdx) / pool.length);
+      const minCenter   = CENTER + from / ITEM_H + 3;
+      const safeK       = Math.max(k, Math.ceil((minCenter - wIdx) / pool.length));
+      to                = (safeK * pool.length + wIdx - CENTER) * ITEM_H;
+    } else {
+      // Large pool: winner occurrences are spaced farther than DECEL_DIST apart.
+      // Targeting winner directly would make easeOutQuad start much faster than SPEED,
+      // causing the "spinning wild" bug. Stop at exactly DECEL_DIST ahead instead —
+      // the winner is revealed via the overlay fade-in below.
+      to = from + DECEL_DIST;
+    }
 
     revealRef.current = { start: performance.now(), from, to };
     tickRef.current   = from;
@@ -244,21 +252,27 @@ export function DrawingScreen({
             ))}
           </div>
 
-          {/* Winner overlay — covers the list item at center with drum background,
-              then renders the winner name in primary-700. Only mounted when stopped. */}
-          {stopped && revealName && (
-            <div
-              className="absolute inset-x-0 z-30 flex items-center justify-center px-6 pointer-events-none"
-              style={{ top: CENTER * ITEM_H, height: ITEM_H, background: DRUM_BG }}
+          {/* Winner overlay — covers center slot with drum background and reveals winner name.
+              Always rendered; opacity transitions to 1 on stop for a smooth fade-in reveal.
+              For small pools the winner was already at center (seamless).
+              For large pools this is the primary reveal mechanism. */}
+          <div
+            className="absolute inset-x-0 z-30 flex items-center justify-center px-6 pointer-events-none"
+            style={{
+              top: CENTER * ITEM_H,
+              height: ITEM_H,
+              background: DRUM_BG,
+              opacity: stopped && revealName ? 1 : 0,
+              transition: 'opacity 0.3s ease-out',
+            }}
+          >
+            <span
+              className="text-center font-black leading-tight truncate max-w-full font-heading"
+              style={{ fontSize: '1.6rem', color: PRI7, textShadow: '0 0 16px oklch(0.47 0.17 234 / 0.18)' }}
             >
-              <span
-                className="text-center font-black leading-tight truncate max-w-full font-heading"
-                style={{ fontSize: '1.6rem', color: PRI7, textShadow: '0 0 16px oklch(0.47 0.17 234 / 0.18)' }}
-              >
-                {revealName}
-              </span>
-            </div>
-          )}
+              {revealName ?? ''}
+            </span>
+          </div>
 
           {/* Gradient masks — fade list edges to white */}
           <div

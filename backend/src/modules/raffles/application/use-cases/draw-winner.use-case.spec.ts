@@ -3,7 +3,6 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { DrawWinnerUseCase } from './draw-winner.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
-import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import type { RaffleWinnerDto } from '@pos/shared';
 
 const PRIZES_3 = [
@@ -52,22 +51,6 @@ function makeWinnerDto(overrides: Partial<RaffleWinnerDto> = {}): RaffleWinnerDt
     voided: false,
     ...overrides,
   } as RaffleWinnerDto;
-}
-
-/** Crea un RaffleWinner (entidad) — usado solo para verificar addWinner calls. */
-function makeWinner(overrides: Partial<RaffleWinner> = {}): RaffleWinner {
-  return RaffleWinner.reconstitute({
-    id: 'winner-1',
-    tenantId: 'tenant-1',
-    raffleId: 'r1',
-    customerId: 'cust-0',
-    ticketId: 'ticket-0',
-    position: 3,
-    prizeDescription: '3er lugar',
-    drawnAt: new Date(),
-    voided: false,
-    ...overrides,
-  });
 }
 
 describe('DrawWinnerUseCase', () => {
@@ -311,6 +294,23 @@ describe('DrawWinnerUseCase', () => {
         id: 'r1', spendings: [],
         tickets: [makeTickets(1)[0]],
         winners: [makeWinnerDto({ ticketId: 'ticket-0', position: 2, voided: false })],
+      } as any);
+
+      await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
+      expect(repo.drawWinnerAtomic).not.toHaveBeenCalled();
+    });
+
+    it('lanza BadRequestException si todas las posiciones ya tienen ganador activo (race condition defensiva)', async () => {
+      // Escenario: 2 ganadores de 2 posiciones, ambos activos — missingPositions = []
+      const raffle = makeRaffle('DRAWING', 2);
+      repo.findRaffleById.mockResolvedValue(raffle);
+      repo.findRaffleWithTickets.mockResolvedValueOnce({
+        id: 'r1', spendings: [],
+        tickets: makeTickets(5),
+        winners: [
+          makeWinnerDto({ ticketId: 'ticket-0', position: 2, voided: false }),
+          makeWinnerDto({ id: 'w2', ticketId: 'ticket-1', position: 1, voided: false }),
+        ],
       } as any);
 
       await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);

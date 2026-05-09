@@ -50,7 +50,6 @@ export interface RaffleRepositoryPort {
   /** Borra tickets ligados a una orden (modo PRODUCT_MATCH) de sorteos no en DRAWING/DRAWN. */
   deleteTicketsByOrderId(tenantId: string, orderId: string): Promise<void>;
 
-  addWinner(winner: RaffleWinner): Promise<RaffleWinner>;
   findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]>;
   voidWinner(winnerId: string, raffleId: string, tenantId: string): Promise<void>;
 

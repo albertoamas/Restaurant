@@ -77,8 +77,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
   }
 
   async saveRaffle(raffle: Raffle): Promise<void> {
-    await this.prisma.raffle.update({
-      where: { id: raffle.id },
+    await this.prisma.raffle.updateMany({
+      where: { id: raffle.id, tenantId: raffle.tenantId },
       data: {
         name: raffle.name,
         description: raffle.description,
@@ -245,23 +245,6 @@ export class RaffleRepository implements RaffleRepositoryPort {
 
   // ─── Winners ───────────────────────────────────────────────────────────────
 
-  async addWinner(winner: RaffleWinner): Promise<RaffleWinner> {
-    await this.prisma.raffleWinner.create({
-      data: {
-        id: winner.id,
-        tenantId: winner.tenantId,
-        raffleId: winner.raffleId,
-        customerId: winner.customerId,
-        ticketId: winner.ticketId,
-        position: winner.position,
-        prizeDescription: winner.prizeDescription,
-        drawnAt: winner.drawnAt,
-        voided: false,
-      },
-    });
-    return winner;
-  }
-
   async findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]> {
     const rows = await this.prisma.raffleWinner.findMany({
       where: { raffleId, tenantId },
@@ -325,8 +308,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
         },
       });
 
-      await tx.raffle.update({
-        where: { id },
+      await tx.raffle.updateMany({
+        where: { id, tenantId },
         data: { status: newStatus, updatedAt: new Date() },
       });
     });
@@ -391,8 +374,8 @@ export class RaffleRepository implements RaffleRepositoryPort {
     customerId: string,
     excessCount: number,
   ): Promise<void> {
-    const raffle = await this.prisma.raffle.findUnique({
-      where: { id: raffleId },
+    const raffle = await this.prisma.raffle.findFirst({
+      where: { id: raffleId, tenantId },
       select: { status: true },
     });
     if (!raffle || raffle.status === 'DRAWING' || raffle.status === 'DRAWN') return;
