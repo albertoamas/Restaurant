@@ -30,7 +30,7 @@ interface ExpenseFormModalProps {
 let rowKey = 0;
 
 function newRow(categoryId = ''): ItemRow {
-  return { key: ++rowKey, categoryId, name: '', mode: 'simple', amount: '', quantity: '1', unitPrice: '' };
+  return { key: ++rowKey, categoryId, name: '', mode: 'simple', amount: '', quantity: '', unitPrice: '' };
 }
 
 function rowFromItem(item: ExpenseDto['items'][number], categories: ExpenseCategoryDto[]): ItemRow {
@@ -282,7 +282,7 @@ function ItemRowForm({
             placeholder="Cant."
             value={row.quantity}
             onChange={(e) => onChange({ quantity: e.target.value })}
-            className={`${inputBase} w-14 text-right`}
+            className={`${inputBase} w-20 text-left`}
             required
           />
           <span className="text-gray-300 text-xs font-medium">×</span>
@@ -290,10 +290,10 @@ function ItemRowForm({
             type="number"
             min="0.01"
             step="0.01"
-            placeholder="P.unit"
+            placeholder="P. unit."
             value={row.unitPrice}
             onChange={(e) => onChange({ unitPrice: e.target.value })}
-            className={`${inputBase} w-24 text-right`}
+            className={`${inputBase} w-28 text-left`}
             required
           />
           <span className="text-gray-300 text-xs">=</span>
