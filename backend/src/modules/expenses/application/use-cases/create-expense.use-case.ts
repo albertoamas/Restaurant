@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
 import { Expense } from '../../domain/entities/expense.entity';
-import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort } from '../../domain/ports/expense-repository.port';
+import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
+import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { CreateExpenseDto } from '../dto/create-expense.dto';
@@ -12,11 +13,12 @@ export class CreateExpenseUseCase {
     @Inject(EXPENSE_REPOSITORY_PORT)
     private readonly expenseRepository: ExpenseRepositoryPort,
 
+    @Inject(EXPENSE_CATEGORY_REPOSITORY_PORT)
+    private readonly categoryRepository: ExpenseCategoryRepositoryPort,
+
     @Inject('BranchRepositoryPort')
     private readonly branchRepository: BranchRepositoryPort,
 
-    // Necesario para adjuntar el gasto a la sesión de caja activa del branch.
-    // El módulo CashSessionModule debe estar importado en ExpensesModule.
     @Inject('CashSessionRepositoryPort')
     private readonly cashSessionRepository: CashSessionRepositoryPort,
 
@@ -24,27 +26,47 @@ export class CreateExpenseUseCase {
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CreateExpenseDto): Promise<Expense> {
-    // Verificar que la sucursal existe y pertenece a este tenant.
     const branch = await this.branchRepository.findById(branchId, tenantId);
-    if (!branch) {
-      throw new BadRequestException(`Sucursal ${branchId} no encontrada`);
+    if (!branch) throw new BadRequestException(`Sucursal ${branchId} no encontrada`);
+
+    // Resolve category names for all items that have a categoryId.
+    const categoryIds = [...new Set(dto.items.map((i) => i.categoryId).filter(Boolean) as string[])];
+    const categoryMap = new Map<string, string>();
+    for (const catId of categoryIds) {
+      const cat = await this.categoryRepository.findById(catId, tenantId);
+      if (cat) categoryMap.set(catId, cat.name);
     }
 
-    // Buscar sesión activa del branch para vincular el gasto formalmente.
-    // Si no hay sesión abierta (fuera de horario), cashSessionId queda null — el gasto se registra igual.
+    // Build items with computed totalPrice and resolved category name.
+    const items: NewExpenseItemInput[] = dto.items.map((i) => {
+      const totalPrice = Math.round(i.quantity * i.unitPrice * 100) / 100;
+      return {
+        categoryId:   i.categoryId ?? null,
+        categoryName: i.categoryId ? (categoryMap.get(i.categoryId) ?? null) : null,
+        name:         i.name,
+        quantity:     i.quantity,
+        unitPrice:    i.unitPrice,
+        totalPrice,
+      };
+    });
+
+    const totalAmount = items.reduce((sum, i) => sum + i.totalPrice, 0);
+    const firstCategoryName = items[0]?.categoryName ?? 'OTHER';
+
     const activeSession = await this.cashSessionRepository.findOpenByBranch(tenantId, branchId);
 
     const expense = Expense.create({
       tenantId,
       branchId,
-      category:      dto.category,
-      amount:        dto.amount,
+      category:      firstCategoryName,
+      amount:        Math.round(totalAmount * 100) / 100,
       description:   dto.description ?? null,
       createdBy:     userId,
       cashSessionId: activeSession?.id ?? null,
+      items:         [],
     });
 
-    const saved = await this.expenseRepository.save(expense);
+    const saved = await this.expenseRepository.save(expense, items);
     this.eventsService?.emitToTenant(tenantId, 'expense.created', saved);
     return saved;
   }

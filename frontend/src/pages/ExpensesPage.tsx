@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { ExpenseCategory, UserRole } from '@pos/shared';
+import { UserRole } from '@pos/shared';
+import type { ExpenseDto } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
 import { reportsApi } from '../api/reports.api';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAuth } from '../context/auth.context';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
-import { Card } from '../components/ui/Card';
 import { ExpenseFormModal } from '../components/expenses/ExpenseFormModal';
 import { handleApiError } from '../utils/api-error';
 import { today } from '../utils/date';
@@ -40,14 +40,34 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: 'custom', label: 'Rango' },
 ];
 
-const CATEGORY_META: Record<ExpenseCategory, { label: string; icon: string; color: string; bg: string }> = {
-  [ExpenseCategory.SUPPLIES]:    { label: 'Insumos',       icon: '🧂', color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200' },
-  [ExpenseCategory.WAGES]:       { label: 'Personal',      icon: '👤', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200' },
-  [ExpenseCategory.UTILITIES]:   { label: 'Servicios',     icon: '💡', color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' },
-  [ExpenseCategory.TRANSPORT]:   { label: 'Transporte',    icon: '🚗', color: 'text-cyan-700',   bg: 'bg-cyan-50 border-cyan-200' },
-  [ExpenseCategory.MAINTENANCE]: { label: 'Mantenimiento', icon: '🔧', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-  [ExpenseCategory.OTHER]:       { label: 'Otro',          icon: '📋', color: 'text-gray-600',   bg: 'bg-gray-50 border-gray-200' },
-};
+/** Derives a display label for an expense — category of first item, or legacy category. */
+function expenseCategoryLabel(expense: ExpenseDto): string {
+  if (expense.items.length > 0) {
+    const firstName = expense.items[0].categoryName;
+    if (firstName) return firstName;
+  }
+  const LEGACY: Record<string, string> = {
+    SUPPLIES: 'Insumos', WAGES: 'Personal', UTILITIES: 'Servicios',
+    TRANSPORT: 'Transporte', MAINTENANCE: 'Mantenimiento', OTHER: 'Otro',
+  };
+  return LEGACY[expense.category] ?? expense.category;
+}
+
+const CAT_COLORS = [
+  { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    bar: 'bg-blue-400'    },
+  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   bar: 'bg-amber-400'   },
+  { bg: 'bg-violet-50',  text: 'text-violet-700',  border: 'border-violet-200',  bar: 'bg-violet-400'  },
+  { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', bar: 'bg-emerald-400' },
+  { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200',    bar: 'bg-rose-400'    },
+  { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200',    bar: 'bg-cyan-400'    },
+  { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200',  bar: 'bg-orange-400'  },
+];
+
+function categoryColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return CAT_COLORS[h % CAT_COLORS.length];
+}
 
 export function ExpensesPage() {
   const { currentBranchId, user } = useAuth();
@@ -55,21 +75,19 @@ export function ExpensesPage() {
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
   const [showModal, setShowModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseDto | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | ''>('');
   const [totalSales, setTotalSales] = useState<number | null>(null);
   const [salesLoading, setSalesLoading] = useState(false);
 
   const { from, to } = getRange(period, customFrom, customTo);
   const branchParam = user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;
 
-  // Límites exactos del día en Bolivia (UTC-4), independiente del timezone del dispositivo
   const { start: utcFrom } = getBoliviaDayBounds(from);
   const { end:   utcTo   } = getBoliviaDayBounds(to);
 
   const { expenses, summary, loading, reload } = useExpenses(utcFrom, utcTo, branchParam);
 
-  // Load sales total for net profit calculation
   useEffect(() => {
     setSalesLoading(true);
     reportsApi
@@ -90,11 +108,17 @@ export function ExpensesPage() {
   };
 
   const netProfit = totalSales !== null ? totalSales - summary.total : null;
-  const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
+  const activeClass   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
   const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
 
+  // Unique category labels present in summary (for filter chips)
+  const summaryCategories = Object.entries(summary.byCategory)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1]);
+
+  const [selectedCategory, setSelectedCategory] = useState('');
   const filteredExpenses = selectedCategory
-    ? expenses.filter((e) => e.category === selectedCategory)
+    ? expenses.filter((e) => expenseCategoryLabel(e) === selectedCategory)
     : expenses;
 
   return (
@@ -145,7 +169,6 @@ export function ExpensesPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {/* Total gastos */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
           <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-red-500">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,7 +181,6 @@ export function ExpensesPage() {
           </p>
         </div>
 
-        {/* Ventas */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-emerald-500">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,7 +193,6 @@ export function ExpensesPage() {
           </p>
         </div>
 
-        {/* Ganancia neta */}
         <div className={`rounded-2xl border shadow-[0_1px_4px_oklch(0.13_0.012_260/0.07)] p-4 flex flex-col gap-2 ${
           netProfit !== null && netProfit >= 0
             ? 'bg-emerald-50 border-emerald-200'
@@ -197,7 +218,7 @@ export function ExpensesPage() {
       </div>
 
       {/* Category filter chips */}
-      {expenses.length > 0 && (
+      {summaryCategories.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-4">
           <button
             onClick={() => setSelectedCategory('')}
@@ -207,20 +228,20 @@ export function ExpensesPage() {
           >
             Todas
           </button>
-          {Object.values(ExpenseCategory).filter((cat) => summary.byCategory[cat]).map((cat) => {
-            const meta = CATEGORY_META[cat];
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-                  selectedCategory === cat ? activeClass : inactiveClass
-                }`}
-              >
-                {meta.icon} {meta.label}
-              </button>
-            );
-          })}
+          {summaryCategories.map(([cat, total]) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                selectedCategory === cat ? activeClass : inactiveClass
+              }`}
+            >
+              {cat}
+              <span className={`ml-1.5 text-[11px] ${selectedCategory === cat ? 'opacity-80' : 'text-gray-400'}`}>
+                Bs {total.toFixed(2)}
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -237,83 +258,141 @@ export function ExpensesPage() {
           <p className="text-xs mt-1">Agrega el primer gasto del período</p>
         </div>
       ) : (
-        <Card variant="default" padding="none">
-          <div className="divide-y divide-gray-50">
-            {filteredExpenses.map((expense) => {
-              const meta = CATEGORY_META[expense.category];
-              return (
-                <div key={expense.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/60 transition-colors">
-                  {/* Category badge */}
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold border shrink-0 ${meta.bg} ${meta.color}`}>
-                    {meta.icon} {meta.label}
-                  </span>
-
-                  {/* Description */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 truncate">
-                      {expense.description || <span className="text-gray-400 italic">Sin descripción</span>}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">
-                      {new Date(expense.createdAt).toLocaleString('es-BO', {
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Amount */}
-                  <span className="font-heading font-bold text-sm text-red-600 shrink-0">
-                    Bs {Number(expense.amount).toFixed(2)}
-                  </span>
-
-                  {/* Delete */}
-                  {deletingId === expense.id ? (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => { handleDelete(expense.id); setDeletingId(null); }}
-                        className="p-1.5 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors"
-                        title="Confirmar eliminación"
-                        aria-label="Confirmar eliminación del gasto"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => setDeletingId(null)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        title="Cancelar"
-                        aria-label="Cancelar eliminación"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeletingId(expense.id)}
-                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
-                      title="Eliminar gasto"
-                      aria-label="Eliminar gasto"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+        <div className="rounded-2xl border border-white/70 bg-white/90 backdrop-blur-sm shadow-[0_4px_16px_oklch(0.13_0.012_260/0.08)] overflow-hidden">
+          {filteredExpenses.map((expense, idx) => (
+            <ExpenseRow
+              key={expense.id}
+              expense={expense}
+              isFirst={idx === 0}
+              isDeleting={deletingId === expense.id}
+              onEdit={() => { setEditingExpense(expense); setShowModal(true); }}
+              onDelete={() => { handleDelete(expense.id); setDeletingId(null); }}
+              onConfirmDelete={() => setDeletingId(expense.id)}
+              onCancelDelete={() => setDeletingId(null)}
+            />
+          ))}
+        </div>
       )}
 
       <ExpenseFormModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => { setShowModal(false); setEditingExpense(null); }}
         onSaved={reload}
+        expense={editingExpense ?? undefined}
       />
+    </div>
+  );
+}
+
+function ExpenseRow({
+  expense, isFirst, isDeleting, onEdit, onDelete, onConfirmDelete, onCancelDelete,
+}: {
+  expense: ExpenseDto;
+  isFirst: boolean;
+  isDeleting: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+}) {
+  const categoryLabel = expenseCategoryLabel(expense);
+  const color    = categoryColor(categoryLabel);
+  const hasItems = expense.items.length > 0;
+
+  return (
+    <div className={`group flex gap-0 transition-colors
+      ${!isFirst ? 'border-t border-gray-100' : ''}
+      ${isDeleting ? 'bg-red-50/40' : 'hover:bg-gray-50/70'}`}
+    >
+      {/* Category color bar */}
+      <div className={`w-1 shrink-0 ${color.bar} ${isFirst ? 'rounded-tl-2xl' : ''}`} />
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 px-4 py-4">
+        {/* Top row: badge · date · amount · delete */}
+        <div className="flex items-center gap-3">
+          <span className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border shrink-0
+            ${color.bg} ${color.text} ${color.border}`}>
+            {categoryLabel}
+          </span>
+
+          <span className="text-[11px] text-gray-400 flex-1 truncate">
+            {new Date(expense.createdAt).toLocaleString('es-BO', {
+              weekday: 'short', month: 'short', day: 'numeric',
+              hour: '2-digit', minute: '2-digit',
+            })}
+          </span>
+
+          <span className="font-heading font-black text-sm text-gray-900 shrink-0 tabular-nums">
+            Bs {Number(expense.amount).toFixed(2)}
+          </span>
+
+          {isDeleting ? (
+            <div className="flex items-center gap-1 shrink-0">
+              <button onClick={onDelete}
+                className="p-1.5 rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <button onClick={onCancelDelete}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={onEdit}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button onClick={onConfirmDelete}
+                className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Items */}
+        {hasItems && (
+          <div className="mt-2.5 space-y-1.5">
+            {expense.items.map((item) => (
+              <div key={item.id} className="flex items-baseline gap-2 text-sm">
+                <span className="font-medium text-gray-700 flex-1 min-w-0 truncate">
+                  {item.name}
+                </span>
+                <span className="text-xs text-gray-400 shrink-0 tabular-nums">
+                  {Number(item.quantity) % 1 === 0
+                    ? `${Number(item.quantity)} × Bs ${item.unitPrice.toFixed(2)}`
+                    : `${Number(item.quantity).toFixed(3)} × Bs ${item.unitPrice.toFixed(2)}`}
+                </span>
+                <span className={`text-xs font-semibold shrink-0 tabular-nums ${color.text}`}>
+                  Bs {item.totalPrice.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Legacy description */}
+        {!hasItems && expense.description && (
+          <p className="text-sm text-gray-500 mt-1.5">{expense.description}</p>
+        )}
+
+        {/* Notes below items */}
+        {hasItems && expense.description && (
+          <p className="text-xs text-gray-400 italic mt-1.5">{expense.description}</p>
+        )}
+      </div>
     </div>
   );
 }

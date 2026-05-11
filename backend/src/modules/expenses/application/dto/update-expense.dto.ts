@@ -11,7 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class CreateExpenseItemDto {
+export class UpdateExpenseItemDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
@@ -29,18 +29,14 @@ export class CreateExpenseItemDto {
   unitPrice: number;
 }
 
-export class CreateExpenseDto {
+export class UpdateExpenseDto {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => CreateExpenseItemDto)
-  items: CreateExpenseItemDto[];
+  @Type(() => UpdateExpenseItemDto)
+  items: UpdateExpenseItemDto[];
 
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsUUID()
-  branchId?: string;
 }

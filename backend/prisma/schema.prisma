@@ -64,6 +64,7 @@ model Tenant {
   orders               Order[]
   cashSessions         CashSession[]
   expenses             Expense[]
+  expenseCategories    ExpenseCategory[]
   customers            Customer[]
   orderPayments        OrderPayment[]
   branchOrderSequences BranchOrderSequence[]
@@ -271,10 +272,50 @@ model Expense {
 
   tenant      Tenant       @relation(fields: [tenantId],      references: [id], onDelete: Cascade)
   cashSession CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  items       ExpenseItem[]
 
   @@index([tenantId, branchId, createdAt])
   @@index([cashSessionId], map: "expenses_cash_session_id_idx")
   @@map("expenses")
+}
+
+// ─── ExpenseCategory ──────────────────────────────────────────
+
+model ExpenseCategory {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  name          String   @db.VarChar(100)
+  icon          String?  @db.VarChar(10)
+  isActive      Boolean  @default(true)  @map("is_active")
+  trackQuantity Boolean  @default(false) @map("track_quantity")
+  sortOrder     Int      @default(0)     @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items  ExpenseItem[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("expense_categories")
+}
+
+// ─── ExpenseItem ──────────────────────────────────────────────
+
+model ExpenseItem {
+  id         String   @id @default(uuid())
+  expenseId  String   @map("expense_id")
+  categoryId String?  @map("category_id")
+  name       String   @db.VarChar(255)
+  quantity   Decimal  @db.Decimal(10, 3)
+  unitPrice  Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice Decimal  @map("total_price") @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  expense  Expense          @relation(fields: [expenseId],  references: [id], onDelete: Cascade)
+  category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([expenseId])
+  @@map("expense_items")
 }
 
 // ─── Customer ─────────────────────────────────────────────────
