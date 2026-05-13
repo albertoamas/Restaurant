@@ -272,11 +272,9 @@ export function ReportPage() {
         </div>
       )}
 
-        <p data-print-hide className="text-xs text-gray-400 mb-6 font-medium">Comparativa activa: {rangeLabel}</p>
-
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : !report || (report.orderCount === 0 && report.paymentBreakdown.cortesia === 0) ? (
+      ) : !report || (report.orderCount === 0 && report.paymentBreakdown.cortesia === 0 && !(expenseSummary && expenseSummary.total > 0)) ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -308,10 +306,10 @@ export function ReportPage() {
               accent="text-violet-600" bg="bg-violet-50"
             />
             <StatCard
-              label="Delivery"
-              value={String(report.ordersByType.delivery)}
-              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" /></svg>}
-              accent="text-amber-600" bg="bg-amber-50"
+              label="Gastos Totales"
+              value={expenseSummary ? `Bs ${expenseSummary.total.toFixed(2)}` : 'Bs 0.00'}
+              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4M4 12l4-4M4 12l4 4" /></svg>}
+              accent="text-red-500" bg="bg-red-50"
             />
           </div>
 
@@ -411,76 +409,72 @@ export function ReportPage() {
             )}
           </Card>
 
-          {/* Net Profit section */}
+          {/* Expense breakdown by category */}
+          {expenseSummary !== null && expenseSummary.total > 0 && (
+            <Card variant="panel" className="mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-gray-700 font-heading">Gastos por Categoría</h3>
+                <span className="font-heading font-bold text-sm text-red-500">Bs {expenseSummary.total.toFixed(2)}</span>
+              </div>
+              <div className="space-y-3">
+                {(Object.entries(expenseSummary.byCategory) as [string, number][])
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([cat, amount]) => (
+                    <div key={cat}>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-gray-600 font-medium">{EXPENSE_LABELS[cat as ExpenseCategory] ?? cat}</span>
+                        <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
+                      </div>
+                      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-red-400 transition-[width] duration-700"
+                          style={{ width: `${(amount / expenseSummary.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Net Profit */}
           {expenseSummary !== null && (
             <Card variant="feature" className="mt-4">
               <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Ganancia Neta</h3>
               {(() => {
                 const netProfit = report.totalSales - expenseSummary.total;
                 const isPositive = netProfit >= 0;
-                const profitPct = report.totalSales > 0
-                  ? Math.min(100, (netProfit / report.totalSales) * 100)
-                  : 0;
-                const expensePct = report.totalSales > 0
-                  ? Math.min(100, (expenseSummary.total / report.totalSales) * 100)
-                  : 0;
-
+                const profitPct = report.totalSales > 0 ? Math.min(100, (netProfit / report.totalSales) * 100) : 0;
+                const expensePct = report.totalSales > 0 ? Math.min(100, (expenseSummary.total / report.totalSales) * 100) : 0;
                 return (
-                  <>
-                    {/* Main net profit display */}
-                    <div className={`rounded-2xl p-4 mb-4 ${isPositive ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 mb-0.5">Ventas — Gastos = Ganancia Neta</p>
-                          <p className="text-xs text-gray-400">
-                            Bs {report.totalSales.toFixed(2)} — Bs {expenseSummary.total.toFixed(2)}
-                          </p>
-                        </div>
-                        <p className={`font-heading font-black text-2xl leading-tight ${isPositive ? 'text-emerald-700' : 'text-red-600'}`}>
-                          Bs {Math.abs(netProfit).toFixed(2)}
-                          {!isPositive && <span className="text-sm font-semibold ml-1">pérdida</span>}
+                  <div className={`rounded-2xl p-4 ${isPositive ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-0.5">Ventas — Gastos = Ganancia Neta</p>
+                        <p className="text-xs text-gray-400">
+                          Bs {report.totalSales.toFixed(2)} — Bs {expenseSummary.total.toFixed(2)}
                         </p>
                       </div>
-                      {/* Stacked bar */}
-                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
-                        {isPositive && (
-                          <>
-                            <div className="h-full bg-emerald-500 rounded-l-full transition-[width] duration-700" style={{ width: `${profitPct}%` }} />
-                            <div className="h-full bg-red-400 rounded-r-full transition-[width] duration-700" style={{ width: `${expensePct}%` }} />
-                          </>
-                        )}
-                        {!isPositive && (
-                          <div className="h-full bg-red-500 rounded-full w-full" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-500">
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Ganancia</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Gastos</span>
-                      </div>
+                      <p className={`font-heading font-black text-2xl leading-tight ${isPositive ? 'text-emerald-700' : 'text-red-600'}`}>
+                        Bs {Math.abs(netProfit).toFixed(2)}
+                        {!isPositive && <span className="text-sm font-semibold ml-1">pérdida</span>}
+                      </p>
                     </div>
-
-                    {/* Expense breakdown by category */}
-                    {expenseSummary.total > 0 && (
-                      <div className="space-y-3">
-                        {(Object.entries(expenseSummary.byCategory) as [ExpenseCategory, number][])
-                          .sort(([, a], [, b]) => b - a)
-                          .map(([cat, amount]) => (
-                            <div key={cat}>
-                              <div className="flex justify-between text-sm mb-1.5">
-                                <span className="text-gray-600 font-medium">{EXPENSE_LABELS[cat] ?? cat}</span>
-                                <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
-                              </div>
-                              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-red-400 transition-[width] duration-700"
-                                  style={{ width: `${expenseSummary.total > 0 ? (amount / expenseSummary.total) * 100 : 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </>
+                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
+                      {isPositive ? (
+                        <>
+                          <div className="h-full bg-emerald-500 rounded-l-full transition-[width] duration-700" style={{ width: `${profitPct}%` }} />
+                          <div className="h-full bg-red-400 rounded-r-full transition-[width] duration-700" style={{ width: `${expensePct}%` }} />
+                        </>
+                      ) : (
+                        <div className="h-full bg-red-500 rounded-full w-full" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-500">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Ganancia</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Gastos</span>
+                    </div>
+                  </div>
                 );
               })()}
             </Card>

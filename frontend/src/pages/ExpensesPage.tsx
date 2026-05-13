@@ -81,6 +81,7 @@ export function ExpensesPage() {
   const [salesLoading, setSalesLoading] = useState(false);
 
   const { from, to } = getRange(period, customFrom, customTo);
+  const rangeLabel = from === to ? from : `${from} → ${to}`;
   const branchParam = user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;
 
   const { start: utcFrom } = getBoliviaDayBounds(from);
@@ -122,7 +123,7 @@ export function ExpensesPage() {
     : expenses;
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
       {/* Period selector */}
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -130,7 +131,12 @@ export function ExpensesPage() {
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Gastos Operativos</h2>
             <p className="text-xs text-gray-500 mt-0.5">Control por categoría, período y rentabilidad neta.</p>
           </div>
-          <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar gasto</Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+              {rangeLabel}
+            </span>
+            <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar gasto</Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
