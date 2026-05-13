@@ -85,7 +85,7 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
     setItems((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
 
   const addItem = () =>
-    setItems((prev) => [...prev, newRow(prev[prev.length - 1]?.categoryId ?? '')]);
+    setItems((prev) => [...prev, newRow()]);
 
   const removeItem = (key: number) =>
     setItems((prev) => (prev.length > 1 ? prev.filter((r) => r.key !== key) : prev));
