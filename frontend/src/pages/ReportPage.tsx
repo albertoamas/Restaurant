@@ -439,42 +439,53 @@ export function ReportPage() {
 
           {/* Net Profit */}
           {expenseSummary !== null && (
-            <Card variant="feature" className="mt-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Ganancia Neta</h3>
+            <Card variant="panel" className="mt-4">
               {(() => {
                 const netProfit = report.totalSales - expenseSummary.total;
                 const isPositive = netProfit >= 0;
-                const profitPct = report.totalSales > 0 ? Math.min(100, (netProfit / report.totalSales) * 100) : 0;
+                const marginPct = report.totalSales > 0 ? (netProfit / report.totalSales) * 100 : 0;
+                const profitPct = report.totalSales > 0 ? Math.min(100, Math.max(0, (netProfit / report.totalSales) * 100)) : 0;
                 const expensePct = report.totalSales > 0 ? Math.min(100, (expenseSummary.total / report.totalSales) * 100) : 0;
                 return (
-                  <div className={`rounded-2xl p-4 ${isPositive ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
-                    <div className="flex items-center justify-between mb-3">
+                  <>
+                    <div className="flex items-start justify-between mb-4">
                       <div>
-                        <p className="text-xs font-medium text-gray-500 mb-0.5">Ventas — Gastos = Ganancia Neta</p>
-                        <p className="text-xs text-gray-400">
-                          Bs {report.totalSales.toFixed(2)} — Bs {expenseSummary.total.toFixed(2)}
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Ganancia Neta</p>
+                        <p className={`font-heading font-black text-3xl leading-none ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {!isPositive && <span className="text-xl mr-0.5">−</span>}Bs {Math.abs(netProfit).toFixed(2)}
                         </p>
                       </div>
-                      <p className={`font-heading font-black text-2xl leading-tight ${isPositive ? 'text-emerald-700' : 'text-red-600'}`}>
-                        Bs {Math.abs(netProfit).toFixed(2)}
-                        {!isPositive && <span className="text-sm font-semibold ml-1">pérdida</span>}
-                      </p>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                        isPositive
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                      }`}>
+                        {isPositive ? '↑' : '↓'} {Math.abs(marginPct).toFixed(1)}% margen
+                      </span>
                     </div>
-                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
-                      {isPositive ? (
-                        <>
-                          <div className="h-full bg-emerald-500 rounded-l-full transition-[width] duration-700" style={{ width: `${profitPct}%` }} />
-                          <div className="h-full bg-red-400 rounded-r-full transition-[width] duration-700" style={{ width: `${expensePct}%` }} />
-                        </>
-                      ) : (
-                        <div className="h-full bg-red-500 rounded-full w-full" />
-                      )}
+
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex mb-5">
+                      <div className="h-full bg-emerald-500 transition-[width] duration-700" style={{ width: `${profitPct}%` }} />
+                      <div className="h-full bg-red-400 transition-[width] duration-700" style={{ width: `${expensePct}%` }} />
                     </div>
-                    <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-500">
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Ganancia</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Gastos</span>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Ingresos</span>
+                        <span className="font-heading font-bold text-gray-900">Bs {report.totalSales.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Gastos operativos</span>
+                        <span className="font-heading font-bold text-red-500">− Bs {expenseSummary.total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm pt-2.5 border-t border-gray-100">
+                        <span className="font-semibold text-gray-700">Resultado neto</span>
+                        <span className={`font-heading font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {!isPositive && '− '}Bs {Math.abs(netProfit).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 );
               })()}
             </Card>
