@@ -11,6 +11,7 @@ import { toBoliviaDateString } from '../utils/timezone';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
 import { OrderCard } from '../components/orders/OrderCard';
+import { OrderHistoryTable } from '../components/orders/OrderHistoryTable';
 import { PayOrderModal } from '../components/orders/PayOrderModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { EditOrderModal } from '../components/orders/EditOrderModal';
@@ -307,22 +308,12 @@ export function OrdersPage() {
                   : 'Ajusta el rango de fechas o filtros'
               )
             : (
-              <div className="space-y-3">
-                {historyOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onStatusChange={handleStatusChange}
-                    onPayOrder={setPayingOrder}
-                    onEdit={setEditingOrder}
-                  />
-                ))}
-                {historyTotal > historyOrders.length && (
-                  <p className="text-center text-xs text-gray-400 py-3">
-                    Mostrando {historyOrders.length} de {historyTotal} — refina la búsqueda para ver más
-                  </p>
-                )}
-              </div>
+              <OrderHistoryTable
+                orders={historyOrders}
+                total={historyTotal}
+                onPayOrder={setPayingOrder}
+                onEdit={setEditingOrder}
+              />
             )
           }
         </>
