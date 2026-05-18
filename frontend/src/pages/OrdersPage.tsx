@@ -130,9 +130,9 @@ export function OrdersPage() {
   );
 
   const tabClass = (tab: ActiveTab) =>
-    `px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-150 ${
+    `px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
       activeTab === tab
-        ? 'bg-primary-600 text-white shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]'
+        ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.45_0.16_235/0.20)]'
         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
     }`;
 
@@ -160,17 +160,15 @@ export function OrdersPage() {
                 : (historyTotal > historyOrders.length ? `${historyOrders.length} de ${historyTotal}` : historyTotal)
               } pedidos
             </span>
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+              <button className={tabClass('operation')} onClick={() => setActiveTab('operation')}>
+                Operación
+              </button>
+              <button className={tabClass('history')} onClick={() => setActiveTab('history')}>
+                Historial
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Tab selector */}
-        <div className="flex gap-1.5 mb-4">
-          <button className={tabClass('operation')} onClick={() => setActiveTab('operation')}>
-            Operación
-          </button>
-          <button className={tabClass('history')} onClick={() => setActiveTab('history')}>
-            Historial
-          </button>
         </div>
 
         {/* Operation filters */}
