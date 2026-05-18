@@ -1,57 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ExpenseDto, ExpenseSummaryDto, ExpenseCategoryDto } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
-import { useVisibilityRefresh } from './useVisibilityRefresh';
 import { useSocketEvent } from '../context/socket.context';
+import { queryKeys } from '../lib/query-keys';
 
 export function useExpenses(from: string, to: string, branchId?: string) {
-  const [expenses, setExpenses] = useState<ExpenseDto[]>([]);
-  const [summary, setSummary] = useState<ExpenseSummaryDto>({ total: 0, byCategory: {} });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(false);
-    Promise.all([
-      expensesApi.getAll(from, to, branchId),
-      expensesApi.getSummary(from, to, branchId),
-    ])
-      .then(([list, sum]) => {
-        setExpenses(list);
-        setSummary(sum);
-      })
-      .catch(() => {
-        setError(true);
-        toast.error('Error al cargar gastos');
-      })
-      .finally(() => setLoading(false));
-  }, [from, to, branchId]);
+  const { data, isPending: loading, isError: error, refetch } = useQuery({
+    queryKey: queryKeys.expenses(from, to, branchId),
+    queryFn:  () =>
+      Promise.all([
+        expensesApi.getAll(from, to, branchId),
+        expensesApi.getSummary(from, to, branchId),
+      ]).then(([expenses, summary]): { expenses: ExpenseDto[]; summary: ExpenseSummaryDto } => ({
+        expenses,
+        summary,
+      })),
+    staleTime: 0,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['expenses'] });
+  }, [queryClient]);
 
-  useVisibilityRefresh(load);
-  useSocketEvent('expense.created', load);
-  useSocketEvent('expense.deleted', load);
+  useSocketEvent('expense.created', invalidate);
+  useSocketEvent('expense.deleted', invalidate);
 
-  return { expenses, summary, loading, error, reload: load };
+  return {
+    expenses: data?.expenses ?? [],
+    summary:  data?.summary  ?? { total: 0, byCategory: {} },
+    loading,
+    error,
+    reload: refetch,
+  };
 }
 
 export function useExpenseCategories() {
-  const [categories, setCategories] = useState<ExpenseCategoryDto[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    expensesApi
-      .getCategories()
-      .then(setCategories)
-      .catch(() => { /* silently ignore — categories are best-effort */ })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  return { categories, loading, reload: load };
+  const { data: categories = [] as ExpenseCategoryDto[], isPending: loading, refetch } = useQuery({
+    queryKey: queryKeys.expenseCategories,
+    queryFn:  () => expensesApi.getCategories(),
+    staleTime: 5 * 60_000,
+  });
+  return { categories, loading, reload: refetch };
 }

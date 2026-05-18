@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { handleApiError } from '../utils/api-error';
 import { branchesApi } from '../api/branches.api';
 import type { BranchDto } from '@pos/shared';
@@ -10,32 +11,28 @@ import { Badge } from '../components/ui/Badge';
 import { Toggle } from '../components/ui/Toggle';
 import { Spinner } from '../components/ui/Spinner';
 import { useBranches } from '../hooks/useBranches';
+import { queryKeys } from '../lib/query-keys';
 
 export function BranchesPage() {
-  const { branches, setBranches, loading } = useBranches();
+  const queryClient = useQueryClient();
+  const { branches, loading } = useBranches();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<BranchDto | null>(null);
 
   const handleToggle = async (branch: BranchDto) => {
     try {
       const updated = await branchesApi.toggle(branch.id);
-      setBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       toast.success(updated.isActive ? 'Sucursal activada' : 'Sucursal desactivada');
+      queryClient.invalidateQueries({ queryKey: queryKeys.branches });
     } catch (err) {
       handleApiError(err, 'Error al actualizar sucursal');
     }
   };
 
-  const handleSaved = (branch: BranchDto) => {
-    setBranches((prev) => {
-      const idx = prev.findIndex((b) => b.id === branch.id);
-      if (idx >= 0) {
-        const next = [...prev]; next[idx] = branch; return next;
-      }
-      return [...prev, branch];
-    });
+  const handleSaved = () => {
     setShowModal(false);
     setEditing(null);
+    queryClient.invalidateQueries({ queryKey: queryKeys.branches });
   };
 
   return (
@@ -118,6 +115,7 @@ export function BranchesPage() {
         onClose={() => { setShowModal(false); setEditing(null); }}
         onSaved={handleSaved}
       />
+
     </div>
   );
 }
@@ -128,7 +126,7 @@ function BranchModal({
   isOpen: boolean;
   branch: BranchDto | null;
   onClose: () => void;
-  onSaved: (b: BranchDto) => void;
+  onSaved: () => void;
 }) {
   const [form, setForm] = useState({ name: '', address: '', phone: '' });
   const [loading, setLoading] = useState(false);
@@ -149,11 +147,11 @@ function BranchModal({
     setLoading(true);
     try {
       const payload = { name: form.name, address: form.address || undefined, phone: form.phone || undefined };
-      const saved = branch
+      branch
         ? await branchesApi.update(branch.id, payload)
         : await branchesApi.create(payload);
-      onSaved(saved);
       toast.success(branch ? 'Sucursal actualizada' : 'Sucursal creada');
+      onSaved();
     } catch (err) {
       handleApiError(err, 'Error al guardar sucursal');
       setError('Error al guardar sucursal');

@@ -1,38 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CashSessionDto } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
-import { useVisibilityRefresh } from './useVisibilityRefresh';
 import { useSocketEvent } from '../context/socket.context';
+import { queryKeys } from '../lib/query-keys';
 
 export function useCashSession(branchId: string | null) {
-  const [session, setSession] = useState<CashSessionDto | null | undefined>(undefined);
-  const [history, setHistory] = useState<CashSessionDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(() => {
-    if (!branchId) { setLoading(false); return; }
-    Promise.all([
-      cashSessionApi.getCurrent(branchId).catch(() => null),
-      cashSessionApi.getHistory(branchId).catch(() => []),
-    ]).then(([cur, hist]) => {
-      setSession(cur);
-      setHistory(hist ?? []);
-    }).finally(() => setLoading(false));
-  }, [branchId]);
+  const { data, isPending: loading, refetch } = useQuery({
+    queryKey: branchId ? queryKeys.cashSession(branchId) : ['cashSession', null],
+    queryFn:  () =>
+      Promise.all([
+        cashSessionApi.getCurrent(branchId!).catch(() => null),
+        cashSessionApi.getHistory(branchId!).catch(() => [] as CashSessionDto[]),
+      ]).then(([current, history]) => ({ current, history: history ?? [] })),
+    enabled:         !!branchId,
+    staleTime:       0,
+    refetchInterval: 30_000,
+  });
 
-  // Initial load + polling every 30s
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 30_000);
-    return () => clearInterval(id);
-  }, [load]);
+  const invalidate = useCallback(() => {
+    if (branchId) queryClient.invalidateQueries({ queryKey: queryKeys.cashSession(branchId) });
+  }, [queryClient, branchId]);
 
-  // Refresh when returning to the tab
-  useVisibilityRefresh(load);
+  useSocketEvent('cash.opened', invalidate);
+  useSocketEvent('cash.closed', invalidate);
 
-  // Real-time via WebSocket
-  useSocketEvent('cash.opened', load);
-  useSocketEvent('cash.closed', load);
-
-  return { session, setSession, history, loading, reload: load };
+  return {
+    session: data?.current  ?? null,
+    history: data?.history  ?? [],
+    loading,
+    reload: refetch,
+  };
 }

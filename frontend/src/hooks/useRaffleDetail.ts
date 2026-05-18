@@ -1,42 +1,55 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { rafflesApi } from '../api/raffles.api';
 import { handleApiError } from '../utils/api-error';
 import type { RaffleWinnerDto } from '@pos/shared';
 import type { DetailRaffle } from '../components/raffles/types';
+import { useSocketEvent } from '../context/socket.context';
+import { queryKeys } from '../lib/query-keys';
 
 export const DRAW_DURATION_MS = 7000;
 export const WINNER_PAUSE_MS  = 4000;
 
+export type BusyState = 'draw' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;
+
 export function useRaffleDetail(
   raffleId: string,
-  onClose: () => void,
+  onClose:  () => void,
   onUpdate: () => void,
 ) {
-  const [raffle, setRaffle] = useState<DetailRaffle | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleted, setDeleted] = useState(false);
-  const [drawingPosition, setDrawingPosition] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  const [busy, setBusy]                           = useState<BusyState>(null);
+  const [showConfirm, setShowConfirm]             = useState(false);
+  const [deleteConfirm, setDeleteConfirm]         = useState(false);
+  const [deleted, setDeleted]                     = useState(false);
+  const [drawingPosition, setDrawingPosition]     = useState<number | null>(null);
   const [pendingWinnerName, setPendingWinnerName] = useState<string | null>(null);
-  const [drawnWinner, setDrawnWinner] = useState<RaffleWinnerDto | null>(null);
-  const [voidConfirmId, setVoidConfirmId] = useState<string | null>(null);
+  const [drawnWinner, setDrawnWinner]             = useState<RaffleWinnerDto | null>(null);
+  const [voidConfirmId, setVoidConfirmId]         = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    try {
-      setRaffle(await rafflesApi.getOne(raffleId));
-      setError(false);
-    } catch (err) {
-      handleApiError(err, 'Error al cargar sorteo');
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [raffleId]);
+  const qk = queryKeys.raffleDetail(raffleId);
 
-  useEffect(() => { reload(); }, [reload]);
+  const { data: raffle, isPending: loading, isError: error, refetch } = useQuery<DetailRaffle>({
+    queryKey: qk,
+    queryFn:  () => rafflesApi.getOne(raffleId),
+    staleTime: 0,
+  });
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: qk });
+  }, [queryClient, raffleId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTicketAdded = useCallback((data: { raffleId: string }) => {
+    if (data.raffleId === raffleId) invalidate();
+  }, [raffleId, invalidate]);
+
+  useSocketEvent<{ raffleId: string }>('raffle.ticket_added', handleTicketAdded);
+
+  // Mutations update cache directly with server response, no extra refetch needed
+  function setRaffle(updated: DetailRaffle) {
+    queryClient.setQueryData(qk, updated);
+  }
 
   async function handleClose() {
     if (!raffle) return;
@@ -127,32 +140,21 @@ export function useRaffleDetail(
   const activeWinnersCount    = raffle?.winners.filter((w) => !w.voided).length ?? 0;
 
   return {
-    raffle,
+    raffle:      raffle ?? null,
     setRaffle,
     loading,
     error,
     busy,
     deleted,
-    showConfirm,
-    setShowConfirm,
-    deleteConfirm,
-    setDeleteConfirm,
+    showConfirm,    setShowConfirm,
+    deleteConfirm,  setDeleteConfirm,
     drawingPosition,
     pendingWinnerName,
-    drawnWinner,
-    setDrawnWinner,
-    voidConfirmId,
-    setVoidConfirmId,
-    handleClose,
-    handleReopen,
-    handleVoidWinner,
-    handleDelete,
-    handleDraw,
-    isDrawable,
-    isDeletable,
-    isActive,
-    isReopenable,
-    canVoid,
+    drawnWinner,    setDrawnWinner,
+    voidConfirmId,  setVoidConfirmId,
+    handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
+    reload:     refetch,
+    isDrawable, isDeletable, isActive, isReopenable, canVoid,
     availableTickets,
     activeWinnersCount,
   };

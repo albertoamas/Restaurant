@@ -1,24 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { usersApi, type UserDto } from '../api/users.api';
-import { useVisibilityRefresh } from './useVisibilityRefresh';
+import { queryKeys } from '../lib/query-keys';
 
 export function useUsers() {
-  const [users, setUsers] = useState<UserDto[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
-    usersApi
-      .getAll()
-      .then((data) => setUsers(Array.isArray(data) ? data : []))
-      .catch(() => toast.error('Error al cargar usuarios'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Refresh when returning to the tab
-  useVisibilityRefresh(load);
-
-  return { users, setUsers, loading };
+  const { data: users = [] as UserDto[], isPending: loading, refetch } = useQuery({
+    queryKey: queryKeys.users,
+    queryFn:  () => usersApi.getAll(),
+  });
+  return { users, loading, reload: refetch };
 }

@@ -1,19 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { PlanDto } from '@pos/shared';
 import { plansApi } from '../api/plans.api';
+import { queryKeys } from '../lib/query-keys';
 
 export function usePlans() {
-  const [plans, setPlans] = useState<PlanDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    plansApi
-      .getAll()
-      .then(setPlans)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
-
+  const { data: plans = [] as PlanDto[], isPending: loading, isError: error } = useQuery({
+    queryKey: queryKeys.plans,
+    queryFn:  () => plansApi.getAll(),
+    staleTime: 5 * 60_000,
+  });
   return { plans, loading, error };
 }

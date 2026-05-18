@@ -4,6 +4,7 @@ import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi, type OrdersParams } from '../api/orders.api';
 import { getBoliviaDayBounds } from '../utils/timezone';
+import { useSocketEvent } from '../context/socket.context';
 
 const PAGE_SIZE = 50;
 
@@ -13,6 +14,7 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const pageRef                       = useRef(1);
+  const abortRef                      = useRef<AbortController | null>(null);
 
   const buildParams = useCallback((p: number): OrdersParams => {
     const { start, end } = getBoliviaDayBounds(date);
@@ -34,20 +36,25 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
       setLoading(false);
       return;
     }
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const { signal } = abortRef.current;
     setLoading(true);
     try {
       const result = await ordersApi.getAll(buildParams(1));
-      setOrders(result.data);
-      setTotal(result.total);
-      pageRef.current = 1;
+      if (!signal.aborted) {
+        setOrders(result.data);
+        setTotal(result.total);
+        pageRef.current = 1;
+      }
     } catch {
-      toast.error('Error al cargar pedidos');
+      if (!signal.aborted) toast.error('Error al cargar pedidos');
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, [buildParams, branchId]);
 
-  // Append next page without replacing existing orders
+  // Append next page without replacing existing orders (user-triggered, no abort needed)
   const loadMore = useCallback(async () => {
     const nextPage = pageRef.current + 1;
     setLoadingMore(true);
@@ -67,8 +74,26 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
   useEffect(() => {
     fetchOrders();
     const id = setInterval(fetchOrders, 30_000);
-    return () => clearInterval(id);
+    return () => { clearInterval(id); abortRef.current?.abort(); };
   }, [fetchOrders]);
+
+  const handleOrderCreated = useCallback((order: OrderDto) => {
+    if (order.branchId !== branchId) return;
+    const d = order.createdAt.split('T')[0];
+    if (d !== date) return;
+    if (statusFilter && order.status !== statusFilter) return;
+    setOrders((prev) => [order, ...prev]);
+  }, [branchId, date, statusFilter]);
+
+  const handleOrderUpdated = useCallback((order: OrderDto) => {
+    setOrders((prev) =>
+      prev.map((o) => o.id === order.id ? order : o)
+          .filter((o) => !statusFilter || o.status === statusFilter),
+    );
+  }, [statusFilter]);
+
+  useSocketEvent<OrderDto>('order.created', handleOrderCreated);
+  useSocketEvent<OrderDto>('order.updated', handleOrderUpdated);
 
   const hasMore = orders.length < total;
 

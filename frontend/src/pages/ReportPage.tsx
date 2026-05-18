@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { DailyReportDto, TopCustomerDto, TopProductDto, CategoryDto, ExpenseSummaryDto } from '@pos/shared';
 import { UserRole, ExpenseCategory, SaasPlan } from '@pos/shared';
 import { reportsApi } from '../api/reports.api';
@@ -7,7 +7,7 @@ import { expensesApi } from '../api/expenses.api';
 import { categoriesApi } from '../api/categories.api';
 import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
-import { useVisibilityRefresh } from '../hooks/useVisibilityRefresh';
+import { queryKeys } from '../lib/query-keys';
 import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
 import { today } from '../utils/date';
@@ -72,17 +72,7 @@ export function ReportPage() {
   const [period, setPeriod] = useState<Period>('today');
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
-  const [report, setReport] = useState<DailyReportDto | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [topProducts, setTopProducts]   = useState<TopProductDto[]>([]);
-  const [topLoading, setTopLoading]     = useState(false);
-  const [topCustomers, setTopCustomers] = useState<TopCustomerDto[]>([]);
-  const [custLoading, setCustLoading]   = useState(false);
-
-  const [expenseSummary, setExpenseSummary] = useState<ExpenseSummaryDto | null>(null);
 
   const { from, to } = getRange(period, customFrom, customTo);
   const rangeLabel = from === to ? from : `${from} → ${to}`;
@@ -92,60 +82,35 @@ export function ReportPage() {
   const { end:   utcTo   } = getBoliviaDayBounds(to);
   const branchParam = user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;
 
-  // Load categories once
-  useEffect(() => {
-    categoriesApi.getAll().then(setCategories).catch(() => {});
-  }, []);
+  const { data: categories = [] as CategoryDto[] } = useQuery({
+    queryKey: queryKeys.categories,
+    queryFn:  () => categoriesApi.getAll(),
+    staleTime: 5 * 60_000,
+  });
 
-  // Load summary report
-  useEffect(() => {
-    setLoading(true);
-    reportsApi
-      .getByRange(utcFrom, utcTo, branchParam)
-      .then(setReport)
-      .catch(() => toast.error('Error al cargar reporte'))
-      .finally(() => setLoading(false));
-  }, [utcFrom, utcTo, currentBranchId, user?.role]);
+  const { data: report = null, isPending: loading } = useQuery<DailyReportDto | null>({
+    queryKey: queryKeys.reportRange(utcFrom, utcTo, branchParam),
+    queryFn:  () => reportsApi.getByRange(utcFrom, utcTo, branchParam),
+    staleTime: 0,
+  });
 
-  // Load expense summary
-  useEffect(() => {
-    expensesApi
-      .getSummary(utcFrom, utcTo, branchParam)
-      .then(setExpenseSummary)
-      .catch(() => setExpenseSummary(null));
-  }, [utcFrom, utcTo, currentBranchId, user?.role]);
+  const { data: expenseSummary = null } = useQuery<ExpenseSummaryDto | null>({
+    queryKey: queryKeys.reportExpenseSummary(utcFrom, utcTo, branchParam),
+    queryFn:  () => expensesApi.getSummary(utcFrom, utcTo, branchParam).catch(() => null),
+    staleTime: 0,
+  });
 
-  // Load top products
-  useEffect(() => {
-    setTopLoading(true);
-    reportsApi
-      .getTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined)
-      .then(setTopProducts)
-      .catch(() => toast.error('Error al cargar productos'))
-      .finally(() => setTopLoading(false));
-  }, [utcFrom, utcTo, currentBranchId, user?.role, selectedCategory]);
+  const { data: topProducts = [] as TopProductDto[], isPending: topLoading } = useQuery({
+    queryKey: queryKeys.reportTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined),
+    queryFn:  () => reportsApi.getTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined),
+    staleTime: 0,
+  });
 
-  // Load top customers
-  useEffect(() => {
-    setCustLoading(true);
-    reportsApi
-      .getTopCustomers(utcFrom, utcTo, branchParam)
-      .then(setTopCustomers)
-      .catch(() => toast.error('Error al cargar clientes'))
-      .finally(() => setCustLoading(false));
-  }, [utcFrom, utcTo, currentBranchId, user?.role]);
-
-  // Refresh all report data when returning to the tab
-  const reloadAll = useCallback(() => {
-    setLoading(true);
-    reportsApi.getByRange(utcFrom, utcTo, branchParam).then(setReport).catch(() => {}).finally(() => setLoading(false));
-    expensesApi.getSummary(utcFrom, utcTo, branchParam).then(setExpenseSummary).catch(() => {});
-    setTopLoading(true);
-    reportsApi.getTopProducts(utcFrom, utcTo, branchParam, selectedCategory || undefined).then(setTopProducts).catch(() => {}).finally(() => setTopLoading(false));
-    setCustLoading(true);
-    reportsApi.getTopCustomers(utcFrom, utcTo, branchParam).then(setTopCustomers).catch(() => {}).finally(() => setCustLoading(false));
-  }, [utcFrom, utcTo, currentBranchId, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
-  useVisibilityRefresh(reloadAll);
+  const { data: topCustomers = [] as TopCustomerDto[], isPending: custLoading } = useQuery({
+    queryKey: queryKeys.reportTopCustomers(utcFrom, utcTo, branchParam),
+    queryFn:  () => reportsApi.getTopCustomers(utcFrom, utcTo, branchParam),
+    staleTime: 0,
+  });
 
   const EXPENSE_LABELS: Partial<Record<ExpenseCategory, string>> = {
     [ExpenseCategory.SUPPLIES]:    'Insumos',

@@ -1,50 +1,43 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
-import { customersApi } from '../api/customers.api';
-import { useVisibilityRefresh } from './useVisibilityRefresh';
-import { useSocketEvent } from '../context/socket.context';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CustomerStatsDto } from '@pos/shared';
+import { customersApi } from '../api/customers.api';
+import { useSocketEvent } from '../context/socket.context';
+import { queryKeys } from '../lib/query-keys';
 
 const PAGE_SIZE = 50;
 
-type SortBy = 'name' | 'totalSpent' | 'purchaseCount';
+type SortBy  = 'name' | 'totalSpent' | 'purchaseCount';
 type SortDir = 'asc' | 'desc';
 
 export function useCustomers(initialQ = '') {
-  const [customers, setCustomers] = useState<CustomerStatsDto[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [q, setQState] = useState(initialQ);
-  const [page, setPageState] = useState(1);
+  const queryClient = useQueryClient();
+
+  const [q, setQState]           = useState(initialQ);
+  const [page, setPageState]     = useState(1);
   const [sortBy, setSortByState] = useState<SortBy>('name');
   const [sortDir, setSortDirState] = useState<SortDir>('asc');
 
-  const load = useCallback(
-    (query: string, pg: number, sb: SortBy, sd: SortDir) => {
-      setLoading(true);
-      customersApi
-        .getAll({ q: query || undefined, page: pg, limit: PAGE_SIZE, sortBy: sb, sortDir: sd })
-        .then((r) => { setCustomers(r.data); setTotal(r.total); })
-        .catch(() => toast.error('Error al cargar clientes'))
-        .finally(() => setLoading(false));
-    },
-    [],
-  );
+  const params = { q, page, sortBy, sortDir };
 
-  useEffect(() => {
-    load(q, page, sortBy, sortDir);
-  }, [q, page, sortBy, sortDir, load]);
+  const { data, isPending: loading, refetch } = useQuery({
+    queryKey: queryKeys.customers(params),
+    queryFn:  () =>
+      customersApi.getAll({ q: q || undefined, page, limit: PAGE_SIZE, sortBy, sortDir })
+        .then((r): { data: CustomerStatsDto[]; total: number } => r),
+    staleTime: 0,
+  });
 
-  function setQ(value: string) {
-    setQState(value);
-    setPageState(1);
-  }
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+  }, [queryClient]);
 
-  function setPage(pg: number) {
-    setPageState(pg);
-  }
+  useSocketEvent('customer.created', invalidate);
+  useSocketEvent('customer.updated', invalidate);
 
-  function setSort(col: SortBy) {
+  function setQ(value: string)    { setQState(value);    setPageState(1); }
+  function setPage(pg: number)    { setPageState(pg); }
+  function setSort(col: SortBy)   {
     if (col === sortBy) {
       setSortDirState((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -54,13 +47,16 @@ export function useCustomers(initialQ = '') {
     setPageState(1);
   }
 
-  const reload = useCallback(() => load(q, page, sortBy, sortDir), [q, page, sortBy, sortDir, load]);
-
-  useVisibilityRefresh(reload);
-  useSocketEvent('customer.created', reload);
-  useSocketEvent('customer.updated', reload);
-
+  const total      = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  return { customers, loading, q, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort };
+  return {
+    customers: data?.data ?? [],
+    loading,
+    total,
+    q,       setQ,
+    page,    totalPages, setPage,
+    sortBy,  sortDir,    setSort,
+    reload:  refetch,
+  };
 }

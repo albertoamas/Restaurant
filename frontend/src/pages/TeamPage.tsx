@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { handleApiError } from '../utils/api-error';
 import { usersApi, type UserDto, type CreateCashierRequest } from '../api/users.api';
 import type { BranchDto } from '@pos/shared';
@@ -12,6 +13,7 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useUsers } from '../hooks/useUsers';
 import { useBranches } from '../hooks/useBranches';
+import { queryKeys } from '../lib/query-keys';
 
 const ROLE_LABEL: Record<string, string> = { OWNER: 'Dueño', CASHIER: 'Cajero' };
 
@@ -26,18 +28,21 @@ function UserAvatar({ name }: { name: string }) {
 }
 
 export function TeamPage() {
-  const { users, setUsers, loading: usersLoading } = useUsers();
+  const queryClient = useQueryClient();
+  const { users, loading: usersLoading } = useUsers();
   const { branches, loading: branchesLoading } = useBranches();
   const loading = usersLoading || branchesLoading;
   const activeBranches = branches.filter((b) => b.isActive);
 
   const [showModal, setShowModal] = useState(false);
 
+  const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: queryKeys.users });
+
   const handleToggle = async (user: UserDto) => {
     try {
       const updated = await usersApi.toggle(user.id);
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, isActive: updated.isActive } : u)));
       toast.success(updated.isActive ? 'Usuario activado' : 'Usuario desactivado');
+      invalidateUsers();
     } catch (err) {
       handleApiError(err, 'Error al actualizar usuario');
     }
@@ -46,18 +51,18 @@ export function TeamPage() {
   const handleBranchChange = async (user: UserDto, branchId: string | null) => {
     try {
       await usersApi.updateBranch(user.id, branchId);
-      setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, branchId } : u));
       toast.success('Sucursal actualizada');
+      invalidateUsers();
     } catch (err) {
       handleApiError(err, 'Error al actualizar sucursal');
     }
   };
 
   const handleCreate = async (data: CreateCashierRequest) => {
-    const created = await usersApi.create(data);
-    setUsers((prev) => [...prev, { ...created, createdAt: new Date().toISOString() }]);
+    await usersApi.create(data);
     setShowModal(false);
     toast.success('Cajero creado');
+    invalidateUsers();
   };
 
   return (

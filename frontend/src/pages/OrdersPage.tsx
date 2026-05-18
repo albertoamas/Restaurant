@@ -1,7 +1,6 @@
 import { OrderStatus, UserRole } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
-import { useSocketEvent } from '../context/socket.context';
 import { Spinner } from '../components/ui/Spinner';
 import { useOrders } from '../hooks/useOrders';
 import { today } from '../utils/date';
@@ -30,21 +29,6 @@ export function OrdersPage() {
   const [paidOrder, setPaidOrder] = useState<OrderDto | null>(null);
   const [editingOrder, setEditingOrder] = useState<OrderDto | null>(null);
   const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } = useOrders(date, statusFilter, currentBranchId);
-
-  useSocketEvent<OrderDto>('order.created', (order) => {
-    if (order.branchId !== currentBranchId) return;
-    const d = order.createdAt.split('T')[0];
-    if (d !== date) return;
-    if (statusFilter && order.status !== statusFilter) return;
-    setOrders((prev) => [order, ...prev]);
-  });
-
-  useSocketEvent<OrderDto>('order.updated', (order) => {
-    setOrders((prev) =>
-      prev.map((o) => o.id === order.id ? order : o)
-          .filter((o) => !statusFilter || o.status === statusFilter),
-    );
-  });
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     try {

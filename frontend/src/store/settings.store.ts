@@ -2,6 +2,23 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { OrderNumberResetPeriod, SaasPlan, PlanLimits } from '@pos/shared';
 
+/** Shape of the server payload written to the store after login / getMe. */
+export interface ServerConfig {
+  ordersEnabled?:          boolean;
+  cashEnabled?:            boolean;
+  teamEnabled?:            boolean;
+  branchesEnabled?:        boolean;
+  kitchenEnabled?:         boolean;
+  rafflesEnabled?:         boolean;
+  orderNumberResetPeriod?: OrderNumberResetPeriod;
+  tenantLogo?:             string | null;
+  businessAddress?:        string;
+  businessPhone?:          string;
+  receiptSlogan?:          string;
+  plan?:                   SaasPlan;
+  planLimits?:             PlanLimits;
+}
+
 interface SettingsState {
   // Impresión
   autoPrintKitchen: boolean;
@@ -44,6 +61,10 @@ interface SettingsState {
   setPlan: (value: SaasPlan) => void;
   planLimits: PlanLimits;
   setPlanLimits: (value: PlanLimits) => void;
+
+  // Bulk update — single call instead of 12 individual setters.
+  // auth.context calls this after every login / getMe.
+  applyServerConfig: (config: ServerConfig) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -84,6 +105,23 @@ export const useSettingsStore = create<SettingsState>()(
       setPlan: (value) => set({ plan: value }),
       planLimits: { maxBranches: 1, maxCashiers: 2, maxProducts: 80, kitchenEnabled: false } as PlanLimits,
       setPlanLimits: (value) => set({ planLimits: value }),
+
+      applyServerConfig: (config) => set((state) => ({
+        ordersEnabled:          config.ordersEnabled          ?? state.ordersEnabled,
+        cashEnabled:            config.cashEnabled            ?? state.cashEnabled,
+        teamEnabled:            config.teamEnabled            ?? state.teamEnabled,
+        branchesEnabled:        config.branchesEnabled        ?? state.branchesEnabled,
+        kitchenEnabled:         config.kitchenEnabled         ?? state.kitchenEnabled,
+        rafflesEnabled:         config.rafflesEnabled         ?? state.rafflesEnabled,
+        orderNumberResetPeriod: config.orderNumberResetPeriod ?? state.orderNumberResetPeriod,
+        // tenantLogo can be null (valid) vs undefined (not provided)
+        tenantLogo:             config.tenantLogo !== undefined ? config.tenantLogo : state.tenantLogo,
+        businessAddress:        config.businessAddress        ?? state.businessAddress,
+        businessPhone:          config.businessPhone          ?? state.businessPhone,
+        receiptSlogan:          config.receiptSlogan          ?? state.receiptSlogan,
+        plan:                   config.plan                   ?? state.plan,
+        planLimits:             config.planLimits             ?? state.planLimits,
+      })),
     }),
     {
       name: 'pos-settings',

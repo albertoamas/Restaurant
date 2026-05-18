@@ -7,14 +7,14 @@ import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import type { RaffleStatus } from '@pos/shared';
 import { StatusBadge } from '../components/raffles/StatusBadge';
-import { IconTicket, IconPackage, IconGift, IconAward, IconDice, IconCoins } from '../components/raffles/RaffleIcons';
+import { IconTicket, IconPackage, IconDice, IconCoins } from '../components/raffles/RaffleIcons';
 import { WinnerModal } from '../components/raffles/WinnerModal';
 import { DrawingScreen } from '../components/raffles/DrawingScreen';
-import { useRaffleDetail } from '../hooks/useRaffleDetail';
+import { useRaffleDetail, type BusyState } from '../hooks/useRaffleDetail';
 import { positionLabel } from '../utils/raffle-utils';
-import { printWinnerCertificate } from '../utils/raffle-certificate';
 import { downloadExcelSheets } from '../utils/excel';
 import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
+import { PrizesSection } from '../components/raffles/PrizesSection';
 
 // ─── Confirm draw ─────────────────────────────────────────────────────────────
 
@@ -53,20 +53,49 @@ function ConfirmDrawModal({
   );
 }
 
-// ─── Position medal ───────────────────────────────────────────────────────────
+// ─── Delete confirm dialog ────────────────────────────────────────────────────
 
-const MEDAL: Record<number, string> = {
-  1: 'bg-amber-100 text-amber-700 border-amber-300 ring-amber-100',
-  2: 'bg-gray-100 text-gray-500 border-gray-300 ring-gray-100',
-  3: 'bg-orange-50 text-orange-500 border-orange-200 ring-orange-50',
-};
-
-function PositionMedal({ position }: { position: number }) {
-  const cls = MEDAL[position] ?? 'bg-gray-100 text-gray-500 border-gray-200 ring-gray-100';
+function DeleteRaffleDialog({
+  raffleName, busy, deleted, onConfirm, onCancel,
+}: {
+  raffleName: string; busy: BusyState; deleted: boolean;
+  onConfirm: () => void; onCancel: () => void;
+}) {
   return (
-    <span className={`w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-black shrink-0 ring-2 ${cls}`}>
-      {position}°
-    </span>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">¿Eliminar sorteo?</h3>
+            <p className="text-xs text-gray-500 mt-0.5">"{raffleName}"</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Se eliminarán todos los tickets y acumulados asociados. Esta acción no se puede deshacer.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onCancel}
+            className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={busy === 'delete' || deleted}
+            className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+          >
+            {busy === 'delete' ? 'Eliminando…' : 'Sí, eliminar'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -208,97 +237,18 @@ function RaffleDetailContent({ id }: { id: string }) {
             </div>
 
             {/* ── Premios ──────────────────────────────────────────────────── */}
-            {raffle.prizes.length > 0 && (
-              <section className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Premios</p>
-                <div className="space-y-2">
-                  {raffle.prizes.map((p) => {
-                    const activeWinner = raffle.winners.find((w) => w.position === p.position && !w.voided);
-                    const voidedWinner = raffle.winners.find((w) => w.position === p.position && w.voided);
-                    const isConfirming = voidConfirmId === activeWinner?.id;
-
-                    return (
-                      <div key={p.position} className={`rounded-xl border px-3.5 py-3 transition-colors ${
-                        activeWinner
-                          ? 'bg-amber-50 border-amber-200'
-                          : 'bg-gray-50 border-transparent'
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <PositionMedal position={p.position} />
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <IconGift className="w-3 h-3 text-gray-400 shrink-0" />
-                              <p className="text-sm font-semibold text-gray-700 truncate">{p.prizeDescription}</p>
-                            </div>
-
-                            {activeWinner && !isConfirming && (
-                              <div className="flex items-center gap-1.5">
-                                <IconAward className="w-3 h-3 text-amber-500 shrink-0" />
-                                <span className="text-xs font-semibold text-amber-800 truncate">{activeWinner.customer.name}</span>
-                                <div className="ml-auto flex items-center gap-0.5">
-                                  <button
-                                    onClick={() => printWinnerCertificate(activeWinner, raffle.name, business)}
-                                    title="Imprimir certificado"
-                                    className="text-gray-300 hover:text-primary-500 p-1 rounded-lg transition-colors"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                      <path strokeLinecap="round" strokeLinejoin="round"
-                                        d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 21h6v-6H9v6z" />
-                                    </svg>
-                                  </button>
-                                  {canVoid && (
-                                    <button
-                                      onClick={() => setVoidConfirmId(activeWinner.id)}
-                                      disabled={!!busy}
-                                      className="text-[10px] text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40"
-                                    >
-                                      Anular
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {voidedWinner && !activeWinner && (
-                              <p className="text-[10px] text-red-400 mt-0.5">
-                                <span className="line-through">{voidedWinner.customer.name}</span>
-                                {' '}· anulado
-                              </p>
-                            )}
-
-                            {!activeWinner && !voidedWinner && (
-                              <p className="text-[10px] text-gray-400 mt-0.5">Pendiente</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {isConfirming && (
-                          <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-amber-200">
-                            <p className="text-xs text-red-600 font-semibold flex-1">
-                              ¿Anular a <strong>{activeWinner!.customer.name}</strong>?
-                            </p>
-                            <button
-                              onClick={() => handleVoidWinner(activeWinner!.id)}
-                              disabled={!!busy}
-                              className="text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
-                            >
-                              Sí, anular
-                            </button>
-                            <button
-                              onClick={() => setVoidConfirmId(null)}
-                              className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg transition-colors"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+            <PrizesSection
+              prizes={raffle.prizes}
+              winners={raffle.winners}
+              raffleName={raffle.name}
+              canVoid={canVoid}
+              busy={busy}
+              voidConfirmId={voidConfirmId}
+              onVoidRequest={setVoidConfirmId}
+              onVoidConfirm={handleVoidWinner}
+              onVoidCancel={() => setVoidConfirmId(null)}
+              business={business}
+            />
 
             {/* ── Stats ────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3">
@@ -435,40 +385,13 @@ function RaffleDetailContent({ id }: { id: string }) {
       )}
 
       {deleteConfirm && raffle && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirm(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">¿Eliminar sorteo?</h3>
-                <p className="text-xs text-gray-500 mt-0.5">"{raffle.name}"</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Se eliminarán todos los tickets y acumulados asociados. Esta acción no se puede deshacer.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setDeleteConfirm(false)}
-                className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={busy === 'delete' || deleted}
-                className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-              >
-                {busy === 'delete' ? 'Eliminando…' : 'Sí, eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteRaffleDialog
+          raffleName={raffle.name}
+          busy={busy}
+          deleted={deleted}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteConfirm(false)}
+        />
       )}
     </>
   );

@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import type { CashSessionDto } from '@pos/shared';
 import { CashSessionStatus } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
 import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
-import { useSocketEvent } from '../context/socket.context';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { useCashSession } from '../hooks/useCashSession';
@@ -48,13 +46,10 @@ export function CashPage() {
 
   const { currentBranchId, user } = useAuth();
   const isOwner = user?.role === 'OWNER';
-  const { session, setSession, history, loading, reload } = useCashSession(currentBranchId);
+  const { session, history, loading, reload } = useCashSession(currentBranchId);
   const [showOpen, setShowOpen] = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-
-  useSocketEvent<CashSessionDto>('cash.opened', (s) => { setSession(s); reload(); });
-  useSocketEvent<CashSessionDto>('cash.closed', (s) => { setSession(s); reload(); });
 
   if (!currentBranchId) {
     return (
@@ -71,7 +66,7 @@ export function CashPage() {
     );
   }
 
-  if (loading || session === undefined) {
+  if (loading) {
     return <div className="flex justify-center py-12"><Spinner /></div>;
   }
 
@@ -81,9 +76,8 @@ export function CashPage() {
 
   const handleOpen = async (amount: number, notes?: string) => {
     try {
-      const s = await cashSessionApi.open({ openingAmount: amount, notes }, currentBranchId);
+      await cashSessionApi.open({ openingAmount: amount, notes }, currentBranchId);
       toast.success('Caja abierta');
-      setSession(s);
       setShowOpen(false);
       reload();
     } catch (err) {
@@ -93,9 +87,8 @@ export function CashPage() {
 
   const handleClose = async (amount: number, notes?: string) => {
     try {
-      const s = await cashSessionApi.close({ closingAmount: amount, notes }, currentBranchId);
+      await cashSessionApi.close({ closingAmount: amount, notes }, currentBranchId);
       toast.success('Caja cerrada');
-      setSession(s);
       setShowClose(false);
       reload();
     } catch (err) {

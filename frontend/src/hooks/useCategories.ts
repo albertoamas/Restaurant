@@ -1,31 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
-import { categoriesApi } from '../api/categories.api';
-import { useVisibilityRefresh } from './useVisibilityRefresh';
-import { useSocketEvent } from '../context/socket.context';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CategoryDto } from '@pos/shared';
+import { categoriesApi } from '../api/categories.api';
+import { useSocketEvent } from '../context/socket.context';
+import { queryKeys } from '../lib/query-keys';
 
 export function useCategories() {
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(() => {
-    categoriesApi
-      .getAll()
-      .then(setCategories)
-      .catch(() => toast.error('Error al cargar categorías'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: categories = [] as CategoryDto[], isPending: loading, refetch } = useQuery({
+    queryKey: queryKeys.categories,
+    queryFn:  () => categoriesApi.getAll(),
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+  }, [queryClient]);
 
-  // Refresh when returning to the tab
-  useVisibilityRefresh(load);
+  useSocketEvent('category.created', invalidate);
+  useSocketEvent('category.updated', invalidate);
+  useSocketEvent('category.deleted', invalidate);
 
-  // Real-time: reload instantly on any category change
-  useSocketEvent('category.created', load);
-  useSocketEvent('category.updated', load);
-  useSocketEvent('category.deleted', load);
-
-  return { categories, loading, reload: load };
+  return { categories, loading, reload: refetch };
 }

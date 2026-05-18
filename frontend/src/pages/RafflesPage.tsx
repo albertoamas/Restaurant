@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { useRaffles } from '../hooks/useRaffles';
 import { RaffleCard } from '../components/raffles/RaffleCard';
 import { CreateRaffleModal } from '../components/raffles/CreateRaffleModal';
 import type { RaffleDto } from '@pos/shared';
+import { queryKeys } from '../lib/query-keys';
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
@@ -27,11 +29,12 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 export function RafflesPage() {
   const navigate = useNavigate();
-  const { raffles, setRaffles, loading } = useRaffles();
+  const queryClient = useQueryClient();
+  const { raffles, loading } = useRaffles();
   const [showCreate, setShowCreate] = useState(false);
 
   function handleCreated(raffle: RaffleDto) {
-    setRaffles((prev) => [raffle, ...prev]);
+    queryClient.invalidateQueries({ queryKey: queryKeys.raffles });
     navigate(`/raffles/${raffle.id}`);
   }
 
