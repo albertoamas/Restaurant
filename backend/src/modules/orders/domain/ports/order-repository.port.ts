@@ -8,6 +8,7 @@ export interface OrderFilters {
   status?: OrderStatus;
   branchId?: string;
   customerId?: string;
+  q?: string;
   page?: number;
   limit?: number;
 }

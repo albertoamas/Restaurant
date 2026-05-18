@@ -194,6 +194,14 @@ export class OrderRepository implements OrderRepositoryPort {
       const end   = new Date(`${date}T23:59:59.999${BOLIVIA_OFFSET}`);
       where.createdAt = { gte: start, lte: end };
     }
+    if (filters.q) {
+      const num = parseInt(filters.q, 10);
+      const conditions: Prisma.OrderWhereInput[] = [
+        { customer: { name: { contains: filters.q, mode: 'insensitive' } } },
+      ];
+      if (!isNaN(num)) conditions.push({ orderNumber: num });
+      where.OR = conditions;
+    }
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.order.findMany({

@@ -73,6 +73,7 @@ export class OrderController {
     @Query('status') status?: OrderStatus,
     @Query('branchId') branchId?: string,
     @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
+    @Query('q') q?: string,
     @Query('page') pageStr?: string,
     @Query('limit') limitStr?: string,
   ) {
@@ -80,7 +81,7 @@ export class OrderController {
     const effectiveBranchId = user.branchId ?? branchId;
     const page  = pageStr  ? Number(pageStr)  : undefined;
     const limit = limitStr ? Number(limitStr) : undefined;
-    return this.listOrdersUseCase.execute(tenantId, { date, from, to, status, branchId: effectiveBranchId, customerId, page, limit });
+    return this.listOrdersUseCase.execute(tenantId, { date, from, to, status, branchId: effectiveBranchId, customerId, q, page, limit });
   }
 
   @Get(':id')

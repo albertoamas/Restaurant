@@ -19,6 +19,9 @@ export const queryKeys = {
   expenses: (from: string, to: string, branchId?: string) =>
     ['expenses', from, to, branchId] as const,
 
+  orderHistory: (p: { from: string; to: string; q: string; status: string; branchId: string | null }) =>
+    ['orderHistory', p] as const,
+
   expenseCategories: ['expenseCategories'] as const,
 
   cashSession: (branchId: string) =>
