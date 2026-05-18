@@ -1,6 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
+import { EventsService } from '../../../events/events.service';
 
 export interface CancelTicketsOptions {
   /** customerId de la orden cancelada — necesario para revertir gasto acumulado. */
@@ -16,6 +17,7 @@ export class RaffleAutoTicketService {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   /**
@@ -82,6 +84,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
+      this.eventsService?.emitToTenant(tenantId, 'raffle.ticket_added', { raffleId: raffle.id });
     }
   }
 
@@ -114,6 +117,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
+      this.eventsService?.emitToTenant(tenantId, 'raffle.ticket_added', { raffleId: raffle.id });
     }
   }
 

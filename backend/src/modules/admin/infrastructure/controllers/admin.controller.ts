@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Inject,
   Logger,
   Param,
   ParseUUIDPipe,
@@ -11,17 +10,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { PlanDto, SaasPlan, TENANT_MODULES_UPDATED_EVENT } from '@pos/shared';
-import { AdminGuard } from '../../common/guards/admin.guard';
-import { TenantRepositoryPort } from '../tenant/domain/ports/tenant-repository.port';
-import { RegisterUseCase } from '../auth/application/use-cases/register.use-case';
-import { RegisterDto } from '../auth/application/dto/register.dto';
-import { PlanRepositoryPort } from '../plans/domain/ports/plan-repository.port';
-import { UpdateModulesDto } from './dto/update-modules.dto';
-import { UpdatePlanDto } from './dto/update-plan.dto';
-import { UpdatePlanLimitsDto } from './dto/update-plan-limits.dto';
-import { UpdateTenantPlanUseCase } from './application/use-cases/update-tenant-plan.use-case';
-import { EventsService } from '../events/events.service';
+import { PlanDto, SaasPlan } from '@pos/shared';
+import { AdminGuard } from '../../../../common/guards/admin.guard';
+import { RegisterUseCase } from '../../../auth/application/use-cases/register.use-case';
+import { RegisterDto } from '../../../auth/application/dto/register.dto';
+import { ListTenantsUseCase } from '../../application/use-cases/list-tenants.use-case';
+import { ToggleTenantActiveUseCase } from '../../application/use-cases/toggle-tenant-active.use-case';
+import { UpdateTenantPlanUseCase } from '../../application/use-cases/update-tenant-plan.use-case';
+import { UpdateTenantModulesUseCase } from '../../application/use-cases/update-tenant-modules.use-case';
+import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
+import { UpdatePlanLimitsUseCase } from '../../application/use-cases/update-plan-limits.use-case';
+import { UpdatePlanDto } from '../../application/dto/update-plan.dto';
+import { UpdateModulesDto } from '../../application/dto/update-modules.dto';
+import { UpdatePlanLimitsDto } from '../../application/dto/update-plan-limits.dto';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -30,13 +31,13 @@ export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
   constructor(
-    @Inject('TenantRepositoryPort')
-    private readonly tenantRepository: TenantRepositoryPort,
-    @Inject('PlanRepositoryPort')
-    private readonly planRepository: PlanRepositoryPort,
-    private readonly registerUseCase: RegisterUseCase,
+    private readonly listTenantsUseCase: ListTenantsUseCase,
+    private readonly toggleTenantActiveUseCase: ToggleTenantActiveUseCase,
     private readonly updateTenantPlanUseCase: UpdateTenantPlanUseCase,
-    private readonly eventsService: EventsService,
+    private readonly updateTenantModulesUseCase: UpdateTenantModulesUseCase,
+    private readonly listPlansUseCase: ListPlansUseCase,
+    private readonly updatePlanLimitsUseCase: UpdatePlanLimitsUseCase,
+    private readonly registerUseCase: RegisterUseCase,
   ) {}
 
   @Get('ping')
@@ -48,7 +49,7 @@ export class AdminController {
 
   @Get('tenants')
   listTenants() {
-    return this.tenantRepository.findAll();
+    return this.listTenantsUseCase.execute();
   }
 
   @Post('tenants')
@@ -58,7 +59,7 @@ export class AdminController {
 
   @Patch('tenants/:id/toggle')
   async toggleTenant(@Param('id', ParseUUIDPipe) id: string) {
-    const result = await this.tenantRepository.toggleActive(id);
+    const result = await this.toggleTenantActiveUseCase.execute(id);
     this.logger.log(`toggleTenant tenantId=${id} isActive=${result.isActive}`);
     return result;
   }
@@ -70,7 +71,6 @@ export class AdminController {
   ) {
     const result = await this.updateTenantPlanUseCase.execute(id, dto.plan);
     this.logger.log(`updateTenantPlan tenantId=${id} plan=${dto.plan}`);
-    this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
     return result;
   }
 
@@ -79,18 +79,16 @@ export class AdminController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateModulesDto,
   ) {
-    const result = await this.tenantRepository.updateModules(id, dto);
+    const result = await this.updateTenantModulesUseCase.execute(id, dto);
     this.logger.log(`updateModules tenantId=${id} ${JSON.stringify(dto)}`);
-    this.eventsService.emitToTenant(id, TENANT_MODULES_UPDATED_EVENT, {});
     return result;
   }
 
   // ── Plans ──────────────────────────────────────────────────
 
   @Get('plans')
-  async listPlans(): Promise<PlanDto[]> {
-    const plans = await this.planRepository.findAll();
-    return plans.map((p) => p.toDto());
+  listPlans(): Promise<PlanDto[]> {
+    return this.listPlansUseCase.execute();
   }
 
   @Patch('plans/:id')
@@ -98,6 +96,6 @@ export class AdminController {
     @Param('id') id: string,
     @Body() dto: UpdatePlanLimitsDto,
   ) {
-    return this.planRepository.update(id as SaasPlan, dto);
+    return this.updatePlanLimitsUseCase.execute(id as SaasPlan, dto);
   }
 }

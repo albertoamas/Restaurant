@@ -1,11 +1,13 @@
-import { BadRequestException, Controller, Get, Inject, ParseIntPipe, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, ParseIntPipe, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
-import { OrderRepositoryPort } from '../../../orders/domain/ports/order-repository.port';
-import { toBoliviaDateString, getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
+import { GetDailyReportUseCase } from '../../application/use-cases/get-daily-report.use-case';
+import { GetReportByRangeUseCase } from '../../application/use-cases/get-report-by-range.use-case';
+import { GetTopProductsUseCase } from '../../application/use-cases/get-top-products.use-case';
+import { GetTopCustomersUseCase } from '../../application/use-cases/get-top-customers.use-case';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
@@ -17,8 +19,10 @@ function validateISODate(val: string | undefined, name: string): void {
 @Roles(UserRole.OWNER)
 export class ReportController {
   constructor(
-    @Inject('OrderRepositoryPort')
-    private readonly orderRepository: OrderRepositoryPort,
+    private readonly getDailyReportUseCase: GetDailyReportUseCase,
+    private readonly getReportByRangeUseCase: GetReportByRangeUseCase,
+    private readonly getTopProductsUseCase: GetTopProductsUseCase,
+    private readonly getTopCustomersUseCase: GetTopCustomersUseCase,
   ) {}
 
   @Get('daily')
@@ -29,10 +33,8 @@ export class ReportController {
     @Query('branchId') branchId?: string,
   ) {
     validateISODate(date, 'date');
-    // Default: fecha de hoy en hora Bolivia, no UTC
-    const reportDate = date || toBoliviaDateString(new Date());
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.orderRepository.getDailyReport(tenantId, reportDate, effectiveBranchId);
+    return this.getDailyReportUseCase.execute(tenantId, effectiveBranchId, date);
   }
 
   @Get('range')
@@ -45,15 +47,8 @@ export class ReportController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    // Default: inicio y fin del día de hoy en hora Bolivia
-    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.orderRepository.getReportByRange(
-      tenantId,
-      effectiveBranchId,
-      from || defaultStart,
-      to   || defaultEnd,
-    );
+    return this.getReportByRangeUseCase.execute(tenantId, effectiveBranchId, from, to);
   }
 
   @Get('top-products')
@@ -68,17 +63,8 @@ export class ReportController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    const effectiveLimit = Math.min(limit ?? 20, 100);
-    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.orderRepository.getTopProducts(
-      tenantId,
-      effectiveBranchId,
-      from || defaultStart,
-      to   || defaultEnd,
-      categoryId,
-      effectiveLimit,
-    );
+    return this.getTopProductsUseCase.execute(tenantId, effectiveBranchId, from, to, categoryId, limit);
   }
 
   @Get('top-customers')
@@ -92,15 +78,7 @@ export class ReportController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    const effectiveLimit = Math.min(limit ?? 20, 100);
-    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.orderRepository.getTopCustomers(
-      tenantId,
-      effectiveBranchId,
-      from || defaultStart,
-      to   || defaultEnd,
-      effectiveLimit,
-    );
+    return this.getTopCustomersUseCase.execute(tenantId, effectiveBranchId, from, to, limit);
   }
 }

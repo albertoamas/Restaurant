@@ -1,5 +1,5 @@
 import { IsBoolean, IsOptional } from 'class-validator';
-import { TenantModules } from '../../tenant/domain/entities/tenant.entity';
+import { TenantModules } from '../../../tenant/domain/entities/tenant.entity';
 
 export class UpdateModulesDto implements Partial<TenantModules> {
   @IsOptional() @IsBoolean() ordersEnabled?:   boolean;

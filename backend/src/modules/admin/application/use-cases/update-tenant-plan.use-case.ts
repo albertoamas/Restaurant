@@ -1,7 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { SaasPlan } from '@pos/shared';
+import { SaasPlan, TENANT_MODULES_UPDATED_EVENT } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
+import { EventsService } from '../../../events/events.service';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class UpdateTenantPlanUseCase {
     private readonly tenantRepo: TenantRepositoryPort,
     @Inject('PlanRepositoryPort')
     private readonly planRepo: PlanRepositoryPort,
+    private readonly eventsService: EventsService,
   ) {}
 
   async execute(tenantId: string, plan: SaasPlan): Promise<Tenant> {
@@ -26,9 +28,12 @@ export class UpdateTenantPlanUseCase {
     // Sync plan-gated feature flags (kitchenEnabled, rafflesEnabled).
     // Core flags (ordersEnabled, cashEnabled, teamEnabled, branchesEnabled)
     // are admin-only overrides — they are never touched by plan changes.
-    return this.tenantRepo.updateModules(tenantId, {
+    const result = await this.tenantRepo.updateModules(tenantId, {
       kitchenEnabled: newPlan.kitchenEnabled,
       rafflesEnabled: newPlan.rafflesEnabled,
     });
+
+    this.eventsService.emitToTenant(tenantId, TENANT_MODULES_UPDATED_EVENT, {});
+    return result;
   }
 }
