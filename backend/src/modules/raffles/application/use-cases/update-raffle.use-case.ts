@@ -1,13 +1,15 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDetailDto } from '@pos/shared';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { RaffleDetailDto, SOCKET_EVENTS } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { UpdateRaffleDto } from '../dto/update-raffle.dto';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class UpdateRaffleUseCase {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(id: string, tenantId: string, dto: UpdateRaffleDto): Promise<RaffleDetailDto> {
@@ -31,6 +33,7 @@ export class UpdateRaffleUseCase {
 
     const updated = await this.repo.findRaffleWithTickets(id, tenantId);
     if (!updated) throw new NotFoundException('Sorteo no encontrado');
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, updated);
     return updated;
   }
 }

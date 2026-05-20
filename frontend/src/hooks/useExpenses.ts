@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ExpenseDto, ExpenseSummaryDto, ExpenseCategoryDto } from '@pos/shared';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
@@ -18,15 +19,14 @@ export function useExpenses(from: string, to: string, branchId?: string) {
         expenses,
         summary,
       })),
-    staleTime: 0,
   });
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['expenses'] });
   }, [queryClient]);
 
-  useSocketEvent('expense.created', invalidate);
-  useSocketEvent('expense.deleted', invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CREATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_DELETED, invalidate);
 
   return {
     expenses: data?.expenses ?? [],

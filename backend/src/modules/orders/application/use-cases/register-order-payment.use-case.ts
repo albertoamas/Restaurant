@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { PaymentMethod, UserRole } from '@pos/shared';
+import { PaymentMethod, UserRole, SOCKET_EVENTS } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
@@ -94,7 +94,7 @@ export class RegisterOrderPaymentUseCase {
     );
 
     // 9. Notify connected clients
-    this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     return saved;
   }

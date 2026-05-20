@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ProductDto } from '@pos/shared';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { productsApi } from '../api/products.api';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
@@ -25,8 +26,8 @@ export function useProducts(includeInactive = false, pageSize = 500) {
     queryClient.invalidateQueries({ queryKey: ['products'] });
   }, [queryClient]);
 
-  useSocketEvent('product.created', invalidate);
-  useSocketEvent('product.updated', invalidate);
+  useSocketEvent(SOCKET_EVENTS.PRODUCT_CREATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.PRODUCT_UPDATED, invalidate);
 
   function setQ(value: string) { setQState(value); setPageState(1); }
   function setCategoryId(value: string | undefined) { setCategoryIdState(value); setPageState(1); }

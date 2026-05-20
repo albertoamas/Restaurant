@@ -1,14 +1,16 @@
 import { randomInt } from 'crypto';
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { RaffleDetailDto } from '@pos/shared';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { RaffleDetailDto, SOCKET_EVENTS } from '@pos/shared';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class DrawWinnerUseCase {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   private readonly logger = new Logger(DrawWinnerUseCase.name);
@@ -71,6 +73,7 @@ export class DrawWinnerUseCase {
     this.logger.log(`draw success raffleId=${id} tenantId=${tenantId} position=${nextPosition} ticketId=${winnerTicket.id} newStatus=${raffle.status}`);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
     return result!;
   }
 }

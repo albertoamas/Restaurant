@@ -83,20 +83,30 @@ export function OrdersPage() {
     queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    // Optimistic update — apply immediately and respect current filter
+    setOrders((prev) =>
+      prev
+        .map((o) => o.id === orderId ? { ...o, status: newStatus } : o)
+        .filter((o) => !statusFilter || o.status === statusFilter),
+    );
     try {
       await ordersApi.updateStatus(orderId, newStatus);
       toast.success(newStatus === OrderStatus.CANCELLED ? 'Pedido cancelado' : 'Estado actualizado');
-      fetchOrders();
       invalidateHistory();
     } catch (err) {
       handleApiError(err, 'Error al actualizar');
+      fetchOrders(); // Revert on error
     }
   };
 
   const handlePaid = (order: OrderDto) => {
     setPayingOrder(null);
     setPaidOrder(order);
-    fetchOrders();
+    setOrders((prev) =>
+      prev
+        .map((o) => o.id === order.id ? order : o)
+        .filter((o) => !statusFilter || o.status === statusFilter),
+    );
     invalidateHistory();
   };
 

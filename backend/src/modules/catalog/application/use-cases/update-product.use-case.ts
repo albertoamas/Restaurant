@@ -1,6 +1,7 @@
 import { unlink } from 'fs/promises';
 import { join, basename } from 'path';
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
 import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/ports/category-repository.port';
 import { Product } from '../../domain/entities/product.entity';
@@ -40,7 +41,7 @@ export class UpdateProductUseCase {
     });
 
     const saved = await this.productRepository.save(product);
-    this.eventsService?.emitToTenant(tenantId, 'product.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.PRODUCT_UPDATED, saved);
 
     if (dto.imageUrl !== undefined && oldImageUrl && dto.imageUrl !== oldImageUrl) {
       unlink(join(process.cwd(), 'uploads', basename(oldImageUrl))).catch(() => {});

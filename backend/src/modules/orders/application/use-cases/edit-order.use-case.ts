@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -66,7 +67,7 @@ export class EditOrderUseCase {
     });
 
     const saved = await this.orderRepository.update(order);
-    this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
     return saved;
   }
 }

@@ -14,7 +14,7 @@ import { CreateOrderDto } from '../dto/create-order.dto';
 import { Customer } from '../../../customers/domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../../customers/domain/ports/customer-repository.port';
 import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
-import { PaymentMethod, UserRole } from '@pos/shared';
+import { PaymentMethod, UserRole, SOCKET_EVENTS } from '@pos/shared';
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -188,7 +188,7 @@ export class CreateOrderUseCase {
 
     // 12. Persist and return
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emitToTenant(tenantId, 'order.created', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_CREATED, saved);
 
     // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
     if (resolvedCustomerId && this.raffleAutoTicket && !hasCortesia) {

@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -49,7 +50,7 @@ export class UpdateExpenseUseCase {
       description: dto.description ?? null,
     }, items);
 
-    this.eventsService?.emitToTenant(tenantId, 'expense.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_UPDATED, saved);
     return saved;
   }
 }

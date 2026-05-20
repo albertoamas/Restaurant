@@ -1,4 +1,5 @@
 import { ConflictException, Inject, Injectable, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -26,7 +27,7 @@ export class OpenCashSessionUseCase {
 
     try {
       const saved = await this.repo.save(session);
-      this.eventsService?.emitToTenant(tenantId, 'cash.opened', saved);
+      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CASH_OPENED, saved);
       return saved;
     } catch (err: unknown) {
       // El índice único parcial uq_one_open_session_per_branch rechaza el segundo

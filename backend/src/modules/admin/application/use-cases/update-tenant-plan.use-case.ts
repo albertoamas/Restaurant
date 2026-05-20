@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { SaasPlan, TENANT_MODULES_UPDATED_EVENT } from '@pos/shared';
+import { SaasPlan, SOCKET_EVENTS } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -33,7 +33,7 @@ export class UpdateTenantPlanUseCase {
       rafflesEnabled: newPlan.rafflesEnabled,
     });
 
-    this.eventsService.emitToTenant(tenantId, TENANT_MODULES_UPDATED_EVENT, {});
+    this.eventsService.emitToTenant(tenantId, SOCKET_EVENTS.TENANT_MODULES_UPDATED, {});
     return result;
   }
 }

@@ -1,4 +1,5 @@
 export * from './constants';
+export * from './socket-events';
 export * from './types/enums';
 export * from './types/auth.types';
 export * from './types/product.types';

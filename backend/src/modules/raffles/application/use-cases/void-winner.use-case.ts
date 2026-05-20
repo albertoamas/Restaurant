@@ -1,12 +1,14 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDetailDto } from '@pos/shared';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { RaffleDetailDto, SOCKET_EVENTS } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class VoidWinnerUseCase {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(raffleId: string, winnerId: string, tenantId: string): Promise<RaffleDetailDto> {
@@ -30,6 +32,7 @@ export class VoidWinnerUseCase {
     }
 
     const result = await this.repo.findRaffleWithTickets(raffleId, tenantId);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
     return result!;
   }
 }

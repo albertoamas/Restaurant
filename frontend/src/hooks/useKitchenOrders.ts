@@ -1,71 +1,92 @@
-import { useState, useEffect, useCallback } from 'react';
-import { OrderStatus } from '@pos/shared';
+import { useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { OrderStatus, SOCKET_EVENTS } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
-import { useSocketEvent } from '../context/socket.context';
+import { useSocket, useSocketEvent } from '../context/socket.context';
 import { today } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
+import { queryKeys } from '../lib/query-keys';
 
+const FALLBACK_POLL_MS = 30_000;
+
+/**
+ * Live kitchen orders for the current branch (PENDING + PREPARING only).
+ *
+ * Real-time strategy:
+ *  - WebSocket events (`order.created`, `order.updated`) keep the cache up to date in real time.
+ *  - Polling every 30s only when the socket is disconnected (fallback).
+ *  - On reconnection, refetches immediately to recover events missed while offline.
+ *  - Mutations are optimistic; on error we resync from the server.
+ */
 export function useKitchenOrders(branchId: string | null) {
-  const [orders, setOrders] = useState<OrderDto[]>([]);
+  const queryClient     = useQueryClient();
+  const { connected }   = useSocket();
+  const wasConnectedRef = useRef<boolean | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    try {
+  const qk = queryKeys.kitchenOrders(branchId);
+
+  const { data: orders = [] as OrderDto[], refetch } = useQuery<OrderDto[]>({
+    queryKey: qk,
+    queryFn:  async () => {
       const { data } = await ordersApi.getAll({ date: today(), branchId: branchId ?? undefined });
-      setOrders(data.filter((o) =>
+      return data.filter((o) =>
         o.status === OrderStatus.PENDING || o.status === OrderStatus.PREPARING,
-      ));
-    } catch {
-      // silently ignore — kitchen screen should not show error toasts on auto-refresh
-    }
-  }, [branchId]);
+      );
+    },
+    enabled:         !!branchId,
+    refetchInterval: connected ? false : FALLBACK_POLL_MS,
+  });
 
-  // Initial load + fallback polling every 30s (WebSocket is primary)
+  // Catch-up on reconnection — refetch immediately to recover events missed while offline
   useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
+    if (wasConnectedRef.current === false && connected) {
+      refetch();
+    }
+    wasConnectedRef.current = connected;
+  }, [connected, refetch]);
 
-  // Handlers estables con useCallback para que useSocketEvent no re-registre
-  // el listener en cada render (evita el frame sin listener durante off+on).
+  // Stable socket handlers so useSocketEvent does not re-register on every render
+  // (avoids the frame without listener during off+on).
   const handleOrderCreated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
-    if (order.status === OrderStatus.PENDING) {
-      setOrders((prev) => [...prev, order]);
-    }
-  }, [branchId]);
+    if (order.status !== OrderStatus.PENDING) return;
+    queryClient.setQueryData<OrderDto[]>(qk, (old = []) => [...old, order]);
+  }, [branchId, queryClient, qk]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOrderUpdated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
-    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
-      setOrders((prev) => prev.filter((o) => o.id !== order.id));
-    } else {
-      setOrders((prev) => prev.map((o) => o.id === order.id ? order : o));
-    }
-  }, [branchId]);
+    queryClient.setQueryData<OrderDto[]>(qk, (old = []) => {
+      if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+        return old.filter((o) => o.id !== order.id);
+      }
+      return old.map((o) => o.id === order.id ? order : o);
+    });
+  }, [branchId, queryClient, qk]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real-time via WebSocket
-  useSocketEvent<OrderDto>('order.created', handleOrderCreated);
-  useSocketEvent<OrderDto>('order.updated', handleOrderUpdated);
+  useSocketEvent<OrderDto>(SOCKET_EVENTS.ORDER_CREATED, handleOrderCreated);
+  useSocketEvent<OrderDto>(SOCKET_EVENTS.ORDER_UPDATED, handleOrderUpdated);
 
   const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       await ordersApi.updateStatus(orderId, newStatus);
-      // Optimistic update
-      setOrders((prev) =>
-        newStatus === OrderStatus.DELIVERED
-          ? prev.filter((o) => o.id !== orderId)
-          : prev.map((o) => o.id === orderId ? { ...o, status: newStatus } : o),
-      );
+      // Optimistic update — server will also emit order.updated, but we don't wait for it.
+      queryClient.setQueryData<OrderDto[]>(qk, (old = []) => {
+        if (newStatus === OrderStatus.DELIVERED) {
+          return old.filter((o) => o.id !== orderId);
+        }
+        return old.map((o) => o.id === orderId ? { ...o, status: newStatus } : o);
+      });
     } catch (err) {
       handleApiError(err, 'Error al actualizar');
-      fetchOrders(); // re-sync on error
+      refetch(); // re-sync on error
     }
   };
 
-  const pending = orders.filter((o) => o.status === OrderStatus.PENDING);
+  const pending   = orders.filter((o) => o.status === OrderStatus.PENDING);
   const preparing = orders.filter((o) => o.status === OrderStatus.PREPARING);
 
-  return { orders, pending, preparing, updateStatus, refresh: fetchOrders };
+  const refresh = useCallback(async () => { await refetch(); }, [refetch]);
+
+  return { orders, pending, preparing, updateStatus, refresh };
 }

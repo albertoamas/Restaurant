@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CustomerStatsDto } from '@pos/shared';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { customersApi } from '../api/customers.api';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
@@ -25,15 +26,14 @@ export function useCustomers(initialQ = '') {
     queryFn:  () =>
       customersApi.getAll({ q: q || undefined, page, limit: PAGE_SIZE, sortBy, sortDir })
         .then((r): { data: CustomerStatsDto[]; total: number } => r),
-    staleTime: 0,
   });
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['customers'] });
   }, [queryClient]);
 
-  useSocketEvent('customer.created', invalidate);
-  useSocketEvent('customer.updated', invalidate);
+  useSocketEvent(SOCKET_EVENTS.CUSTOMER_CREATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.CUSTOMER_UPDATED, invalidate);
 
   function setQ(value: string)    { setQState(value);    setPageState(1); }
   function setPage(pg: number)    { setPageState(pg); }

@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/ports/category-repository.port';
 import { EventsService } from '../../../events/events.service';
 
@@ -16,6 +17,6 @@ export class DeleteCategoryUseCase {
       throw new NotFoundException(`Category ${id} not found`);
     }
     await this.categoryRepository.delete(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, 'category.deleted', { id });
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CATEGORY_DELETED, { id });
   }
 }

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
 import { EventsService } from '../../../events/events.service';
 
@@ -84,7 +85,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToTenant(tenantId, 'raffle.ticket_added', { raffleId: raffle.id });
+      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 
@@ -117,7 +118,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToTenant(tenantId, 'raffle.ticket_added', { raffleId: raffle.id });
+      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 

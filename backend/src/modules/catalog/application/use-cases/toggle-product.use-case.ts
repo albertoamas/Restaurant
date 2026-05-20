@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
 import { Product } from '../../domain/entities/product.entity';
 import { EventsService } from '../../../events/events.service';
@@ -23,7 +24,7 @@ export class ToggleProductUseCase {
     product.isActive = !product.isActive;
 
     const saved = await this.productRepository.save(product);
-    this.eventsService?.emitToTenant(tenantId, 'product.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.PRODUCT_UPDATED, saved);
     return saved;
   }
 }

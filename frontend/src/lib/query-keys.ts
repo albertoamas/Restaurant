@@ -22,6 +22,12 @@ export const queryKeys = {
   orderHistory: (p: { from: string; to: string; q: string; status: string; branchId: string | null }) =>
     ['orderHistory', p] as const,
 
+  orders: (p: { date: string; statusFilter: string; branchId: string | null }) =>
+    ['orders', p] as const,
+
+  kitchenOrders: (branchId: string | null) =>
+    ['kitchenOrders', branchId] as const,
+
   expenseCategories: ['expenseCategories'] as const,
 
   cashSession: (branchId: string) =>

@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { Expense } from '../../domain/entities/expense.entity';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
@@ -67,7 +68,7 @@ export class CreateExpenseUseCase {
     });
 
     const saved = await this.expenseRepository.save(expense, items);
-    this.eventsService?.emitToTenant(tenantId, 'expense.created', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, saved);
     return saved;
   }
 }

@@ -1,9 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { RaffleDetailDto } from '@pos/shared';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { RaffleDetailDto, SOCKET_EVENTS } from '@pos/shared';
 import { Raffle } from '../../domain/entities/raffle.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { PRODUCT_REPOSITORY_PORT, ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CreateRaffleDto } from '../dto/create-raffle.dto';
+import { EventsService } from '../../../events/events.service';
 
 @Injectable()
 export class CreateRaffleUseCase {
@@ -12,6 +13,7 @@ export class CreateRaffleUseCase {
     private readonly repo: RaffleRepositoryPort,
     @Inject(PRODUCT_REPOSITORY_PORT)
     private readonly productRepo: ProductRepositoryPort,
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(tenantId: string, dto: CreateRaffleDto): Promise<RaffleDetailDto> {
@@ -60,6 +62,7 @@ export class CreateRaffleUseCase {
     await this.repo.createRaffle(raffle);
 
     const result = await this.repo.findRaffleWithTickets(raffle.id, tenantId);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_CREATED, result);
     return result!;
   }
 }

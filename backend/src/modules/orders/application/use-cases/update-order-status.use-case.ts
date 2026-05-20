@@ -6,7 +6,7 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import { OrderStatus } from '@pos/shared';
+import { OrderStatus, SOCKET_EVENTS } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -37,7 +37,7 @@ export class UpdateOrderStatusUseCase {
     }
 
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emitToTenant(tenantId, 'order.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
       await this.raffleAutoTicket.cancelOrderTickets(tenantId, id, {

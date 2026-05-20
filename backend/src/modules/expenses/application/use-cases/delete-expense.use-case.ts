@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort } from '../../domain/ports/expense-repository.port';
 import { EventsService } from '../../../events/events.service';
 
@@ -13,6 +14,6 @@ export class DeleteExpenseUseCase {
   async execute(id: string, tenantId: string): Promise<void> {
     await this.expenseRepository.delete(id, tenantId);
     // Emit to all branches of the tenant — frontend reloads on any expense.deleted
-    this.eventsService?.emitToTenant(tenantId, 'expense.deleted', { id });
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_DELETED, { id });
   }
 }

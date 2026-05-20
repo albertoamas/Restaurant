@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { rafflesApi } from '../api/raffles.api';
 import { handleApiError } from '../utils/api-error';
 import type { RaffleWinnerDto } from '@pos/shared';
+import { SOCKET_EVENTS } from '@pos/shared';
 import type { DetailRaffle } from '../components/raffles/types';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
@@ -33,7 +34,6 @@ export function useRaffleDetail(
   const { data: raffle, isPending: loading, isError: error, refetch } = useQuery<DetailRaffle>({
     queryKey: qk,
     queryFn:  () => rafflesApi.getOne(raffleId),
-    staleTime: 0,
   });
 
   const invalidate = useCallback(() => {
@@ -44,7 +44,14 @@ export function useRaffleDetail(
     if (data.raffleId === raffleId) invalidate();
   }, [raffleId, invalidate]);
 
-  useSocketEvent<{ raffleId: string }>('raffle.ticket_added', handleTicketAdded);
+  const handleRaffleUpdated = useCallback((updated: DetailRaffle) => {
+    if (updated?.id === raffleId) {
+      queryClient.setQueryData(qk, updated);
+    }
+  }, [raffleId, queryClient]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_TICKET_ADDED, handleTicketAdded);
+  useSocketEvent<DetailRaffle>(SOCKET_EVENTS.RAFFLE_UPDATED, handleRaffleUpdated);
 
   // Mutations update cache directly with server response, no extra refetch needed
   function setRaffle(updated: DetailRaffle) {

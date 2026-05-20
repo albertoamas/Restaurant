@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/auth.context';
+import { ConnectionStatus } from './ConnectionStatus';
 
 const pageTitles: Record<string, string> = {
   '/pos':       'Punto de Venta',
@@ -64,6 +65,7 @@ export function Header({ onMenuOpen }: HeaderProps) {
         <h2 className="text-[17px] font-bold text-gray-900 font-heading">{title}</h2>
       </div>
       <div className="flex items-center gap-3">
+        <ConnectionStatus />
         <span className="text-sm text-gray-400 hidden md:block capitalize">{formatDate()}</span>
         <span className="text-sm text-gray-400 md:hidden capitalize">{formatDateShort()}</span>
         <div className="flex items-center gap-2 pl-3 border-l border-gray-200">

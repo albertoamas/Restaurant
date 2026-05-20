@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -22,7 +23,7 @@ export class CloseCashSessionUseCase {
     session.close(userId, dto.closingAmount, cashSales, dto.notes);
 
     const saved = await this.repo.save(session);
-    this.eventsService?.emitToTenant(tenantId, 'cash.closed', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CASH_CLOSED, saved);
     return saved;
   }
 }

@@ -52,9 +52,9 @@ pnpm --filter backend typecheck
 pnpm --filter frontend typecheck
 
 # Tests
-pnpm test:backend                        # Jest (173 unit tests)
-pnpm test:frontend                       # Vitest (33 unit tests)
-pnpm test:e2e                            # Playwright (9 E2E tests — requires pnpm dev running)
+pnpm test:backend                        # Jest unit tests
+pnpm test:frontend                       # Vitest unit tests
+pnpm test:e2e                            # Playwright E2E tests (requires pnpm dev running)
 
 # Run a single backend test file
 pnpm --filter backend test -- --testPathPattern="create-order"
@@ -169,7 +169,7 @@ hooks/       ← custom hooks: fetch + state (useProducts, useOrders, …)
 store/       ← Zustand stores: cart.store.ts, settings.store.ts, cashSession.store.ts
 context/     ← auth.context.tsx (user/token/branchId), socket.context.tsx
 pages/       ← route-level components
-components/  ← ui/, layout/, pos/, orders/, products/, cash/, expenses/, raffles/
+components/  ← ui/, layout/, pos/, orders/, products/, cash/, expenses/, raffles/, admin/
 utils/       ← date.ts (today, formatDate, elapsed), api-error.ts, print.ts, order.ts
 routes/      ← PrivateRoute, OwnerRoute
 ```
@@ -249,7 +249,7 @@ Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/ut
 
 `packages/shared/src/` exports enums and DTO types. **The backend imports from the compiled `dist/` folder** (via tsconfig paths). Always run `pnpm --filter @pos/shared build` after editing shared types before typechecking the backend.
 
-Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`, `RaffleStatus` (ACTIVE | CLOSED | DRAWING | DRAWN), `RaffleTicketMode` (PRODUCT_MATCH | SPENDING_THRESHOLD).
+Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`. Raffle types (`RaffleStatus`: ACTIVE | CLOSED | DRAWING | DRAWN; `RaffleTicketMode`: PRODUCT_MATCH | SPENDING_THRESHOLD) are string literal union types defined in `packages/shared/src/types/raffle.types.ts`, not TypeScript enums.
 
 ## Environment Variables (backend)
 

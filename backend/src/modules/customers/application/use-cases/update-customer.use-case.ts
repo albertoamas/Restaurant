@@ -1,4 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { Customer } from '../../domain/entities/customer.entity';
 import { CustomerRepositoryPort, CUSTOMER_REPOSITORY_PORT } from '../../domain/ports/customer-repository.port';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
@@ -25,7 +26,7 @@ export class UpdateCustomerUseCase {
 
     customer.update(dto);
     const saved = await this.repo.save(customer);
-    this.eventsService?.emitToTenant(tenantId, 'customer.updated', saved);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CUSTOMER_UPDATED, saved);
     return saved;
   }
 }
