@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ChangePasswordModal } from './ChangePasswordModal';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 import { useSocketEvent } from '../../context/socket.context';
@@ -32,6 +33,7 @@ export function AppLayout() {
   const { user, logout, refreshUser } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled, rafflesEnabled } = useSettingsStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [branchOpen, setBranchOpen] = useState(false);
   const { currentBranchId, setCurrentBranch } = useAuth();
@@ -274,6 +276,16 @@ export function AppLayout() {
             <p className="text-xs text-white/50 truncate flex-1">{user?.email}</p>
           </div>
           <button
+            onClick={() => { setDrawerOpen(false); setChangePwOpen(true); }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-white/70 hover:bg-white/5 w-full transition-all duration-150"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Cambiar contraseña
+          </button>
+          <button
             onClick={() => { setDrawerOpen(false); logout(); }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-red-400 hover:bg-red-500/10 w-full transition-all duration-150"
           >
@@ -285,6 +297,8 @@ export function AppLayout() {
           </button>
         </div>
       </div>
+
+      <ChangePasswordModal open={changePwOpen} onClose={() => setChangePwOpen(false)} />
 
       <div data-print-main className="lg:ml-60 flex flex-col min-h-screen">
         <Header onMenuOpen={() => setDrawerOpen(true)} />
