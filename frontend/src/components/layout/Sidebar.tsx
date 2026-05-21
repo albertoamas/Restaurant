@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 import { branchesApi } from '../../api/branches.api';
-import { ChangePasswordModal } from './ChangePasswordModal';
 import type { BranchDto } from '@pos/shared';
 
 const cashNavItem = {
@@ -67,6 +66,17 @@ const rafflesNavItem = {
   icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>,
 };
 
+const accountNavItem = {
+  to: '/account',
+  label: 'Mi cuenta',
+  icon: (
+    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+};
+
 const kitchenNavItem = {
   to: '/kitchen',
   label: 'Cocina',
@@ -85,7 +95,6 @@ export function Sidebar() {
   const { kitchenEnabled, ordersEnabled, cashEnabled, teamEnabled, branchesEnabled, rafflesEnabled } = useSettingsStore();
   const [branches, setBranches] = useState<BranchDto[]>([]);
   const [branchOpen, setBranchOpen] = useState(false);
-  const [changePwOpen, setChangePwOpen] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'OWNER') {
@@ -111,6 +120,7 @@ export function Sidebar() {
         ownerNav[0],
         ...(ordersEnabled ? [ownerNav[1]] : []),
         ...(cashEnabled ? [cashNavItem] : []),
+        accountNavItem,
       ];
     }
     return [
@@ -252,16 +262,6 @@ export function Sidebar() {
           <p className="text-xs text-white/50 truncate flex-1">{user?.email}</p>
         </div>
         <button
-          onClick={() => setChangePwOpen(true)}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-white/70 hover:bg-white/5 w-full transition-all duration-150"
-        >
-          <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          Cambiar contraseña
-        </button>
-        <button
           onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-red-400 hover:bg-red-500/10 w-full transition-all duration-150"
         >
@@ -272,8 +272,6 @@ export function Sidebar() {
           Cerrar Sesión
         </button>
       </div>
-
-      <ChangePasswordModal open={changePwOpen} onClose={() => setChangePwOpen(false)} />
     </aside>
   );
 }

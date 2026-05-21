@@ -21,6 +21,7 @@ import { RafflesPage } from './pages/RafflesPage';
 import { RaffleDetailPage } from './pages/RaffleDetailPage';
 import { AdminPage } from './pages/AdminPage';
 import { LandingPage } from './pages/LandingPage';
+import { CashierAccountPage } from './pages/CashierAccountPage';
 
 /**
  * Guards a route behind a module flag.
@@ -59,6 +60,7 @@ function AppRoutes() {
             path="/cash"
             element={<ModuleRoute enabled={cashEnabled} element={<CashPage />} />}
           />
+          <Route path="/account" element={<CashierAccountPage />} />
 
           <Route element={<OwnerRoute />}>
             <Route path="/report"    element={<ReportPage />} />
