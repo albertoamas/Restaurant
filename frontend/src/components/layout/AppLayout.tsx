@@ -197,7 +197,7 @@ export function AppLayout() {
 
         {/* Branch selector for OWNER */}
         {isOwner && (
-          <div className="px-4 pb-3 border-b border-white/8 relative">
+          <div className="px-4 pt-3 pb-3 border-b border-white/8 relative">
             <button
               onClick={() => branches.length > 1 && setBranchOpen((o) => !o)}
               className={`w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/6 border border-white/10 text-xs text-white/65 transition-colors ${
@@ -241,7 +241,7 @@ export function AppLayout() {
 
         {/* Branch indicator for CASHIER */}
         {user?.role === 'CASHIER' && user.branchId && (
-          <div className="px-4 pb-3 border-b border-white/8">
+          <div className="px-4 pt-3 pb-3 border-b border-white/8">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/12 border border-primary-500/20 text-xs text-primary-300">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse-dot shrink-0" />
               <span className="truncate">Sucursal asignada</span>
