@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/auth.context';
@@ -26,16 +26,18 @@ const Icons = {
   team:      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   branches:  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   raffles:   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>,
-  account:   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
 
 export function AppLayout() {
   const { user, logout, refreshUser } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled, rafflesEnabled } = useSettingsStore();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [branches, setBranches] = useState<BranchDto[]>([]);
-  const [branchOpen, setBranchOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [drawerUserMenuOpen, setDrawerUserMenuOpen] = useState(false);
+  const [branches, setBranches]             = useState<BranchDto[]>([]);
+  const [branchOpen, setBranchOpen]         = useState(false);
   const { currentBranchId, setCurrentBranch } = useAuth();
+  const drawerUserMenuRef = useRef<HTMLDivElement>(null);
+  const navigate          = useNavigate();
 
   const isOwner = user?.role === 'OWNER';
   const clearCart = useCartStore((s) => s.clear);
@@ -63,6 +65,18 @@ export function AppLayout() {
     }
     prevBranchRef.current = currentBranchId;
   }, [currentBranchId, clearCart]);
+
+  // Close drawer user-menu on outside click
+  useEffect(() => {
+    if (!drawerUserMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (drawerUserMenuRef.current && !drawerUserMenuRef.current.contains(e.target as Node)) {
+        setDrawerUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [drawerUserMenuOpen]);
 
   // Sync cash session state globally so every page can read it
   const { setSession: setCashSession } = useCashSessionStore();
@@ -105,7 +119,6 @@ export function AppLayout() {
     { to: '/team',      label: 'Equipo',     icon: Icons.team,      show: isOwner && teamEnabled },
     { to: '/branches',  label: 'Sucursales', icon: Icons.branches,  show: isOwner && branchesEnabled },
     { to: '/settings',  label: 'Ajustes',    icon: Icons.settings,  show: isOwner || (!isOwner && (branchesEnabled || teamEnabled)) },
-    { to: '/account',   label: 'Mi cuenta',  icon: Icons.account,   show: !isOwner },
   ].filter((i) => i.show);
 
   if (user?.role === 'CASHIER' && !user.branchId) {
@@ -267,24 +280,59 @@ export function AppLayout() {
           ))}
         </nav>
 
-        {/* Drawer footer */}
-        <div className="px-3 py-4 border-t border-white/8">
-          <div className="flex items-center gap-2.5 px-3 mb-2">
-            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold text-white/70">{(user?.name ?? '?')[0].toUpperCase()}</span>
-            </div>
-            <p className="text-xs text-white/50 truncate flex-1">{user?.email}</p>
+        {/* Drawer footer — user dropdown */}
+        <div className="px-3 py-3 border-t border-white/8">
+          <div ref={drawerUserMenuRef} className="relative">
+            {/* Dropdown (opens upward) */}
+            {drawerUserMenuOpen && (
+              <div
+                className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
+                style={{ background: 'oklch(0.18 0.018 255)' }}
+              >
+                <button
+                  onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); navigate('/account'); }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/65 hover:text-white/90 hover:bg-white/8 transition-colors"
+                >
+                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                      d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Mi cuenta
+                </button>
+                <div className="h-px bg-white/6 mx-3" />
+                <button
+                  onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); logout(); }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
+
+            {/* Trigger */}
+            <button
+              onClick={() => setDrawerUserMenuOpen((o) => !o)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-white/6 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-white/70">{(user?.name ?? '?')[0].toUpperCase()}</span>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs font-medium text-white/75 truncate leading-tight">{user?.name}</p>
+                <p className="text-[10px] text-white/40 truncate leading-tight">{user?.email}</p>
+              </div>
+              <svg
+                className={`w-3.5 h-3.5 text-white/30 shrink-0 transition-transform duration-150 ${drawerUserMenuOpen ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={() => { setDrawerOpen(false); logout(); }}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-red-400 hover:bg-red-500/10 w-full transition-all duration-150"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Cerrar Sesión
-          </button>
         </div>
       </div>
 

@@ -12,8 +12,8 @@ const ACCOUNT_UNLOCK_KEY = 'pos_account_unlocked';
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 function AccountLock({ onUnlock }: { onUnlock: () => void }) {
-  const [key, setKey]       = useState('');
-  const [error, setError]   = useState('');
+  const [key, setKey]         = useState('');
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +64,11 @@ function AccountLock({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  OWNER:   'Propietario',
+  CASHIER: 'Cajero',
+};
+
 export function CashierAccountPage() {
   const { user } = useAuth();
   const [unlocked, setUnlocked] = useState(
@@ -72,6 +77,7 @@ export function CashierAccountPage() {
   const [pw, setPw]           = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const userInitial            = (user?.name ?? '?')[0].toUpperCase();
+  const roleLabel              = ROLE_LABEL[user?.role ?? ''] ?? user?.role ?? '';
 
   if (!unlocked) {
     return <AccountLock onUnlock={() => setUnlocked(true)} />;
@@ -113,9 +119,9 @@ export function CashierAccountPage() {
         <div className="min-w-0">
           <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
           <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-          {user?.role === 'CASHIER' && (
+          {roleLabel && (
             <span className="inline-block mt-1 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full">
-              Cajero
+              {roleLabel}
             </span>
           )}
         </div>

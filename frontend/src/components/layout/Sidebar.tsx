@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 import { branchesApi } from '../../api/branches.api';
@@ -66,16 +66,6 @@ const rafflesNavItem = {
   icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>,
 };
 
-const accountNavItem = {
-  to: '/account',
-  label: 'Mi cuenta',
-  icon: (
-    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-};
 
 const kitchenNavItem = {
   to: '/kitchen',
@@ -93,8 +83,22 @@ const kitchenNavItem = {
 export function Sidebar() {
   const { user, logout, currentBranchId, setCurrentBranch } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, teamEnabled, branchesEnabled, rafflesEnabled } = useSettingsStore();
-  const [branches, setBranches] = useState<BranchDto[]>([]);
+  const [branches, setBranches]     = useState<BranchDto[]>([]);
   const [branchOpen, setBranchOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate    = useNavigate();
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     if (user?.role === 'OWNER') {
@@ -120,7 +124,6 @@ export function Sidebar() {
         ownerNav[0],
         ...(ordersEnabled ? [ownerNav[1]] : []),
         ...(cashEnabled ? [cashNavItem] : []),
-        accountNavItem,
       ];
     }
     return [
@@ -253,24 +256,59 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* User & Logout */}
-      <div className="px-3 py-4 border-t border-white/8">
-        <div className="flex items-center gap-2.5 px-3 mb-2">
-          <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-white/70">{userInitial}</span>
-          </div>
-          <p className="text-xs text-white/50 truncate flex-1">{user?.email}</p>
+      {/* User menu */}
+      <div className="px-3 py-3 border-t border-white/8">
+        <div ref={userMenuRef} className="relative">
+          {/* Dropdown — opens upward */}
+          {userMenuOpen && (
+            <div
+              className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
+              style={{ background: 'oklch(0.18 0.018 255)' }}
+            >
+              <button
+                onClick={() => { setUserMenuOpen(false); navigate('/account'); }}
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/65 hover:text-white/90 hover:bg-white/8 transition-colors"
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                    d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Mi cuenta
+              </button>
+              <div className="h-px bg-white/6 mx-3" />
+              <button
+                onClick={() => { setUserMenuOpen(false); logout(); }}
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Cerrar Sesión
+              </button>
+            </div>
+          )}
+
+          {/* Trigger button */}
+          <button
+            onClick={() => setUserMenuOpen((o) => !o)}
+            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-white/6 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-white/70">{userInitial}</span>
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-medium text-white/75 truncate leading-tight">{user?.name}</p>
+              <p className="text-[10px] text-white/40 truncate leading-tight">{user?.email}</p>
+            </div>
+            <svg
+              className={`w-3.5 h-3.5 text-white/30 shrink-0 transition-transform duration-150 ${userMenuOpen ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/35 hover:text-red-400 hover:bg-red-500/10 w-full transition-all duration-150"
-        >
-          <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Cerrar Sesión
-        </button>
       </div>
     </aside>
   );
