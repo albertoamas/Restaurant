@@ -2,6 +2,7 @@ import type { OrderDto } from '@pos/shared';
 import { OrderType } from '@pos/shared';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { printReceipt } from '../../utils/print';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 
@@ -40,9 +41,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Cerrar"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon name="x" size={16} strokeWidth={2} />
         </button>
         {/* Success icon with confetti */}
         <div className="relative inline-flex items-center justify-center mb-5">

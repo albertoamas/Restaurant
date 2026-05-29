@@ -7,9 +7,10 @@ import type { BranchDto } from '@pos/shared';
 import { UserRole } from '@pos/shared';
 import { Badge } from '../components/ui/Badge';
 import { Toggle } from '../components/ui/Toggle';
-import { Spinner } from '../components/ui/Spinner';
+import { Skeleton } from '../components/ui/Skeleton';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { PageShell } from '../components/ui/PageShell';
 import { Input } from '../components/ui/Input';
 import { useUsers } from '../hooks/useUsers';
 import { useBranches } from '../hooks/useBranches';
@@ -66,7 +67,7 @@ export function TeamPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+    <PageShell maxWidth="4xl">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -83,7 +84,11 @@ export function TeamPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="space-y-3">
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+        </div>
       ) : (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] divide-y divide-gray-50 overflow-hidden">
           {users.map((user) => (
@@ -133,7 +138,7 @@ export function TeamPage() {
         onClose={() => setShowModal(false)}
         onSubmit={handleCreate}
       />
-    </div>
+    </PageShell>
   );
 }
 

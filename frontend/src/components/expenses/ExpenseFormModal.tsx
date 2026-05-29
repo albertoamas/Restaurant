@@ -5,6 +5,7 @@ import { expensesApi } from '../../api/expenses.api';
 import { useExpenseCategories } from '../../hooks/useExpenses';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { handleApiError } from '../../utils/api-error';
 import { useAuth } from '../../context/auth.context';
 
@@ -164,9 +165,7 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
           onClick={addItem}
           className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+          <Icon name="plus" size={16} strokeWidth={2} />
           Agregar ítem
         </button>
 
@@ -313,9 +312,7 @@ function ItemRowForm({
           className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-gray-300
             hover:text-red-500 hover:bg-red-50 transition-colors"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon name="x" size={14} strokeWidth={2} />
         </button>
       ) : (
         <div className="w-7 shrink-0" />

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { adminApi, type TenantRow, type TenantModules, type PlanDto, type CreateTenantPayload } from '../api/admin.api';
 import { Button } from '../components/ui/Button';
+import { Icon } from '../components/ui/Icon';
 import { Spinner } from '../components/ui/Spinner';
 import { AdminLogin } from '../components/admin/AdminLogin';
 import { PlansSection } from '../components/admin/PlansSection';
@@ -128,17 +129,14 @@ export function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(165deg,oklch(0.975_0.006_250),oklch(0.955_0.012_248))]">
+    <div className="min-h-screen bg-[var(--color-surface-page)]">
 
       {/* Top bar */}
       <header className="bg-[oklch(0.145_0.020_255)] border-b border-white/8 sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
           <div className="flex items-center gap-2.5 shrink-0">
             <div className="w-7 h-7 rounded-lg bg-primary-500/20 border border-primary-400/25 flex items-center justify-center">
-              <svg className="w-3.5 h-3.5 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-              </svg>
+              <Icon name="table" size={14} strokeWidth={2} className="text-primary-400" />
             </div>
             <span className="font-heading font-bold text-sm text-white">Admin Console</span>
           </div>
@@ -218,9 +216,7 @@ export function AdminPage() {
             ) : tenants.length === 0 ? (
               <div className="flex flex-col items-center py-14 text-center">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                  <Icon name="building" size={20} strokeWidth={1.5} className="text-gray-300" />
                 </div>
                 <p className="text-sm text-gray-400">No hay negocios registrados</p>
                 <p className="text-xs text-gray-300 mt-1">Crea el primero con el botón de arriba</p>
@@ -235,9 +231,12 @@ export function AdminPage() {
                         className="p-1 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
                         aria-expanded={expandedId === t.id}
                       >
-                        <svg className={`w-4 h-4 transition-transform duration-200 ${expandedId === t.id ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon
+                          name="chevron-right"
+                          size={16}
+                          strokeWidth={2}
+                          className={`transition-transform duration-200 ${expandedId === t.id ? 'rotate-90' : ''}`}
+                        />
                       </button>
 
                       <TenantAvatar name={t.name} />

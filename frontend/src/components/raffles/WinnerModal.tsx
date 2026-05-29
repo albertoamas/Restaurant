@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Confetti } from '../ui/Confetti';
+import { Icon } from '../ui/Icon';
 import type { RaffleWinnerDto } from '@pos/shared';
 import { IconTicket, IconGift } from './RaffleIcons';
 import { playWinnerFanfare } from '../../utils/raffle-sounds';
@@ -118,10 +119,7 @@ export function WinnerModal({
               onClick={() => printWinnerCertificate(winner, raffleName, business)}
               className="mt-2.5 w-full flex items-center justify-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 py-1.5 transition-colors"
             >
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 21h6v-6H9v6z" />
-              </svg>
+              <Icon name="print" size={14} strokeWidth={1.8} className="shrink-0" />
               Imprimir certificado
             </button>
           </div>

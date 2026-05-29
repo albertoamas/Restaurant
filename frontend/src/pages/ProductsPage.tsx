@@ -3,8 +3,10 @@ import toast from 'react-hot-toast';
 import type { ProductDto, CategoryDto } from '@pos/shared';
 import { productsApi } from '../api/products.api';
 import { Badge } from '../components/ui/Badge';
+import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { Spinner } from '../components/ui/Spinner';
+import { PageShell } from '../components/ui/PageShell';
+import { Skeleton } from '../components/ui/Skeleton';
 import { Toggle } from '../components/ui/Toggle';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
@@ -64,14 +66,23 @@ export function ProductsPage() {
   }
 
   if (catsLoading && prodsLoading) {
-    return <div className="flex justify-center py-12"><Spinner /></div>;
+    return (
+      <PageShell>
+        <div className="space-y-3">
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+        </div>
+      </PageShell>
+    );
   }
 
   const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.20)]';
   const inactiveClass = 'bg-white text-gray-600 border border-gray-200 hover:border-primary-400 hover:text-primary-800';
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+    <PageShell>
       {/* Toolbar */}
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -111,10 +122,7 @@ export function ProductsPage() {
                 title="Editar categoría"
                 aria-label={`Editar categoría ${cat.name}`}
               >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Icon name="edit" size={12} />
               </button>
             </div>
           ))}
@@ -129,10 +137,7 @@ export function ProductsPage() {
 
       {/* Search */}
       <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
           type="text"
           value={searchInput}
@@ -144,10 +149,7 @@ export function ProductsPage() {
 
       {products.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-sm shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
-          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
+          <Icon name="box" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin productos</p>
           <p className="text-xs mt-1">
             {(categoryId || q) ? 'No hay productos con ese filtro' : 'Crea tu primer producto'}
@@ -174,10 +176,7 @@ export function ProductsPage() {
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                   ) : (
-                    <svg className="w-6 h-6 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="photo" size={24} strokeWidth={1.5} className="text-primary-300" />
                   )}
                 </div>
 
@@ -236,10 +235,7 @@ export function ProductsPage() {
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           ) : (
-                            <svg className="w-5 h-5 text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <Icon name="photo" size={20} strokeWidth={1.5} className="text-primary-300" />
                           )}
                         </div>
                       </td>
@@ -339,6 +335,6 @@ export function ProductsPage() {
         onSaved={fetchData}
         category={editingCategory}
       />
-    </div>
+    </PageShell>
   );
 }

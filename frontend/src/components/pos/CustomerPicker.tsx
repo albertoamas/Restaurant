@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { CreateCustomerRequest, CustomerSearchResult } from '@pos/shared';
+import { Icon } from '../ui/Icon';
 import { useCustomerSearch } from '../../hooks/useCustomerSearch';
 
 type CustomerValue =
@@ -92,10 +93,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
           border-2 border-gray-200 text-sm font-medium text-gray-400
           hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
       >
-        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
+        <Icon name="user" size={16} strokeWidth={2} className="shrink-0" />
         <span>Agregar cliente (opcional)</span>
       </button>
     );
@@ -109,14 +107,10 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
 
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
-        <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
+        <Icon name="check" size={16} strokeWidth={2} className="text-emerald-500 shrink-0" />
         <span className="text-sm text-emerald-800 font-medium flex-1 truncate">{label}</span>
-        <button type="button" onClick={clearSelection} aria-label="Quitar cliente" className="text-emerald-400 hover:text-emerald-600 transition-colors">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+        <button type="button" onClick={clearSelection} aria-label="Quitar cliente" className="text-emerald-500 hover:text-emerald-700 transition-colors">
+          <Icon name="x" size={16} strokeWidth={2} />
         </button>
       </div>
     );
@@ -168,9 +162,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
     <div className="space-y-2" ref={dropdownRef}>
       <div className="relative">
         <div className="flex items-center gap-2 px-3 py-3 rounded-2xl border-2 border-gray-200 bg-white focus-within:border-primary-400 transition-colors">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Icon name="search" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -181,9 +173,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
             className="flex-1 text-sm bg-transparent outline-none placeholder-gray-400"
           />
           <button type="button" onClick={handleCollapse} aria-label="Cancelar búsqueda" className="text-gray-300 hover:text-gray-500 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="x" size={16} strokeWidth={2} />
           </button>
         </div>
 
@@ -232,9 +222,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
           border-2 border-gray-200 text-sm font-medium text-gray-400
           hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
       >
-        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
+        <Icon name="plus" size={16} strokeWidth={2} className="shrink-0" />
         Crear nuevo cliente
       </button>
     </div>

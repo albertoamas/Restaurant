@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
+import { Icon } from '../components/ui/Icon';
 import { useCustomers } from '../hooks/useCustomers';
 import { customersApi } from '../api/customers.api';
 import { ordersApi } from '../api/orders.api';
@@ -291,10 +292,7 @@ export function CustomersPage() {
 
       {/* Search */}
       <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <Icon name="search" size={16} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
           type="text"
           value={searchInput}
@@ -310,10 +308,7 @@ export function CustomersPage() {
       ) : customers.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-            <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <Icon name="users" size={28} strokeWidth={1.5} className="text-gray-400" />
           </div>
           <p className="text-sm font-medium text-gray-500">
             {q ? 'No se encontraron clientes' : 'Sin clientes registrados aún'}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PaymentMethod, OrderType } from '@pos/shared';
 import type { CreateCustomerRequest } from '@pos/shared';
 import { Modal } from '../ui/Modal';
+import { Icon } from '../ui/Icon';
 import { CustomerPicker } from './CustomerPicker';
 import { useCartStore } from '../../store/cart.store';
 
@@ -24,39 +25,24 @@ const ORDER_TYPES = [
     value: OrderType.DINE_IN,
     label: 'Local',
     desc: 'Consumir en el local',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50/50 hover:text-primary-700',
+    icon: <Icon name="card" size={24} />,
+    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700',
     active: 'border-2 border-primary-500 bg-primary-50 text-primary-900 ring-2 ring-primary-200 shadow-sm',
   },
   {
     value: OrderType.TAKEOUT,
     label: 'Para Llevar',
     desc: 'El cliente retira',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-      </svg>
-    ),
-    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50/50 hover:text-amber-700',
+    icon: <Icon name="bag" size={24} />,
+    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
     active: 'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
   },
   {
     value: OrderType.DELIVERY,
     label: 'Delivery',
     desc: 'Entrega a domicilio',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-700',
+    icon: <Icon name="map" size={24} />,
+    idle:   'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700',
     active: 'border-2 border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200 shadow-sm',
   },
 ];
@@ -66,13 +52,8 @@ const BASE_PAYMENT_METHODS = [
     value: PaymentMethod.CASH,
     label: 'Efectivo',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700',
+    icon: <Icon name="cash" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700',
     active:      'border-2 border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50',
     splitActive: 'border-2 border-emerald-400 bg-emerald-100 text-emerald-800',
@@ -81,13 +62,8 @@ const BASE_PAYMENT_METHODS = [
     value: PaymentMethod.QR,
     label: 'QR',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50/60 hover:text-primary-700',
+    icon: <Icon name="qr" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700',
     active:      'border-2 border-primary-500 bg-primary-50 text-primary-900 ring-2 ring-primary-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-primary-300 hover:bg-primary-50',
     splitActive: 'border-2 border-primary-400 bg-primary-100 text-primary-800',
@@ -96,13 +72,8 @@ const BASE_PAYMENT_METHODS = [
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-violet-300 hover:bg-violet-50/60 hover:text-violet-700',
+    icon: <Icon name="card" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700',
     active:      'border-2 border-violet-500 bg-violet-50 text-violet-900 ring-2 ring-violet-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:bg-violet-50',
     splitActive: 'border-2 border-violet-400 bg-violet-100 text-violet-800',
@@ -111,13 +82,8 @@ const BASE_PAYMENT_METHODS = [
     value: PaymentMethod.CORTESIA,
     label: 'Cortesía',
     cortesiaOnly: true,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50/60 hover:text-amber-700',
+    icon: <Icon name="gift" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
     active:      'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50',
     splitActive: 'border-2 border-amber-400 bg-amber-100 text-amber-800',
@@ -138,9 +104,7 @@ function StepHeader({ n, label, done }: { n: number; label: string; done: boolea
           : 'bg-gray-100 text-gray-500',
       ].join(' ')}>
         {done ? (
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
+          <Icon name="check" size={14} strokeWidth={2.5} />
         ) : (
           <span className="text-xs font-black">{n}</span>
         )}
@@ -309,10 +273,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
             {customerConfirmed && customerValue === null ? (
               <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 border-2 border-gray-200">
                 <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <Icon name="user" size={16} strokeWidth={2} className="text-gray-400" />
                   Sin cliente
                 </div>
                 <button
@@ -334,10 +295,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                       border-2 border-gray-200 text-sm font-medium text-gray-400
                       hover:border-gray-300 hover:text-gray-600 hover:bg-gray-50 transition-all duration-150"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
+                    <Icon name="ban" size={16} strokeWidth={2} />
                     Sin cliente para este pedido
                   </button>
                 )}
@@ -377,12 +335,10 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                   <button
                     onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl
-                      text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
+                      text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-500/10
                       border-2 border-gray-200 hover:border-primary-200 transition-all"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Icon name="plus" size={14} strokeWidth={2} />
                     Dividir pago entre varios métodos
                   </button>
                 )}
@@ -396,9 +352,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                     onClick={() => { setSplitMode(false); setSplitPayments([]); setSplitMethod(null); setSplitAmount(''); }}
                     className="text-xs text-gray-400 hover:text-primary-600 transition-colors flex items-center gap-1"
                   >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <Icon name="chevron-left" size={12} strokeWidth={2} />
                     Pago simple
                   </button>
                 </div>
@@ -436,9 +390,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                             className="w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 flex items-center justify-center text-white transition-colors ml-0.5"
                             aria-label="Quitar"
                           >
-                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <Icon name="x" size={10} strokeWidth={3} />
                           </button>
                         </div>
                       );
@@ -535,7 +487,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                 className={[
                   'w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-200',
                   step1Done && step2Done && !loading
-                    ? 'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]'
+                    ? 'bg-amber-400 hover:bg-amber-500/100 text-amber-950 shadow-[0_4px_16px_oklch(0.82_0.17_85/0.35)] active:scale-[0.98]'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed',
                 ].join(' ')}
               >

@@ -7,7 +7,9 @@ import { reportsApi } from '../api/reports.api';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAuth } from '../context/auth.context';
 import { Button } from '../components/ui/Button';
-import { Spinner } from '../components/ui/Spinner';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Icon } from '../components/ui/Icon';
+import { PageShell } from '../components/ui/PageShell';
 import { ExpenseFormModal } from '../components/expenses/ExpenseFormModal';
 import { handleApiError } from '../utils/api-error';
 import { today } from '../utils/date';
@@ -122,7 +124,7 @@ export function ExpensesPage() {
     : expenses;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+    <PageShell>
       {/* Period selector */}
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -175,10 +177,8 @@ export function ExpensesPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
-          <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-red-500">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
+          <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+            <Icon name="minus" size={16} />
           </div>
           <p className="text-xs font-medium text-gray-400">Total Gastos</p>
           <p className="font-heading font-black text-lg text-red-600 leading-tight">
@@ -187,10 +187,8 @@ export function ExpensesPage() {
         </div>
 
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 text-emerald-500">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
+            <Icon name="dollar" size={16} />
           </div>
           <p className="text-xs font-medium text-gray-400">Ventas</p>
           <p className="font-heading font-black text-lg text-emerald-600 leading-tight">
@@ -205,13 +203,10 @@ export function ExpensesPage() {
             ? 'bg-red-50 border-red-200'
             : 'bg-white border-gray-100'
         }`}>
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center [&_svg]:w-4 [&_svg]:h-4 ${
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
             netProfit !== null && netProfit >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
           }`}>
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
+            <Icon name="chart" size={16} />
           </div>
           <p className="text-xs font-medium text-gray-500">Ganancia Neta</p>
           <p className={`font-heading font-black text-lg leading-tight ${
@@ -252,13 +247,14 @@ export function ExpensesPage() {
 
       {/* Expense list */}
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="space-y-3">
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+        </div>
       ) : filteredExpenses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-          </svg>
+          <Icon name="receipt" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin gastos registrados</p>
           <p className="text-xs mt-1">Agrega el primer gasto del período</p>
         </div>
@@ -291,7 +287,7 @@ export function ExpensesPage() {
         onSaved={reload}
         expense={editingExpense ?? undefined}
       />
-    </div>
+    </PageShell>
   );
 }
 
@@ -360,10 +356,7 @@ function ExpenseRow({
 
         {hasItems && expense.description && (
           <div className="flex items-center gap-1.5 mt-2">
-            <svg className="w-3 h-3 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
+            <Icon name="chat" size={12} className="text-gray-300 shrink-0" />
             <p className="text-xs text-gray-400 italic">{expense.description}</p>
           </div>
         )}
@@ -381,33 +374,23 @@ function ExpenseRow({
         <div className="flex items-center justify-end gap-1 pt-0.5">
           <button onClick={onDelete}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
+            <Icon name="check" size={14} strokeWidth={2.5} />
           </button>
           <button onClick={onCancelDelete}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="x" size={14} strokeWidth={2.5} />
           </button>
         </div>
       ) : (
         <div className="flex items-center justify-end gap-0.5 pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={onEdit}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <Icon name="edit" size={16} />
           </button>
           <button onClick={onConfirmDelete}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            </button>
+            <Icon name="trash" size={16} />
+          </button>
           </div>
         )}
     </div>

@@ -4,6 +4,8 @@ import { OrderStatus, UserRole } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
 import { Spinner } from '../components/ui/Spinner';
+import { Icon } from '../components/ui/Icon';
+import { PageShell } from '../components/ui/PageShell';
 import { useOrders } from '../hooks/useOrders';
 import { useOrderHistory } from '../hooks/useOrderHistory';
 import { today } from '../utils/date';
@@ -119,10 +121,7 @@ export function OrdersPage() {
   // ── Shared empty / no-branch UI ───────────────────────────────────────────
   const noBranchUi = (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
+      <Icon name="building" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
       <p className="text-sm font-semibold text-gray-500">Selecciona una sucursal</p>
       <p className="text-xs mt-1 text-gray-400">Elige una sucursal en el menú lateral para ver sus pedidos</p>
     </div>
@@ -130,10 +129,7 @@ export function OrdersPage() {
 
   const emptyUi = (message: string) => (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
+      <Icon name="orders" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
       <p className="text-sm font-semibold text-gray-500">Sin pedidos</p>
       <p className="text-xs mt-1 text-gray-400">{message}</p>
     </div>
@@ -154,7 +150,7 @@ export function OrdersPage() {
     }`;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+    <PageShell>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.08)] p-4 mb-6">
@@ -192,7 +188,7 @@ export function OrdersPage() {
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
                 shadow-[0_1px_2px_oklch(0.13_0.012_260/0.06)] transition-[border-color,box-shadow]"
             />
-            <div className="flex gap-0.5 bg-[oklch(0.96_0.008_252)] rounded-xl p-1 overflow-x-auto">
+            <div className="flex gap-0.5 bg-gray-100 rounded-xl p-1 overflow-x-auto">
               {operationStatusFilters.map((f) => (
                 <button key={f.value} onClick={() => setStatusFilter(f.value)} className={pillClass(statusFilter === f.value)}>
                   {f.label}
@@ -228,7 +224,7 @@ export function OrdersPage() {
                     shadow-[0_1px_2px_oklch(0.13_0.012_260/0.06)] transition-[border-color,box-shadow]"
                 />
               </div>
-              <div className="flex gap-0.5 bg-[oklch(0.96_0.008_252)] rounded-xl p-1 overflow-x-auto">
+              <div className="flex gap-0.5 bg-gray-100 rounded-xl p-1 overflow-x-auto">
                 {historyStatusFilters.map((f) => (
                   <button key={f.value} onClick={() => setHistoryStatus(f.value)} className={pillClass(historyStatus === f.value)}>
                     {f.label}
@@ -239,11 +235,7 @@ export function OrdersPage() {
 
             {/* Search bar */}
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 value={searchInput}
@@ -284,10 +276,7 @@ export function OrdersPage() {
                     >
                       {loadingMore ? (
                         <>
-                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-                          </svg>
+                          <Spinner size="sm" color="muted" />
                           Cargando...
                         </>
                       ) : (
@@ -355,6 +344,6 @@ export function OrdersPage() {
           onSaved={handleEditSaved}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

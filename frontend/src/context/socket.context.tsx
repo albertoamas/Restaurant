@@ -82,10 +82,13 @@ export function useSocket() {
 /** Subscribe to a socket event, auto-cleanup on unmount */
 export function useSocketEvent<T>(event: string, handler: (data: T) => void) {
   const { socket } = useSocket();
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
 
   useEffect(() => {
     if (!socket) return;
-    socket.on(event, handler);
-    return () => { socket.off(event, handler); };
-  }, [socket, event, handler]);
+    const fn = (data: T) => handlerRef.current(data);
+    socket.on(event, fn);
+    return () => { socket.off(event, fn); };
+  }, [socket, event]);
 }

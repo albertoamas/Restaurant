@@ -5,11 +5,13 @@ import { handleApiError } from '../utils/api-error';
 import { branchesApi } from '../api/branches.api';
 import type { BranchDto } from '@pos/shared';
 import { Button } from '../components/ui/Button';
+import { PageShell } from '../components/ui/PageShell';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Toggle } from '../components/ui/Toggle';
-import { Spinner } from '../components/ui/Spinner';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Icon } from '../components/ui/Icon';
 import { useBranches } from '../hooks/useBranches';
 import { queryKeys } from '../lib/query-keys';
 
@@ -36,7 +38,7 @@ export function BranchesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto animate-slide">
+    <PageShell maxWidth="4xl">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -53,13 +55,14 @@ export function BranchesPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="space-y-3">
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+          <Skeleton variant="card" />
+        </div>
       ) : branches.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-sm shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
-          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
+          <Icon name="building" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin sucursales</p>
           <p className="text-xs mt-1">Crea tu primera sucursal</p>
         </div>
@@ -77,12 +80,7 @@ export function BranchesPage() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  <Icon name="map-pin" size={14} strokeWidth={2} className="text-gray-400 shrink-0" />
                   <p className="text-sm font-semibold text-gray-900 truncate">{branch.name}</p>
                 </div>
                 {branch.address && (
@@ -116,7 +114,7 @@ export function BranchesPage() {
         onSaved={handleSaved}
       />
 
-    </div>
+    </PageShell>
   );
 }
 

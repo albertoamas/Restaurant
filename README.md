@@ -1,4 +1,4 @@
-# POS SaaS — Sistema de Punto de Venta para Restaurantes y Locales
+# YankoPOS — Sistema de Punto de Venta SaaS para Restaurantes y Locales
 
 Plataforma multi-tenant de punto de venta diseñada para restaurantes, cafeterías, hamburgueserías y cualquier negocio de comida. Cada local tiene su propio entorno aislado. Gestiona pedidos, caja, reportes, productos, clientes y sorteos — todo en tiempo real, desde cualquier dispositivo.
 

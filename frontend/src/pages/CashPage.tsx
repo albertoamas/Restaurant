@@ -7,9 +7,11 @@ import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
+import { PageShell } from '../components/ui/PageShell';
 import { useCashSession } from '../hooks/useCashSession';
 import { formatDate } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
+import { Icon } from '../components/ui/Icon';
 import { CashAmountModal } from '../components/cash/CashAmountModal';
 import { HistoryModal } from '../components/cash/HistoryModal';
 
@@ -55,10 +57,7 @@ export function CashPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400 px-6">
         <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-          <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
+          <Icon name="building" size={28} strokeWidth={1.5} className="text-gray-300" />
         </div>
         <p className="text-sm font-semibold text-gray-500 text-center">Selecciona una sucursal</p>
         <p className="text-xs mt-1 text-center">para ver el estado de caja</p>
@@ -97,7 +96,7 @@ export function CashPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-2xl mx-auto animate-slide">
+    <PageShell maxWidth="2xl">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -138,10 +137,7 @@ export function CashPage() {
             'w-12 h-12 rounded-xl flex items-center justify-center',
             isOpen ? 'bg-emerald-500/15' : 'bg-gray-200/60',
           ].join(' ')}>
-            <svg className={`w-6 h-6 ${isOpen ? 'text-emerald-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+            <Icon name="cash" size={24} className={isOpen ? 'text-emerald-600' : 'text-gray-400'} />
           </div>
         </div>
 
@@ -186,10 +182,7 @@ export function CashPage() {
       {!isOpen && lastClosed && (
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-5">
           <div className="flex items-center gap-2 mb-4">
-            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <Icon name="orders" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
             <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
             {lastClosed.closedAt && (
               <span className="ml-auto text-xs text-gray-400">{formatDate(lastClosed.closedAt)}</span>
@@ -266,6 +259,6 @@ export function CashPage() {
         sessions={closedSessions}
         onClose={() => setShowHistory(false)}
       />
-    </div>
+    </PageShell>
   );
 }

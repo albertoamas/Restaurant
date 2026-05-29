@@ -3,6 +3,7 @@ import { OrderStatus, PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { orderTypeLabels } from '../../utils/order';
 import { elapsed, elapsedBetween, formatBoliviaTime } from '../../utils/date';
+import { Icon } from '../ui/Icon';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 import { printKitchenTicket, printReceipt } from '../../utils/print';
 
@@ -71,10 +72,7 @@ function ElapsedChip({ createdAt }: { createdAt: string }) {
           ? 'bg-amber-50 text-amber-600 border-amber-200'
           : 'bg-emerald-50 text-emerald-600 border-emerald-200',
     ].join(' ')}>
-      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
+      <Icon name="clock" size={12} strokeWidth={2} className="shrink-0" />
       {text}
     </span>
   );
@@ -87,10 +85,7 @@ function DeliveredAtChip({ createdAt, updatedAt }: { createdAt: string; updatedA
         {formatBoliviaTime(updatedAt)}
       </span>
       <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-sky-50 text-sky-600 border-sky-200">
-        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M5 13l4 4L19 7" />
-        </svg>
+        <Icon name="check" size={12} strokeWidth={2} className="shrink-0" />
         {elapsedBetween(createdAt, updatedAt)}
       </span>
     </span>
@@ -140,10 +135,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
             <DeliveredAtChip createdAt={order.createdAt} updatedAt={order.updatedAt} />
           ) : (
             <span className="text-xs text-gray-400 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Icon name="clock" size={12} strokeWidth={2} />
               {formatBoliviaTime(order.createdAt)}
             </span>
           )}
@@ -175,10 +167,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
       {order.customer && (
         <div className="px-4 pb-2 -mt-1">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
-            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <Icon name="user" size={12} strokeWidth={2} className="shrink-0" />
             {order.customer.name}
           </span>
         </div>
@@ -188,10 +177,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
       {order.notes && (
         <div className="px-4 pb-3">
           <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-xl">
-            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
+            <Icon name="chat" size={12} strokeWidth={2} className="shrink-0" />
             {order.notes}
           </span>
         </div>
@@ -220,9 +206,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
                         : 'bg-gray-100 border-2 border-gray-200',
                     ].join(' ')}>
                       {done && !active && (
-                        <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Icon name="check" size={12} strokeWidth={3} className="text-gray-500" />
                       )}
                       {active && <span className="w-2 h-2 rounded-full bg-white" />}
                     </div>
@@ -242,10 +226,8 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
         </div>
       ) : (
         <div className="px-4 pb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
+            <Icon name="x" size={14} strokeWidth={2} />
             Cancelado
           </span>
         </div>
@@ -267,7 +249,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
                 : (paymentLabel[order.payments[0]?.method] ?? '—')}
             </span>
           ) : (
-            <span className="text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
               Pendiente de cobro
             </span>
           )}
@@ -288,10 +270,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
               className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-colors shrink-0"
               title="Editar pedido"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Icon name="edit" size={14} strokeWidth={2} />
             </button>
           )}
           {!isCancelled && (
@@ -300,22 +279,16 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
               className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 transition-colors shrink-0"
               title="Imprimir comanda"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
+              <Icon name="print" size={14} strokeWidth={2} />
             </button>
           )}
           {order.isPaid && (
             <button
               onClick={handlePrintReceipt}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-sky-500/50 hover:text-sky-300 hover:bg-sky-500/10 transition-colors shrink-0"
               title="Imprimir recibo"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <Icon name="document" size={14} strokeWidth={2} />
             </button>
           )}
           {action && (
@@ -323,7 +296,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
               <button
                 onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
                 className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-gray-200
-                  rounded-xl hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                  rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 Cancelar
               </button>

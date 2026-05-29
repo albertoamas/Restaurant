@@ -6,7 +6,7 @@ import { productsApi } from '../../api/products.api';
 import { handleApiError } from '../../utils/api-error';
 import type { RaffleDto, ProductDto, RaffleTicketMode } from '@pos/shared';
 
-const inputCls = 'w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white transition-[border-color,box-shadow]';
+const inputCls = 'w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white transition-[border-color,box-shadow]';
 const labelCls = 'text-xs font-semibold text-gray-600 mb-1.5 block';
 
 function ordinalLabel(n: number): string {
@@ -104,13 +104,13 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
         {/* Toggle de modo */}
         <div>
           <label className={labelCls}>Tipo de sorteo *</label>
-          <div className="flex gap-0.5 bg-[oklch(0.96_0.008_252)] rounded-xl p-1">
+          <div className="flex gap-0.5 bg-gray-100 rounded-xl p-1">
             <button
               type="button"
               onClick={() => handleModeChange('PRODUCT_MATCH')}
               className={`flex-1 px-3 py-2 text-xs font-semibold rounded-[9px] transition-all duration-150 ${
                 ticketMode === 'PRODUCT_MATCH'
-                  ? 'bg-white text-gray-900 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]'
+                  ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -121,7 +121,7 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
               onClick={() => handleModeChange('SPENDING_THRESHOLD')}
               className={`flex-1 px-3 py-2 text-xs font-semibold rounded-[9px] transition-all duration-150 ${
                 ticketMode === 'SPENDING_THRESHOLD'
-                  ? 'bg-white text-gray-900 shadow-[0_1px_3px_oklch(0.13_0.012_260/0.10)]'
+                  ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >

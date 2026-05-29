@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `frontend/` — React 19 + Vite 5 + Tailwind CSS 4
 - `packages/shared/` — TypeScript types shared between front and back (`@pos/shared`)
 
-**Key versions:** TypeScript 5.6, React Router 6, Zustand 5, Socket.IO 4, JWT via `@nestjs/jwt` + `passport-jwt`.
+**Key versions:** TypeScript 5.6, React Router 6, Zustand 5, TanStack Query 5, Socket.IO 4, JWT via `@nestjs/jwt` + `passport-jwt`.
 
 ## Prerequisites
 
@@ -46,10 +46,16 @@ pnpm dev:frontend   # Vite on :5173
 # Seed the database with demo data (tenant, owner, cashier, branches, products)
 pnpm --filter backend seed
 
+# Seed raffle test data (~600 tickets, SPENDING_THRESHOLD mode, dev only)
+pnpm --filter backend seed:raffle
+
 # Type-check
 pnpm --filter @pos/shared build          # MUST run first after editing shared types
 pnpm --filter backend typecheck
 pnpm --filter frontend typecheck
+
+# Lint (backend only; zero-warning policy)
+pnpm --filter backend lint
 
 # Tests
 pnpm test:backend                        # Jest unit tests
@@ -61,6 +67,13 @@ pnpm --filter backend test -- --testPathPattern="create-order"
 
 # Run a single frontend test file
 pnpm --filter frontend test:run -- src/store/cart.store.spec.ts
+
+# Watch / coverage (backend)
+pnpm --filter backend test:watch
+pnpm --filter backend test:coverage
+
+# Coverage (frontend)
+pnpm --filter frontend test:coverage
 
 # Prisma commands (run from repo root — pnpm filter sets the right cwd)
 pnpm --filter backend prisma:generate        # Regenerate client after schema changes
@@ -86,8 +99,9 @@ The Vite dev server proxies `/api`, `/uploads`, and `/socket.io` to `localhost:3
 ## Key Conventions
 
 - Keep changes small and scoped to the requested module — avoid unsolicited global refactors.
-- All TypeScript; avoid `any` except where justified.
+- All TypeScript; `any` is an ESLint error — avoid it. `_` prefix silences the unused-vars rule for intentionally unused params.
 - Validate changes with `typecheck` (and manual flow testing for affected screens) — the automated test suite is not comprehensive.
+- Error messages thrown by use cases are in **Spanish** (they surface directly to the UI via `HttpExceptionFilter`).
 
 ## Backend Architecture
 
@@ -106,7 +120,11 @@ infrastructure/
   persistence/   ← Repository impl (PrismaService, maps rows ↔ domain)
 ```
 
-Repositories are registered with a string token (`'OrderRepositoryPort'`) and injected with `@Inject('OrderRepositoryPort')` — never with the class directly.
+Repositories are registered with a **constant token** (e.g. `RAFFLE_REPOSITORY_PORT` exported from the port file) and injected with `@Inject(RAFFLE_REPOSITORY_PORT)` — never with the class directly. Older modules use a plain string token (e.g. `'OrderRepositoryPort'`); both patterns are valid, but prefer the constant form for new modules.
+
+### Unit tests
+
+Backend specs live next to the file under test (`*.use-case.spec.ts`, `*.entity.spec.ts`). Use `jest-mock-extended` (`mock<PortInterface>()`) to create repository mocks. Test the use-case class in isolation — never spin up NestJS or Prisma in unit tests.
 
 ### Multi-tenancy
 
@@ -135,7 +153,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 
 | Module | Key endpoints | Notes |
 |--------|--------------|-------|
-| `auth` | `POST /auth/login`, `GET /auth/me`, `POST /auth/users` | Cashier management; JWT |
+| `auth` | `POST /auth/login`, `GET /auth/me`, `POST /auth/users`, `PATCH /auth/me/password` | Cashier management; JWT. Password change requires `x-admin-key` header. |
 | `tenant` | `PATCH /tenants/settings` | Owner-only; `orderNumberResetPeriod` (DAILY/MONTHLY) |
 | `branch` | `GET/POST /branches`, `PATCH /branches/:id` | |
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
@@ -145,7 +163,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
 | `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
-| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. |
+| `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `PATCH /admin/tenants/:id/modules`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT. `/modules` sets per-tenant feature flags (`ordersEnabled`, `cashEnabled`, `rafflesEnabled`, etc.) |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
@@ -183,10 +201,13 @@ routes/      ← PrivateRoute, OwnerRoute
 /kitchen    ← auth, fullscreen (no sidebar)
 /* AppLayout:
   /pos       /orders    /cash      ← CASHIER + OWNER
+  /account                         ← CASHIER + OWNER (password change)
   /report    /expenses  /customers
   /products  /team      /branches  ← OWNER only
   /raffles   /settings
 ```
+
+`/orders`, `/cash`, `/kitchen`, `/team`, `/branches`, `/raffles` are gated by `ModuleRoute` (implemented inline in `App.tsx`) — when the corresponding module flag is disabled by the admin, direct URL access redirects to `/pos`.
 
 Unknown routes redirect to `/`. No public self-registration.
 
@@ -200,9 +221,27 @@ Unknown routes redirect to `/`. No public self-registration.
 
 `useAuth()` exposes `{ user, token, currentBranchId, login, logout }`. When an OWNER logs in, `currentBranchId` is `null` until they select a branch from the Sidebar. If there is only one branch, it is auto-selected. `currentBranchId` is stored in `localStorage` (`pos_branch` key) via `auth.context.tsx`, so it persists across tabs and sessions. It is cleared on logout.
 
+The Axios client (`frontend/src/api/client.ts`) reads the JWT from `localStorage` key `pos_token` and sets it as `Authorization: Bearer …` on every request. A 401 response auto-redirects to `/login` and clears the token.
+
+### React Query
+
+All server-state fetching in hooks uses TanStack Query (`@tanstack/react-query`). The `QueryClient` is in `frontend/src/lib/query-client.ts` with these global defaults:
+
+- `staleTime: 30_000` — data is fresh for 30 s after a fetch
+- `refetchOnWindowFocus: false` — disabled because WebSocket events keep data current; tab switches would cause redundant requests
+- `retry: 1` — one automatic retry on failure
+
+**Adaptive polling strategy:** hooks that drive real-time views (orders, kitchen, cash session) poll only when the socket is disconnected, then stop polling and invalidate their cache on reconnect. This means the socket is the primary freshness mechanism; polling is only a fallback.
+
 ### Socket context
 
-`useSocketEvent<T>(event, handler)` subscribes a component to a Socket.IO event. Subscriptions are cleaned up on unmount. The socket connects with `auth: { token }` from JWT.
+`useSocket()` exposes `{ socket, connected, reconnecting, status }` where `status: ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected'`.
+
+`useSocketEvent<T>(event, handler)` subscribes a component to a Socket.IO event. Subscriptions are cleaned up on unmount. The socket connects with `auth: { token }` from JWT and attempts up to 5 reconnections (2 s delay).
+
+### Error handling (frontend)
+
+`handleApiError(err, fallback?)` in `frontend/src/utils/api-error.ts` extracts a user-friendly string from an Axios error response and calls `toast.error()`. Use it in every `catch` block instead of inline error extraction.
 
 ## Data Model
 
@@ -268,6 +307,7 @@ ADMIN_SECRET     x-admin-key header value for /admin/* routes.
                  Dev default in backend/.env.example: dev-admin-secret
                  Production: must be set to a strong secret.
 NODE_ENV         development | production
+TZ               America/La_Paz — set at container level in docker-compose.prod.yml; ensures correct timezone for cron, logs, and any node Date calls that leak past the utility layer
 ```
 
 ## CI/CD

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PaymentMethod, OrderType } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { Modal } from '../ui/Modal';
+import { Icon } from '../ui/Icon';
 import { ordersApi } from '../../api/orders.api';
 import { handleApiError } from '../../utils/api-error';
 
@@ -28,13 +29,8 @@ const ALL_PAYMENT_METHODS = [
     value: PaymentMethod.CASH,
     label: 'Efectivo',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700',
+    icon: <Icon name="cash" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700',
     active:      'border-2 border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50',
     splitActive: 'border-2 border-emerald-400 bg-emerald-100 text-emerald-800',
@@ -43,13 +39,8 @@ const ALL_PAYMENT_METHODS = [
     value: PaymentMethod.QR,
     label: 'QR',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50/60 hover:text-primary-700',
+    icon: <Icon name="qr" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700',
     active:      'border-2 border-primary-500 bg-primary-50 text-primary-900 ring-2 ring-primary-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-primary-300 hover:bg-primary-50',
     splitActive: 'border-2 border-primary-400 bg-primary-100 text-primary-800',
@@ -58,13 +49,8 @@ const ALL_PAYMENT_METHODS = [
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
     cortesiaOnly: false,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-violet-300 hover:bg-violet-50/60 hover:text-violet-700',
+    icon: <Icon name="card" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700',
     active:      'border-2 border-violet-500 bg-violet-50 text-violet-900 ring-2 ring-violet-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:bg-violet-50',
     splitActive: 'border-2 border-violet-400 bg-violet-100 text-violet-800',
@@ -73,13 +59,8 @@ const ALL_PAYMENT_METHODS = [
     value: PaymentMethod.CORTESIA,
     label: 'Cortesía',
     cortesiaOnly: true,
-    icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-      </svg>
-    ),
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50/60 hover:text-amber-700',
+    icon: <Icon name="gift" size={28} strokeWidth={1.5} />,
+    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
     active:      'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
     splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50',
     splitActive: 'border-2 border-amber-400 bg-amber-100 text-amber-800',
@@ -213,12 +194,10 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                 <button
                   onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
                   className="mt-3 w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl
-                    text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50
+                    text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-500/10
                     border-2 border-gray-200 hover:border-primary-200 transition-all"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Icon name="plus" size={14} strokeWidth={2} />
                   Dividir pago entre varios métodos
                 </button>
               )}
@@ -232,9 +211,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                   onClick={() => { setSplitMode(false); setSplitPayments([]); setSplitMethod(null); setSplitAmount(''); }}
                   className="text-xs text-gray-400 hover:text-primary-600 transition-colors flex items-center gap-1"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+                  <Icon name="chevron-left" size={12} strokeWidth={2} />
                   Pago simple
                 </button>
               </div>
@@ -272,9 +249,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                           className="w-4 h-4 rounded-full bg-gray-300 hover:bg-red-400 flex items-center justify-center text-white transition-colors ml-0.5"
                           aria-label="Quitar"
                         >
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <Icon name="x" size={10} strokeWidth={3} />
                         </button>
                       </div>
                     );

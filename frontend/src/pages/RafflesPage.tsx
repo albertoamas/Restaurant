@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
+import { Icon } from '../components/ui/Icon';
 import { Spinner } from '../components/ui/Spinner';
 import { useRaffles } from '../hooks/useRaffles';
 import { RaffleCard } from '../components/raffles/RaffleCard';
@@ -13,10 +14,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-4">
-        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-        </svg>
+        <Icon name="ticket" size={32} strokeWidth={1.5} className="text-gray-400" />
       </div>
       <h3 className="text-base font-bold font-heading text-gray-700 mb-1">Sin sorteos aún</h3>
       <p className="text-sm text-gray-400 max-w-xs mb-6 leading-relaxed">

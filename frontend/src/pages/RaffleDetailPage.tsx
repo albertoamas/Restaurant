@@ -4,6 +4,7 @@ import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
 import { ParticipantsList } from '../components/raffles/ParticipantsModal';
 import { Button } from '../components/ui/Button';
+import { Icon } from '../components/ui/Icon';
 import { Spinner } from '../components/ui/Spinner';
 import type { RaffleStatus } from '@pos/shared';
 import { StatusBadge } from '../components/raffles/StatusBadge';
@@ -67,9 +68,7 @@ function DeleteRaffleDialog({
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            </svg>
+            <Icon name="warning" size={20} strokeWidth={2} className="text-red-600" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-900">¿Eliminar sorteo?</h3>
@@ -156,9 +155,7 @@ function RaffleDetailContent({ id }: { id: string }) {
           disabled={!!busy}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5 group transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+          <Icon name="chevron-left" size={16} strokeWidth={2} className="group-hover:-translate-x-0.5 transition-transform" />
           Volver a Sorteos
         </button>
 
@@ -192,9 +189,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                     className="text-gray-300 hover:text-violet-500 transition-colors p-1.5 rounded-lg hover:bg-violet-50 disabled:opacity-40"
                     title="Editar sorteo"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    <Icon name="edit" size={16} strokeWidth={2} />
                   </button>
                   {isDeletable && (
                     <button
@@ -203,9 +198,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                       className="text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-40"
                       title="Eliminar sorteo"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Icon name="trash" size={16} strokeWidth={2} />
                     </button>
                   )}
                 </div>

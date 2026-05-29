@@ -1,3 +1,5 @@
+import { Icon } from '../ui/Icon';
+
 interface AdminLoginProps {
   keyInput: string;
   keyError: string;
@@ -22,10 +24,7 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
       <div className="relative w-full max-w-xs animate-in">
         <div className="flex flex-col items-center mb-5">
           <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_255)] border border-white/10 flex items-center justify-center mb-3 shadow-[0_8px_32px_oklch(0_0_0/0.5)]">
-            <svg className="w-7 h-7 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            <Icon name="lock" size={28} strokeWidth={1.5} className="text-white/80" />
           </div>
           <h1 className="font-heading font-black text-xl text-white tracking-tight">Admin Console</h1>
           <p className="text-xs text-white/35 mt-0.5 tracking-wide">Acceso restringido</p>

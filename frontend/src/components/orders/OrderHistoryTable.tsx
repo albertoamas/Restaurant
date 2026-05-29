@@ -2,6 +2,7 @@ import { OrderStatus, PaymentMethod, BOLIVIA_TZ } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { statusAccent, statusLabel } from './OrderCard';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
+import { Icon } from '../ui/Icon';
 import { printReceipt, printKitchenTicket } from '../../utils/print';
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -96,7 +97,7 @@ function HistoryRow({ order, receiptSettings, onPayOrder, onEdit }: RowProps) {
       <td className="px-3 py-3.5 hidden sm:table-cell whitespace-nowrap">
         {payment != null
           ? <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">{payment}</span>
-          : <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+          : <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
               Pendiente
             </span>
         }
@@ -107,38 +108,26 @@ function HistoryRow({ order, receiptSettings, onPayOrder, onEdit }: RowProps) {
         <div className="flex items-center justify-end gap-0.5">
           {!order.isPaid && !isCancelled && (
             <button onClick={() => onPayOrder(order)} title="Cobrar pedido"
-              className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-colors">
+              <Icon name="cash" size={16} strokeWidth={2} />
             </button>
           )}
           {!isCancelled && !isDelivered && (
             <button onClick={() => onEdit(order)} title="Editar pedido"
               className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <Icon name="edit" size={16} strokeWidth={2} />
             </button>
           )}
           {!isCancelled && (
             <button onClick={() => printKitchenTicket(order)} title="Imprimir comanda"
               className="p-1.5 rounded-lg text-gray-400 hover:bg-orange-50 hover:text-orange-500 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
+              <Icon name="print" size={16} strokeWidth={2} />
             </button>
           )}
           {order.isPaid && (
             <button onClick={() => printReceipt(order, receiptSettings)} title="Imprimir recibo"
-              className="p-1.5 rounded-lg text-gray-400 hover:bg-sky-50 hover:text-sky-500 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              className="p-1.5 rounded-lg text-gray-400 hover:bg-sky-500/10 hover:text-sky-300 transition-colors">
+              <Icon name="document" size={16} strokeWidth={2} />
             </button>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { type InputHTMLAttributes, useId, type ReactNode, type Ref } from 'react';
+import { Icon } from './Icon';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   ref?: Ref<HTMLInputElement>;
@@ -56,9 +57,7 @@ export function Input({ label, error, hint, leftAddon, rightAddon, inputSize = '
       </div>
       {error && (
         <span className="text-xs text-red-600 font-medium flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
+          <Icon name="warning" size={14} strokeWidth={2} className="shrink-0" />
           {error}
         </span>
       )}

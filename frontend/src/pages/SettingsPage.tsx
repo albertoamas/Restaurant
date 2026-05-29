@@ -12,6 +12,8 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toggle } from '../components/ui/Toggle';
+import { Icon } from '../components/ui/Icon';
+import { PageShell } from '../components/ui/PageShell';
 import { handleApiError } from '../utils/api-error';
 
 const SETTINGS_UNLOCK_KEY = 'pos_settings_unlocked';
@@ -40,10 +42,7 @@ function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
     <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-8 text-center">
         <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
-          <svg className="w-7 h-7 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <Icon name="lock" size={28} className="text-primary-600" />
         </div>
         <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Ajustes protegidos</h2>
         <p className="text-sm text-gray-500 mb-6">Esta sección es solo para el administrador del sistema.</p>
@@ -185,7 +184,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto animate-slide space-y-4">
+    <PageShell maxWidth="3xl" className="space-y-4">
       <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5">
         <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Ajustes del Negocio</h2>
         <p className="text-xs text-gray-500 mt-1">Configura impresión, datos del recibo y seguridad de acceso.</p>
@@ -194,10 +193,7 @@ export function SettingsPage() {
       {/* Business data */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
+          <Icon name="building" size={16} className="text-gray-400 shrink-0" />
           <h3 className="text-sm font-bold text-gray-700">Datos del negocio</h3>
         </div>
         <p className="text-xs text-gray-400 mb-4 ml-6">Aparecen en el recibo que se entrega al cliente</p>
@@ -220,10 +216,7 @@ export function SettingsPage() {
                 </div>
               ) : (
                 <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center shrink-0">
-                  <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <Icon name="photo" size={28} strokeWidth={1.5} className="text-gray-300" />
                 </div>
               )}
               <div className="flex flex-col gap-2">
@@ -300,10 +293,7 @@ export function SettingsPage() {
       {/* Order numbering */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-          </svg>
+          <Icon name="hash" size={16} className="text-gray-400 shrink-0" />
           <h3 className="text-sm font-bold text-gray-700">Numeración de pedidos</h3>
         </div>
         <p className="text-xs text-gray-400 mb-4 ml-6">Define cada cuándo se reinicia el contador de pedidos (#1, #2, #3…)</p>
@@ -353,9 +343,7 @@ export function SettingsPage() {
               onClick={() => setResetNowConfirm(true)}
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-amber-600 transition-colors group"
             >
-              <svg className="w-4 h-4 group-hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <Icon name="refresh" size={16} className="group-hover:text-amber-500 transition-colors" />
               Reiniciar contador ahora
             </button>
           ) : (
@@ -401,10 +389,7 @@ export function SettingsPage() {
       {/* Printing */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
+          <Icon name="print" size={16} className="text-gray-400 shrink-0" />
           <h3 className="text-sm font-bold text-gray-700">Impresión</h3>
         </div>
         <p className="text-xs text-gray-400 mb-4 ml-6">Opciones de impresión de comandas</p>
@@ -414,12 +399,7 @@ export function SettingsPage() {
             description="Al confirmar un pedido, se envía la comanda a la impresora de cocina sin clic adicional."
             value={autoPrintKitchen}
             onChange={setAutoPrintKitchen}
-            icon={
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-            }
+            icon={<Icon name="print" size={16} />}
           />
         </div>
       </Card>
@@ -427,10 +407,7 @@ export function SettingsPage() {
       {/* Password change */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <Icon name="lock" size={16} className="text-gray-400 shrink-0" />
           <h3 className="text-sm font-bold text-gray-700">Seguridad</h3>
         </div>
         <p className="text-xs text-gray-400 mb-4 ml-6">Cambia tu contraseña de acceso</p>
@@ -466,6 +443,6 @@ export function SettingsPage() {
           </Button>
         </form>
       </Card>
-    </div>
+    </PageShell>
   );
 }

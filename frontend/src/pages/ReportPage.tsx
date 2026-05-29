@@ -10,6 +10,9 @@ import { useSettingsStore } from '../store/settings.store';
 import { queryKeys } from '../lib/query-keys';
 import { Card } from '../components/ui/Card';
 import { Spinner } from '../components/ui/Spinner';
+import { Icon } from '../components/ui/Icon';
+import { PageShell } from '../components/ui/PageShell';
+import { StatCard, PaymentBar, TypeRow, TopProductRow, TopCustomerRow } from '../components/report';
 import { today } from '../utils/date';
 import { getBoliviaDayBounds } from '../utils/timezone';
 import { downloadExcel } from '../utils/excel';
@@ -41,28 +44,6 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: 'month', label: 'Este mes' },
   { key: 'custom', label: 'Rango' },
 ];
-
-interface StatCardProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  accent: string;
-  bg: string;
-}
-
-function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
-  return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-3">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] ${bg} ${accent}`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-xs font-medium text-gray-400 mb-0.5">{label}</p>
-        <p className="font-heading font-black text-xl text-gray-900 leading-tight">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 export function ReportPage() {
   const { currentBranchId, user } = useAuth();
@@ -137,7 +118,7 @@ export function ReportPage() {
   const maxQty = topProducts[0]?.totalQuantity ?? 1;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto animate-slide">
+    <PageShell>
       {/* Print-only header — hidden on screen */}
       <div className="hidden print:block mb-6 pb-4 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-900">{user?.tenantName ?? 'Reporte de Ventas'}</h1>
@@ -164,10 +145,7 @@ export function ReportPage() {
                   title="Exportar a Excel"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
+                  <Icon name="download" size={14} />
                   Excel
                 </button>
                 <button
@@ -176,10 +154,7 @@ export function ReportPage() {
                   title="Imprimir / Guardar como PDF"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
+                  <Icon name="print" size={14} />
                   PDF
                 </button>
               </>
@@ -189,10 +164,7 @@ export function ReportPage() {
                   disabled
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                  <Icon name="lock" size={14} />
                   Exportar
                 </button>
                 <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-gray-200 bg-white shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug">
@@ -241,10 +213,7 @@ export function ReportPage() {
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : !report || (report.orderCount === 0 && report.paymentBreakdown.cortesia === 0 && !(expenseSummary && expenseSummary.total > 0)) ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
+          <Icon name="chart" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin ventas en este período</p>
           <p className="text-xs mt-1">Selecciona otro rango de fechas</p>
         </div>
@@ -255,26 +224,26 @@ export function ReportPage() {
             <StatCard
               label="Ventas Totales"
               value={`Bs ${report.totalSales.toFixed(2)}`}
-              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-              accent="text-emerald-600" bg="bg-emerald-50"
+              icon={<Icon name="dollar" size={24} />}
+              accent="text-emerald-400" bg="bg-emerald-500/10"
             />
             <StatCard
               label="Pedidos"
               value={String(report.orderCount)}
-              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
-              accent="text-primary-600" bg="bg-primary-50"
+              icon={<Icon name="orders" size={24} />}
+              accent="text-primary-400" bg="bg-primary-500/10"
             />
             <StatCard
               label="Ticket Promedio"
               value={`Bs ${report.averageTicket.toFixed(2)}`}
-              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-              accent="text-violet-600" bg="bg-violet-50"
+              icon={<Icon name="receipt" size={24} />}
+              accent="text-violet-400" bg="bg-violet-500/10"
             />
             <StatCard
               label="Gastos Totales"
               value={expenseSummary ? `Bs ${expenseSummary.total.toFixed(2)}` : 'Bs 0.00'}
-              icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4M4 12l4-4M4 12l4 4" /></svg>}
-              accent="text-red-500" bg="bg-red-50"
+              icon={<Icon name="minus" size={24} />}
+              accent="text-red-400" bg="bg-red-500/10"
             />
           </div>
 
@@ -326,10 +295,7 @@ export function ReportPage() {
               <div className="flex justify-center py-8"><Spinner /></div>
             ) : topProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                <svg className="w-8 h-8 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
+                <Icon name="package" size={32} strokeWidth={1.5} className="mb-2 opacity-40" />
                 <p className="text-xs font-medium text-gray-500">Sin datos para este período</p>
               </div>
             ) : (
@@ -354,10 +320,7 @@ export function ReportPage() {
               <div className="flex justify-center py-8"><Spinner /></div>
             ) : topCustomers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                <svg className="w-8 h-8 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <Icon name="users" size={32} strokeWidth={1.5} className="mb-2 opacity-40" />
                 <p className="text-xs font-medium text-gray-500">Sin clientes registrados en este período</p>
               </div>
             ) : (
@@ -457,138 +420,6 @@ export function ReportPage() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function PaymentBar({ label, amount, total, color }: { label: string; amount: number; total: number; color: string }) {
-  const pct = total > 0 ? (amount / total) * 100 : 0;
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-1.5">
-        <span className="text-gray-600 font-medium">{label}</span>
-        <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
-      </div>
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-[width] duration-700 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TypeRow({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="font-heading font-bold text-sm text-gray-900">{count}</span>
-          <span className="text-xs text-gray-400 w-9 text-right tabular-nums">{pct}%</span>
-        </div>
-      </div>
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-[width] duration-700 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-const RANK_COLORS = [
-  'bg-amber-400',
-  'bg-gray-300',
-  'bg-amber-600',
-];
-
-function TopCustomerRow({ rank, customer, maxSpent }: { rank: number; customer: TopCustomerDto; maxSpent: number }) {
-  const pct    = maxSpent > 0 ? (customer.totalSpent / maxSpent) * 100 : 0;
-  const isTop3 = rank <= 3;
-
-  return (
-    <div className="flex items-center gap-3">
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black
-        ${isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-gray-100 text-gray-400'}`}
-      >
-        {rank}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1 gap-2">
-          <div className="min-w-0">
-            <span className="text-sm font-semibold text-gray-800 truncate leading-tight block">
-              {customer.customerName}
-            </span>
-            {customer.customerPhone && (
-              <span className="text-[10px] text-gray-400 font-medium">{customer.customerPhone}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-gray-400 tabular-nums">{customer.orderCount} ped.</span>
-            <span className="font-heading font-bold text-sm text-gray-900 tabular-nums w-24 text-right">
-              Bs {customer.totalSpent.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-[width] duration-700 ${
-              rank === 1 ? 'bg-emerald-500' : rank === 2 ? 'bg-emerald-400' : rank === 3 ? 'bg-emerald-300' : 'bg-gray-300'
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TopProductRow({ rank, product, maxQty }: { rank: number; product: TopProductDto; maxQty: number }) {
-  const pct = maxQty > 0 ? (product.totalQuantity / maxQty) * 100 : 0;
-  const isTop3 = rank <= 3;
-
-  return (
-    <div className="flex items-center gap-3">
-      {/* Rank badge */}
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black
-        ${isTop3
-          ? `${RANK_COLORS[rank - 1]} text-white`
-          : 'bg-gray-100 text-gray-400'
-        }`}
-      >
-        {rank}
-      </div>
-
-      {/* Name + bar */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1 gap-2">
-          <span className="text-sm font-semibold text-gray-800 truncate leading-tight">{product.productName}</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="font-heading font-bold text-sm text-gray-900 tabular-nums">
-              {product.totalQuantity} uds
-            </span>
-            <span className="text-xs text-gray-400 tabular-nums w-20 text-right">
-              Bs {product.totalRevenue.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-[width] duration-700 ${
-              rank === 1 ? 'bg-primary-500' : rank === 2 ? 'bg-primary-400' : rank === 3 ? 'bg-primary-300' : 'bg-gray-300'
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        {product.categoryName && (
-          <span className="text-[10px] text-gray-400 font-medium mt-0.5 inline-block">{product.categoryName}</span>
-        )}
-      </div>
-    </div>
+    </PageShell>
   );
 }

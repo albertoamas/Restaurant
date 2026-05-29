@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from './Icon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export function Modal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
-          className="relative w-full bg-white rounded-t-2xl shadow-[0_-8px_32px_oklch(0.13_0.012_260/0.15)] z-10 animate-slide-sheet"
+          className="relative w-full bg-white border-t border-gray-100 rounded-t-2xl shadow-[0_-8px_32px_oklch(0.13_0.012_260/0.14)] z-10 animate-slide-sheet"
         >
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -69,9 +70,7 @@ export function Modal({
                 aria-label="Cerrar"
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icon name="x" size={16} strokeWidth={2} />
               </button>
             </div>
           )}
@@ -94,7 +93,7 @@ export function Modal({
         aria-labelledby={title ? titleId : undefined}
         className={[
           'relative bg-white rounded-2xl w-full z-10 animate-in',
-          'shadow-[0_20px_60px_oklch(0.13_0.012_260/0.15),0_4px_16px_oklch(0.13_0.012_260/0.08)]',
+          'shadow-[0_24px_48px_oklch(0.13_0.012_260/0.16),0_4px_16px_oklch(0.13_0.012_260/0.08)]',
           'ring-1 ring-black/5',
           sizes[size],
         ].join(' ')}
@@ -107,9 +106,7 @@ export function Modal({
               aria-label="Cerrar"
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Icon name="x" size={16} strokeWidth={2} />
             </button>
           </div>
         )}

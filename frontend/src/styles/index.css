@@ -8,36 +8,48 @@
   --font-heading: 'Plus Jakarta Sans', sans-serif;
 
   /* Primary — cerulean rico */
-  --color-primary-50:  oklch(0.97 0.013 225);
-  --color-primary-100: oklch(0.93 0.03  225);
-  --color-primary-200: oklch(0.87 0.07  225);
-  --color-primary-300: oklch(0.78 0.12  225);
-  --color-primary-400: oklch(0.68 0.14  232);
+  --color-primary-50:  oklch(0.96 0.02  232);
+  --color-primary-100: oklch(0.92 0.04  232);
+  --color-primary-200: oklch(0.84 0.08  232);
+  --color-primary-300: oklch(0.73 0.13  232);
+  --color-primary-400: oklch(0.63 0.16  232);
   --color-primary-500: oklch(0.55 0.16  232);
-  --color-primary-600: oklch(0.47 0.17  234);
-  --color-primary-700: oklch(0.39 0.15  236);
-  --color-primary-800: oklch(0.34 0.18  225);
-  --color-primary-900: oklch(0.27 0.13  225);
+  --color-primary-600: oklch(0.46 0.15  234);
+  --color-primary-700: oklch(0.37 0.12  234);
+  --color-primary-800: oklch(0.27 0.09  230);
+  --color-primary-900: oklch(0.18 0.06  228);
 
-  /* Surfaces */
+  /* Surfaces — light mode */
   --color-surface-page:       oklch(0.972 0.005 255);
   --color-surface-card:       oklch(1.000 0.000 0);
-  --color-surface-2:          oklch(0.985 0.006 250);
-  --color-surface-3:          oklch(0.955 0.010 248);
-  --color-surface-card-hover: oklch(0.985 0.008 225);
-  --color-surface-sidebar:    oklch(0.145 0.020 255);
-  --color-surface-overlay:    oklch(0.10  0.015 255);
+  --color-surface-2:          oklch(0.965 0.005 255);
+  --color-surface-3:          oklch(0.955 0.007 255);
+  --color-surface-card-hover: oklch(0.980 0.004 255);
+  --color-surface-sidebar:    oklch(0.09  0.018 258);
+  --color-surface-overlay:    oklch(0.06  0.015 255);
 
   /* Semantic states */
-  --color-state-success: oklch(0.62 0.18 148);
-  --color-state-warning: oklch(0.73 0.16 85);
-  --color-state-danger:  oklch(0.60 0.22 28);
-  --color-state-info:    oklch(0.58 0.22 225);
+  --color-state-success: oklch(0.72 0.18 148);
+  --color-state-warning: oklch(0.82 0.16 85);
+  --color-state-danger:  oklch(0.70 0.22 28);
+  --color-state-info:    oklch(0.68 0.20 225);
 
-  /* Neutral text hierarchy */
+  /* Neutral text hierarchy — light mode */
   --color-text-main:  oklch(0.13 0.012 260);
-  --color-text-soft:  oklch(0.45 0.010 260);
-  --color-text-muted: oklch(0.62 0.008 260);
+  --color-text-soft:  oklch(0.42 0.008 260);
+  --color-text-muted: oklch(0.58 0.006 260);
+
+  /* Violet — acento secundario (reportes, estadísticas, extras) */
+  --color-violet-50:  oklch(0.97 0.016 285);
+  --color-violet-100: oklch(0.93 0.04  285);
+  --color-violet-200: oklch(0.87 0.08  285);
+  --color-violet-300: oklch(0.78 0.14  283);
+  --color-violet-400: oklch(0.68 0.20  281);
+  --color-violet-500: oklch(0.58 0.24  279);
+  --color-violet-600: oklch(0.50 0.25  277);
+  --color-violet-700: oklch(0.43 0.22  276);
+  --color-violet-800: oklch(0.36 0.18  275);
+  --color-violet-900: oklch(0.28 0.13  273);
 
   /* Animation durations */
   --animate-fade:        fade-in        0.25s ease-out both;
@@ -45,6 +57,7 @@
   --animate-in:          pop-in         0.2s  ease-out both;
   --animate-slide-sheet: slide-up-sheet 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
   --animate-slide-down:  slide-down     0.2s  ease-out both;
+  --animate-shimmer:     shimmer        1.6s  ease-in-out infinite;
 }
 
 /* ─── Keyframes ──────────────────────────────────────────── */
@@ -88,6 +101,11 @@
   100% { transform: translateY(-60px) rotate(180deg); opacity: 0; }
 }
 
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
 /* ─── Utility classes ────────────────────────────────────── */
 @utility animate-fade {
   animation: var(--animate-fade);
@@ -118,6 +136,11 @@
   stroke-dasharray: 50;
 }
 
+@utility animate-shimmer {
+  animation: var(--animate-shimmer);
+  background-size: 200% auto;
+}
+
 @utility font-heading {
   font-family: var(--font-heading);
 }
@@ -132,13 +155,13 @@
 
 @utility surface-card {
   background: var(--color-surface-card);
-  border: 1px solid oklch(0.91 0.008 252);
-  box-shadow: 0 1px 3px oklch(0.13 0.012 260 / 0.08);
+  border: 1px solid oklch(0.92 0.006 255);
+  box-shadow: 0 1px 3px oklch(0.13 0.012 260 / 0.07);
 }
 
 @utility surface-panel {
   background: var(--color-surface-2);
-  border: 1px solid oklch(0.90 0.010 250);
+  border: 1px solid oklch(0.92 0.006 255);
 }
 
 /* Stagger delays for list animations */
@@ -180,18 +203,17 @@
     position: relative;
   }
 
-  /* Layer 1: Radial vignette gradient */
+  /* Subtle aurora — orbes suaves sobre fondo claro */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    background: radial-gradient(
-      ellipse 85% 55% at 50% -5%,
-      oklch(0.58 0.22 225 / 0.06) 0%,
-      transparent 70%
-    );
+    background:
+      radial-gradient(ellipse 80% 60% at 5% 0%,  oklch(0.82 0.10 265 / 0.10) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 45% at 95% 5%, oklch(0.78 0.12 215 / 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 65% 50% at 50% 100%, oklch(0.80 0.08 250 / 0.06) 0%, transparent 65%);
   }
 
   /* Focus ring standardization */

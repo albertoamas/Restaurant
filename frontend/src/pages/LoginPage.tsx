@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/auth.context';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Icon } from '../components/ui/Icon';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
 
@@ -33,29 +34,30 @@ export function LoginPage() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <div className="min-h-svh relative overflow-hidden bg-[oklch(0.972_0.006_252)]">
+    <div className="min-h-svh relative overflow-hidden bg-[var(--color-surface-page)]">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            'radial-gradient(1200px 560px at 0% 0%, oklch(0.74 0.15 85 / 0.15), transparent 62%)',
-            'radial-gradient(1000px 560px at 100% 100%, oklch(0.63 0.16 145 / 0.12), transparent 58%)',
-            'linear-gradient(135deg, oklch(0.99 0.004 252), oklch(0.96 0.010 248))',
+            'radial-gradient(ellipse 90% 60% at 8% 2%, oklch(0.66 0.18 265 / 0.55) 0%, transparent 62%)',
+            'radial-gradient(ellipse 65% 45% at 92% 6%, oklch(0.60 0.20 215 / 0.40) 0%, transparent 58%)',
+            'radial-gradient(ellipse 70% 50% at 52% 98%, oklch(0.70 0.14 250 / 0.32) 0%, transparent 60%)',
           ].join(','),
         }}
       />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, oklch(0.75 0.010 255) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, oklch(0.78 0.025 255) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
           maskImage: 'radial-gradient(ellipse 100% 100% at 50% 0%, black 10%, transparent 80%)',
+          opacity: 0.5,
         }}
       />
 
       <div className="relative z-10 min-h-svh p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="w-full max-w-[430px] lg:max-w-6xl rounded-3xl overflow-hidden border border-white/70 shadow-[0_24px_60px_oklch(0.13_0.012_260/0.14)] bg-white/80 backdrop-blur-xl lg:grid lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="hidden lg:flex flex-col justify-between p-10 xl:p-12 relative overflow-hidden bg-[linear-gradient(165deg,oklch(0.36_0.16_236)_0%,oklch(0.20_0.09_252)_100%)] border-r border-white/20 text-white">
+          <section className="hidden lg:flex flex-col justify-between p-10 xl:p-12 relative overflow-hidden bg-[linear-gradient(165deg,oklch(0.28_0.14_248)_0%,oklch(0.16_0.06_260)_100%)] border-r border-white/20 text-white">
             <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full border border-white/15" />
             <div className="absolute -bottom-20 -left-14 w-72 h-72 rounded-full bg-white/10" />
 
@@ -93,10 +95,7 @@ export function LoginPage() {
             <div className="lg:hidden mb-6">
               <div className="flex items-center gap-3 mb-2.5">
                 <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-[0_8px_18px_oklch(0.47_0.17_234/0.28)]">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-                  </svg>
+                  <Icon name="cart" size={20} strokeWidth={2} />
                 </div>
                 <div>
                   <h1 className="font-heading font-black text-2xl text-gray-900 tracking-tight">YankoPOS</h1>
@@ -135,17 +134,9 @@ export function LoginPage() {
                       className="-mr-1 p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
                     >
                       {showPassword ? (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592m3.198-2.226A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.965 9.965 0 01-4.312 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 9L3 3" />
-                        </svg>
+                        <Icon name="eye-off" size={20} strokeWidth={2} />
                       ) : (
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.522 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7s-8.268-2.943-9.542-7z" />
-                        </svg>
+                        <Icon name="eye" size={20} strokeWidth={2} />
                       )}
                     </button>
                   )}

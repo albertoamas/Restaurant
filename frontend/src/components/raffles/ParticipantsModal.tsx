@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Icon } from '../ui/Icon';
 import { IconStar, IconCoins, IconTicket } from './RaffleIcons';
 import type { RaffleSpendingDto } from '@pos/shared';
 import type { DetailRaffle } from './types';
@@ -52,7 +53,7 @@ function PrintSelectModal({
             <button
               key={t.id}
               onClick={() => handlePrint(t)}
-              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-violet-50 hover:border-violet-100 border border-transparent transition-colors text-left"
+              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-violet-50 hover:border-violet-200 border border-gray-100 transition-colors text-left"
             >
               <span className="font-mono font-bold text-sm text-gray-700 w-10 shrink-0">
                 #{t.ticketNumber}
@@ -90,7 +91,7 @@ function PrintButton({ onClick, title }: { onClick: () => void; title: string })
     <button
       onClick={onClick}
       title={title}
-      className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors shrink-0"
+      className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors shrink-0"
     >
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <polyline points="6 9 6 2 18 2 18 9" />
@@ -104,23 +105,18 @@ function PrintButton({ onClick, title }: { onClick: () => void; title: string })
 function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="relative">
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-      </svg>
+      <Icon name="search" size={16} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
       <input
         type="text"
         placeholder="Buscar por nombre o teléfono…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 placeholder:text-gray-400"
+        className="w-full pl-10 pr-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
       />
       {value && (
         <button onClick={() => onChange('')}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Icon name="x" size={14} strokeWidth={2} />
         </button>
       )}
     </div>
@@ -176,7 +172,7 @@ function SpendingRow({
   };
 
   return (
-    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50 border border-transparent'}`}>
+    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
 
       {/* ── Cabecera — clic para expandir/colapsar ── */}
       <div
@@ -200,7 +196,7 @@ function SpendingRow({
         <div className="flex items-center gap-1.5 shrink-0">
 
           {/* Tickets ganados */}
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">
             <IconTicket className="w-3 h-3" />
             {spending.ticketsEarned}
           </span>
@@ -208,7 +204,7 @@ function SpendingRow({
           {/* Resumen de entrega */}
           {hasTickets && (
             allDelivered ? (
-              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap">
                 ✓ todos
               </span>
             ) : deliveredCount > 0 ? (
@@ -238,12 +234,7 @@ function SpendingRow({
 
           {/* Chevron — solo si tiene tickets */}
           {hasTickets && (
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform duration-200 shrink-0 ${collapsed ? '' : 'rotate-180'}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <Icon name="chevron-down" size={16} strokeWidth={2} className={`text-gray-400 transition-transform duration-200 shrink-0 ${collapsed ? '' : 'rotate-180'}`} />
           )}
         </div>
       </div>
@@ -285,8 +276,8 @@ function SpendingRow({
                   disabled={isToggling}
                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40 ${
                     delivered
-                      ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-                      : 'text-violet-600 hover:text-violet-800 hover:bg-violet-50'
+                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-50'
                   }`}
                 >
                   {isToggling ? '…' : delivered ? '↩ Revertir' : '✓ Entregar'}
@@ -377,8 +368,8 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
             {totalTickets > 0 && (
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                 totalPending === 0
-                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                  : 'bg-orange-50 text-orange-600 border border-orange-100'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-orange-50 text-orange-700 border border-orange-200'
               }`}>
                 {totalPending === 0
                   ? '✓ Todos entregados'
@@ -478,7 +469,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
             const isToggling = togglingId === t.id;
             return (
               <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
-                win ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'
+                win ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'
               }`}>
                 <span className={`text-xs font-mono font-bold shrink-0 w-9 text-center ${
                   win ? 'text-amber-700' : 'text-gray-400'
@@ -499,8 +490,8 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
                   title={delivered ? 'Revertir entrega' : 'Marcar como entregado'}
                   className={`text-[10px] font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-40 shrink-0 ${
                     delivered
-                      ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-                      : 'text-violet-600 hover:text-violet-800 hover:bg-violet-50'
+                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-50'
                   }`}
                 >
                   {isToggling ? '…' : delivered ? '↩' : '✓ Entregar'}

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { OrderStatus, SOCKET_EVENTS } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi, type OrdersParams } from '../api/orders.api';
-import { getBoliviaDayBounds } from '../utils/timezone';
+import { getBoliviaDayBounds, toBoliviaDateString } from '../utils/timezone';
 import { useSocket, useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 
@@ -32,7 +32,10 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
   const { connected }   = useSocket();
   const wasConnectedRef = useRef<boolean | null>(null);
 
-  const qk = queryKeys.orders({ date, statusFilter, branchId });
+  const qk = useMemo(
+    () => queryKeys.orders({ date, statusFilter, branchId }),
+    [date, statusFilter, branchId],
+  );
 
   const buildParams = useCallback((p: number): OrdersParams => {
     const { start, end } = getBoliviaDayBounds(date);
@@ -123,7 +126,7 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
   // ── Socket handlers ────────────────────────────────────────────────────────
   const handleOrderCreated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
-    const d = order.createdAt.split('T')[0];
+    const d = toBoliviaDateString(new Date(order.createdAt));
     if (d !== date) return;
     if (statusFilter && order.status !== statusFilter) return;
 
