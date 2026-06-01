@@ -113,7 +113,7 @@ export function ReportPage() {
   const handlePrint = () => window.print();
 
   const activeClass = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
+  const inactiveClass = 'bg-white/5 border border-white/10 text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
 
   const maxQty = topProducts[0]?.totalQuantity ?? 1;
 
@@ -127,14 +127,14 @@ export function ReportPage() {
       </div>
 
       {/* Header + Period selector */}
-      <div data-print-hide className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-6">
+      <div data-print-hide className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Reporte y Rendimiento</h2>
             <p className="text-xs text-gray-500 mt-0.5">Vista consolidada de ventas, gastos y desempeño por periodo.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100/60 border border-primary-500/25 text-primary-400">
               {rangeLabel}
             </span>
             {canExport ? (
@@ -143,7 +143,7 @@ export function ReportPage() {
                   onClick={handleExportExcel}
                   disabled={!report || loading}
                   title="Exportar a Excel"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
                 >
                   <Icon name="download" size={14} />
                   Excel
@@ -152,7 +152,7 @@ export function ReportPage() {
                   onClick={handlePrint}
                   disabled={!report || loading}
                   title="Imprimir / Guardar como PDF"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-50 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
                 >
                   <Icon name="print" size={14} />
                   PDF
@@ -167,7 +167,7 @@ export function ReportPage() {
                   <Icon name="lock" size={14} />
                   Exportar
                 </button>
-                <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-gray-200 bg-white shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug">
+                <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-white/10 shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug" style={{ background: 'var(--color-surface-card)' }}>
                   Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
                 </div>
               </div>
@@ -192,19 +192,19 @@ export function ReportPage() {
 
       {/* Custom range inputs */}
       {period === 'custom' && (
-        <div data-print-hide className="flex items-center gap-2 mb-4 rounded-2xl border border-white/70 bg-white/75 p-3 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
+        <div data-print-hide className="flex items-center gap-2 mb-4 rounded-2xl border border-white/8 p-3 shadow-[0_6px_20px_oklch(0.06_0.010_38/0.4)]" style={{ background: 'var(--color-surface-card)' }}>
           <input
             type="date" value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 transition-[border-color,box-shadow]"
+            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
+              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
           />
           <span className="text-gray-400 text-sm">→</span>
           <input
             type="date" value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 transition-[border-color,box-shadow]"
+            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
+              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
           />
         </div>
       )}
@@ -279,8 +279,8 @@ export function ReportPage() {
                   data-print-hide
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="text-xs border border-gray-200 rounded-xl px-3 py-1.5 bg-white text-gray-600
-                    focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
+                  className="text-xs border border-white/10 rounded-xl px-3 py-1.5 bg-[var(--color-surface-card)] text-gray-600 [color-scheme:dark]
+                    focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
                     transition-[border-color,box-shadow] cursor-pointer"
                 >
                   <option value="">Todas las categorías</option>

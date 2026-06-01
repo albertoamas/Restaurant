@@ -41,7 +41,7 @@ export function PrizesSection({
   if (prizes.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+    <section className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-5" style={{ background: 'var(--color-surface-card)' }}>
       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Premios</p>
       <div className="space-y-2">
         {prizes.map((p) => {

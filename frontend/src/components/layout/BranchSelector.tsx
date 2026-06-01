@@ -69,7 +69,7 @@ export function BranchSelector({
       {isOpen && canSelect && (
         <div
           className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-white/8 shadow-[0_8px_24px_oklch(0.08_0.010_255/0.8)]"
-          style={{ background: 'oklch(0.18 0.018 255)' }}
+          style={{ background: 'oklch(0.18 0.022 40)' }}
         >
           {branches.map((b) => (
             <button

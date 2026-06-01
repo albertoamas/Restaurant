@@ -50,7 +50,7 @@ function KitchenCard({ order, onAction, actionLabel, actionStatus, actionColor, 
   const minutes = getElapsedMinutes(order.createdAt);
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col animate-slide border border-gray-200 bg-white shadow-[0_8px_22px_oklch(0.13_0.012_260/0.10)]">
+    <div className="rounded-2xl overflow-hidden flex flex-col animate-slide border border-white/8 shadow-[0_8px_22px_oklch(0.06_0.010_38/0.5)]" style={{ background: 'var(--color-surface-card)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100 bg-gray-50">
         <div>
@@ -118,14 +118,14 @@ export function KitchenPage() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            'radial-gradient(1200px 540px at 0% 0%, oklch(0.38 0.18 85 / 0.25), transparent 62%)',
-            'radial-gradient(1200px 540px at 100% 0%, oklch(0.32 0.22 232 / 0.30), transparent 64%)',
+            'radial-gradient(1200px 540px at 0% 0%, oklch(0.55 0.20 42 / 0.12), transparent 62%)',
+            'radial-gradient(1200px 540px at 100% 0%, oklch(0.48 0.18 38 / 0.10), transparent 64%)',
           ].join(','),
         }}
       />
 
       {/* Kitchen header */}
-      <div className="relative z-10 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/70 shrink-0 bg-white/70 backdrop-blur-xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.08)]">
+      <div className="relative z-10 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-white/8 shrink-0 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.5)]" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0/0.10)]">
             <Icon name="flame" size={16} className="text-amber-400" />
@@ -151,7 +151,7 @@ export function KitchenPage() {
           </div>
           <button
             onClick={refresh}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-900 hover:bg-white transition-colors border border-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-300 hover:bg-white/8 transition-colors border border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
             title="Actualizar"
             aria-label="Actualizar pedidos de cocina"
           >
@@ -159,7 +159,7 @@ export function KitchenPage() {
           </button>
           <Link
             to="/pos"
-            className="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 hover:border-primary-300 hover:text-primary-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
+            className="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-500 bg-white/5 border border-white/10 hover:border-primary-500/40 hover:text-primary-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
             aria-label="Volver al panel principal"
           >
             <Icon name="arrow-left" size={14} />
@@ -168,7 +168,7 @@ export function KitchenPage() {
         </div>
       </div>
 
-      <div className="relative z-10 sm:hidden px-4 pb-3 border-b border-gray-100 bg-gray-50/80">
+      <div className="relative z-10 sm:hidden px-4 pb-3 border-b border-white/8 bg-white/3">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-500/20">
             <p className="text-amber-400 font-black uppercase tracking-[0.08em]">Pendientes</p>
@@ -184,7 +184,7 @@ export function KitchenPage() {
       {/* Two-column board */}
       <div className="relative z-10 flex-1 grid grid-cols-1 xl:grid-cols-2 gap-4 p-4 sm:p-6 min-h-0">
         {/* PENDING column */}
-        <div className="flex flex-col min-h-0 rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_28px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
+        <div className="flex flex-col min-h-0 rounded-2xl border border-white/8 shadow-[0_10px_28px_oklch(0.06_0.010_38/0.6)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           <div className="px-5 py-3 flex items-center gap-2.5 border-b border-amber-500/20 bg-amber-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
             <span className="text-amber-400 font-black text-xs uppercase tracking-[0.12em]">Pendientes</span>
             <span
@@ -222,7 +222,7 @@ export function KitchenPage() {
         </div>
 
         {/* PREPARING column */}
-        <div className="flex flex-col min-h-0 rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_28px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
+        <div className="flex flex-col min-h-0 rounded-2xl border border-white/8 shadow-[0_10px_28px_oklch(0.06_0.010_38/0.6)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           <div className="px-5 py-3 flex items-center gap-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
             <span className="text-emerald-400 font-black text-xs uppercase tracking-[0.12em]">Preparando</span>
             <span

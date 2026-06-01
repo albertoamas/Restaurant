@@ -184,7 +184,7 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
             placeholder="Ej: Compra semanal de insumos"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
+            className="w-full border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700
               focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
               transition-[border-color,box-shadow] placeholder:text-gray-300"
           />
@@ -223,7 +223,7 @@ function ItemRowForm({
   const total = rowTotal(row);
 
   const inputBase =
-    'border border-gray-200 rounded-xl px-2.5 py-2 text-sm bg-white ' +
+    'border border-white/10 rounded-xl px-2.5 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark] ' +
     'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 ' +
     'transition-[border-color,box-shadow]';
 
@@ -239,7 +239,7 @@ function ItemRowForm({
           onChange({ categoryId: e.target.value, mode });
         }}
         disabled={catLoading}
-        className={`${inputBase} w-[140px] shrink-0 text-gray-700 disabled:opacity-50 bg-white`}
+        className={`${inputBase} w-[140px] shrink-0 disabled:opacity-50`}
       >
         <option value="">Sin categoría</option>
         {categories.map((c) => (
@@ -296,7 +296,7 @@ function ItemRowForm({
             required
           />
           <span className="text-gray-300 text-xs">=</span>
-          <div className="w-[88px] rounded-xl border border-gray-100 bg-white px-2.5 py-2 text-sm text-right font-semibold text-gray-700 tabular-nums">
+          <div className="w-[88px] rounded-xl border border-white/10 bg-white/5 px-2.5 py-2 text-sm text-right font-semibold text-gray-700 tabular-nums">
             {total > 0
               ? `Bs ${total.toFixed(2)}`
               : <span className="text-gray-300 font-normal">—</span>}

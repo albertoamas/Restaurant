@@ -40,7 +40,7 @@ export function RafflesPage() {
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-5">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Sorteos</h1>

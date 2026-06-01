@@ -111,7 +111,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         placeholder="Buscar por nombre o teléfono…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
+        className="w-full pl-10 pr-3 py-2.5 text-sm bg-white/5 border border-white/10 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
       />
       {value && (
         <button onClick={() => onChange('')}
@@ -254,13 +254,13 @@ function SpendingRow({
 
       {/* ── Lista de tickets (colapsable) ── */}
       {!collapsed && hasTickets && (
-        <div className="border-t border-gray-200 px-4 pt-2 pb-3 space-y-0.5 bg-white/60">
+        <div className="border-t border-white/8 px-4 pt-2 pb-3 space-y-0.5 bg-white/3">
           {customerTickets.map((t) => {
             const delivered     = isEffectivelyDelivered(t);
             const isToggling    = togglingId === t.id;
             const isWinnerTicket = t.winnerPosition !== undefined;
             return (
-              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white transition-colors">
+              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white/6 transition-colors">
                 <span className={`font-mono font-bold text-xs w-9 shrink-0 ${isWinnerTicket ? 'text-amber-700' : 'text-gray-500'}`}>
                   #{t.ticketNumber}
                 </span>

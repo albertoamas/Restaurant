@@ -48,7 +48,7 @@ export function Modal({
     return createPortal(
       <div className="fixed inset-0 z-50 flex items-end">
         <div
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -56,19 +56,20 @@ export function Modal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
-          className="relative w-full bg-white border-t border-gray-100 rounded-t-2xl shadow-[0_-8px_32px_oklch(0.13_0.012_260/0.14)] z-10 animate-slide-sheet"
+          className="relative w-full border-t border-white/8 rounded-t-2xl shadow-[0_-8px_32px_oklch(0.06_0.010_38/0.7)] z-10 animate-slide-sheet"
+          style={{ background: 'var(--color-surface-card)' }}
         >
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-gray-200 rounded-full" aria-hidden="true" />
+            <div className="w-10 h-1 bg-white/12 rounded-full" aria-hidden="true" />
           </div>
           {title && (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 id={titleId} className="text-base font-bold text-gray-900 font-heading">{title}</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+              <h2 id={titleId} className="text-base font-bold text-gray-800 font-heading">{title}</h2>
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/8 text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <Icon name="x" size={16} strokeWidth={2} />
               </button>
@@ -76,7 +77,7 @@ export function Modal({
           )}
           <div className="px-6 py-4">{children}</div>
           {footer && (
-            <div className="px-6 pb-6 pt-2 border-t border-gray-100 mt-2">{footer}</div>
+            <div className="px-6 pb-6 pt-2 border-t border-white/8 mt-2">{footer}</div>
           )}
         </div>
       </div>,
@@ -86,25 +87,26 @@ export function Modal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         className={[
-          'relative bg-white rounded-2xl w-full z-10 animate-in',
-          'shadow-[0_24px_48px_oklch(0.13_0.012_260/0.16),0_4px_16px_oklch(0.13_0.012_260/0.08)]',
-          'ring-1 ring-black/5',
+          'relative rounded-2xl w-full z-10 animate-in',
+          'shadow-[0_24px_48px_oklch(0.06_0.010_38/0.8),0_4px_16px_oklch(0.06_0.010_38/0.4)]',
+          'ring-1 ring-white/6',
           sizes[size],
         ].join(' ')}
+        style={{ background: 'var(--color-surface-card)' }}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 id={titleId} className="text-base font-bold text-gray-900 font-heading">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-5 border-b border-white/8">
+            <h2 id={titleId} className="text-base font-bold text-gray-800 font-heading">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/8 text-gray-500 hover:text-gray-300 transition-colors"
             >
               <Icon name="x" size={16} strokeWidth={2} />
             </button>
@@ -112,7 +114,7 @@ export function Modal({
         )}
         <div className="px-6 py-5 overflow-y-auto max-h-[80vh]">{children}</div>
         {footer && (
-          <div className="px-6 pb-6 pt-2 border-t border-gray-100">{footer}</div>
+          <div className="px-6 pb-6 pt-2 border-t border-white/8">{footer}</div>
         )}
       </div>
     </div>,

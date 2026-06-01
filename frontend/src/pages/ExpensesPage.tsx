@@ -113,7 +113,7 @@ export function ExpensesPage() {
 
   const netProfit = totalSales !== null ? totalSales - summary.total : null;
   const activeClass   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const inactiveClass = 'bg-white border border-gray-200 text-gray-600 hover:border-primary-400 hover:text-primary-800';
+  const inactiveClass = 'bg-white/5 border border-white/10 text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
 
   const summaryCategories = Object.entries(summary.byCategory)
     .filter(([, v]) => v > 0)
@@ -126,14 +126,14 @@ export function ExpensesPage() {
   return (
     <PageShell>
       {/* Period selector */}
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Gastos Operativos</h2>
             <p className="text-xs text-gray-500 mt-0.5">Control por categoría, período y rentabilidad neta.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100/60 border border-primary-500/25 text-primary-400">
               {rangeLabel}
             </span>
             <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar gasto</Button>
@@ -161,22 +161,22 @@ export function ExpensesPage() {
           <input
             type="date" value={customFrom}
             onChange={(e) => setCustomFrom(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 transition-[border-color,box-shadow]"
+            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
+              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
           />
           <span className="text-gray-400 text-sm">→</span>
           <input
             type="date" value={customTo}
             onChange={(e) => setCustomTo(e.target.value)}
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 transition-[border-color,box-shadow]"
+            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
+              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
           />
         </div>
       )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
+        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
             <Icon name="minus" size={16} />
           </div>
@@ -186,7 +186,7 @@ export function ExpensesPage() {
           </p>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-4 flex flex-col gap-2">
+        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
             <Icon name="dollar" size={16} />
           </div>
@@ -201,7 +201,7 @@ export function ExpensesPage() {
             ? 'bg-emerald-50 border-emerald-200'
             : netProfit !== null
             ? 'bg-red-50 border-red-200'
-            : 'bg-white border-gray-100'
+            : 'bg-white/5 border-white/8'
         }`}>
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
             netProfit !== null && netProfit >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
@@ -259,9 +259,9 @@ export function ExpensesPage() {
           <p className="text-xs mt-1">Agrega el primer gasto del período</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/70 bg-white/90 backdrop-blur-sm shadow-[0_4px_16px_oklch(0.13_0.012_260/0.08)] overflow-hidden">
+        <div className="rounded-2xl border border-white/8 shadow-[0_4px_16px_oklch(0.06_0.010_38/0.4)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {/* Table header */}
-          <div className="grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-2.5 bg-gray-50/70 border-b border-gray-100">
+          <div className="grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-2.5 bg-white/3 border-b border-white/8">
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Fecha</span>
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Detalle</span>
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider text-right">Total</span>
@@ -309,7 +309,7 @@ function ExpenseRow({
   const legacyCol  = categoryColor(legacyLabel);
 
   return (
-    <div className={`group grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-4 border-t border-gray-100 transition-colors
+    <div className={`group grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-4 border-t border-white/8 transition-colors
       ${isDeleting ? 'bg-red-50/40' : 'hover:bg-gray-50/50'}`}
     >
       {/* Date */}

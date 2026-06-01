@@ -26,30 +26,30 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
         'hover:-translate-y-1',
         'active:scale-[0.93] active:translate-y-0',
         flash
-          ? 'border-primary-400 shadow-[0_4px_14px_oklch(0.13_0.012_260/0.14)]'
-          : 'border-gray-200 shadow-[0_2px_8px_oklch(0.13_0.012_260/0.08)]',
-        'bg-white backdrop-blur-sm',
+          ? 'border-primary-500/60 shadow-[0_4px_16px_oklch(0.60_0.22_42/0.30)]'
+          : 'border-white/8 shadow-[0_2px_8px_oklch(0.06_0.010_38/0.5)]',
       ].join(' ')}
+      style={{ background: 'var(--color-surface-card)' }}
     >
       {/* Image / placeholder */}
       {product.imageUrl ? (
-        <div className="relative w-full h-28 overflow-hidden">
+        <div className="relative w-full h-28 [overflow:clip]">
           <img
             src={product.imageUrl}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
-          {/* Price overlay en imagen */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2.5 pt-4 pb-1.5">
+          {/* Price overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 pt-4 pb-1.5">
             <span className="font-heading font-black text-sm text-white drop-shadow">
               Bs {product.price.toFixed(2)}
             </span>
           </div>
         </div>
       ) : (
-        <div className="w-full h-24 flex items-center justify-center bg-gradient-to-br from-primary-100 via-primary-50 to-white group-hover:from-primary-200 group-hover:to-primary-50 transition-all duration-300">
-          <Icon name="photo" size={32} strokeWidth={1.5} className="text-primary-300 group-hover:text-primary-400 transition-colors" />
+        <div className="w-full h-24 flex items-center justify-center bg-white/4 group-hover:bg-white/6 transition-all duration-300">
+          <Icon name="photo" size={32} strokeWidth={1.5} className="text-gray-400 group-hover:text-gray-300 transition-colors" />
         </div>
       )}
 
@@ -59,7 +59,7 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
           {product.name}
         </span>
         {!product.imageUrl && (
-          <span className="font-heading font-black text-[15px] text-primary-600">
+          <span className="font-heading font-black text-[15px] text-primary-400">
             Bs {product.price.toFixed(2)}
           </span>
         )}
@@ -67,12 +67,12 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
 
       {/* Flash overlay */}
       {flash && (
-        <div className="absolute inset-0 bg-primary-500/12 pointer-events-none rounded-2xl" />
+        <div className="absolute inset-0 bg-primary-500/10 pointer-events-none rounded-2xl" />
       )}
 
       {/* +1 badge */}
       {flash && (
-        <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs font-black px-2 py-0.5 rounded-full animate-in pointer-events-none shadow-[0_2px_8px_oklch(0.49_0.21_234/0.45)]">
+        <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs font-black px-2 py-0.5 rounded-full animate-in pointer-events-none shadow-[0_2px_8px_oklch(0.60_0.22_42/0.50)]">
           +1
         </div>
       )}
@@ -83,8 +83,8 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
 export function ProductGrid({ products, onSelect }: Props) {
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-        <Icon name="photo" size={40} strokeWidth={1.5} className="opacity-30" />
+      <div className="flex flex-col items-center justify-center h-48 text-gray-500 gap-2">
+        <Icon name="photo" size={40} strokeWidth={1.5} className="opacity-20" />
         <p className="text-sm font-medium">No hay productos</p>
       </div>
     );

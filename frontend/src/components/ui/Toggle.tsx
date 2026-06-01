@@ -20,7 +20,7 @@ export function Toggle({ checked, onChange, disabled = false, label }: TogglePro
         'focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         checked
-          ? 'bg-primary-600 shadow-[inset_0_0_0_1px_oklch(0.50_0.24_225/0.3)]'
+          ? 'bg-primary-600 shadow-[inset_0_0_0_1px_oklch(0.60_0.22_42/0.30)]'
           : 'bg-gray-200',
       ].join(' ')}
     >

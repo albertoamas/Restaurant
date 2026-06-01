@@ -46,8 +46,8 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
   return (
     <section className="mb-6">
       <div className="px-1 mb-3">
-        <h2 className="font-heading font-bold text-sm text-gray-900">Planes SaaS</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Límites y precios por nivel</p>
+        <h2 className="font-heading font-bold text-sm text-gray-800">Planes SaaS</h2>
+        <p className="text-xs text-gray-500 mt-0.5">Límites y precios por nivel</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {sortedPlans.map((p) => {
@@ -93,10 +93,10 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   return (
-    <div className="p-4 bg-white/70 space-y-3">
+    <div className="p-4 bg-white/5 space-y-3">
       <div className="flex items-center gap-2 mb-1">
         <PlanBadge plan={plan.id as SaasPlan} />
-        <span className="text-xs text-gray-400">editando</span>
+        <span className="text-xs text-gray-500">editando</span>
       </div>
       <div className="space-y-2">
         {PLAN_FIELDS.map(([field, label, type]) => (
@@ -109,37 +109,37 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
                 ...prev,
                 [field]: type === 'number' ? Number(e.target.value) : e.target.value,
               }))}
-              className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary-400/30"
+              className="w-full text-sm border border-white/10 rounded-lg px-2.5 py-1.5 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
             />
           </div>
         ))}
         <div className="flex items-center justify-between py-1.5">
-          <label className="text-sm font-medium text-gray-700">Cocina</label>
+          <label className="text-sm font-medium text-gray-600">Cocina</label>
           <button
             onClick={() => onFormChange((prev) => ({ ...prev, kitchenEnabled: !prev.kitchenEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.kitchenEnabled ? 'bg-primary-500' : 'bg-gray-200'}`}
+            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.kitchenEnabled ? 'bg-primary-500' : 'bg-white/12'}`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.kitchenEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
         </div>
         <div className="flex items-center justify-between py-1.5">
-          <label className="text-sm font-medium text-gray-700">Sorteos</label>
+          <label className="text-sm font-medium text-gray-600">Sorteos</label>
           <button
             onClick={() => onFormChange((prev) => ({ ...prev, rafflesEnabled: !prev.rafflesEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-gray-200'}`}
+            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-white/12'}`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.rafflesEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-700 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">
+        <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-300 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
           Cancelar
         </button>
         <button
           onClick={onSave}
           disabled={saving}
-          className="flex-1 text-sm font-semibold bg-primary-600 text-white py-1.5 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          className="flex-1 text-sm font-semibold bg-primary-600 text-white py-1.5 rounded-lg hover:bg-primary-500 disabled:opacity-50 transition-colors"
         >
           {saving ? 'Guardando…' : 'Guardar'}
         </button>
@@ -159,14 +159,14 @@ function PlanViewCard({ plan, cfg, onEdit }: {
         <PlanBadge plan={plan.id as SaasPlan} />
         <button
           onClick={onEdit}
-          className="text-[11px] font-medium text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-white/70 transition-colors"
+          className="text-[11px] font-medium text-gray-500 hover:text-gray-300 px-2 py-1 rounded-lg hover:bg-white/8 transition-colors"
         >
           Editar
         </button>
       </div>
       <div className="mb-3">
         <span className={`font-heading font-black text-2xl ${cfg.accent}`}>Bs {plan.priceBs}</span>
-        <span className="text-xs text-gray-400 ml-1">/mes</span>
+        <span className="text-xs text-gray-500 ml-1">/mes</span>
       </div>
       <div className="space-y-1.5">
         {([
@@ -175,19 +175,19 @@ function PlanViewCard({ plan, cfg, onEdit }: {
           ['Productos',  limitLabel(plan.maxProducts)],
         ] as [string, string][]).map(([label, val]) => (
           <div key={label} className="flex justify-between text-xs">
-            <span className="text-gray-400">{label}</span>
+            <span className="text-gray-500">{label}</span>
             <span className="font-semibold text-gray-700">{val}</span>
           </div>
         ))}
         <div className="flex justify-between text-xs">
-          <span className="text-gray-400">Cocina</span>
-          <span className={`font-semibold ${plan.kitchenEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>
+          <span className="text-gray-500">Cocina</span>
+          <span className={`font-semibold ${plan.kitchenEnabled ? 'text-emerald-500' : 'text-gray-400'}`}>
             {plan.kitchenEnabled ? 'Sí' : 'No'}
           </span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-gray-400">Sorteos</span>
-          <span className={`font-semibold ${plan.rafflesEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>
+          <span className="text-gray-500">Sorteos</span>
+          <span className={`font-semibold ${plan.rafflesEnabled ? 'text-emerald-500' : 'text-gray-400'}`}>
             {plan.rafflesEnabled ? 'Sí' : 'No'}
           </span>
         </div>

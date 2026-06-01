@@ -10,20 +10,20 @@ interface AdminLoginProps {
 export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminLoginProps) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 bg-[oklch(0.10_0.015_255)]"
+      className="min-h-screen flex items-center justify-center p-4 bg-[oklch(0.10_0.012_38)]"
       style={{
-        backgroundImage: 'radial-gradient(circle, oklch(0.18 0.015 255) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(circle, oklch(0.17 0.010 40) 1px, transparent 1px)',
         backgroundSize: '24px 24px',
       }}
     >
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, oklch(0.47 0.17 234 / 0.15), transparent 70%)' }}
+        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, oklch(0.55 0.20 42 / 0.12), transparent 70%)' }}
       />
 
       <div className="relative w-full max-w-xs animate-in">
         <div className="flex flex-col items-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_255)] border border-white/10 flex items-center justify-center mb-3 shadow-[0_8px_32px_oklch(0_0_0/0.5)]">
+          <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_40)] border border-white/10 flex items-center justify-center mb-3 shadow-[0_8px_32px_oklch(0_0_0/0.5)]">
             <Icon name="lock" size={28} strokeWidth={1.5} className="text-white/80" />
           </div>
           <h1 className="font-heading font-black text-xl text-white tracking-tight">Admin Console</h1>
@@ -32,7 +32,7 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
 
         <div
           className="rounded-2xl border border-white/10 overflow-hidden shadow-[0_24px_48px_oklch(0_0_0/0.5)]"
-          style={{ background: 'oklch(0.14 0.016 255 / 0.85)', backdropFilter: 'blur(20px)' }}
+          style={{ background: 'oklch(0.14 0.016 40 / 0.90)', backdropFilter: 'blur(20px)' }}
         >
           <form onSubmit={onSubmit} className="p-6 space-y-4">
             <div>

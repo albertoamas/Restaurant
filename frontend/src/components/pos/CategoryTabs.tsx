@@ -9,12 +9,12 @@ interface Props {
 export function CategoryTabs({ categories, selected, onSelect }: Props) {
   const activeClass = [
     'bg-primary-600 text-white border border-primary-600',
-    'shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]',
+    'shadow-[0_2px_8px_oklch(0.60_0.22_42/0.35)]',
   ].join(' ');
 
   const inactiveClass = [
-    'bg-white text-gray-600 border border-gray-200',
-    'hover:border-primary-400 hover:text-primary-800 hover:bg-primary-50/35',
+    'bg-white/5 text-gray-500 border border-white/8',
+    'hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8',
   ].join(' ');
 
   return (

@@ -25,7 +25,7 @@ interface SkeletonProps {
 
 const shimmer = [
   'animate-shimmer',
-  'bg-[linear-gradient(90deg,oklch(0.92_0.005_255)_25%,oklch(0.97_0.005_255)_50%,oklch(0.92_0.005_255)_75%)]',
+  'bg-[linear-gradient(90deg,oklch(0.17_0.012_40)_25%,oklch(0.24_0.016_42)_50%,oklch(0.17_0.012_40)_75%)]',
   'rounded-lg',
 ].join(' ');
 
@@ -69,7 +69,8 @@ export function Skeleton({
   if (variant === 'card') {
     return (
       <div
-        className={`rounded-xl border border-gray-100 bg-white p-6 ${className}`}
+        className={`rounded-xl border border-white/6 p-6 ${className}`}
+        style={{ background: 'var(--color-surface-card)' }}
         aria-hidden="true"
       >
         <div className="flex items-center gap-3 mb-4">
@@ -106,10 +107,6 @@ interface SkeletonGroupProps {
   className?: string;
 }
 
-/**
- * Renderiza `count` skeletons de texto con gap vertical,
- * aplicando anchos variables para simular párrafos reales.
- */
 export function SkeletonGroup({ count = 3, className = '' }: SkeletonGroupProps) {
   const widths = ['100%', '85%', '92%', '78%', '88%', '70%'];
 

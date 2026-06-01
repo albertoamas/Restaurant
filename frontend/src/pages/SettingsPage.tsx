@@ -40,7 +40,7 @@ function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-8 text-center">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
         <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
           <Icon name="lock" size={28} className="text-primary-600" />
         </div>
@@ -185,7 +185,7 @@ export function SettingsPage() {
 
   return (
     <PageShell maxWidth="3xl" className="space-y-4">
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5" style={{ background: 'var(--color-surface-card)' }}>
         <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Ajustes del Negocio</h2>
         <p className="text-xs text-gray-500 mt-1">Configura impresión, datos del recibo y seguridad de acceso.</p>
       </div>
@@ -283,7 +283,7 @@ export function SettingsPage() {
               maxLength={RECEIPT_MAX}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
-                resize-none transition-[border-color,box-shadow] bg-white"
+                resize-none transition-[border-color,box-shadow] bg-[var(--color-surface-card)] text-gray-700"
             />
             <p className="text-xs text-gray-400 mt-1.5">Aparece debajo del nombre del negocio en el recibo</p>
           </div>
@@ -325,7 +325,7 @@ export function SettingsPage() {
                   'flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all',
                   active
                     ? 'border-primary-400 bg-primary-50 text-primary-800'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                    : 'border-white/10 bg-white/5 text-gray-500 hover:border-white/18',
                   resetPeriodLoading ? 'opacity-50 cursor-not-allowed' : '',
                 ].join(' ')}
               >

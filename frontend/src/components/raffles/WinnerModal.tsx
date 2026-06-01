@@ -62,8 +62,8 @@ export function WinnerModal({
         />
 
         <div
-          className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden"
-          style={{ animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-white/10"
+          style={{ background: 'var(--color-surface-card)', animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
         >
           <div className={`h-1 w-full bg-gradient-to-r ${medal.badge}`} />
 

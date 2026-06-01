@@ -20,10 +20,10 @@ export const STEPS = [
 const stepIndex = (s: OrderStatus) => STEPS.findIndex((x) => x.status === s);
 
 export const statusAccent: Record<string, { border: string; bg: string; badge: string }> = {
-  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-50/40',   badge: 'bg-amber-100 text-amber-700 border-amber-200' },
-  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-50/40', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-50/40',     badge: 'bg-sky-100 text-sky-700 border-sky-200' },
-  [OrderStatus.CANCELLED]: { border: 'border-l-red-300',     bg: '',                 badge: 'bg-red-100 text-red-600 border-red-200' },
+  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-400/8',   badge: 'bg-amber-100 text-amber-600 border-amber-200' },
+  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-400/8', badge: 'bg-emerald-100 text-emerald-600 border-emerald-200' },
+  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-400/8',     badge: 'bg-sky-100 text-sky-600 border-sky-200' },
+  [OrderStatus.CANCELLED]: { border: 'border-l-red-400',     bg: '',                 badge: 'bg-red-100 text-red-600 border-red-200' },
 };
 
 export const statusLabel: Record<string, string> = {
@@ -67,10 +67,10 @@ function ElapsedChip({ createdAt }: { createdAt: string }) {
     <span className={[
       'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums',
       urgent
-        ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+        ? 'bg-red-100 text-red-600 border-red-200 animate-pulse'
         : warning
-          ? 'bg-amber-50 text-amber-600 border-amber-200'
-          : 'bg-emerald-50 text-emerald-600 border-emerald-200',
+          ? 'bg-amber-100 text-amber-600 border-amber-200'
+          : 'bg-emerald-100 text-emerald-600 border-emerald-200',
     ].join(' ')}>
       <Icon name="clock" size={12} strokeWidth={2} className="shrink-0" />
       {text}
@@ -116,12 +116,14 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
 
   return (
     <div className={[
-      'bg-white/90 backdrop-blur-md rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.09)]',
+      'rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)]',
       'overflow-hidden border-l-4 animate-fade',
       accent.border,
       accent.bg,
       isCancelled ? 'opacity-60' : '',
-    ].join(' ')}>
+    ].join(' ')}
+    style={{ background: 'var(--color-surface-card)' }}
+    >
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
@@ -144,7 +146,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
             {statusLabel[order.status]}
           </span>
-          <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-semibold bg-white/8 text-gray-500 px-2.5 py-1 rounded-lg">
             {orderTypeLabels[order.type]}
           </span>
         </div>
@@ -155,7 +157,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
         {order.items.map((item) => (
           <span
             key={item.id}
-            className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1"
+            className="inline-flex items-center gap-1 text-xs bg-white/5 border border-white/10 text-gray-600 rounded-lg px-2.5 py-1"
           >
             <span className="font-heading font-bold text-gray-900">{item.quantity}×</span>
             {item.productName}
@@ -235,7 +237,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
 
       {/* Footer */}
       <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-gray-100/80 bg-[oklch(0.99_0.004_250)]',
+        'flex items-center gap-3 px-4 py-3 border-t border-white/8 bg-white/3',
         action ? 'flex-col sm:flex-row' : '',
       ].join(' ')}>
         <div className="flex items-center gap-2 shrink-0">
@@ -243,7 +245,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
             Bs {order.total.toFixed(2)}
           </span>
           {order.isPaid ? (
-            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-medium text-gray-500 bg-white/8 px-2 py-0.5 rounded-md">
               {order.payments.length > 1
                 ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
                 : (paymentLabel[order.payments[0]?.method] ?? '—')}
@@ -267,7 +269,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {!isCancelled && order.status !== OrderStatus.DELIVERED && (
             <button
               onClick={() => onEdit(order)}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-white/10 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Editar pedido"
             >
               <Icon name="edit" size={14} strokeWidth={2} />
@@ -276,7 +278,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {!isCancelled && (
             <button
               onClick={handlePrintKitchen}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Imprimir comanda"
             >
               <Icon name="print" size={14} strokeWidth={2} />
@@ -285,7 +287,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {order.isPaid && (
             <button
               onClick={handlePrintReceipt}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-sky-500/50 hover:text-sky-300 hover:bg-sky-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
               title="Imprimir recibo"
             >
               <Icon name="document" size={14} strokeWidth={2} />
@@ -295,7 +297,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
             <>
               <button
                 onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
-                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-gray-200
+                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-white/10
                   rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 Cancelar

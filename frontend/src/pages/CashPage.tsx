@@ -33,7 +33,7 @@ interface StatRowProps {
 
 function StatRow({ label, value, muted, bold, bordered, valueClass }: StatRowProps) {
   return (
-    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-gray-100' : ''}`}>
+    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-white/8' : ''}`}>
       <span className={`text-sm ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
       <span className={`text-sm ${bold ? 'font-heading font-bold' : 'font-medium'} ${valueClass || 'text-gray-900'}`}>
         {value}
@@ -97,7 +97,7 @@ export function CashPage() {
 
   return (
     <PageShell maxWidth="2xl">
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-4">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl font-black text-gray-900">Control de Caja</h2>
@@ -180,7 +180,7 @@ export function CashPage() {
 
       {/* Last closing summary */}
       {!isOpen && lastClosed && (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] p-5">
+        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-5" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Icon name="orders" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
             <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
@@ -189,7 +189,7 @@ export function CashPage() {
             )}
           </div>
 
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-white/8">
             <StatRow label="Monto inicial" value={`Bs ${lastClosed.openingAmount.toFixed(2)}`} />
             <StatRow
               label="Ventas en efectivo"
@@ -223,7 +223,7 @@ export function CashPage() {
         <button
           onClick={() => setShowHistory(true)}
           className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
-            bg-white/90 border border-white/70 rounded-xl py-3 hover:border-primary-200 hover:bg-primary-50/40 shadow-[0_6px_18px_oklch(0.13_0.012_260/0.06)]"
+            bg-white/5 border border-white/10 rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-[0_6px_18px_oklch(0.06_0.010_38/0.4)]"
         >
           Ver historial de cierres ({closedSessions.length}) →
         </button>

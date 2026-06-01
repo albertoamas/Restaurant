@@ -28,7 +28,7 @@ function ConfirmDrawModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="relative rounded-2xl shadow-2xl border border-white/8 w-full max-w-sm p-6 space-y-4" style={{ background: 'var(--color-surface-card)' }}>
         <h3 className="text-base font-bold text-gray-900">
           Sortear {positionLabel(nextPosition)}
         </h3>
@@ -65,7 +65,7 @@ function DeleteRaffleDialog({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+      <div className="relative rounded-2xl shadow-2xl border border-white/8 w-full max-w-sm p-6 flex flex-col gap-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
             <Icon name="warning" size={20} strokeWidth={2} className="text-red-600" />
@@ -177,7 +177,7 @@ function RaffleDetailContent({ id }: { id: string }) {
           <div className="space-y-5">
 
             {/* ── Encabezado de la página ──────────────────────────────────── */}
-            <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+            <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-5" style={{ background: 'var(--color-surface-card)' }}>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-2xl font-black text-gray-900 font-heading leading-tight">
                   {raffle.name}
@@ -245,7 +245,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
             {/* ── Stats ────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] px-5 py-4">
+              <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isDrawable && !isActive ? 'Tickets disponibles' : 'Tickets en ánfora'}
                 </p>
@@ -263,7 +263,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] px-5 py-4">
+              <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isSpending ? 'Clientes' : 'Participantes'}
                 </p>
@@ -274,7 +274,7 @@ function RaffleDetailContent({ id }: { id: string }) {
             </div>
 
             {/* ── Participantes (inline) ────────────────────────────────────── */}
-            <section className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5">
+            <section className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-5" style={{ background: 'var(--color-surface-card)' }}>
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
                 {isSpending ? 'Clientes y acumulados' : 'Participantes'}
               </p>
@@ -283,7 +283,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
             {/* ── Acciones ─────────────────────────────────────────────────── */}
             {(isActive || isReopenable || isDrawable || activeWinnersCount > 0) && (
-              <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-5 space-y-3">
+              <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-5 space-y-3" style={{ background: 'var(--color-surface-card)' }}>
                 {isDrawable && raffle.nextPositionToDraw !== null && (
                   <Button
                     variant="primary"

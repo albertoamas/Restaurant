@@ -30,40 +30,40 @@ const ALL_PAYMENT_METHODS = [
     label: 'Efectivo',
     cortesiaOnly: false,
     icon: <Icon name="cash" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700',
-    active:      'border-2 border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200 shadow-sm',
-    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50',
-    splitActive: 'border-2 border-emerald-400 bg-emerald-100 text-emerald-800',
+    idle:        'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    active:      'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-300',
+    splitIdle:   'border border-white/10 bg-white/5 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10',
+    splitActive: 'border-2 border-emerald-500/60 bg-emerald-500/18 text-emerald-300',
   },
   {
     value: PaymentMethod.QR,
     label: 'QR',
     cortesiaOnly: false,
     icon: <Icon name="qr" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700',
-    active:      'border-2 border-primary-500 bg-primary-50 text-primary-900 ring-2 ring-primary-200 shadow-sm',
-    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-primary-300 hover:bg-primary-50',
-    splitActive: 'border-2 border-primary-400 bg-primary-100 text-primary-800',
+    idle:        'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    active:      'border-2 border-primary-500/70 bg-primary-500/18 text-primary-300',
+    splitIdle:   'border border-white/10 bg-white/5 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10',
+    splitActive: 'border-2 border-primary-500/60 bg-primary-500/18 text-primary-300',
   },
   {
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
     cortesiaOnly: false,
     icon: <Icon name="card" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700',
-    active:      'border-2 border-violet-500 bg-violet-50 text-violet-900 ring-2 ring-violet-200 shadow-sm',
-    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-violet-300 hover:bg-violet-50',
-    splitActive: 'border-2 border-violet-400 bg-violet-100 text-violet-800',
+    idle:        'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
+    active:      'border-2 border-violet-500/70 bg-violet-500/18 text-violet-300',
+    splitIdle:   'border border-white/10 bg-white/5 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10',
+    splitActive: 'border-2 border-violet-500/60 bg-violet-500/18 text-violet-300',
   },
   {
     value: PaymentMethod.CORTESIA,
     label: 'Cortesía',
     cortesiaOnly: true,
     icon: <Icon name="gift" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
-    active:      'border-2 border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-200 shadow-sm',
-    splitIdle:   'border border-gray-200 bg-white text-gray-600 hover:border-amber-300 hover:bg-amber-50',
-    splitActive: 'border-2 border-amber-400 bg-amber-100 text-amber-800',
+    idle:        'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
+    active:      'border-2 border-amber-500/70 bg-amber-500/18 text-amber-300',
+    splitIdle:   'border border-white/10 bg-white/5 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10',
+    splitActive: 'border-2 border-amber-500/60 bg-amber-500/18 text-amber-300',
   },
 ];
 
@@ -284,7 +284,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                         onChange={(e) => setSplitAmount(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSplit()}
                         placeholder={remaining.toFixed(2)}
-                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white
+                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-white/12 rounded-xl bg-[var(--color-surface-card)] text-gray-700
                           focus:outline-none focus:border-primary-400 transition-[border-color]"
                       />
                     </div>

@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/auth.context';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Icon } from '../components/ui/Icon';
 import toast from 'react-hot-toast';
 import { handleApiError } from '../utils/api-error';
+
+const BG   = 'oklch(0.10  0.012 38)';
+const BG2  = 'oklch(0.145 0.016 40)';
+const BD   = 'oklch(0.24  0.016 40)';
+const ORG  = 'oklch(0.65  0.22  42)';
+const ORG2 = 'oklch(0.60  0.22  40)';
+const ORGG = 'oklch(0.65  0.22  42 / 0.18)';
+const CR   = 'oklch(0.93  0.010 52)';
+const CR2  = 'oklch(0.68  0.012 50)';
+const CR3  = 'oklch(0.42  0.008 48)';
 
 export function LoginPage() {
   const BRAND_TAGLINE = 'Control total de tu negocio, en un solo lugar.';
@@ -34,121 +42,210 @@ export function LoginPage() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <div className="min-h-svh relative overflow-hidden bg-[var(--color-surface-page)]">
+    <div
+      className="min-h-svh relative overflow-hidden flex items-center justify-center p-4 sm:p-6 lg:p-8"
+      style={{ background: BG }}
+    >
+      {/* Aurora orbs */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            'radial-gradient(ellipse 90% 60% at 8% 2%, oklch(0.66 0.18 265 / 0.55) 0%, transparent 62%)',
-            'radial-gradient(ellipse 65% 45% at 92% 6%, oklch(0.60 0.20 215 / 0.40) 0%, transparent 58%)',
-            'radial-gradient(ellipse 70% 50% at 52% 98%, oklch(0.70 0.14 250 / 0.32) 0%, transparent 60%)',
+            `radial-gradient(ellipse 70% 55% at 8% 0%,   ${ORGG} 0%, transparent 60%)`,
+            `radial-gradient(ellipse 50% 40% at 92% 8%,  oklch(0.50 0.18 38 / 0.10) 0%, transparent 55%)`,
+            `radial-gradient(ellipse 60% 45% at 50% 100%, oklch(0.48 0.16 48 / 0.07) 0%, transparent 60%)`,
           ].join(','),
         }}
       />
+
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="relative z-10 w-full max-w-[430px] lg:max-w-5xl rounded-3xl overflow-hidden lg:grid lg:grid-cols-[1.1fr_0.9fr]"
         style={{
-          backgroundImage: 'radial-gradient(circle, oklch(0.78 0.025 255) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          maskImage: 'radial-gradient(ellipse 100% 100% at 50% 0%, black 10%, transparent 80%)',
-          opacity: 0.5,
+          border: `1px solid ${BD}`,
+          boxShadow: '0 32px 80px oklch(0.04 0.008 38 / 0.9)',
         }}
-      />
+      >
+        {/* LEFT — brand panel */}
+        <section
+          className="hidden lg:flex flex-col justify-between p-10 xl:p-12 relative overflow-hidden border-r"
+          style={{
+            background: `linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)`,
+            borderColor: BD,
+          }}
+        >
+          {/* Decorative orb */}
+          <div
+            className="absolute -top-24 -right-24 w-80 h-80 rounded-full opacity-20 blur-3xl pointer-events-none"
+            style={{ background: ORG }}
+          />
+          <div
+            className="absolute -bottom-20 -left-14 w-72 h-72 rounded-full opacity-10 pointer-events-none"
+            style={{ background: ORG }}
+          />
 
-      <div className="relative z-10 min-h-svh p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-        <div className="w-full max-w-[430px] lg:max-w-6xl rounded-3xl overflow-hidden border border-white/70 shadow-[0_24px_60px_oklch(0.13_0.012_260/0.14)] bg-white/80 backdrop-blur-xl lg:grid lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="hidden lg:flex flex-col justify-between p-10 xl:p-12 relative overflow-hidden bg-[linear-gradient(165deg,oklch(0.28_0.14_248)_0%,oklch(0.16_0.06_260)_100%)] border-r border-white/20 text-white">
-            <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full border border-white/15" />
-            <div className="absolute -bottom-20 -left-14 w-72 h-72 rounded-full bg-white/10" />
+          <div className="relative animate-slide stagger-1">
+            <h1
+              className="font-heading font-black text-5xl leading-[1.02] tracking-tight"
+              style={{ color: CR }}
+            >
+              Yanko<span style={{ color: CR3 }}>POS</span>
+            </h1>
+            <p className="mt-3 text-sm" style={{ color: CR2 }}>
+              {BRAND_TAGLINE}
+            </p>
 
-            <div className="relative animate-slide stagger-1">
-              <h1 className="font-heading font-black text-5xl leading-[1.02] tracking-tight text-white max-w-lg">
-                Yanko<span className="opacity-70">POS</span>
-              </h1>
-              <p className="mt-3 text-sm text-white/80 max-w-md">
-                {BRAND_TAGLINE}
-              </p>
+            <p
+              className="mt-8 text-xs uppercase tracking-[0.16em] font-semibold"
+              style={{ color: CR3 }}
+            >
+              Panel Operativo
+            </p>
+            <h2
+              className="mt-2 text-3xl font-heading font-black leading-tight"
+              style={{ color: CR }}
+            >
+              Tu restaurante, en ritmo de servicio.
+            </h2>
+          </div>
 
-              <p className="mt-8 text-xs uppercase tracking-[0.16em] text-white/70 font-semibold">Panel Operativo</p>
-              <h2 className="mt-2 text-3xl font-heading font-black text-white leading-tight max-w-md">
-                Tu restaurante, en ritmo de servicio.
-              </h2>
+          <div className="relative grid grid-cols-3 gap-3 text-xs animate-slide stagger-2">
+            {[
+              { label: 'Pedidos', value: 'Continuos' },
+              { label: 'Caja', value: 'Controlada' },
+              { label: 'Cocina', value: 'Sin fricción' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-xl px-3 py-3"
+                style={{ border: `1px solid ${BD}`, background: 'oklch(0.18 0.022 40)' }}
+              >
+                <p style={{ color: CR3 }}>{item.label}</p>
+                <p className="font-bold text-base mt-1" style={{ color: CR }}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* RIGHT — form panel */}
+        <section
+          className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center"
+          style={{ background: BG2 }}
+        >
+          {/* Mobile brand */}
+          <div className="lg:hidden mb-6">
+            <div className="flex items-center gap-3 mb-2.5">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shadow-[0_8px_18px_oklch(0.60_0.22_42/0.35)]"
+                style={{ background: ORG2 }}
+              >
+                <Icon name="cart" size={20} strokeWidth={2} className="text-white" />
+              </div>
+              <div>
+                <h1 className="font-heading font-black text-2xl tracking-tight" style={{ color: CR }}>
+                  YankoPOS
+                </h1>
+                <p className="text-[11px] leading-snug max-w-[22rem]" style={{ color: CR3 }}>
+                  {BRAND_TAGLINE}
+                </p>
+              </div>
             </div>
+          </div>
 
-            <div className="relative grid grid-cols-3 gap-3 text-xs animate-slide stagger-2">
-              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-3">
-                <p className="text-white/70">Pedidos</p>
-                <p className="font-bold text-base mt-1 text-white">Continuos</p>
-              </div>
-              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-3">
-                <p className="text-white/70">Caja</p>
-                <p className="font-bold text-base mt-1 text-white">Controlada</p>
-              </div>
-              <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-3">
-                <p className="text-white/70">Cocina</p>
-                <p className="font-bold text-base mt-1 text-white">Sin fricción</p>
-              </div>
-            </div>
-          </section>
+          <div className="max-w-sm mx-auto lg:mx-0 w-full">
+            <p
+              className="text-xs uppercase tracking-[0.17em] font-semibold mb-2"
+              style={{ color: ORG }}
+            >
+              Acceso Seguro
+            </p>
+            <h2 className="text-3xl font-heading font-black tracking-tight" style={{ color: CR }}>
+              Bienvenido
+            </h2>
+            <p className="text-sm mt-1 mb-6" style={{ color: CR2 }}>
+              Ingresa tus credenciales para continuar.
+            </p>
 
-          <section className="p-6 sm:p-8 lg:p-10 bg-white/88 min-h-0 flex flex-col justify-center lg:block">
-            <div className="lg:hidden mb-6">
-              <div className="flex items-center gap-3 mb-2.5">
-                <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-[0_8px_18px_oklch(0.47_0.17_234/0.28)]">
-                  <Icon name="cart" size={20} strokeWidth={2} />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium" style={{ color: CR2 }}>
+                  Correo electrónico
+                </label>
+                <div
+                  className="flex items-center rounded-xl border transition-[border-color,box-shadow] duration-150 focus-within:ring-[3px]"
+                  style={{
+                    background: 'oklch(0.11 0.014 38)',
+                    borderColor: BD,
+                  }}
+                  onFocus={() => {}}
+                >
+                  <input
+                    type="email"
+                    placeholder="correo@tu-negocio.bo"
+                    value={form.email}
+                    onChange={set('email')}
+                    required
+                    className="flex-1 min-w-0 bg-transparent outline-none px-4 py-3 text-base placeholder:text-gray-400"
+                    style={{ color: CR }}
+                  />
                 </div>
-                <div>
-                  <h1 className="font-heading font-black text-2xl text-gray-900 tracking-tight">YankoPOS</h1>
-                  <p className="text-[11px] text-gray-500 leading-snug max-w-[22rem]">{BRAND_TAGLINE}</p>
+              </div>
+
+              {/* Password */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium" style={{ color: CR2 }}>
+                  Contraseña
+                </label>
+                <div
+                  className="flex items-center rounded-xl border transition-[border-color,box-shadow] duration-150"
+                  style={{
+                    background: 'oklch(0.11 0.014 38)',
+                    borderColor: BD,
+                  }}
+                >
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={set('password')}
+                    required
+                    className="flex-1 min-w-0 bg-transparent outline-none px-4 py-3 text-base placeholder:text-gray-400"
+                    style={{ color: CR }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="-mr-1 p-2 rounded-lg transition-colors mr-2"
+                    style={{ color: CR3 }}
+                  >
+                    <Icon name={showPassword ? 'eye-off' : 'eye'} size={20} strokeWidth={2} />
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div className="max-w-sm mx-auto lg:mx-0 lg:max-w-md">
-              <p className="text-xs uppercase tracking-[0.17em] text-primary-700 font-semibold mb-2">Acceso Seguro</p>
-              <h2 className="text-3xl font-heading font-black text-gray-900 tracking-tight">Bienvenido a YankoPOS</h2>
-              <p className="text-sm text-gray-500 mt-1 mb-6">Control total de tu negocio, en un solo lugar.</p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  label="Correo electrónico"
-                  type="email"
-                  placeholder="correo@tu-negocio.bo"
-                  value={form.email}
-                  onChange={set('email')}
-                  inputSize="lg"
-                  required
-                />
-                <Input
-                  label="Contraseña"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={set('password')}
-                  inputSize="lg"
-                  rightAddon={(
-                    <button
-                      type="button"
-                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="-mr-1 p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      {showPassword ? (
-                        <Icon name="eye-off" size={20} strokeWidth={2} />
-                      ) : (
-                        <Icon name="eye" size={20} strokeWidth={2} />
-                      )}
-                    </button>
-                  )}
-                  required
-                />
-                <Button type="submit" fullWidth size="lg" loading={loading}>
-                  {loading ? 'Entrando...' : 'Entrar al panel'}
-                </Button>
-              </form>
-            </div>
-          </section>
-        </div>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-xl text-base font-bold text-white transition-all duration-150 mt-2 disabled:opacity-60"
+                style={{
+                  background: loading ? ORG2 : `linear-gradient(135deg, ${ORG} 0%, ${ORG2} 100%)`,
+                  boxShadow: `0 4px_16px oklch(0.60 0.22 42 / 0.40)`,
+                }}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Entrando...
+                  </span>
+                ) : (
+                  'Entrar al panel'
+                )}
+              </button>
+            </form>
+          </div>
+        </section>
       </div>
     </div>
   );

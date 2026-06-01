@@ -24,7 +24,7 @@ export interface StatCardProps {
 
 export function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
   return (
-    <div className="relative bg-white/90 backdrop-blur-md rounded-2xl border border-white/70 shadow-[0_8px_28px_oklch(0.13_0.012_260/0.12)] p-5 flex flex-col gap-4 overflow-hidden">
+    <div className="relative rounded-2xl border border-white/8 shadow-[0_8px_28px_oklch(0.06_0.010_38/0.6)] p-5 flex flex-col gap-4 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
       {/* Accent orb de fondo */}
       <div className={`absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-25 blur-2xl ${bg}`} />
 

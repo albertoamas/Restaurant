@@ -4,8 +4,20 @@ import { SaasPlan } from '@pos/shared';
 import { usePlans } from '../hooks/usePlans';
 import { Spinner } from '../components/ui/Spinner';
 
-/* ─── Data ──────────────────────────────────────────────── */
+/* ─── Paleta ─────────────────────────────────────────────── */
+const ORG  = 'oklch(0.65 0.22 42)';
+const ORGD = 'oklch(0.45 0.22 40)';
+const ORGG = 'oklch(0.65 0.22 42 / 0.18)';
+const BG   = 'oklch(0.10 0.012 38)';
+const BG2  = 'oklch(0.145 0.016 40)';
+const BG3  = 'oklch(0.19 0.018 40)';
+const BD   = 'oklch(0.22 0.018 40)';
+const BD2  = 'oklch(0.30 0.022 42)';
+const CR   = 'oklch(0.93 0.010 52)';
+const CR2  = 'oklch(0.70 0.012 50)';
+const CR3  = 'oklch(0.46 0.008 48)';
 
+/* ─── Data ──────────────────────────────────────────────── */
 const FEATURES = [
   {
     icon: <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />,
@@ -40,157 +52,188 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: '< 3s', label: 'para crear un pedido' },
-  { value: '100%', label: 'en la nube, sin instalación' },
-  { value: '24/7', label: 'disponibilidad garantizada' },
-  { value: 'Tiempo real', label: 'actualizaciones vía WebSocket' },
+  { value: '< 3s',       label: 'para crear un pedido' },
+  { value: '100%',       label: 'en la nube, sin instalación' },
+  { value: '24/7',       label: 'disponibilidad garantizada' },
+  { value: 'Tiempo real',label: 'actualizaciones vía WebSocket' },
 ];
 
 const USD_RATE = 9;
 
-type PlanMeta = {
-  description: string;
-  highlight: boolean;
-  badge?: string;
-  cta: string;
-};
+type PlanMeta = { description: string; highlight: boolean; badge?: string; cta: string };
 
 const PLAN_META: Record<SaasPlan, PlanMeta> = {
-  [SaasPlan.BASICO]: {
-    description: 'Todo lo esencial para un restaurante que arranca.',
-    highlight: false,
-    cta: 'Empezar con Básico',
-  },
-  [SaasPlan.PRO]: {
-    description: 'Para restaurantes en operación que quieren escalar.',
-    highlight: true,
-    badge: 'Más popular',
-    cta: 'Empezar con Pro',
-  },
-  [SaasPlan.NEGOCIO]: {
-    description: 'Para cadenas y franquicias con múltiples locales.',
-    highlight: false,
-    cta: 'Contactar',
-  },
+  [SaasPlan.BASICO]:  { description: 'Todo lo esencial para un restaurante que arranca.', highlight: false, cta: 'Empezar con Básico' },
+  [SaasPlan.PRO]:     { description: 'Para restaurantes en operación que quieren escalar.', highlight: true, badge: 'Más popular', cta: 'Empezar con Pro' },
+  [SaasPlan.NEGOCIO]: { description: 'Para cadenas y franquicias con múltiples locales.', highlight: false, cta: 'Contactar' },
 };
 
 const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
 
 function getLimits(plan: PlanDto): string[] {
-  const limits: string[] = [];
-  limits.push(plan.maxBranches >= 999 ? 'sucursales ilimitadas' : `${plan.maxBranches} sucursal${plan.maxBranches > 1 ? 'es' : ''}`);
-  limits.push(plan.maxCashiers >= 999 ? 'cajeros ilimitados' : `${plan.maxCashiers} cajero${plan.maxCashiers > 1 ? 's' : ''}`);
-  limits.push(plan.maxProducts >= 999 ? 'productos ilimitados' : `hasta ${plan.maxProducts} productos`);
-  return limits;
-}
-
-type PlanFeature = { text: string; included: boolean };
-
-function getFeatures(plan: PlanDto): PlanFeature[] {
-  if (plan.id === SaasPlan.BASICO) {
-    return [
-      { text: 'POS + pagos mixtos',                included: true },
-      { text: 'Pedidos con estados y seguimiento', included: true },
-      { text: 'Gestión de caja y gastos',          included: true },
-      { text: 'Clientes y fidelización',           included: true },
-      { text: 'Reportes de ventas',                included: true },
-      { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
-      { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
-      { text: 'Múltiples sucursales',              included: plan.maxBranches > 1 },
-    ];
-  }
-
-  if (plan.id === SaasPlan.PRO) {
-    return [
-      { text: 'Todo lo del plan Básico',           included: true },
-      { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
-      { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
-      { text: `Hasta ${plan.maxBranches} sucursales`, included: true },
-      { text: `Hasta ${plan.maxCashiers} cajeros`, included: true },
-      { text: 'Productos ilimitados',              included: plan.maxProducts >= 999 },
-      { text: 'Sucursales ilimitadas',             included: plan.maxBranches >= 999 },
-      { text: 'Cajeros ilimitados',                included: plan.maxCashiers >= 999 },
-    ];
-  }
-
-  // NEGOCIO
   return [
-    { text: 'Todo lo del plan Pro',          included: true },
-    { text: 'Sucursales ilimitadas',         included: plan.maxBranches >= 999 },
-    { text: 'Cajeros ilimitados',            included: plan.maxCashiers >= 999 },
-    { text: 'Sin límite de escala',          included: true },
+    plan.maxBranches >= 999 ? 'sucursales ilimitadas' : `${plan.maxBranches} sucursal${plan.maxBranches > 1 ? 'es' : ''}`,
+    plan.maxCashiers >= 999 ? 'cajeros ilimitados'    : `${plan.maxCashiers} cajero${plan.maxCashiers > 1 ? 's' : ''}`,
+    plan.maxProducts >= 999 ? 'productos ilimitados'  : `hasta ${plan.maxProducts} productos`,
   ];
 }
 
-/* ─── Mock POS ──────────────────────────────────────────── */
+function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
+  if (plan.id === SaasPlan.BASICO) return [
+    { text: 'POS + pagos mixtos',                included: true },
+    { text: 'Pedidos con estados y seguimiento', included: true },
+    { text: 'Gestión de caja y gastos',          included: true },
+    { text: 'Clientes y fidelización',           included: true },
+    { text: 'Reportes de ventas',                included: true },
+    { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
+    { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
+    { text: 'Múltiples sucursales',              included: plan.maxBranches > 1 },
+  ];
+  if (plan.id === SaasPlan.PRO) return [
+    { text: 'Todo lo del plan Básico',           included: true },
+    { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
+    { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
+    { text: `Hasta ${plan.maxBranches} sucursales`, included: true },
+    { text: `Hasta ${plan.maxCashiers} cajeros`, included: true },
+    { text: 'Productos ilimitados',              included: plan.maxProducts >= 999 },
+    { text: 'Sucursales ilimitadas',             included: plan.maxBranches >= 999 },
+    { text: 'Cajeros ilimitados',                included: plan.maxCashiers >= 999 },
+  ];
+  return [
+    { text: 'Todo lo del plan Pro',  included: true },
+    { text: 'Sucursales ilimitadas', included: plan.maxBranches >= 999 },
+    { text: 'Cajeros ilimitados',    included: plan.maxCashiers >= 999 },
+    { text: 'Sin límite de escala',  included: true },
+  ];
+}
+
+/* ─── MockPOS (tema oscuro naranja) ────────────────────────── */
 function MockPOS() {
   return (
-    <div
-      className="relative w-full max-w-2xl mx-auto rounded-2xl overflow-hidden"
-      style={{
-        background: 'white',
-        border: '1px solid oklch(0.91 0.008 252)',
-        boxShadow: '0 32px 72px oklch(0.13 0.012 260 / 0.12), 0 8px 24px oklch(0.13 0.012 260 / 0.06)',
-      }}
-    >
-      <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'oklch(0.93 0.008 252)', background: 'oklch(0.975 0.006 252)' }}>
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ background: 'oklch(0.65 0.22 28)' }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: 'oklch(0.73 0.16 85)' }} />
-          <div className="w-3 h-3 rounded-full" style={{ background: 'oklch(0.62 0.18 148)' }} />
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      maxWidth: '580px',
+      borderRadius: '16px',
+      overflow: 'hidden',
+      background: BG2,
+      border: `1px solid ${BD}`,
+      boxShadow: `0 40px 80px oklch(0 0 0 / 0.60), 0 0 0 1px ${BD}, 0 12px 32px oklch(0.65 0.22 42 / 0.08)`,
+    }}>
+      {/* Barra de título */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '10px 16px',
+        borderBottom: `1px solid ${BD}`,
+        background: 'oklch(0.12 0.014 40)',
+      }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['oklch(0.62 0.22 25)','oklch(0.73 0.16 80)','oklch(0.55 0.18 145)'].map((c, i) => (
+            <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />
+          ))}
         </div>
-        <div className="flex-1 mx-4 rounded-md text-center text-xs py-0.5 px-3" style={{ background: 'oklch(0.93 0.008 252)', color: 'oklch(0.55 0.01 260)' }}>
+        <div style={{
+          flex: 1, margin: '0 12px', borderRadius: 6,
+          padding: '3px 12px', textAlign: 'center',
+          fontSize: 10, background: BD, color: CR3,
+        }}>
           YankoPOS — Punto de Venta
         </div>
       </div>
-      <div className="grid grid-cols-[56px_1fr_200px] h-72 sm:h-80">
-        <div className="flex flex-col items-center py-4 gap-3 border-r" style={{ borderColor: 'oklch(0.93 0.008 252)', background: 'oklch(0.145 0.020 255)' }}>
+
+      {/* Cuerpo */}
+      <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr 180px', height: 272 }}>
+        {/* Sidebar */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '14px 0', gap: 10,
+          borderRight: `1px solid ${BD}`,
+          background: 'oklch(0.09 0.010 38)',
+        }}>
           {[0,1,2,3].map((i) => (
-            <div key={i} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: i===0?'oklch(0.47 0.17 234 / 0.25)':'transparent', border: i===0?'1px solid oklch(0.47 0.17 234 / 0.5)':'1px solid transparent' }}>
-              <div className="w-4 h-4 rounded" style={{ background: i===0?'oklch(0.65 0.14 232)':'oklch(0.30 0.02 260)' }} />
+            <div key={i} style={{
+              width: 32, height: 32, borderRadius: 9,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: i === 0 ? ORGG : 'transparent',
+              border: i === 0 ? `1px solid oklch(0.65 0.22 42 / 0.35)` : `1px solid transparent`,
+            }}>
+              <div style={{
+                width: 14, height: 14, borderRadius: 3,
+                background: i === 0 ? ORG : 'oklch(0.26 0.016 40)',
+              }} />
             </div>
           ))}
         </div>
-        <div className="p-3 overflow-hidden" style={{ background: 'oklch(0.985 0.006 250)' }}>
-          <div className="flex gap-2 mb-3">
-            {['Populares','Burgers','Bebidas','Extras'].map((cat,i) => (
-              <div key={cat} className="px-3 py-1 rounded-full text-xs font-medium" style={{ background:i===0?'oklch(0.47 0.17 234)':'white', color:i===0?'white':'oklch(0.55 0.01 260)', border:i===0?'none':'1px solid oklch(0.91 0.008 252)', fontSize:'10px' }}>
+
+        {/* Productos */}
+        <div style={{ padding: 10, background: BG, overflow: 'hidden' }}>
+          {/* Categorías */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+            {['Populares','Burgers','Bebidas'].map((cat, i) => (
+              <div key={cat} style={{
+                padding: '3px 9px', borderRadius: 20, fontSize: 9, fontWeight: i === 0 ? 700 : 500,
+                background: i === 0 ? ORG : BG3,
+                color: i === 0 ? 'white' : CR3,
+                border: i !== 0 ? `1px solid ${BD}` : 'none',
+              }}>
                 {cat}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[{name:'Classic Burger',price:'35'},{name:'BBQ Bacon',price:'42'},{name:'Veggie',price:'30'},{name:'Papas Fritas',price:'18'},{name:'Onion Rings',price:'20'},{name:'Coca-Cola',price:'12'}].map((p,i) => (
-              <div key={i} className="rounded-xl p-2 flex flex-col gap-1" style={{ background:'white', border:'1px solid oklch(0.92 0.008 252)', boxShadow:'0 1px 3px oklch(0.13 0.012 260 / 0.06)' }}>
-                <div className="w-full rounded-lg mb-1" style={{ height:'36px', background:`oklch(${0.88+i*0.015} 0.04 ${210+i*12})` }} />
-                <p style={{ fontSize:'9px', color:'oklch(0.55 0.01 260)', lineHeight:'1.2' }}>{p.name}</p>
-                <p style={{ fontSize:'10px', color:'oklch(0.47 0.17 234)', fontWeight:700 }}>Bs {p.price}</p>
+          {/* Grid de productos */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
+            {[
+              {name:'Classic Burger',price:'35'},
+              {name:'BBQ Bacon',price:'42'},
+              {name:'Veggie',price:'30'},
+              {name:'Papas Fritas',price:'18'},
+              {name:'Onion Rings',price:'20'},
+              {name:'Coca-Cola',price:'12'},
+            ].map((p, i) => (
+              <div key={i} style={{
+                borderRadius: 9, padding: 7,
+                background: BG2, border: `1px solid ${BD}`,
+                cursor: 'pointer',
+              }}>
+                <div style={{
+                  height: 30, borderRadius: 5, marginBottom: 5,
+                  background: `oklch(${0.18 + i * 0.016} 0.045 ${42 + i * 6})`,
+                }} />
+                <p style={{ fontSize: 8, color: CR2, lineHeight: 1.2 }}>{p.name}</p>
+                <p style={{ fontSize: 10, color: ORG, fontWeight: 700, marginTop: 2 }}>Bs {p.price}</p>
               </div>
             ))}
           </div>
         </div>
-        <div className="flex flex-col border-l" style={{ borderColor:'oklch(0.91 0.008 252)', background:'white' }}>
-          <div className="p-3 border-b" style={{ borderColor:'oklch(0.93 0.008 252)' }}>
-            <p style={{ fontSize:'10px', color:'oklch(0.47 0.17 234)', fontWeight:600 }}>PEDIDO #14</p>
-            <p style={{ fontSize:'9px', color:'oklch(0.62 0.008 260)', marginTop:'2px' }}>Mesa · Efectivo</p>
+
+        {/* Panel de pedido */}
+        <div style={{ display: 'flex', flexDirection: 'column', borderLeft: `1px solid ${BD}`, background: BG2 }}>
+          <div style={{ padding: 10, borderBottom: `1px solid ${BD}` }}>
+            <p style={{ fontSize: 9, color: ORG, fontWeight: 700, letterSpacing: '0.08em' }}>PEDIDO #14</p>
+            <p style={{ fontSize: 8, color: CR3, marginTop: 2 }}>Mesa · Efectivo</p>
           </div>
-          <div className="flex-1 p-3 flex flex-col gap-2">
-            {[{name:'Classic Burger',qty:2,price:'70'},{name:'BBQ Bacon',qty:1,price:'42'},{name:'Coca-Cola',qty:2,price:'24'}].map((item,i) => (
-              <div key={i} className="flex justify-between items-start" style={{ fontSize:'9px' }}>
+          <div style={{ flex: 1, padding: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {[{name:'Classic Burger',qty:2,price:'70'},{name:'BBQ Bacon',qty:1,price:'42'},{name:'Coca-Cola',qty:2,price:'24'}].map((item, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 8 }}>
                 <div>
-                  <p style={{ color:'oklch(0.25 0.012 260)' }}>{item.name}</p>
-                  <p style={{ color:'oklch(0.62 0.008 260)' }}>×{item.qty}</p>
+                  <p style={{ color: CR }}>{item.name}</p>
+                  <p style={{ color: CR3, marginTop: 1 }}>×{item.qty}</p>
                 </div>
-                <p style={{ color:'oklch(0.47 0.17 234)', fontWeight:600 }}>Bs {item.price}</p>
+                <p style={{ color: ORG, fontWeight: 700 }}>Bs {item.price}</p>
               </div>
             ))}
           </div>
-          <div className="p-3 border-t" style={{ borderColor:'oklch(0.93 0.008 252)' }}>
-            <div className="flex justify-between mb-2" style={{ fontSize:'10px' }}>
-              <span style={{ color:'oklch(0.55 0.01 260)' }}>Total</span>
-              <span style={{ color:'oklch(0.13 0.012 260)', fontWeight:700 }}>Bs 136</span>
+          <div style={{ padding: 10, borderTop: `1px solid ${BD}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 9 }}>
+              <span style={{ color: CR2 }}>Total</span>
+              <span style={{ color: CR, fontWeight: 700 }}>Bs 136</span>
             </div>
-            <div className="w-full rounded-xl py-2 text-center font-semibold" style={{ background:'oklch(0.47 0.17 234)', color:'white', fontSize:'10px' }}>
+            <div style={{
+              borderRadius: 7, padding: '7px 0', textAlign: 'center',
+              fontWeight: 700, fontSize: 9,
+              background: ORG, color: 'white',
+              boxShadow: `0 4px 12px oklch(0.65 0.22 42 / 0.40)`,
+            }}>
               Confirmar pedido
             </div>
           </div>
@@ -200,105 +243,96 @@ function MockPOS() {
   );
 }
 
-/* ─── Pricing card ──────────────────────────────────────── */
+/* ─── PlanCard ──────────────────────────────────────────── */
 function PlanCard({ plan }: { plan: PlanDto }) {
-  const primary = 'oklch(0.47 0.17 234)';
-  const meta    = PLAN_META[plan.id as SaasPlan] ?? PLAN_META[SaasPlan.BASICO];
-  const limits  = getLimits(plan);
+  const meta     = PLAN_META[plan.id as SaasPlan] ?? PLAN_META[SaasPlan.BASICO];
+  const limits   = getLimits(plan);
   const features = getFeatures(plan);
-  const usd     = Math.round(plan.priceBs / USD_RATE);
+  const usd      = Math.round(plan.priceBs / USD_RATE);
 
   return (
-    <div
-      className="relative flex flex-col rounded-2xl p-7 transition-all duration-200"
-      style={meta.highlight ? {
-        background: 'white',
-        border: `2px solid ${primary}`,
-        boxShadow: `0 20px 60px oklch(0.47 0.17 234 / 0.15), 0 4px 16px oklch(0.47 0.17 234 / 0.10)`,
-        transform: 'translateY(-6px)',
-      } : {
-        background: 'white',
-        border: '1px solid oklch(0.91 0.008 252)',
-        boxShadow: '0 2px 12px oklch(0.13 0.012 260 / 0.06)',
-      }}
-    >
-      {/* Badge */}
-      {meta.badge && (
-        <div
-          className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap"
-          style={{ background: primary, boxShadow: `0 4px 12px oklch(0.47 0.17 234 / 0.35)` }}
-        >
-          ⭐ {meta.badge}
+    <div style={{
+      position: 'relative',
+      display: 'flex', flexDirection: 'column',
+      borderRadius: 20,
+      padding: '28px 28px 24px',
+      background: meta.highlight ? BG3 : BG2,
+      border: meta.highlight ? `1.5px solid ${BD2}` : `1px solid ${BD}`,
+      boxShadow: meta.highlight
+        ? `0 0 0 1px ${ORG}, 0 24px 60px oklch(0.65 0.22 42 / 0.15), 0 4px 16px oklch(0 0 0 / 0.3)`
+        : `0 4px 20px oklch(0 0 0 / 0.25)`,
+      transform: meta.highlight ? 'translateY(-8px)' : 'none',
+      transition: 'transform 0.2s',
+    }}>
+      {meta.highlight && (
+        <div style={{
+          position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+          padding: '4px 16px', borderRadius: 99,
+          fontSize: 11, fontWeight: 800, color: 'white', whiteSpace: 'nowrap',
+          background: ORG, boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.45)`,
+          letterSpacing: '0.04em',
+        }}>
+          ★ {meta.badge}
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-6">
-        <p className="font-heading font-black text-lg mb-1" style={{ color: 'oklch(0.13 0.012 260)' }}>
-          {plan.displayName}
-        </p>
-        <p className="text-sm leading-relaxed" style={{ color: 'oklch(0.55 0.010 260)' }}>
-          {meta.description}
-        </p>
-      </div>
+      {/* Nombre */}
+      <p style={{ fontSize: 11, fontWeight: 700, color: meta.highlight ? ORG : CR3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+        {plan.displayName}
+      </p>
+      <p style={{ fontSize: 13, color: CR2, lineHeight: 1.5, marginBottom: 20 }}>
+        {meta.description}
+      </p>
 
-      {/* Price */}
-      <div className="mb-5">
-        <div className="flex items-end gap-1.5">
-          <span className="font-heading font-black text-5xl leading-none" style={{ color: meta.highlight ? primary : 'oklch(0.13 0.012 260)' }}>
+      {/* Precio */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 52, lineHeight: 1, color: meta.highlight ? ORG : CR }}>
             {plan.priceBs}
           </span>
-          <div className="mb-1">
-            <p className="text-sm font-bold" style={{ color: 'oklch(0.40 0.010 260)' }}>Bs</p>
-            <p className="text-xs" style={{ color: 'oklch(0.65 0.008 260)' }}>/mes</p>
+          <div style={{ paddingBottom: 6 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: CR2 }}>Bs</p>
+            <p style={{ fontSize: 11, color: CR3 }}>/mes</p>
           </div>
         </div>
-        <p className="text-xs mt-1.5" style={{ color: 'oklch(0.68 0.008 260)' }}>
-          ~${usd} USD al tipo de cambio referencial
-        </p>
+        <p style={{ fontSize: 11, color: CR3, marginTop: 4 }}>~${usd} USD al cambio referencial</p>
       </div>
 
-      {/* Limits */}
-      <div
-        className="flex flex-wrap gap-1.5 mb-6 p-3 rounded-xl"
-        style={{ background: meta.highlight ? 'oklch(0.97 0.013 225)' : 'oklch(0.975 0.006 252)' }}
-      >
+      {/* Límites */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20,
+        padding: 12, borderRadius: 12,
+        background: meta.highlight ? ORGG : 'oklch(0.12 0.012 38)',
+        border: `1px solid ${meta.highlight ? BD2 : BD}`,
+      }}>
         {limits.map((l) => (
-          <span
-            key={l}
-            className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-            style={{
-              background: meta.highlight ? 'oklch(0.93 0.04 225)' : 'white',
-              color: meta.highlight ? 'oklch(0.39 0.15 236)' : 'oklch(0.45 0.010 260)',
-              border: meta.highlight ? '1px solid oklch(0.87 0.07 225)' : '1px solid oklch(0.91 0.008 252)',
-            }}
-          >
+          <span key={l} style={{
+            fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 8,
+            background: meta.highlight ? 'oklch(0.65 0.22 42 / 0.25)' : BG3,
+            color: meta.highlight ? 'oklch(0.85 0.10 50)' : CR2,
+            border: `1px solid ${meta.highlight ? BD2 : BD}`,
+          }}>
             {l}
           </span>
         ))}
       </div>
 
       {/* Features */}
-      <ul className="flex-1 space-y-2.5 mb-7">
+      <ul style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
         {features.map((f) => (
-          <li key={f.text} className="flex items-start gap-2.5">
-            {f.included ? (
-              <span className="mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'oklch(0.92 0.08 145)' }}>
-                <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="oklch(0.45 0.18 148)" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-            ) : (
-              <span className="mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center" style={{ background: 'oklch(0.94 0.004 260)' }}>
-                <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="oklch(0.70 0.008 260)" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </span>
-            )}
-            <span
-              className="text-sm leading-snug"
-              style={{ color: f.included ? 'oklch(0.25 0.012 260)' : 'oklch(0.68 0.008 260)' }}
-            >
+          <li key={f.text} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{
+              marginTop: 2, width: 16, height: 16, flexShrink: 0, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: f.included
+                ? (meta.highlight ? 'oklch(0.65 0.22 42 / 0.30)' : 'oklch(0.55 0.18 145 / 0.20)')
+                : 'oklch(0.18 0.010 40)',
+            }}>
+              <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={f.included ? (meta.highlight ? ORG : 'oklch(0.55 0.18 145)') : CR3} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                {f.included ? <path d="M5 13l4 4L19 7" /> : <path d="M6 18L18 6M6 6l12 12" />}
+              </svg>
+            </span>
+            <span style={{ fontSize: 13, lineHeight: 1.4, color: f.included ? CR2 : CR3 }}>
               {f.text}
             </span>
           </li>
@@ -308,15 +342,18 @@ function PlanCard({ plan }: { plan: PlanDto }) {
       {/* CTA */}
       <Link
         to="/login"
-        className="block text-center py-3 rounded-xl text-sm font-bold transition-all duration-150 active:scale-[0.98]"
-        style={meta.highlight ? {
-          background: primary,
-          color: 'white',
-          boxShadow: `0 4px 16px oklch(0.47 0.17 234 / 0.30)`,
-        } : {
-          background: 'oklch(0.975 0.006 252)',
-          color: 'oklch(0.35 0.015 260)',
-          border: '1px solid oklch(0.88 0.010 252)',
+        style={{
+          display: 'block', textAlign: 'center',
+          padding: '13px 0', borderRadius: 12,
+          fontSize: 13, fontWeight: 700,
+          transition: 'all 0.15s',
+          ...(meta.highlight ? {
+            background: ORG, color: 'white',
+            boxShadow: `0 6px 20px oklch(0.65 0.22 42 / 0.40)`,
+          } : {
+            background: BG3, color: CR2,
+            border: `1px solid ${BD2}`,
+          }),
         }}
       >
         {meta.cta} →
@@ -325,229 +362,381 @@ function PlanCard({ plan }: { plan: PlanDto }) {
   );
 }
 
-/* ─── Pricing section ───────────────────────────────────── */
+/* ─── PricingSection ────────────────────────────────────── */
 function PricingSection() {
   const { plans, loading, error } = usePlans();
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-24">
-        <Spinner size="md" color="primary" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+      <Spinner size="md" color="primary" />
+    </div>
+  );
 
-  if (error || plans.length === 0) {
-    return (
-      <p className="text-center py-24 text-sm" style={{ color: 'oklch(0.55 0.010 260)' }}>
-        No se pudieron cargar los planes. Intenta de nuevo más tarde.
-      </p>
-    );
-  }
+  if (error || plans.length === 0) return (
+    <p style={{ textAlign: 'center', padding: '80px 0', fontSize: 14, color: CR3 }}>
+      No se pudieron cargar los planes. Intenta de nuevo más tarde.
+    </p>
+  );
 
-  const ordered = PLAN_ORDER
-    .map((id) => plans.find((p) => p.id === id))
-    .filter((p): p is PlanDto => p !== undefined);
+  const ordered = PLAN_ORDER.map((id) => plans.find((p) => p.id === id)).filter((p): p is PlanDto => p !== undefined);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pt-5">
-      {ordered.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} />
-      ))}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, alignItems: 'start', paddingTop: 20 }}>
+      {ordered.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
     </div>
   );
 }
 
-/* ─── Main ──────────────────────────────────────────────── */
+/* ─── Landing principal ─────────────────────────────────── */
 export function LandingPage() {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white" style={{ color: 'oklch(0.13 0.012 260)' }}>
+    <div style={{ minHeight: '100vh', overflowX: 'hidden', background: BG, color: CR, fontFamily: 'var(--font-sans)' }}>
 
-      {/* ── Nav ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b" style={{ background: 'oklch(1 0 0 / 0.92)', borderColor: 'oklch(0.92 0.008 252)', backdropFilter: 'blur(16px)' }}>
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'oklch(0.47 0.17 234)' }}>
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      {/* ── Barra de navegación ──────────────────────────── */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        borderBottom: `1px solid ${BD}`,
+        backdropFilter: 'blur(20px)',
+        background: 'oklch(0.10 0.012 38 / 0.92)',
+      }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto', padding: '0 28px',
+          height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 9,
+              background: ORG, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.45)`,
+            }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
               </svg>
             </div>
-            <span className="font-heading font-black text-lg tracking-tight">
-              Yanko<span style={{ color: 'oklch(0.47 0.17 234)' }}>POS</span>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', color: CR }}>
+              Yanko<span style={{ color: ORG }}>POS</span>
             </span>
           </div>
-          <nav className="hidden sm:flex items-center gap-6 text-sm font-medium" style={{ color: 'oklch(0.50 0.010 260)' }}>
-            <a href="#features" className="hover:text-gray-900 transition-colors">Características</a>
-            <a href="#pricing" className="hover:text-gray-900 transition-colors">Precios</a>
+
+          {/* Links */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            <a href="#features" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+              Características
+            </a>
+            <a href="#pricing" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+              Precios
+            </a>
+            <Link to="/login" style={{
+              padding: '8px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700,
+              background: ORG, color: 'white', textDecoration: 'none',
+              boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.35)`,
+            }}>
+              Acceder →
+            </Link>
           </nav>
-          <Link
-            to="/login"
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-            style={{ background: 'oklch(0.47 0.17 234)', color: 'white' }}
-          >
-            Acceder →
-          </Link>
         </div>
       </header>
 
-      {/* ── Hero ────────────────────────────────────────── */}
-      <section className="relative pt-20 pb-24 px-5 sm:px-8 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: ['radial-gradient(900px 500px at 50% -10%, oklch(0.47 0.17 234 / 0.07) 0%, transparent 65%)', 'radial-gradient(600px 400px at 10% 80%, oklch(0.47 0.17 234 / 0.04) 0%, transparent 55%)'].join(',') }} />
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, oklch(0.75 0.010 255) 1px, transparent 1px)', backgroundSize: '28px 28px', maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, black 10%, transparent 75%)' }} />
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <section style={{ position: 'relative', padding: '80px 28px 100px', overflow: 'hidden' }}>
+        {/* Grain texture */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.40,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.80' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat', backgroundSize: '300px 300px',
+          mixBlendMode: 'overlay',
+        }} />
 
-        <div className="relative max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 mb-8 animate-fade" style={{ background: 'oklch(0.97 0.013 225)', borderColor: 'oklch(0.87 0.07 225)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot" style={{ background: 'oklch(0.47 0.17 234)' }} />
-            <span className="text-xs font-semibold" style={{ color: 'oklch(0.39 0.15 236)' }}>
-              Software POS para restaurantes en Bolivia
-            </span>
+        {/* Orbe de luz naranja arriba izquierda */}
+        <div style={{
+          position: 'absolute', top: -120, left: -80, width: 600, height: 600,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, oklch(0.65 0.22 42 / 0.12) 0%, transparent 70%)',
+        }} />
+
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          {/* Texto */}
+          <div>
+            {/* Overline */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              marginBottom: 28, padding: '6px 14px', borderRadius: 99,
+              border: `1px solid ${BD2}`, background: ORGG,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: ORG, display: 'inline-block', animation: 'pulse 2s ease-in-out infinite' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.82 0.12 50)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Software POS · Bolivia
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h1 style={{
+              fontFamily: 'var(--font-heading)', fontWeight: 900,
+              fontSize: 'clamp(3rem, 6vw, 5.2rem)',
+              lineHeight: 1.0, letterSpacing: '-0.03em',
+              color: CR, margin: '0 0 24px 0',
+            }}>
+              Tu restaurante<br />
+              en{' '}
+              <span style={{
+                color: ORG,
+                textShadow: `0 0 40px oklch(0.65 0.22 42 / 0.50)`,
+              }}>
+                ritmo<br />de servicio
+              </span>
+            </h1>
+
+            <p style={{ fontSize: 16, lineHeight: 1.65, color: CR2, maxWidth: 420, margin: '0 0 36px 0' }}>
+              POS, cocina, caja y reportes — todo en una sola plataforma diseñada para operar a máxima velocidad.
+            </p>
+
+            {/* CTAs */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 44 }}>
+              <Link to="/login" style={{
+                padding: '14px 28px', borderRadius: 11, fontSize: 14, fontWeight: 700,
+                background: ORG, color: 'white', textDecoration: 'none',
+                boxShadow: `0 8px 28px oklch(0.65 0.22 42 / 0.45)`,
+                letterSpacing: '-0.01em',
+              }}>
+                Entrar al panel →
+              </Link>
+              <a href="#pricing" style={{
+                padding: '14px 28px', borderRadius: 11, fontSize: 14, fontWeight: 600,
+                background: BG3, color: CR2, textDecoration: 'none',
+                border: `1px solid ${BD2}`,
+              }}>
+                Ver planes y precios
+              </a>
+            </div>
+
+            {/* Mini stats */}
+            <div style={{ display: 'flex', gap: 28, borderTop: `1px solid ${BD}`, paddingTop: 28 }}>
+              {STATS.slice(0, 2).map((s) => (
+                <div key={s.label}>
+                  <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 22, color: ORG, margin: 0 }}>{s.value}</p>
+                  <p style={{ fontSize: 11, color: CR3, margin: '2px 0 0 0' }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h1 className="font-heading font-black leading-[1.05] tracking-tight mx-auto animate-slide stagger-1" style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)', maxWidth: '860px', color: 'oklch(0.10 0.015 260)' }}>
-            Tu restaurante en{' '}
-            <span style={{ color: 'oklch(0.47 0.17 234)' }}>ritmo de servicio</span>
-          </h1>
-
-          <p className="mt-6 text-lg leading-relaxed mx-auto animate-slide stagger-2" style={{ maxWidth: '500px', color: 'oklch(0.50 0.010 260)' }}>
-            POS, cocina, caja y reportes — todo en una sola plataforma diseñada para operar a máxima velocidad.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide stagger-3">
-            <Link
-              to="/login"
-              className="px-7 py-3.5 rounded-xl font-semibold text-base transition-all duration-200"
-              style={{ background: 'oklch(0.47 0.17 234)', color: 'white', boxShadow: '0 4px 20px oklch(0.47 0.17 234 / 0.35)' }}
-            >
-              Entrar al panel →
-            </Link>
-            <a
-              href="#pricing"
-              className="px-7 py-3.5 rounded-xl font-semibold text-base transition-all duration-200"
-              style={{ background: 'white', color: 'oklch(0.40 0.010 260)', border: '1px solid oklch(0.88 0.010 252)', boxShadow: '0 1px 4px oklch(0.13 0.012 260 / 0.07)' }}
-            >
-              Ver planes y precios
-            </a>
-          </div>
-
-          <div className="hidden sm:block mt-16 animate-slide stagger-4">
+          {/* MockPOS */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <MockPOS />
           </div>
         </div>
       </section>
 
-      {/* ── Stats ───────────────────────────────────────── */}
-      <div className="border-y" style={{ borderColor: 'oklch(0.92 0.008 252)', background: 'oklch(0.975 0.006 252)' }}>
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="font-heading font-black text-3xl" style={{ color: 'oklch(0.47 0.17 234)' }}>{s.value}</p>
-              <p className="text-sm mt-1" style={{ color: 'oklch(0.55 0.010 260)' }}>{s.label}</p>
+      {/* ── Banda de stats ───────────────────────────────── */}
+      <div style={{ borderTop: `1px solid ${BD}`, borderBottom: `1px solid ${BD}`, background: BG2 }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto', padding: '36px 28px',
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        }}>
+          {STATS.map((s, i) => (
+            <div key={s.label} style={{
+              textAlign: 'center', position: 'relative',
+              paddingLeft: i > 0 ? 28 : 0,
+            }}>
+              {i > 0 && (
+                <div style={{
+                  position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                  width: 1, height: 36, background: BD,
+                }} />
+              )}
+              <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 28, color: ORG, margin: 0 }}>{s.value}</p>
+              <p style={{ fontSize: 12, color: CR3, margin: '4px 0 0 0' }}>{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Features ────────────────────────────────────── */}
-      <section id="features" className="py-24 px-5 sm:px-8 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3" style={{ color: 'oklch(0.47 0.17 234)' }}>
+      {/* ── Features ─────────────────────────────────────── */}
+      <section id="features" style={{ padding: '100px 28px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Header de sección */}
+          <div style={{ marginBottom: 70 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: ORG, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 14px 0' }}>
               Todo lo que necesitas
             </p>
-            <h2 className="font-heading font-black leading-tight" style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', color: 'oklch(0.10 0.015 260)' }}>
-              Una plataforma completa,<br />nada de extras innecesarios
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+              <h2 style={{
+                fontFamily: 'var(--font-heading)', fontWeight: 900,
+                fontSize: 'clamp(2rem, 4vw, 3rem)',
+                lineHeight: 1.1, letterSpacing: '-0.025em',
+                color: CR, margin: 0, maxWidth: 520,
+              }}>
+                Una plataforma completa,<br />nada de extras innecesarios
+              </h2>
+              <p style={{ fontSize: 14, color: CR3, maxWidth: 280, margin: 0, lineHeight: 1.6 }}>
+                Todo lo que un restaurante necesita para operar bien desde el primer día.
+              </p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Lista numerada editorial */}
+          <div>
             {FEATURES.map((f, i) => (
               <div
                 key={i}
-                className="p-6 rounded-2xl transition-all duration-200"
-                style={{ background: 'oklch(0.985 0.006 250)', border: '1px solid oklch(0.91 0.008 252)' }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.background='white'; el.style.borderColor='oklch(0.78 0.12 225)'; el.style.boxShadow='0 8px 28px oklch(0.13 0.012 260 / 0.08)'; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.background='oklch(0.985 0.006 250)'; el.style.borderColor='oklch(0.91 0.008 252)'; el.style.boxShadow='none'; }}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '80px 1fr 1fr',
+                  gap: '0 40px',
+                  padding: '32px 0',
+                  borderTop: `1px solid ${BD}`,
+                  alignItems: 'center',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = BG2; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
               >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ background: 'oklch(0.93 0.03 225)', color: 'oklch(0.47 0.17 234)' }}>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                    {f.icon}
-                  </svg>
+                {/* Número grande */}
+                <div style={{
+                  fontFamily: 'var(--font-heading)', fontWeight: 900,
+                  fontSize: 52, lineHeight: 1, color: ORGG,
+                  letterSpacing: '-0.04em', userSelect: 'none',
+                  paddingLeft: 8,
+                }}>
+                  {String(i + 1).padStart(2, '0')}
                 </div>
-                <h3 className="font-heading font-bold text-base mb-2" style={{ color: 'oklch(0.13 0.012 260)' }}>{f.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'oklch(0.52 0.010 260)' }}>{f.desc}</p>
+
+                {/* Título + ícono */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 11, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: ORGG, border: `1px solid ${BD2}`,
+                    color: ORG,
+                  }}>
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={ORG} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      {f.icon}
+                    </svg>
+                  </div>
+                  <h3 style={{
+                    fontFamily: 'var(--font-heading)', fontWeight: 800,
+                    fontSize: 18, color: CR, margin: 0, letterSpacing: '-0.02em',
+                  }}>
+                    {f.title}
+                  </h3>
+                </div>
+
+                {/* Descripción */}
+                <p style={{ fontSize: 14, color: CR2, lineHeight: 1.65, margin: 0 }}>
+                  {f.desc}
+                </p>
               </div>
             ))}
+            <div style={{ borderTop: `1px solid ${BD}` }} />
           </div>
         </div>
       </section>
 
-      {/* ── Pricing ─────────────────────────────────────── */}
-      <section id="pricing" className="py-24 px-5 sm:px-8" style={{ background: 'oklch(0.975 0.006 252)' }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3" style={{ color: 'oklch(0.47 0.17 234)' }}>
+      {/* ── Pricing ──────────────────────────────────────── */}
+      <section id="pricing" style={{ padding: '100px 28px', background: BG2, borderTop: `1px solid ${BD}` }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: ORG, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 14px 0' }}>
               Planes y precios
             </p>
-            <h2 className="font-heading font-black leading-tight mb-4" style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', color: 'oklch(0.10 0.015 260)' }}>
+            <h2 style={{
+              fontFamily: 'var(--font-heading)', fontWeight: 900,
+              fontSize: 'clamp(2rem, 4vw, 3rem)',
+              lineHeight: 1.1, letterSpacing: '-0.025em',
+              color: CR, margin: '0 0 14px 0',
+            }}>
               Paga solo lo que necesitas
             </h2>
-            <p className="text-base mx-auto" style={{ maxWidth: '440px', color: 'oklch(0.52 0.010 260)' }}>
+            <p style={{ fontSize: 15, color: CR3, maxWidth: 420, margin: '0 auto' }}>
               Precios en bolivianos, sin contratos ni sorpresas. Cancela cuando quieras.
             </p>
           </div>
 
           <PricingSection />
 
-          <p className="text-center text-xs mt-10" style={{ color: 'oklch(0.65 0.008 260)' }}>
+          <p style={{ textAlign: 'center', fontSize: 11, color: CR3, marginTop: 36 }}>
             Tipo de cambio referencial: 1 USD ≈ {USD_RATE} Bs · Los precios pueden ajustarse según variación del tipo de cambio
           </p>
         </div>
       </section>
 
-      {/* ── CTA ─────────────────────────────────────────── */}
-      <section className="py-24 px-5 sm:px-8 bg-white">
-        <div className="max-w-4xl mx-auto rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden" style={{ background: 'oklch(0.47 0.17 234)', boxShadow: '0 24px 60px oklch(0.47 0.17 234 / 0.30)' }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, oklch(1 0 0 / 0.06) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-          <div className="absolute pointer-events-none" style={{ inset:0, background:'radial-gradient(600px 400px at 70% 120%, oklch(0.30 0.12 250 / 0.5) 0%, transparent 60%)' }} />
-          <div className="relative">
-            <h2 className="font-heading font-black leading-tight mb-4" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'white' }}>
-              ¿Listo para empezar?
-            </h2>
-            <p className="text-base mb-8 mx-auto" style={{ color: 'oklch(0.85 0.06 225)', maxWidth: '400px' }}>
-              Accede a tu panel y empieza a gestionar tu restaurante hoy mismo.
-            </p>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-base transition-all duration-200"
-              style={{ background: 'white', color: 'oklch(0.35 0.15 234)', boxShadow: '0 4px 20px oklch(0.10 0.015 255 / 0.25)' }}
-            >
-              Acceder al panel
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
-          </div>
+      {/* ── CTA final ────────────────────────────────────── */}
+      <section style={{ padding: '100px 28px', position: 'relative', overflow: 'hidden', background: ORGD }}>
+        {/* Grain sobre el naranja */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.20,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat', backgroundSize: '200px 200px',
+          mixBlendMode: 'multiply',
+        }} />
+
+        {/* Luz interior */}
+        <div style={{
+          position: 'absolute', top: -200, right: -200, width: 600, height: 600,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, oklch(0.85 0.14 60 / 0.20) 0%, transparent 70%)',
+        }} />
+
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+          <h2 style={{
+            fontFamily: 'var(--font-heading)', fontWeight: 900,
+            fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+            lineHeight: 1.0, letterSpacing: '-0.03em',
+            color: 'white', margin: '0 0 20px 0',
+          }}>
+            ¿Listo para empezar?
+          </h2>
+          <p style={{ fontSize: 16, color: 'oklch(0.90 0.04 55)', maxWidth: 380, margin: '0 auto 40px', lineHeight: 1.6 }}>
+            Accede a tu panel y empieza a gestionar tu restaurante hoy mismo.
+          </p>
+          <Link to="/login" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            padding: '16px 32px', borderRadius: 12,
+            fontSize: 15, fontWeight: 800,
+            background: 'white', color: ORGD,
+            textDecoration: 'none',
+            boxShadow: '0 8px 32px oklch(0 0 0 / 0.25)',
+            letterSpacing: '-0.01em',
+          }}>
+            Acceder al panel
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </Link>
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────── */}
-      <footer className="border-t py-8 px-5 sm:px-8" style={{ borderColor: 'oklch(0.92 0.008 252)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'oklch(0.47 0.17 234)' }}>
-              <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      {/* ── Footer ───────────────────────────────────────── */}
+      <footer style={{ borderTop: `1px solid ${BD}`, padding: '28px', background: BG }}>
+        <div style={{
+          maxWidth: 1200, margin: '0 auto',
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 6,
+              background: ORG, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218" />
               </svg>
             </div>
-            <span className="font-heading font-bold text-sm" style={{ color: 'oklch(0.55 0.010 260)' }}>YankoPOS</span>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 14, color: CR2 }}>YankoPOS</span>
           </div>
-          <nav className="flex items-center gap-6 text-xs" style={{ color: 'oklch(0.65 0.008 260)' }}>
-            <a href="#features" className="hover:text-gray-700 transition-colors">Características</a>
-            <a href="#pricing" className="hover:text-gray-700 transition-colors">Precios</a>
-            <Link to="/login" className="hover:text-gray-700 transition-colors">Acceder</Link>
+
+          <nav style={{ display: 'flex', gap: 24 }}>
+            {[
+              { label: 'Características', href: '#features' },
+              { label: 'Precios', href: '#pricing' },
+            ].map((l) => (
+              <a key={l.label} href={l.href} style={{ fontSize: 12, color: CR3, textDecoration: 'none' }}>{l.label}</a>
+            ))}
+            <Link to="/login" style={{ fontSize: 12, color: CR3, textDecoration: 'none' }}>Acceder</Link>
           </nav>
-          <p className="text-xs" style={{ color: 'oklch(0.65 0.008 260)' }}>
-            © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia
+
+          <p style={{ fontSize: 12, color: CR3 }}>
+            © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
           </p>
         </div>
       </footer>

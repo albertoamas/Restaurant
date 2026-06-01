@@ -34,7 +34,7 @@ function AccountLock({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-8 text-center">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
         <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
           <Icon name="lock" size={28} strokeWidth={2} className="text-primary-600" />
         </div>

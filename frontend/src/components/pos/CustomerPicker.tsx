@@ -90,8 +90,8 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
         type="button"
         onClick={() => { setExpanded(true); setTimeout(() => inputRef.current?.focus(), 50); }}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl
-          border-2 border-gray-200 text-sm font-medium text-gray-400
-          hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
+          border-2 border-white/12 bg-white/5 text-sm font-medium text-gray-400
+          hover:border-primary-400/50 hover:text-primary-400 hover:bg-primary-500/10 transition-all duration-150"
       >
         <Icon name="user" size={16} strokeWidth={2} className="shrink-0" />
         <span>Agregar cliente (opcional)</span>
@@ -161,7 +161,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
   return (
     <div className="space-y-2" ref={dropdownRef}>
       <div className="relative">
-        <div className="flex items-center gap-2 px-3 py-3 rounded-2xl border-2 border-gray-200 bg-white focus-within:border-primary-400 transition-colors">
+        <div className="flex items-center gap-2 px-3 py-3 rounded-2xl border-2 border-white/12 bg-white/5 focus-within:border-primary-500/60 transition-colors">
           <Icon name="search" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
           <input
             ref={inputRef}
@@ -178,7 +178,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
         </div>
 
         {showDropdown && (results.length > 0 || loading) && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 border border-white/12 rounded-xl shadow-lg max-h-48 overflow-y-auto" style={{ background: 'var(--color-surface-card)' }}>
             {loading && (
               <div className="px-3 py-2 text-xs text-gray-400">Buscando...</div>
             )}
@@ -202,7 +202,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
         )}
 
         {showDropdown && !loading && query.trim().length >= 2 && results.length === 0 && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 border border-white/12 rounded-xl shadow-lg" style={{ background: 'var(--color-surface-card)' }}>
             <div className="px-3 py-2 text-xs text-gray-400">No se encontró ningún cliente</div>
             <button
               type="button"
@@ -219,8 +219,8 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
         type="button"
         onClick={() => setMode('create')}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl
-          border-2 border-gray-200 text-sm font-medium text-gray-400
-          hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50 transition-all duration-150"
+          border-2 border-white/12 bg-white/5 text-sm font-medium text-gray-400
+          hover:border-primary-400/50 hover:text-primary-400 hover:bg-primary-500/10 transition-all duration-150"
       >
         <Icon name="plus" size={16} strokeWidth={2} className="shrink-0" />
         Crear nuevo cliente

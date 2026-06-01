@@ -22,7 +22,7 @@ export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
         {sessions.map((s) => (
           <div
             key={s.id}
-            className="bg-gray-50/60 border border-gray-100 rounded-xl p-4 hover:bg-white hover:border-gray-200 transition-colors"
+            className="bg-white/4 border border-white/8 rounded-xl p-4 hover:bg-white/6 transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-gray-500">{formatDate(s.openedAt)}</span>
@@ -31,15 +31,15 @@ export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
               )}
             </div>
             <div className="grid grid-cols-3 gap-3 text-xs">
-              <div className="bg-white rounded-lg p-2.5 border border-gray-100">
+              <div className="bg-white/5 rounded-lg p-2.5 border border-white/8">
                 <p className="text-gray-400 mb-1">Monto inicial</p>
                 <p className="font-heading font-bold text-sm text-gray-700">Bs {s.openingAmount.toFixed(2)}</p>
               </div>
-              <div className="bg-white rounded-lg p-2.5 border border-gray-100">
+              <div className="bg-white/5 rounded-lg p-2.5 border border-white/8">
                 <p className="text-gray-400 mb-1">Esperado</p>
                 <p className="font-heading font-bold text-sm text-gray-700">Bs {(s.expectedAmount ?? 0).toFixed(2)}</p>
               </div>
-              <div className="bg-white rounded-lg p-2.5 border border-gray-100">
+              <div className="bg-white/5 rounded-lg p-2.5 border border-white/8">
                 <p className="text-gray-400 mb-1">Diferencia</p>
                 <p className={`font-heading font-bold text-sm ${diffColor(s.difference)}`}>
                   {s.difference !== null
@@ -49,7 +49,7 @@ export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
               </div>
             </div>
             {s.notes && (
-              <p className="text-xs text-gray-400 mt-2.5 bg-white border border-gray-100 rounded-lg px-3 py-2 italic">
+              <p className="text-xs text-gray-400 mt-2.5 bg-white/5 border border-white/8 rounded-lg px-3 py-2 italic">
                 {s.notes}
               </p>
             )}

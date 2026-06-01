@@ -79,14 +79,14 @@ export function Sidebar() {
       data-print-hide
       className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-white/5"
       style={{
-        background: 'linear-gradient(165deg, oklch(0.28 0.14 248) 0%, oklch(0.16 0.06 260) 100%)',
+        background: 'linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)',
       }}
     >
       {/* Brand header */}
       <div className="px-4 pt-5 pb-4 border-b border-white/8">
         <div className="flex items-center gap-3 mb-3">
           {/* Logo mark */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.50_0.24_225/0.40)]">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
             <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
           </div>
           <div className="min-w-0">
@@ -158,7 +158,7 @@ export function Sidebar() {
           {userMenuOpen && (
             <div
               className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
-              style={{ background: 'oklch(0.18 0.018 255)' }}
+              style={{ background: 'oklch(0.18 0.022 40)' }}
             >
               <button
                 onClick={() => { setUserMenuOpen(false); navigate('/account'); }}

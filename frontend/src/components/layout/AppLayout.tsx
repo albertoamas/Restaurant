@@ -107,7 +107,7 @@ export function AppLayout() {
   if (user?.role === 'CASHIER' && !user.branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 max-w-sm w-full text-center animate-in shadow-lg">
+        <div className="rounded-2xl border border-white/8 p-8 max-w-sm w-full text-center animate-in shadow-[0_8px_32px_oklch(0.06_0.010_38/0.7)]" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
             <Icon name="warning" size={28} className="text-amber-400" />
           </div>
@@ -146,13 +146,13 @@ export function AppLayout() {
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
-          background: 'linear-gradient(165deg, oklch(0.28 0.14 248) 0%, oklch(0.16 0.06 260) 100%)',
+          background: 'linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)',
         }}
       >
         {/* Drawer header */}
         <div className="px-4 pt-5 pb-4 border-b border-white/8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.50_0.24_225/0.40)]">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
               <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
             </div>
             <div className="min-w-0">
@@ -234,7 +234,7 @@ export function AppLayout() {
             {drawerUserMenuOpen && (
               <div
                 className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
-                style={{ background: 'oklch(0.18 0.018 255)' }}
+                style={{ background: 'oklch(0.18 0.022 40)' }}
               >
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); navigate('/account'); }}

@@ -174,13 +174,13 @@ function CustomerDetailModal({
       {editMode ? (
         <div className="space-y-2 mb-4">
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none" />
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-white/5 text-gray-700 placeholder:text-gray-400" />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setEditMode(false)} disabled={saving}>Cancelar</Button>
             <Button variant="primary" fullWidth onClick={handleSaveEdit} loading={saving}>Guardar</Button>
@@ -249,7 +249,7 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
           className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300 resize-none" />
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-white/5 text-gray-700 placeholder:text-gray-400" />
         <div className="flex gap-2 pt-1">
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button variant="primary" fullWidth onClick={handleSubmit} loading={saving} disabled={!name.trim()}>
@@ -280,7 +280,7 @@ export function CustomersPage() {
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="rounded-2xl border border-white/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_oklch(0.13_0.012_260/0.10)] p-4 sm:p-5 mb-5">
+      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
@@ -298,7 +298,7 @@ export function CustomersPage() {
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar por nombre o teléfono..."
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white/90"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
         />
       </div>
 
@@ -320,9 +320,9 @@ export function CustomersPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/70 shadow-[0_8px_24px_oklch(0.13_0.012_260/0.10)] overflow-hidden">
+        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-white/8 bg-white/3">
             <SortHeader label="Nombre" col="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
             <SortHeader label="Gastado" col="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
             <SortHeader label="Compras" col="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
@@ -356,7 +356,7 @@ export function CustomersPage() {
             <button
               onClick={() => setPage(page - 1)}
               disabled={page <= 1}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
             >
               ← Anterior
             </button>
@@ -378,7 +378,7 @@ export function CustomersPage() {
                   className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
                     pg === page
                       ? 'bg-primary-500 border-primary-500 text-white'
-                      : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'
+                      : 'border-white/10 bg-white/5 hover:bg-white/8 text-gray-600'
                   }`}
                 >
                   {pg}
@@ -388,7 +388,7 @@ export function CustomersPage() {
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
             >
               Siguiente →
             </button>

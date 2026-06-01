@@ -88,14 +88,18 @@ Plataforma multi-tenant de punto de venta diseñada para restaurantes, cafeterí
 # 1. Instalar dependencias
 pnpm install
 
-# 2. Levantar la base de datos
+# 2. Configurar variables de entorno (obligatorio antes de continuar)
+cp backend/.env.example backend/.env
+# En Windows CMD: copy backend\.env.example backend\.env
+# Los valores por defecto sirven para desarrollo local — ajusta JWT_SECRET si quieres mayor seguridad
+
+# 3. Levantar la base de datos
 docker-compose up -d
 
-# 3. Crear tablas y aplicar migraciones
-pnpm --filter backend prisma:migrate
-
-# 4. Generar cliente Prisma
+# 4. Aplicar migraciones y generar cliente Prisma
+pnpm --filter backend prisma:migrate:deploy
 pnpm --filter backend prisma:generate
+# Windows: si prisma:migrate:deploy se cuelga por advisory lock, consulta "Gotchas en Windows" al final
 
 # 5. Poblar con datos de demo
 pnpm --filter backend seed
@@ -123,7 +127,7 @@ Tenant de demo: **Restaurante Demo** · Plan: PRO · Sucursal: Principal
 
 ## Variables de entorno
 
-Copia `backend/.env.example` a `backend/.env` y ajusta:
+El paso 2 de instalación copia el archivo. Los valores del `.env.example` ya están configurados para desarrollo local (PostgreSQL en el puerto 5433 vía docker-compose). Ajusta lo que necesites:
 
 ```env
 DATABASE_URL=postgresql://pos_user:pos_password@localhost:5433/pos_db

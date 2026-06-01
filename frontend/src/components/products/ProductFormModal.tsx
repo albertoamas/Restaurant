@@ -112,7 +112,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
             value={form.categoryId}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             required
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white
+            className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
               focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
               transition-[border-color,box-shadow]"
           >
@@ -130,13 +130,13 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
           </label>
 
           {imagePreview ? (
-            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-gray-200">
+            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10">
               <img src={imagePreview} alt="Vista previa" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={handleRemoveImage}
                 aria-label="Quitar imagen"
-                className="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors border border-gray-100"
+                className="absolute top-2 right-2 bg-white/10 rounded-full p-1.5 hover:bg-red-500/15 transition-colors border border-white/10"
               >
                 <Icon name="x" size={14} strokeWidth={2} className="text-red-500" />
               </button>
