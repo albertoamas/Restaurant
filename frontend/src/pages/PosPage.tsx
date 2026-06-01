@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { handleApiError } from '../utils/api-error';
 import type { OrderDto } from '@pos/shared';
 import { PaymentMethod, OrderType } from '@pos/shared';
@@ -21,6 +22,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useBranches } from '../hooks/useBranches';
 
 export function PosPage() {
+  const queryClient = useQueryClient();
   const { categories } = useCategories();
   const { products } = useProducts();
   const { branches } = useBranches();
@@ -35,6 +37,11 @@ export function PosPage() {
   const { currentBranchId, user } = useAuth();
   const { autoPrintKitchen, cashEnabled } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
+
+  const invalidateOrderCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
+    queryClient.invalidateQueries({ queryKey: ['kitchenOrders'] });
+  };
 
   const currentBranch = branches.find((b) => b.id === currentBranchId);
 
@@ -74,6 +81,7 @@ export function PosPage() {
         ...(customer?.customerId ? { customerId: customer.customerId } : {}),
         ...(customer?.createCustomer ? { createCustomer: customer.createCustomer } : {}),
       });
+      invalidateOrderCaches();
       clear();
       setShowPayment(false);
       setShowCart(false);
@@ -88,14 +96,14 @@ export function PosPage() {
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       {/* Left: Products */}
       <div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
-        <div className="mb-3 rounded-2xl border border-white/70 bg-white/75 backdrop-blur-xl shadow-[0_8px_24px_oklch(0.13_0.012_260/0.08)] p-3 sm:p-4 animate-slide">
+        <div className="mb-3 rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-black text-gray-900 leading-tight">Punto de Venta</h2>
               <p className="text-xs text-gray-500 mt-0.5">Selecciona productos y cobra en segundos.</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-50 border border-primary-200 text-xs font-semibold text-primary-700">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-100/60 border border-primary-500/25 text-xs font-semibold text-primary-400">
                 {filteredProducts.length} productos
               </span>
               {currentBranch && (
@@ -118,10 +126,9 @@ export function PosPage() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-gray-200 rounded-2xl bg-white/95
-                focus:outline-none focus:ring-[3px] focus:ring-primary-500/18 focus:border-primary-400
-                transition-[border-color,box-shadow] duration-150
-                shadow-[0_1px_3px_oklch(0.13_0.012_260/0.07)]"
+              className="w-full pl-10 pr-10 py-2.5 text-sm border border-white/10 rounded-2xl bg-white/5 text-gray-700 placeholder:text-gray-400
+                focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
+                transition-[border-color,box-shadow] duration-150"
             />
             {search && (
               <button
@@ -140,13 +147,13 @@ export function PosPage() {
           selected={selectedCategory}
           onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
-        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-white/70 bg-white/70 backdrop-blur-md p-2 shadow-[0_6px_20px_oklch(0.13_0.012_260/0.06)]">
+        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-white/6 p-2 shadow-[0_6px_20px_oklch(0.06_0.010_38/0.5)]" style={{ background: 'var(--color-surface-2)' }}>
           <ProductGrid products={filteredProducts} onSelect={handleProductSelect} />
         </div>
       </div>
 
       {/* Right: Order panel (desktop) */}
-      <div className="hidden lg:block w-80 border-l border-gray-200/70 bg-white/80 backdrop-blur-xl">
+      <div className="hidden lg:block w-80 border-l border-white/8" style={{ background: 'var(--color-surface-card)' }}>
         <OrderPanel onCharge={handleCharge} />
       </div>
 
@@ -158,9 +165,9 @@ export function PosPage() {
             className={[
               'bg-primary-600 text-white border border-primary-600',
               'rounded-2xl px-5 py-3.5 text-sm font-bold',
-              'shadow-[0_3px_12px_oklch(0.45_0.16_235/0.25)]',
+              'shadow-[0_3px_12px_oklch(0.60_0.22_42/0.40)]',
               'flex items-center gap-2.5',
-              'hover:bg-primary-700 transition-colors',
+              'hover:bg-primary-500 transition-colors',
             ].join(' ')}
           >
             <div className="relative">
@@ -178,7 +185,7 @@ export function PosPage() {
       {showCart && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col bg-white border-t border-gray-200/80">
+          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-white/8" style={{ background: 'var(--color-surface-card)' }}>
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -207,6 +214,7 @@ export function PosPage() {
               ...(customer?.customerId ? { customerId: customer.customerId } : {}),
               ...(customer?.createCustomer ? { createCustomer: customer.createCustomer } : {}),
             });
+            invalidateOrderCaches();
             clear();
             setShowPayment(false);
             setShowCart(false);

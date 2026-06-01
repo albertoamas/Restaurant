@@ -36,8 +36,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const socket = io('/', {
       auth: { token },
       transports: ['websocket'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      reconnectionDelay:    1000,
+      reconnectionDelayMax: 5000,
+      // reconnectionAttempts omitido → Infinity (default Socket.IO)
+      // 5 era demasiado restrictivo: tras un corte breve de red el socket
+      // abandonaba y la app caía al polling de 30 s indefinidamente.
     });
 
     socketRef.current = socket;
