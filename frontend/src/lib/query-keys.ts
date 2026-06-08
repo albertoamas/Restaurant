@@ -45,4 +45,22 @@ export const queryKeys = {
 
   reportExpenseSummary: (from: string, to: string, branchId?: string) =>
     ['reports', 'expenseSummary', from, to, branchId] as const,
+
+  reportDailySeries: (from: string, to: string, branchId?: string) =>
+    ['reports', 'dailySeries', from, to, branchId] as const,
+
+  reportByCashier: (from: string, to: string, branchId?: string) =>
+    ['reports', 'byCashier', from, to, branchId] as const,
+
+  reportTopCategories: (from: string, to: string, branchId?: string) =>
+    ['reports', 'topCategories', from, to, branchId] as const,
+
+  reportByHour: (from: string, to: string, branchId?: string) =>
+    ['reports', 'byHour', from, to, branchId] as const,
+
+  reportCashSessions: (from: string, to: string, branchId?: string) =>
+    ['reports', 'cashSessions', from, to, branchId] as const,
+
+  reportByDayHour: (from: string, to: string, branchId?: string) =>
+    ['reports', 'byDayHour', from, to, branchId] as const,
 };
