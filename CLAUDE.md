@@ -145,7 +145,9 @@ Four guards in `backend/src/common/guards/`:
 
 ### Real-time (WebSockets)
 
-`EventsModule` exports `EventsService`. Use cases call `eventsService.emitToTenant(tenantId, event, payload)`. Events: `order.created`, `order.updated`, `cash.opened`, `cash.closed`.
+`EventsModule` exports `EventsService`. Use cases call `eventsService.emitToTenant(tenantId, event, payload)`.
+
+**Always use the `SOCKET_EVENTS` constant from `@pos/shared`** — never raw string literals — to avoid typos between emitters and subscribers. Full event list in `packages/shared/src/socket-events.ts`: orders (`order.created`, `order.updated`), cash sessions (`cash.opened`, `cash.closed`), catalog (`product.created/updated`, `category.created/updated/deleted`), customers (`customer.created/updated`), expenses (`expense.created/updated/deleted`), raffles (`raffle.created/updated/deleted`, `raffle.ticket_added`), tenant settings (`tenant.modules.updated`).
 
 The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}` rooms.
 
@@ -165,6 +167,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
 | `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `PATCH /admin/tenants/:id/modules`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT. `/modules` sets per-tenant feature flags (`ordersEnabled`, `cashEnabled`, `rafflesEnabled`, etc.) |
+| `plans` | `GET /plans` | No auth; returns all `Plan` rows. `PlanLimitService` is injected by other modules to enforce `maxBranches`, `maxCashiers`, `maxProducts` limits. |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
 ### Global app configuration
@@ -188,7 +191,7 @@ store/       ← Zustand stores: cart.store.ts, settings.store.ts, cashSession.s
 context/     ← auth.context.tsx (user/token/branchId), socket.context.tsx
 pages/       ← route-level components
 components/  ← ui/, layout/, pos/, orders/, products/, cash/, expenses/, raffles/, admin/
-utils/       ← date.ts (today, formatDate, elapsed), api-error.ts, print.ts, order.ts
+utils/       ← date.ts (today, formatDate, elapsed), api-error.ts, print.ts, order.ts, excel.ts, csv.ts, raffle-sounds.ts, raffle-certificate.ts
 routes/      ← PrivateRoute, OwnerRoute
 ```
 
@@ -232,6 +235,8 @@ All server-state fetching in hooks uses TanStack Query (`@tanstack/react-query`)
 - `retry: 1` — one automatic retry on failure
 
 **Adaptive polling strategy:** hooks that drive real-time views (orders, kitchen, cash session) poll only when the socket is disconnected, then stop polling and invalidate their cache on reconnect. This means the socket is the primary freshness mechanism; polling is only a fallback.
+
+Query keys are centralised in `frontend/src/lib/query-keys.ts`. Use the exported factory functions from there when calling `queryClient.invalidateQueries` — never inline raw key arrays.
 
 ### Socket context
 
@@ -290,6 +295,8 @@ Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/ut
 
 Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`. Raffle types (`RaffleStatus`: ACTIVE | CLOSED | DRAWING | DRAWN; `RaffleTicketMode`: PRODUCT_MATCH | SPENDING_THRESHOLD) are string literal union types defined in `packages/shared/src/types/raffle.types.ts`, not TypeScript enums.
 
+`SOCKET_EVENTS` (in `packages/shared/src/socket-events.ts`) is the canonical map of all Socket.IO event name strings. Both the backend emitter and frontend subscriber must import from here.
+
 ## Environment Variables (backend)
 
 Two template files exist:
@@ -312,11 +319,13 @@ TZ               America/La_Paz — set at container level in docker-compose.pro
 
 ## CI/CD
 
-`.github/workflows/deploy.yml` on every push to `main`:
+Two workflows in `.github/workflows/`:
 
-1. **Validate** — `pnpm --filter @pos/shared build`, then `typecheck` backend + frontend.
-2. **Build & push** — multi-stage Docker images → GitHub Container Registry (`ghcr.io`).
-3. **Deploy** — SSH into VPS, update `IMAGE_TAG`, pull images, `docker-compose -f docker-compose.prod.yml up -d`.
+- **`ci.yml`** — runs on PRs and non-main branches: `pnpm --filter @pos/shared build`, then `typecheck` + `lint` on backend and frontend.
+- **`cd.yml`** — runs on every push to `main`:
+  1. **Validate** — same shared-build + typecheck as CI.
+  2. **Build & push** — multi-stage Docker images → GitHub Container Registry (`ghcr.io/albertoamas/restaurant`).
+  3. **Deploy** — SSH into VPS (pre-flight disk-space check < 500 MB threshold), update `IMAGE_TAG`, pull images, `docker-compose -f docker-compose.prod.yml up -d`, then prune old images.
 
 Migrations run automatically on backend container start (`prisma migrate deploy` in entrypoint).
 
