@@ -310,6 +310,7 @@ export function OrdersPage() {
                 total={historyTotal}
                 onPayOrder={setPayingOrder}
                 onEdit={setEditingOrder}
+                onStatusChange={handleStatusChange}
               />
             )
           }

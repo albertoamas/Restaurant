@@ -1,7 +1,9 @@
-import { OrderStatus, PaymentMethod, BOLIVIA_TZ } from '@pos/shared';
+import { useState } from 'react';
+import { OrderStatus, PaymentMethod, UserRole, BOLIVIA_TZ } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { statusAccent, statusLabel } from './OrderCard';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
+import { useAuth } from '../../context/auth.context';
 import { Icon } from '../ui/Icon';
 import { printReceipt, printKitchenTicket } from '../../utils/print';
 
@@ -37,18 +39,24 @@ function paymentSummary(order: OrderDto): string | null {
 /* ─── Row ────────────────────────────────────────────────────────────────── */
 
 interface RowProps {
-  order:           OrderDto;
-  receiptSettings: ReturnType<typeof useReceiptSettings>;
-  onPayOrder:      (order: OrderDto) => void;
-  onEdit:          (order: OrderDto) => void;
+  order:            OrderDto;
+  receiptSettings:  ReturnType<typeof useReceiptSettings>;
+  isOwner:          boolean;
+  onPayOrder:       (order: OrderDto) => void;
+  onEdit:           (order: OrderDto) => void;
+  onStatusChange:   (id: string, s: OrderStatus) => void;
 }
 
-function HistoryRow({ order, receiptSettings, onPayOrder, onEdit }: RowProps) {
+function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onStatusChange }: RowProps) {
   const accent      = statusAccent[order.status] ?? { badge: 'bg-gray-100 text-gray-500 border-gray-200' };
   const { date, time } = formatDateCell(order.createdAt);
   const isCancelled = order.status === OrderStatus.CANCELLED;
   const isDelivered = order.status === OrderStatus.DELIVERED;
+  const isActive    = order.status === OrderStatus.PENDING || order.status === OrderStatus.PREPARING;
   const payment     = paymentSummary(order);
+
+  const [confirming, setConfirming] = useState(false);
+  const canCancel = !isCancelled && (isActive || (isDelivered && isOwner));
 
   return (
     <tr className={`transition-colors hover:bg-white/5 ${isCancelled ? 'opacity-50' : ''}`}>
@@ -106,29 +114,55 @@ function HistoryRow({ order, receiptSettings, onPayOrder, onEdit }: RowProps) {
       {/* Acciones */}
       <td className="pl-2 pr-4 py-3.5">
         <div className="flex items-center justify-end gap-0.5">
-          {!order.isPaid && !isCancelled && (
-            <button onClick={() => onPayOrder(order)} title="Cobrar pedido"
-              className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-colors">
-              <Icon name="cash" size={16} strokeWidth={2} />
-            </button>
-          )}
-          {!isCancelled && !isDelivered && (
-            <button onClick={() => onEdit(order)} title="Editar pedido"
-              className="p-1.5 rounded-lg text-gray-400 hover:bg-white/8 hover:text-gray-600 transition-colors">
-              <Icon name="edit" size={16} strokeWidth={2} />
-            </button>
-          )}
-          {!isCancelled && (
-            <button onClick={() => printKitchenTicket(order)} title="Imprimir comanda"
-              className="p-1.5 rounded-lg text-gray-400 hover:bg-primary-500/10 hover:text-orange-500 transition-colors">
-              <Icon name="print" size={16} strokeWidth={2} />
-            </button>
-          )}
-          {order.isPaid && (
-            <button onClick={() => printReceipt(order, receiptSettings)} title="Imprimir recibo"
-              className="p-1.5 rounded-lg text-gray-400 hover:bg-sky-500/10 hover:text-sky-300 transition-colors">
-              <Icon name="document" size={16} strokeWidth={2} />
-            </button>
+          {confirming ? (
+            <>
+              <span className="text-[11px] font-semibold text-red-400 mr-1 whitespace-nowrap">¿Cancelar?</span>
+              <button
+                onClick={() => { onStatusChange(order.id, OrderStatus.CANCELLED); setConfirming(false); }}
+                className="px-2 py-1 rounded-lg text-xs font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+              >
+                Sí
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-400 border border-white/10 hover:border-gray-400/40 transition-colors"
+              >
+                No
+              </button>
+            </>
+          ) : (
+            <>
+              {!order.isPaid && !isCancelled && (
+                <button onClick={() => onPayOrder(order)} title="Cobrar pedido"
+                  className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-colors">
+                  <Icon name="cash" size={16} strokeWidth={2} />
+                </button>
+              )}
+              {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
+                <button onClick={() => onEdit(order)} title="Editar pedido"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/8 hover:text-gray-600 transition-colors">
+                  <Icon name="edit" size={16} strokeWidth={2} />
+                </button>
+              )}
+              {!isCancelled && (
+                <button onClick={() => printKitchenTicket(order)} title="Imprimir comanda"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-primary-500/10 hover:text-orange-500 transition-colors">
+                  <Icon name="print" size={16} strokeWidth={2} />
+                </button>
+              )}
+              {order.isPaid && (
+                <button onClick={() => printReceipt(order, receiptSettings)} title="Imprimir recibo"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-sky-500/10 hover:text-sky-300 transition-colors">
+                  <Icon name="document" size={16} strokeWidth={2} />
+                </button>
+              )}
+              {canCancel && (
+                <button onClick={() => setConfirming(true)} title="Cancelar pedido"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                  <Icon name="x" size={16} strokeWidth={2} />
+                </button>
+              )}
+            </>
           )}
         </div>
       </td>
@@ -139,10 +173,11 @@ function HistoryRow({ order, receiptSettings, onPayOrder, onEdit }: RowProps) {
 /* ─── Table ──────────────────────────────────────────────────────────────── */
 
 interface OrderHistoryTableProps {
-  orders:     OrderDto[];
-  total:      number;
-  onPayOrder: (order: OrderDto) => void;
-  onEdit:     (order: OrderDto) => void;
+  orders:         OrderDto[];
+  total:          number;
+  onPayOrder:     (order: OrderDto) => void;
+  onEdit:         (order: OrderDto) => void;
+  onStatusChange: (id: string, s: OrderStatus) => void;
 }
 
 const TH = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -151,8 +186,10 @@ const TH = ({ children, className = '' }: { children: React.ReactNode; className
   </th>
 );
 
-export function OrderHistoryTable({ orders, total, onPayOrder, onEdit }: OrderHistoryTableProps) {
+export function OrderHistoryTable({ orders, total, onPayOrder, onEdit, onStatusChange }: OrderHistoryTableProps) {
   const receiptSettings = useReceiptSettings();
+  const { user } = useAuth();
+  const isOwner = user?.role === UserRole.OWNER;
 
   return (
     <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
@@ -176,8 +213,10 @@ export function OrderHistoryTable({ orders, total, onPayOrder, onEdit }: OrderHi
                 key={order.id}
                 order={order}
                 receiptSettings={receiptSettings}
+                isOwner={isOwner}
                 onPayOrder={onPayOrder}
                 onEdit={onEdit}
+                onStatusChange={onStatusChange}
               />
             ))}
           </tbody>

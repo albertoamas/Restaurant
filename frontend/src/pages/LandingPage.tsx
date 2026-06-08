@@ -55,7 +55,7 @@ const STATS = [
   { value: '< 3s',       label: 'para crear un pedido' },
   { value: '100%',       label: 'en la nube, sin instalación' },
   { value: '24/7',       label: 'disponibilidad garantizada' },
-  { value: 'Tiempo real',label: 'actualizaciones vía WebSocket' },
+  { value: 'Tiempo real',label: 'actualizaciones en vivo' },
 ];
 
 const USD_RATE = 9;
@@ -107,7 +107,7 @@ function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
   ];
 }
 
-/* ─── MockPOS (tema oscuro naranja) ────────────────────────── */
+/* ─── MockPOS ───────────────────────────────────────────── */
 function MockPOS() {
   return (
     <div style={{
@@ -118,7 +118,6 @@ function MockPOS() {
       overflow: 'hidden',
       background: BG2,
       border: `1px solid ${BD}`,
-      boxShadow: `0 40px 80px oklch(0 0 0 / 0.60), 0 0 0 1px ${BD}, 0 12px 32px oklch(0.65 0.22 42 / 0.08)`,
     }}>
       {/* Barra de título */}
       <div style={{
@@ -167,7 +166,6 @@ function MockPOS() {
 
         {/* Productos */}
         <div style={{ padding: 10, background: BG, overflow: 'hidden' }}>
-          {/* Categorías */}
           <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
             {['Populares','Burgers','Bebidas'].map((cat, i) => (
               <div key={cat} style={{
@@ -180,7 +178,6 @@ function MockPOS() {
               </div>
             ))}
           </div>
-          {/* Grid de productos */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
             {[
               {name:'Classic Burger',price:'35'},
@@ -217,7 +214,7 @@ function MockPOS() {
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 8 }}>
                 <div>
                   <p style={{ color: CR }}>{item.name}</p>
-                  <p style={{ color: CR3, marginTop: 1 }}>×{item.qty}</p>
+                  <p style={{ color: CR3, marginTop: 1 }}>x{item.qty}</p>
                 </div>
                 <p style={{ color: ORG, fontWeight: 700 }}>Bs {item.price}</p>
               </div>
@@ -232,7 +229,6 @@ function MockPOS() {
               borderRadius: 7, padding: '7px 0', textAlign: 'center',
               fontWeight: 700, fontSize: 9,
               background: ORG, color: 'white',
-              boxShadow: `0 4px 12px oklch(0.65 0.22 42 / 0.40)`,
             }}>
               Confirmar pedido
             </div>
@@ -258,21 +254,16 @@ function PlanCard({ plan }: { plan: PlanDto }) {
       padding: '28px 28px 24px',
       background: meta.highlight ? BG3 : BG2,
       border: meta.highlight ? `1.5px solid ${BD2}` : `1px solid ${BD}`,
-      boxShadow: meta.highlight
-        ? `0 0 0 1px ${ORG}, 0 24px 60px oklch(0.65 0.22 42 / 0.15), 0 4px 16px oklch(0 0 0 / 0.3)`
-        : `0 4px 20px oklch(0 0 0 / 0.25)`,
-      transform: meta.highlight ? 'translateY(-8px)' : 'none',
-      transition: 'transform 0.2s',
     }}>
       {meta.highlight && (
         <div style={{
           position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
           padding: '4px 16px', borderRadius: 99,
           fontSize: 11, fontWeight: 800, color: 'white', whiteSpace: 'nowrap',
-          background: ORG, boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.45)`,
+          background: ORG,
           letterSpacing: '0.04em',
         }}>
-          ★ {meta.badge}
+          {meta.badge}
         </div>
       )}
 
@@ -349,14 +340,13 @@ function PlanCard({ plan }: { plan: PlanDto }) {
           transition: 'all 0.15s',
           ...(meta.highlight ? {
             background: ORG, color: 'white',
-            boxShadow: `0 6px 20px oklch(0.65 0.22 42 / 0.40)`,
           } : {
             background: BG3, color: CR2,
             border: `1px solid ${BD2}`,
           }),
         }}
       >
-        {meta.cta} →
+        {meta.cta}
       </Link>
     </div>
   );
@@ -400,7 +390,7 @@ export function LandingPage() {
         background: 'oklch(0.10 0.012 38 / 0.92)',
       }}>
         <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '0 28px',
+          maxWidth: 1200, margin: '0 auto', padding: '0 20px',
           height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           {/* Logo */}
@@ -408,7 +398,6 @@ export function LandingPage() {
             <div style={{
               width: 34, height: 34, borderRadius: 9,
               background: ORG, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.45)`,
             }}>
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
@@ -420,26 +409,25 @@ export function LandingPage() {
           </div>
 
           {/* Links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-            <a href="#features" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <a href="#features" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
               Características
             </a>
-            <a href="#pricing" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+            <a href="#pricing" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
               Precios
             </a>
             <Link to="/login" style={{
               padding: '8px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700,
               background: ORG, color: 'white', textDecoration: 'none',
-              boxShadow: `0 4px 14px oklch(0.65 0.22 42 / 0.35)`,
             }}>
-              Acceder →
+              Acceder
             </Link>
           </nav>
         </div>
       </header>
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section style={{ position: 'relative', padding: '80px 28px 100px', overflow: 'hidden' }}>
+      <section className="relative px-5 sm:px-7 py-16 sm:py-20 lg:py-24 overflow-hidden">
         {/* Grain texture */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.40,
@@ -448,14 +436,14 @@ export function LandingPage() {
           mixBlendMode: 'overlay',
         }} />
 
-        {/* Orbe de luz naranja arriba izquierda */}
+        {/* Orbe de luz naranja */}
         <div style={{
           position: 'absolute', top: -120, left: -80, width: 600, height: 600,
           borderRadius: '50%', pointerEvents: 'none',
           background: 'radial-gradient(circle, oklch(0.65 0.22 42 / 0.12) 0%, transparent 70%)',
         }} />
 
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center" style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
           {/* Texto */}
           <div>
             {/* Overline */}
@@ -473,22 +461,19 @@ export function LandingPage() {
             {/* Headline */}
             <h1 style={{
               fontFamily: 'var(--font-heading)', fontWeight: 900,
-              fontSize: 'clamp(3rem, 6vw, 5.2rem)',
+              fontSize: 'clamp(2.8rem, 6vw, 5.2rem)',
               lineHeight: 1.0, letterSpacing: '-0.03em',
               color: CR, margin: '0 0 24px 0',
             }}>
               Tu restaurante<br />
               en{' '}
-              <span style={{
-                color: ORG,
-                textShadow: `0 0 40px oklch(0.65 0.22 42 / 0.50)`,
-              }}>
+              <span style={{ color: ORG }}>
                 ritmo<br />de servicio
               </span>
             </h1>
 
             <p style={{ fontSize: 16, lineHeight: 1.65, color: CR2, maxWidth: 420, margin: '0 0 36px 0' }}>
-              POS, cocina, caja y reportes — todo en una sola plataforma diseñada para operar a máxima velocidad.
+              POS, cocina, caja y reportes. Todo en una sola plataforma diseñada para operar a máxima velocidad.
             </p>
 
             {/* CTAs */}
@@ -496,10 +481,9 @@ export function LandingPage() {
               <Link to="/login" style={{
                 padding: '14px 28px', borderRadius: 11, fontSize: 14, fontWeight: 700,
                 background: ORG, color: 'white', textDecoration: 'none',
-                boxShadow: `0 8px 28px oklch(0.65 0.22 42 / 0.45)`,
                 letterSpacing: '-0.01em',
               }}>
-                Entrar al panel →
+                Entrar al panel
               </Link>
               <a href="#pricing" style={{
                 padding: '14px 28px', borderRadius: 11, fontSize: 14, fontWeight: 600,
@@ -521,8 +505,8 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* MockPOS */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {/* MockPOS — solo desktop */}
+          <div className="hidden lg:flex justify-center items-center">
             <MockPOS />
           </div>
         </div>
@@ -530,21 +514,9 @@ export function LandingPage() {
 
       {/* ── Banda de stats ───────────────────────────────── */}
       <div style={{ borderTop: `1px solid ${BD}`, borderBottom: `1px solid ${BD}`, background: BG2 }}>
-        <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '36px 28px',
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        }}>
-          {STATS.map((s, i) => (
-            <div key={s.label} style={{
-              textAlign: 'center', position: 'relative',
-              paddingLeft: i > 0 ? 28 : 0,
-            }}>
-              {i > 0 && (
-                <div style={{
-                  position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-                  width: 1, height: 36, background: BD,
-                }} />
-              )}
+        <div className="grid grid-cols-2 sm:grid-cols-4" style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 20px', gap: 24 }}>
+          {STATS.map((s) => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 28, color: ORG, margin: 0 }}>{s.value}</p>
               <p style={{ fontSize: 12, color: CR3, margin: '4px 0 0 0' }}>{s.label}</p>
             </div>
@@ -553,17 +525,17 @@ export function LandingPage() {
       </div>
 
       {/* ── Features ─────────────────────────────────────── */}
-      <section id="features" style={{ padding: '100px 28px' }}>
+      <section id="features" className="px-5 sm:px-7 py-16 sm:py-24">
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           {/* Header de sección */}
-          <div style={{ marginBottom: 70 }}>
+          <div style={{ marginBottom: 56 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: ORG, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 14px 0' }}>
               Todo lo que necesitas
             </p>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <h2 style={{
                 fontFamily: 'var(--font-heading)', fontWeight: 900,
-                fontSize: 'clamp(2rem, 4vw, 3rem)',
+                fontSize: 'clamp(1.9rem, 4vw, 3rem)',
                 lineHeight: 1.1, letterSpacing: '-0.025em',
                 color: CR, margin: 0, maxWidth: 520,
               }}>
@@ -580,13 +552,10 @@ export function LandingPage() {
             {FEATURES.map((f, i) => (
               <div
                 key={i}
+                className="grid grid-cols-[40px_1fr] md:grid-cols-[80px_1fr_1fr] gap-x-4 md:gap-x-10 gap-y-2 md:gap-y-0 items-center"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '80px 1fr 1fr',
-                  gap: '0 40px',
-                  padding: '32px 0',
+                  padding: '28px 0',
                   borderTop: `1px solid ${BD}`,
-                  alignItems: 'center',
                   transition: 'background 0.2s',
                 }}
                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = BG2; }}
@@ -595,35 +564,33 @@ export function LandingPage() {
                 {/* Número grande */}
                 <div style={{
                   fontFamily: 'var(--font-heading)', fontWeight: 900,
-                  fontSize: 52, lineHeight: 1, color: ORGG,
+                  fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1, color: ORGG,
                   letterSpacing: '-0.04em', userSelect: 'none',
-                  paddingLeft: 8,
                 }}>
                   {String(i + 1).padStart(2, '0')}
                 </div>
 
                 {/* Título + ícono */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 11, flexShrink: 0,
+                    width: 40, height: 40, borderRadius: 11, flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: ORGG, border: `1px solid ${BD2}`,
-                    color: ORG,
                   }}>
-                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={ORG} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={ORG} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                       {f.icon}
                     </svg>
                   </div>
                   <h3 style={{
                     fontFamily: 'var(--font-heading)', fontWeight: 800,
-                    fontSize: 18, color: CR, margin: 0, letterSpacing: '-0.02em',
+                    fontSize: 17, color: CR, margin: 0, letterSpacing: '-0.02em',
                   }}>
                     {f.title}
                   </h3>
                 </div>
 
                 {/* Descripción */}
-                <p style={{ fontSize: 14, color: CR2, lineHeight: 1.65, margin: 0 }}>
+                <p className="col-start-2 md:col-auto" style={{ fontSize: 14, color: CR2, lineHeight: 1.65, margin: 0 }}>
                   {f.desc}
                 </p>
               </div>
@@ -634,7 +601,7 @@ export function LandingPage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────────── */}
-      <section id="pricing" style={{ padding: '100px 28px', background: BG2, borderTop: `1px solid ${BD}` }}>
+      <section id="pricing" className="px-5 sm:px-7 py-16 sm:py-24" style={{ background: BG2, borderTop: `1px solid ${BD}` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: ORG, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 14px 0' }}>
@@ -642,7 +609,7 @@ export function LandingPage() {
             </p>
             <h2 style={{
               fontFamily: 'var(--font-heading)', fontWeight: 900,
-              fontSize: 'clamp(2rem, 4vw, 3rem)',
+              fontSize: 'clamp(1.9rem, 4vw, 3rem)',
               lineHeight: 1.1, letterSpacing: '-0.025em',
               color: CR, margin: '0 0 14px 0',
             }}>
@@ -656,14 +623,14 @@ export function LandingPage() {
           <PricingSection />
 
           <p style={{ textAlign: 'center', fontSize: 11, color: CR3, marginTop: 36 }}>
-            Tipo de cambio referencial: 1 USD ≈ {USD_RATE} Bs · Los precios pueden ajustarse según variación del tipo de cambio
+            Tipo de cambio referencial: 1 USD = {USD_RATE} Bs. Los precios pueden ajustarse según variación del tipo de cambio
           </p>
         </div>
       </section>
 
       {/* ── CTA final ────────────────────────────────────── */}
-      <section style={{ padding: '100px 28px', position: 'relative', overflow: 'hidden', background: ORGD }}>
-        {/* Grain sobre el naranja */}
+      <section className="px-5 sm:px-7 py-16 sm:py-24 relative overflow-hidden" style={{ background: ORGD }}>
+        {/* Grain */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.20,
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E")`,
@@ -671,17 +638,10 @@ export function LandingPage() {
           mixBlendMode: 'multiply',
         }} />
 
-        {/* Luz interior */}
-        <div style={{
-          position: 'absolute', top: -200, right: -200, width: 600, height: 600,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, oklch(0.85 0.14 60 / 0.20) 0%, transparent 70%)',
-        }} />
-
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
           <h2 style={{
             fontFamily: 'var(--font-heading)', fontWeight: 900,
-            fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+            fontSize: 'clamp(2.2rem, 6vw, 4.5rem)',
             lineHeight: 1.0, letterSpacing: '-0.03em',
             color: 'white', margin: '0 0 20px 0',
           }}>
@@ -691,24 +651,20 @@ export function LandingPage() {
             Accede a tu panel y empieza a gestionar tu restaurante hoy mismo.
           </p>
           <Link to="/login" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            padding: '16px 32px', borderRadius: 12,
+            display: 'inline-block',
+            padding: '16px 36px', borderRadius: 12,
             fontSize: 15, fontWeight: 800,
             background: 'white', color: ORGD,
             textDecoration: 'none',
-            boxShadow: '0 8px 32px oklch(0 0 0 / 0.25)',
             letterSpacing: '-0.01em',
           }}>
             Acceder al panel
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-            </svg>
           </Link>
         </div>
       </section>
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <footer style={{ borderTop: `1px solid ${BD}`, padding: '28px', background: BG }}>
+      <footer style={{ borderTop: `1px solid ${BD}`, padding: '24px 20px', background: BG }}>
         <div style={{
           maxWidth: 1200, margin: '0 auto',
           display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16,
