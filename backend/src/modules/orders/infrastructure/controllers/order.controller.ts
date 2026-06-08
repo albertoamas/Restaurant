@@ -124,6 +124,14 @@ export class OrderController {
       if (user.branchId && order.branchId !== user.branchId) {
         throw new ForbiddenException('No tienes permisos para editar pedidos de otra sucursal');
       }
+
+      if (
+        order.status === OrderStatus.DELIVERED &&
+        user.role === UserRole.CASHIER
+      ) {
+        throw new ForbiddenException('Los cajeros no pueden editar pedidos ya entregados');
+      }
+
       return this.editOrderUseCase.execute(id, tenantId, dto);
     });
   }
@@ -139,6 +147,15 @@ export class OrderController {
       if (user.branchId && order.branchId !== user.branchId) {
         throw new ForbiddenException('No tienes permisos para actualizar pedidos de otra sucursal');
       }
+
+      if (
+        dto.status === OrderStatus.CANCELLED &&
+        order.status === OrderStatus.DELIVERED &&
+        user.role === UserRole.CASHIER
+      ) {
+        throw new ForbiddenException('Los cajeros no pueden cancelar pedidos ya entregados');
+      }
+
       return this.updateOrderStatusUseCase.execute(id, tenantId, dto.status);
     });
   }

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { OrderStatus, PaymentMethod } from '@pos/shared';
+import { OrderStatus, PaymentMethod, UserRole } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { orderTypeLabels } from '../../utils/order';
 import { elapsed, elapsedBetween, formatBoliviaTime } from '../../utils/date';
 import { Icon } from '../ui/Icon';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
+import { useAuth } from '../../context/auth.context';
 import { printKitchenTicket, printReceipt } from '../../utils/print';
 
 /* ─── Static data ────────────────────────────────────────────────────────── */
@@ -106,6 +107,14 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
   const currentStep  = stepIndex(order.status);
   const isCancelled  = order.status === OrderStatus.CANCELLED;
   const isActive     = ACTIVE_STATUSES.has(order.status);
+
+  const { user }     = useAuth();
+  const [confirming, setConfirming] = useState(false);
+
+  const isOwner   = user?.role === UserRole.OWNER;
+  // Cajero: solo puede cancelar PENDING y PREPARING.
+  // Owner: puede cancelar cualquier estado no terminal, incluido DELIVERED.
+  const canCancel = !isCancelled && (isActive || (order.status === OrderStatus.DELIVERED && isOwner));
 
   const receiptSettings = useReceiptSettings();
 
@@ -266,7 +275,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
               Cobrar
             </button>
           )}
-          {!isCancelled && order.status !== OrderStatus.DELIVERED && (
+          {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
             <button
               onClick={() => onEdit(order)}
               className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-white/10 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
@@ -293,22 +302,45 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
               <Icon name="document" size={14} strokeWidth={2} />
             </button>
           )}
-          {action && (
-            <>
+          {canCancel && (
+            confirming ? (
+              <>
+                <span className="text-xs font-semibold text-red-500 shrink-0 self-center">
+                  ¿Cancelar pedido?
+                </span>
+                <button
+                  onClick={() => {
+                    onStatusChange(order.id, OrderStatus.CANCELLED);
+                    setConfirming(false);
+                  }}
+                  className="px-3 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-xl transition-colors shrink-0"
+                >
+                  Sí, cancelar
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-white/10 rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
+                >
+                  No
+                </button>
+              </>
+            ) : (
               <button
-                onClick={() => onStatusChange(order.id, OrderStatus.CANCELLED)}
+                onClick={() => setConfirming(true)}
                 className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-white/10
                   rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 Cancelar
               </button>
-              <button
-                onClick={() => onStatusChange(order.id, action.nextStatus)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] ${action.color}`}
-              >
-                {action.label}
-              </button>
-            </>
+            )
+          )}
+          {action && (
+            <button
+              onClick={() => onStatusChange(order.id, action.nextStatus)}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] ${action.color}`}
+            >
+              {action.label}
+            </button>
           )}
         </div>
       </div>
