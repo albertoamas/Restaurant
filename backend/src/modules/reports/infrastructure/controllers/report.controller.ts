@@ -8,6 +8,12 @@ import { GetDailyReportUseCase } from '../../application/use-cases/get-daily-rep
 import { GetReportByRangeUseCase } from '../../application/use-cases/get-report-by-range.use-case';
 import { GetTopProductsUseCase } from '../../application/use-cases/get-top-products.use-case';
 import { GetTopCustomersUseCase } from '../../application/use-cases/get-top-customers.use-case';
+import { GetDailySeriesUseCase } from '../../application/use-cases/get-daily-series.use-case';
+import { GetByCashierUseCase } from '../../application/use-cases/get-by-cashier.use-case';
+import { GetTopCategoriesUseCase } from '../../application/use-cases/get-top-categories.use-case';
+import { GetByHourUseCase } from '../../application/use-cases/get-by-hour.use-case';
+import { GetCashSessionsReportUseCase } from '../../application/use-cases/get-cash-sessions-report.use-case';
+import { GetByDayHourUseCase } from '../../application/use-cases/get-by-day-hour.use-case';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
@@ -23,6 +29,12 @@ export class ReportController {
     private readonly getReportByRangeUseCase: GetReportByRangeUseCase,
     private readonly getTopProductsUseCase: GetTopProductsUseCase,
     private readonly getTopCustomersUseCase: GetTopCustomersUseCase,
+    private readonly getDailySeriesUseCase: GetDailySeriesUseCase,
+    private readonly getByCashierUseCase: GetByCashierUseCase,
+    private readonly getTopCategoriesUseCase: GetTopCategoriesUseCase,
+    private readonly getByHourUseCase: GetByHourUseCase,
+    private readonly getCashSessionsReportUseCase: GetCashSessionsReportUseCase,
+    private readonly getByDayHourUseCase: GetByDayHourUseCase,
   ) {}
 
   @Get('daily')
@@ -80,5 +92,90 @@ export class ReportController {
     validateISODate(to, 'to');
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.getTopCustomersUseCase.execute(tenantId, effectiveBranchId, from, to, limit);
+  }
+
+  @Get('daily-series')
+  getDailySeries(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getDailySeriesUseCase.execute(tenantId, effectiveBranchId, from, to);
+  }
+
+  @Get('by-cashier')
+  getByCashier(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getByCashierUseCase.execute(tenantId, effectiveBranchId, from, to);
+  }
+
+  @Get('top-categories')
+  getTopCategories(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getTopCategoriesUseCase.execute(tenantId, effectiveBranchId, from, to, limit);
+  }
+
+  @Get('by-hour')
+  getByHour(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getByHourUseCase.execute(tenantId, effectiveBranchId, from, to);
+  }
+
+  @Get('by-day-hour')
+  getByDayHour(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getByDayHourUseCase.execute(tenantId, effectiveBranchId, from, to);
+  }
+
+  @Get('cash-sessions')
+  getCashSessions(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    return this.getCashSessionsReportUseCase.execute(tenantId, effectiveBranchId, from, to);
   }
 }

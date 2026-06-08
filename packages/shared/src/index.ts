@@ -10,3 +10,4 @@ export * from './types/expense.types';
 export * from './types/customer.types';
 export * from './types/plan.types';
 export * from './types/raffle.types';
+export * from './types/report.types';
