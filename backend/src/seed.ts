@@ -144,6 +144,12 @@ async function seed() {
     { name: 'Refrescos',       trackQuantity: true,  sortOrder: 20 },
     { name: 'Operativos',      trackQuantity: false, sortOrder: 30 },
     { name: 'Administrativos', trackQuantity: false, sortOrder: 40 },
+    { name: 'Insumos',         trackQuantity: false, sortOrder: 5  },
+    { name: 'Personal',        trackQuantity: false, sortOrder: 15 },
+    { name: 'Servicios',       trackQuantity: false, sortOrder: 25 },
+    { name: 'Transporte',      trackQuantity: false, sortOrder: 35 },
+    { name: 'Mantenimiento',   trackQuantity: false, sortOrder: 45 },
+    { name: 'Otro',            trackQuantity: false, sortOrder: 99 },
   ];
   for (const ec of expenseCats) {
     await prisma.expenseCategory.create({
