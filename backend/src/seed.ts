@@ -138,6 +138,20 @@ async function seed() {
   }
   console.log(`Categorías creadas: ${categoryNames.map((c) => c.name).join(', ')}`);
 
+  // ── Categorías de gastos ──────────────────────────────────────────────────────
+  const expenseCats = [
+    { name: 'Gaseosas',        trackQuantity: true,  sortOrder: 10 },
+    { name: 'Refrescos',       trackQuantity: true,  sortOrder: 20 },
+    { name: 'Operativos',      trackQuantity: false, sortOrder: 30 },
+    { name: 'Administrativos', trackQuantity: false, sortOrder: 40 },
+  ];
+  for (const ec of expenseCats) {
+    await prisma.expenseCategory.create({
+      data: { tenantId: tenant.id, name: ec.name, trackQuantity: ec.trackQuantity, sortOrder: ec.sortOrder },
+    });
+  }
+  console.log(`Categorías de gastos creadas: ${expenseCats.map((c) => c.name).join(', ')}`);
+
   // ── Productos ────────────────────────────────────────────────────────────────
   const products = [
     // Platos principales
