@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { MetricsModule } from './common/metrics/metrics.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TenantModule } from './modules/tenant/tenant.module';
@@ -22,6 +23,7 @@ import { PlansModule } from './modules/plans/plans.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ name: 'global', ttl: 60000, limit: 100 }]),
+    MetricsModule,
     PrismaModule,
     AuthModule,
     TenantModule,

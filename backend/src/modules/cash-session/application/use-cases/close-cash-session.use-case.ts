@@ -3,6 +3,7 @@ import { SOCKET_EVENTS } from '@pos/shared';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { MetricsService } from '../../../../common/metrics/metrics.service';
 import { CloseCashSessionDto } from '../dto/close-cash-session.dto';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class CloseCashSessionUseCase {
     @Inject('CashSessionRepositoryPort')
     private readonly repo: CashSessionRepositoryPort,
     @Optional() private readonly eventsService?: EventsService,
+    @Optional() private readonly metricsService?: MetricsService,
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CloseCashSessionDto): Promise<CashSession> {
@@ -24,6 +26,7 @@ export class CloseCashSessionUseCase {
 
     const saved = await this.repo.save(session);
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CASH_CLOSED, saved);
+    this.metricsService?.recordCashSessionClosed();
     return saved;
   }
 }

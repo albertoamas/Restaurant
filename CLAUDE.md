@@ -161,9 +161,9 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
 | `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
-| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products` | Raw SQL aggregation |
+| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only |
 | `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
-| `expenses` | `POST/GET /expenses` | OWNER only; per cash session |
+| `expenses` | `GET/POST /expenses/categories`, `DELETE /expenses/categories/:id`, `POST/GET/PATCH/DELETE /expenses`, `GET /expenses/summary` | OWNER only; `cashSessionId` nullable (expense recorded even without open session); `ExpenseCategory` is a per-tenant DB model (name, icon, isActive, trackQuantity, sortOrder); each expense has optional `items[]` (ExpenseItem) |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
 | `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `PATCH /admin/tenants/:id/modules`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT. `/modules` sets per-tenant feature flags (`ordersEnabled`, `cashEnabled`, `rafflesEnabled`, etc.) |
@@ -250,7 +250,7 @@ Query keys are centralised in `frontend/src/lib/query-keys.ts`. Use the exported
 
 ## Data Model
 
-18 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
+20 tables. `Plan` is global (no `tenant_id`); all others are scoped by `tenant_id`:
 
 ```
 Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional branchId)
@@ -259,7 +259,10 @@ Plan (global) ── Tenant ──┬── User (OWNER / CASHIER, optional bran
                            ├── Category ── Product (price, imageUrl)
                            ├── Order ──┬── OrderItem  (productName + unitPrice snapshot)
                            │           └── OrderPayment  (method, amount — N per order)
-                           ├── CashSession ── Expense (category, amount, description)
+                           ├── CashSession ── Expense ── ExpenseItem  (quantity, unitPrice, totalPrice)
+                           │                     │
+                           │                     └── links to ExpenseCategory (optional)
+                           ├── ExpenseCategory  (name, icon, isActive, trackQuantity, sortOrder — per tenant)
                            ├── Customer (name, phone, email)
                            └── Raffle ──┬── RafflePrize  (position, prizeDescription)
                                         ├── RaffleTicket  (customer, order link — orderId null for SPENDING_THRESHOLD)
@@ -293,7 +296,7 @@ Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/ut
 
 `packages/shared/src/` exports enums and DTO types. **The backend imports from the compiled `dist/` folder** (via tsconfig paths). Always run `pnpm --filter @pos/shared build` after editing shared types before typechecking the backend.
 
-Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory`, `OrderNumberResetPeriod`, `SaasPlan`. Raffle types (`RaffleStatus`: ACTIVE | CLOSED | DRAWING | DRAWN; `RaffleTicketMode`: PRODUCT_MATCH | SPENDING_THRESHOLD) are string literal union types defined in `packages/shared/src/types/raffle.types.ts`, not TypeScript enums.
+Key enums: `UserRole`, `OrderType`, `OrderStatus`, `PaymentMethod`, `CashSessionStatus`, `ExpenseCategory` (legacy enum — kept for the `Expense.category` string field; custom per-tenant categories are now the `ExpenseCategory` DB model), `OrderNumberResetPeriod`, `SaasPlan`. Raffle types (`RaffleStatus`: ACTIVE | CLOSED | DRAWING | DRAWN; `RaffleTicketMode`: PRODUCT_MATCH | SPENDING_THRESHOLD) are string literal union types defined in `packages/shared/src/types/raffle.types.ts`, not TypeScript enums.
 
 `SOCKET_EVENTS` (in `packages/shared/src/socket-events.ts`) is the canonical map of all Socket.IO event name strings. Both the backend emitter and frontend subscriber must import from here.
 
@@ -315,6 +318,8 @@ ADMIN_SECRET     x-admin-key header value for /admin/* routes.
                  Production: must be set to a strong secret.
 NODE_ENV         development | production
 TZ               America/La_Paz — set at container level in docker-compose.prod.yml; ensures correct timezone for cron, logs, and any node Date calls that leak past the utility layer
+GRAFANA_ADMIN_USER      (default: admin) — Grafana UI login
+GRAFANA_ADMIN_PASSWORD  Required in production. Grafana accessible at :3001; use SSH tunnel or firewall rule.
 ```
 
 ## CI/CD

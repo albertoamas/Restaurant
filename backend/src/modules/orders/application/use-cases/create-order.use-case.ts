@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { MetricsService } from '../../../../common/metrics/metrics.service';
 import { v4 as uuidv4 } from 'uuid';
 import { toBoliviaDateString } from '../../../../common/utils/timezone.util';
 import { Order } from '../../domain/entities/order.entity';
@@ -40,6 +41,8 @@ export class CreateOrderUseCase {
     @Optional() private readonly eventsService?: EventsService,
 
     @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
+
+    @Optional() private readonly metricsService?: MetricsService,
   ) {}
 
   private readonly logger = new Logger(CreateOrderUseCase.name);
@@ -189,6 +192,7 @@ export class CreateOrderUseCase {
     // 12. Persist and return
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_CREATED, saved);
+    this.metricsService?.recordOrderCreated(dominant?.method ?? null, order.total);
 
     // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
     if (resolvedCustomerId && this.raffleAutoTicket && !hasCortesia) {
