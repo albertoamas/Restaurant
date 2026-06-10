@@ -12,9 +12,10 @@
       "title": "Pedidos por minuto",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "rate(pos_orders_created_total[5m]) * 60",
           "legendFormat": "{{ payment_method }}"
         }
@@ -31,9 +32,10 @@
       "title": "Ingresos acumulados (Bs)",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "increase(pos_orders_revenue_bs_total[1h])",
           "legendFormat": "Bs/hora"
         }
@@ -50,9 +52,10 @@
       "title": "Sesiones de caja activas",
       "type": "stat",
       "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "pos_cash_sessions_opened_total - pos_cash_sessions_closed_total",
           "legendFormat": "Abiertas"
         }
@@ -73,12 +76,13 @@
     },
     {
       "id": 4,
-      "title": "Total pedidos (ventana)",
+      "title": "Total pedidos (3 horas)",
       "type": "stat",
       "gridPos": { "x": 16, "y": 4, "w": 8, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "increase(pos_orders_created_total[3h])",
           "legendFormat": "Pedidos"
         }
@@ -90,9 +94,10 @@
       "title": "Tasa de peticiones HTTP (req/s)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "sum(rate(pos_http_requests_total[2m])) by (handler)",
           "legendFormat": "{{ handler }}"
         }
@@ -106,12 +111,13 @@
     },
     {
       "id": 6,
-      "title": "Tasa de errores HTTP 5xx (req/s)",
+      "title": "Errores HTTP 5xx (req/s)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "sum(rate(pos_http_requests_total{status=~\"5..\"}[2m])) by (handler)",
           "legendFormat": "{{ handler }}"
         }
@@ -129,17 +135,20 @@
       "title": "Latencia HTTP P50 / P95 / P99 (s)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "histogram_quantile(0.50, sum(rate(pos_http_request_duration_seconds_bucket[2m])) by (le))",
           "legendFormat": "P50"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "histogram_quantile(0.95, sum(rate(pos_http_request_duration_seconds_bucket[2m])) by (le))",
           "legendFormat": "P95"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "histogram_quantile(0.99, sum(rate(pos_http_request_duration_seconds_bucket[2m])) by (le))",
           "legendFormat": "P99"
         }
@@ -153,16 +162,18 @@
     },
     {
       "id": 8,
-      "title": "Heap Node.js usado (MB)",
+      "title": "Heap Node.js (MB)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "nodejs_heap_size_used_bytes / 1024 / 1024",
           "legendFormat": "Heap usado"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "nodejs_heap_size_total_bytes / 1024 / 1024",
           "legendFormat": "Heap total"
         }
@@ -179,9 +190,10 @@
       "title": "Event Loop Lag (ms)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 24, "w": 8, "h": 7 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "nodejs_eventloop_lag_seconds * 1000",
           "legendFormat": "Lag (ms)"
         }
@@ -202,46 +214,34 @@
     },
     {
       "id": 10,
-      "title": "Conexiones activas PostgreSQL",
+      "title": "Conexiones PostgreSQL",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 24, "w": 8, "h": 7 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "pg_stat_activity_count",
           "legendFormat": "{{ state }}"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short" } }
     },
     {
       "id": 11,
       "title": "Tamaño de la base de datos",
       "type": "stat",
       "gridPos": { "x": 16, "y": 24, "w": 8, "h": 7 },
-      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "pos-prometheus" },
           "expr": "pg_database_size_bytes{datname=\"pos_db\"}",
           "legendFormat": "pos_db"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "decbytes" }
-      }
+      "fieldConfig": { "defaults": { "unit": "decbytes" } }
     }
   ],
-  "templating": {
-    "list": [
-      {
-        "name": "datasource",
-        "type": "datasource",
-        "pluginId": "prometheus",
-        "hide": 0,
-        "label": "Fuente de datos"
-      }
-    ]
-  }
+  "templating": { "list": [] }
 }
