@@ -117,15 +117,10 @@ jobs:
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          GC_URL:      ${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}
-          GC_INSTANCE: ${{ secrets.GRAFANA_CLOUD_INSTANCE_ID }}
-          GC_KEY:      ${{ secrets.GRAFANA_CLOUD_API_KEY }}
         with:
           host:     ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key:      ${{ secrets.VPS_SSH_KEY }}
-          envs:     GC_URL,GC_INSTANCE,GC_KEY
           script: |
             set -e
             cd /opt/pos
@@ -157,12 +152,14 @@ jobs:
               && mv .env.tmp .env
 
             # ── Grafana Cloud: inject remote_write credentials (idempotent) ─
-            # Removes any previous remote_write block (from EOF backward) then
-            # appends a fresh one so every deploy is deterministic.
-            if [ -n "$GC_URL" ]; then
+            # Secrets are interpolated by GitHub Actions before the script is
+            # sent over SSH — they are masked in logs as ***.
+            if [ -n "${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}" ]; then
               sed -i '/^remote_write:/,$d' prometheus/prometheus.yml
               printf '\nremote_write:\n  - url: "%s"\n    basic_auth:\n      username: "%s"\n      password: "%s"\n' \
-                "$GC_URL" "$GC_INSTANCE" "$GC_KEY" >> prometheus/prometheus.yml
+                "${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}" \
+                "${{ secrets.GRAFANA_CLOUD_INSTANCE_ID }}" \
+                "${{ secrets.GRAFANA_CLOUD_API_KEY }}" >> prometheus/prometheus.yml
               echo "Grafana Cloud remote_write injected"
             fi
 
@@ -182,7 +179,7 @@ jobs:
             # ── Reload Prometheus config (hot-reload; fall back to restart) ──
             # Needed because docker compose up -d doesn't restart containers
             # when only a bind-mounted file changes.
-            if [ -n "$GC_URL" ]; then
+            if [ -n "${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}" ]; then
               docker exec pos-prometheus wget -qO- --post-data '' \
                 http://localhost:9090/-/reload \
                 || docker compose -f docker-compose.prod.yml restart prometheus
