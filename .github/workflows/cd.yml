@@ -117,10 +117,15 @@ jobs:
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GC_URL:      ${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}
+          GC_INSTANCE: ${{ secrets.GRAFANA_CLOUD_INSTANCE_ID }}
+          GC_KEY:      ${{ secrets.GRAFANA_CLOUD_API_KEY }}
         with:
           host:     ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key:      ${{ secrets.VPS_SSH_KEY }}
+          envs:     GC_URL,GC_INSTANCE,GC_KEY
           script: |
             set -e
             cd /opt/pos
@@ -151,6 +156,16 @@ jobs:
               'BEGIN{FS=OFS="="} /^IMAGE_TAG=/{$2=tag} 1' .env > .env.tmp \
               && mv .env.tmp .env
 
+            # ── Grafana Cloud: inject remote_write credentials (idempotent) ─
+            # Removes any previous remote_write block (from EOF backward) then
+            # appends a fresh one so every deploy is deterministic.
+            if [ -n "$GC_URL" ]; then
+              sed -i '/^remote_write:/,$d' prometheus/prometheus.yml
+              printf '\nremote_write:\n  - url: "%s"\n    basic_auth:\n      username: "%s"\n      password: "%s"\n' \
+                "$GC_URL" "$GC_INSTANCE" "$GC_KEY" >> prometheus/prometheus.yml
+              echo "Grafana Cloud remote_write injected"
+            fi
+
             # Authenticate with GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | \
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -163,6 +178,15 @@ jobs:
 
             # Remove ALL unused images to prevent disk accumulation.
             docker image prune -a -f
+
+            # ── Reload Prometheus config (hot-reload; fall back to restart) ──
+            # Needed because docker compose up -d doesn't restart containers
+            # when only a bind-mounted file changes.
+            if [ -n "$GC_URL" ]; then
+              docker exec pos-prometheus wget -qO- --post-data '' \
+                http://localhost:9090/-/reload \
+                || docker compose -f docker-compose.prod.yml restart prometheus
+            fi
 
             # ── Post-deploy health check (no fixed sleep — retry immediately) ─
             echo "Waiting for backend to become healthy..."
