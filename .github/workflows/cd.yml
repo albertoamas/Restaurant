@@ -155,11 +155,17 @@ jobs:
             # Secrets are interpolated by GitHub Actions before the script is
             # sent over SSH — they are masked in logs as ***.
             if [ -n "${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}" ]; then
-              sed -i '/^remote_write:/,$d' prometheus/prometheus.yml
+              # Use tmpfile + cat redirection to preserve the file's inode.
+              # sed -i creates a new inode; Docker bind-mounts track by inode,
+              # so the running container would not see the change without a restart.
+              _tmp=$(mktemp)
+              sed '/^remote_write:/,$d' prometheus/prometheus.yml > "$_tmp"
               printf '\nremote_write:\n  - url: "%s"\n    basic_auth:\n      username: "%s"\n      password: "%s"\n' \
                 "${{ secrets.GRAFANA_CLOUD_REMOTE_WRITE_URL }}" \
                 "${{ secrets.GRAFANA_CLOUD_INSTANCE_ID }}" \
-                "${{ secrets.GRAFANA_CLOUD_API_KEY }}" >> prometheus/prometheus.yml
+                "${{ secrets.GRAFANA_CLOUD_API_KEY }}" >> "$_tmp"
+              cat "$_tmp" > prometheus/prometheus.yml
+              rm "$_tmp"
               echo "Grafana Cloud remote_write injected"
             fi
 
