@@ -25,10 +25,10 @@ export function SalesAreaChart({ data }: Props) {
 
   const fmtSales = (v: number | string) => `Bs ${Number(v).toFixed(0)}`;
   const fmtFull  = (v: number | string, name: string) =>
-    name === 'Ventas' ? `Bs ${Number(v).toFixed(2)}` : String(v);
+    name === 'Ventas' ? `Bs ${Number(v).toFixed(2)}` : `${v} pedidos`;
 
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="gradVentas" x1="0" y1="0" x2="0" y2="1">
@@ -36,8 +36,8 @@ export function SalesAreaChart({ data }: Props) {
             <stop offset="95%" stopColor={C.primary} stopOpacity={0.02} />
           </linearGradient>
           <linearGradient id="gradPedidos" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor={C.emerald} stopOpacity={0.30} />
-            <stop offset="95%" stopColor={C.emerald} stopOpacity={0.02} />
+            <stop offset="5%"  stopColor={C.emerald} stopOpacity={0.18} />
+            <stop offset="95%" stopColor={C.emerald} stopOpacity={0.01} />
           </linearGradient>
         </defs>
 
@@ -50,6 +50,7 @@ export function SalesAreaChart({ data }: Props) {
           tickLine={false}
           interval="preserveStartEnd"
         />
+        {/* Single visible Y-axis for Ventas */}
         <YAxis
           yAxisId="left"
           tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
@@ -58,13 +59,11 @@ export function SalesAreaChart({ data }: Props) {
           tickFormatter={fmtSales}
           width={64}
         />
+        {/* Pedidos axis hidden — keeps its own proper scale without showing confusing labels */}
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
-          axisLine={false}
-          tickLine={false}
-          width={32}
+          hide={true}
         />
 
         <Tooltip
@@ -77,6 +76,7 @@ export function SalesAreaChart({ data }: Props) {
           iconSize={8}
         />
 
+        {/* Primary area: Ventas in Bs */}
         <Area
           yAxisId="left"
           type="monotone"
@@ -87,15 +87,17 @@ export function SalesAreaChart({ data }: Props) {
           dot={false}
           activeDot={{ r: 4, fill: C.primary, stroke: 'none' }}
         />
+        {/* Secondary area: Pedidos — scaled independently, shown as subtle trend overlay */}
         <Area
           yAxisId="right"
           type="monotone"
           dataKey="Pedidos"
           stroke={C.emerald}
-          strokeWidth={2}
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
           fill="url(#gradPedidos)"
           dot={false}
-          activeDot={{ r: 4, fill: C.emerald, stroke: 'none' }}
+          activeDot={{ r: 3, fill: C.emerald, stroke: 'none' }}
         />
       </AreaChart>
     </ResponsiveContainer>

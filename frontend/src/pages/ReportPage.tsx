@@ -100,21 +100,20 @@ export function ReportPage() {
                 </div>
               )
             )}
+            {/* Tab switcher — top right, same style as Orders page */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+              {TABS.map((t) => (
+                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
+                    activeTab === t.key
+                      ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-white/8'
+                  }`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
-          {TABS.map((t) => (
-            <button key={t.key} onClick={() => setActiveTab(t.key)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                activeTab === t.key
-                  ? 'bg-primary-600 text-white shadow-[0_1px_6px_oklch(0.45_0.16_235/0.30)]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}>
-              {t.label}
-            </button>
-          ))}
         </div>
 
         {/* Period selector */}
@@ -153,7 +152,6 @@ export function ReportPage() {
           dailySeries={advancedData.dailySeries}
           byCashier={advancedData.byCashier}
           topCategories={advancedData.topCategories}
-          byHour={advancedData.byHour}
           byDayHour={advancedData.byDayHour}
           cashSessions={advancedData.cashSessions}
           isMultiDay={isMultiDay}

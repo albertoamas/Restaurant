@@ -7,7 +7,7 @@ import { C } from './chartColors';
 const DISPLAY_DAYS   = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const DISPLAY_TO_PG  = [1, 2, 3, 4, 5, 6, 0];
 
-const CELL_H = 20; // px — matches h-5
+const CELL_H = 24; // px — matches h-6
 
 interface HoveredCell {
   x:          number;
@@ -69,60 +69,68 @@ export function HeatMapChart({ data }: Props) {
   const hours   = Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i);
 
   return (
-    <div ref={containerRef} className="relative select-none overflow-x-auto">
-      {/* Day headers */}
-      <div className="flex mb-1 pl-10">
-        {DISPLAY_DAYS.map((d) => (
-          <div key={d} className="flex-1 text-center text-[10px] font-semibold text-gray-400">
-            {d}
+    <div ref={containerRef} className="relative select-none">
+      {/* Scroll wrapper — horizontal scroll on narrow screens */}
+      <div className="overflow-x-auto pb-1">
+        <div style={{ minWidth: 320 }}>
+          {/* Day headers */}
+          <div className="flex mb-1.5 pl-10">
+            {DISPLAY_DAYS.map((d) => (
+              <div key={d} className="flex-1 text-center text-[10px] font-semibold text-gray-400">
+                {d}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Grid rows */}
-      <div className="space-y-0.5" style={{ minWidth: 300 }}>
-        {hours.map((h) => (
-          <div key={h} className="flex items-center gap-0.5">
-            {/* Hour label — show every 2 hours */}
-            <div className="w-9 shrink-0 text-right pr-2 text-[10px] text-gray-400 font-medium">
-              {h % 2 === 0 ? `${String(h).padStart(2, '0')}h` : ''}
-            </div>
+          {/* Grid rows */}
+          <div className="space-y-1">
+            {hours.map((h) => (
+              <div key={h} className="flex items-center gap-1">
+                {/* Hour label — every hour */}
+                <div className="w-9 shrink-0 text-right pr-2 text-[10px] text-gray-400 font-medium">
+                  {`${String(h).padStart(2, '0')}h`}
+                </div>
 
-            {/* Cells */}
-            {DISPLAY_TO_PG.map((pgDay, displayDay) => {
-              const cell      = lookup[pgDay]?.[h];
-              const intensity = cell ? cell.totalSales / maxSales : 0;
-              const bg        = cell && cell.totalSales > 0
-                ? `rgba(249,115,22,${(0.12 + intensity * 0.88).toFixed(3)})`
-                : 'rgba(156,163,175,0.07)';
-              return (
+                {/* Cells */}
+                {DISPLAY_TO_PG.map((pgDay, displayDay) => {
+                  const cell      = lookup[pgDay]?.[h];
+                  const intensity = cell ? cell.totalSales / maxSales : 0;
+                  const bg        = cell && cell.totalSales > 0
+                    ? `rgba(249,115,22,${(0.12 + intensity * 0.88).toFixed(3)})`
+                    : 'rgba(156,163,175,0.07)';
+                  return (
+                    <div
+                      key={pgDay}
+                      className="flex-1 h-6 rounded cursor-default transition-all duration-100 hover:ring-1 hover:ring-white/25 hover:brightness-110"
+                      style={{ background: bg }}
+                      onMouseEnter={(e) => handleMouseEnter(e, pgDay, displayDay, h)}
+                      onMouseLeave={() => setHovered(null)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Color scale legend */}
+          <div className="flex items-center gap-2 mt-3 pl-10">
+            <span className="text-[10px] text-gray-400">Menor</span>
+            <div className="flex gap-1">
+              {[0.08, 0.22, 0.38, 0.56, 0.74, 0.92].map((op) => (
                 <div
-                  key={pgDay}
-                  className="flex-1 h-5 rounded-sm cursor-default transition-all duration-100 hover:ring-1 hover:ring-white/20"
-                  style={{ background: bg }}
-                  onMouseEnter={(e) => handleMouseEnter(e, pgDay, displayDay, h)}
-                  onMouseLeave={() => setHovered(null)}
+                  key={op}
+                  className="w-6 h-3 rounded"
+                  style={{ background: `rgba(249,115,22,${op})` }}
                 />
-              );
-            })}
+              ))}
+            </div>
+            <span className="text-[10px] text-gray-400">Mayor</span>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Color scale legend */}
-      <div className="flex items-center gap-2 mt-3 pl-10">
-        <span className="text-[10px] text-gray-400">Menor</span>
-        <div className="flex gap-0.5">
-          {[0.08, 0.22, 0.38, 0.56, 0.74, 0.92].map((op) => (
-            <div
-              key={op}
-              className="w-5 h-2.5 rounded-sm"
-              style={{ background: `rgba(249,115,22,${op})` }}
-            />
-          ))}
-        </div>
-        <span className="text-[10px] text-gray-400">Mayor</span>
-      </div>
+      {/* Mobile scroll hint */}
+      <p className="sm:hidden text-center text-[10px] text-gray-400 mt-1.5">← desliza para ver todos los días →</p>
 
       {/* Custom tooltip — flips above/below based on proximity to top */}
       {hovered && (
@@ -131,8 +139,8 @@ export function HeatMapChart({ data }: Props) {
           style={{
             left:      hovered.x,
             top:       hovered.showBelow
-              ? hovered.cellTop + CELL_H + 6
-              : hovered.cellTop - 6,
+              ? hovered.cellTop + CELL_H + 8
+              : hovered.cellTop - 8,
             transform: hovered.showBelow
               ? 'translateX(-50%)'
               : 'translateX(-50%) translateY(-100%)',

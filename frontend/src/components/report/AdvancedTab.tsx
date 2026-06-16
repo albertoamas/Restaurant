@@ -4,20 +4,15 @@ import type {
   DailyReportDto,
   DailySeriesItemDto,
   DayHourDataDto,
-  HourlyDataDto,
   TopCategoryDto,
 } from '@pos/shared';
 import { Card } from '../ui/Card';
 import { Spinner } from '../ui/Spinner';
 import { Icon } from '../ui/Icon';
 import { SalesAreaChart } from './charts/SalesAreaChart';
-import { DonutChart, type DonutSlice } from './charts/DonutChart';
-import { HourlyBarChart } from './charts/HourlyBarChart';
 import { HeatMapChart } from './charts/HeatMapChart';
-import { AvgTicketChart } from './charts/AvgTicketChart';
 import { CategoryBarChart } from './charts/CategoryBarChart';
-import { CashierBarChart } from './charts/CashierBarChart';
-import { C } from './charts/chartColors';
+import { CashierRankingTable } from './charts/CashierRankingTable';
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -40,15 +35,16 @@ function delta(current: number, prev: number | null | undefined): number | null 
 /* ── KPI card with period-over-period variation ───────────────────────────── */
 
 interface KpiCardProps {
-  label:    string;
-  value:    string;
-  pct:      number | null;
-  accent:   string;
-  bg:       string;
-  iconName: string;
+  label:      string;
+  value:      string;
+  prevValue?: string;   // absolute value of the previous period shown as context
+  pct:        number | null;
+  accent:     string;
+  bg:         string;
+  iconName:   string;
 }
 
-function KpiCard({ label, value, pct, accent, bg, iconName }: KpiCardProps) {
+function KpiCard({ label, value, prevValue, pct, accent, bg, iconName }: KpiCardProps) {
   const isUp      = pct !== null && pct >= 0;
   const hasChange = pct !== null;
 
@@ -76,7 +72,10 @@ function KpiCard({ label, value, pct, accent, bg, iconName }: KpiCardProps) {
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
         <p className="font-heading font-black text-xl text-gray-900 leading-tight">{value}</p>
         {hasChange && (
-          <p className="text-[10px] text-gray-500 mt-0.5">vs período anterior</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">
+            vs período anterior
+            {prevValue && <span className="text-gray-400 ml-1">({prevValue})</span>}
+          </p>
         )}
       </div>
     </div>
@@ -91,7 +90,6 @@ interface Props {
   dailySeries:   DailySeriesItemDto[];
   byCashier:     CashierReportDto[];
   topCategories: TopCategoryDto[];
-  byHour:        HourlyDataDto[];
   byDayHour:     DayHourDataDto[];
   cashSessions:  CashSessionReportItemDto[];
   isMultiDay:    boolean;
@@ -100,111 +98,67 @@ interface Props {
 
 export function AdvancedTab({
   report, prevReport,
-  dailySeries, byCashier, topCategories, byHour, byDayHour,
+  dailySeries, byCashier, topCategories, byDayHour,
   cashSessions, isMultiDay, isLoading,
 }: Props) {
   if (isLoading) {
     return <div className="flex justify-center py-12"><Spinner /></div>;
   }
 
-  /* donut slices */
-  const paymentSlices: DonutSlice[] = report ? [
-    { name: 'Efectivo',      value: report.paymentBreakdown.cash,     color: C.emerald },
-    { name: 'QR',            value: report.paymentBreakdown.qr,       color: C.primary },
-    { name: 'Transferencia', value: report.paymentBreakdown.transfer, color: C.violet  },
-    { name: 'Cortesía',      value: report.paymentBreakdown.cortesia, color: C.amber   },
-  ] : [];
-
-  const typeSlices: DonutSlice[] = report ? [
-    { name: 'Local',       value: report.ordersByType.dineIn,   color: C.primary },
-    { name: 'Para Llevar', value: report.ordersByType.takeout,  color: C.amber   },
-    { name: 'Delivery',    value: report.ordersByType.delivery, color: C.violet  },
-  ] : [];
-
   /* KPI deltas */
-  const salesDelta  = delta(report?.totalSales  ?? 0, prevReport?.totalSales);
-  const ordersDelta = delta(report?.orderCount  ?? 0, prevReport?.orderCount);
+  const salesDelta  = delta(report?.totalSales   ?? 0, prevReport?.totalSales);
+  const ordersDelta = delta(report?.orderCount   ?? 0, prevReport?.orderCount);
   const ticketDelta = delta(report?.averageTicket ?? 0, prevReport?.averageTicket);
 
-  /* avg ticket for reference line in AvgTicketChart */
-  const prevAvgTicket = prevReport?.averageTicket;
+  /* Previous-period absolute values for context label */
+  const prevSales  = prevReport?.totalSales   != null ? `Bs ${prevReport.totalSales.toFixed(0)}`   : undefined;
+  const prevOrders = prevReport?.orderCount   != null ? String(prevReport.orderCount)              : undefined;
+  const prevTicket = prevReport?.averageTicket != null ? `Bs ${prevReport.averageTicket.toFixed(2)}` : undefined;
 
   return (
     <div className="space-y-4">
 
-      {/* ── Row 0: KPIs con variación ──────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* ── Row 0: KPIs con variación — responsive ─────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard
           label="Ventas"
           value={`Bs ${(report?.totalSales ?? 0).toFixed(0)}`}
+          prevValue={prevSales}
           pct={salesDelta}
           accent="text-emerald-400" bg="bg-emerald-500/10" iconName="dollar"
         />
         <KpiCard
           label="Pedidos"
           value={String(report?.orderCount ?? 0)}
+          prevValue={prevOrders}
           pct={ordersDelta}
           accent="text-primary-400" bg="bg-primary-500/10" iconName="orders"
         />
         <KpiCard
           label="Ticket Prom."
           value={`Bs ${(report?.averageTicket ?? 0).toFixed(2)}`}
+          prevValue={prevTicket}
           pct={ticketDelta}
           accent="text-violet-400" bg="bg-violet-500/10" iconName="receipt"
         />
       </div>
 
-      {/* ── Row 1: Evolución diaria (multi-día) ────────────────────────── */}
-      {isMultiDay ? (
-        dailySeries.length >= 2 ? (
-          <Card variant="panel">
-            <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Evolución de Ventas</h3>
-            <p className="text-[11px] text-gray-400 mb-4">Ventas (Bs) y pedidos día a día</p>
-            <SalesAreaChart data={dailySeries} />
-          </Card>
-        ) : null
-      ) : null}
-
-      {/* ── Row 2: Ticket promedio en el tiempo (multi-día) ────────────── */}
+      {/* ── Row 1: Evolución diaria (solo multi-día, ≥2 puntos) ─────────── */}
       {isMultiDay && dailySeries.length >= 2 && (
         <Card variant="panel">
-          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Ticket Promedio Diario</h3>
+          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Evolución de Ventas</h3>
           <p className="text-[11px] text-gray-400 mb-4">
-            Evolución del valor promedio por pedido · línea punteada = período anterior
+            Ventas (Bs) día a día · línea punteada = pedidos (escala propia)
           </p>
-          <AvgTicketChart data={dailySeries} prevAvgTicket={prevAvgTicket} />
+          <SalesAreaChart data={dailySeries} />
         </Card>
       )}
 
-      {/* ── Row 3: Donuts ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card variant="panel">
-          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Métodos de Pago</h3>
-          <p className="text-[11px] text-gray-400 mb-3">Distribución del total facturado</p>
-          <DonutChart
-            data={paymentSlices}
-            total={report?.totalSales ?? 0}
-            label="Total"
-            formatter={(v) => `Bs ${Number(v).toFixed(2)}`}
-          />
-        </Card>
-        <Card variant="panel">
-          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Tipo de Pedido</h3>
-          <p className="text-[11px] text-gray-400 mb-3">Distribución por canal de venta</p>
-          <DonutChart
-            data={typeSlices}
-            total={report?.orderCount ?? 0}
-            label="Pedidos"
-            formatter={(v, name) => `${name}: ${v}`}
-          />
-        </Card>
-      </div>
-
-      {/* ── Row 4: Mapa de calor Hora × Día ────────────────────────────── */}
+      {/* ── Row 2: Mapa de calor Hora × Día ─────────────────────────────── */}
       <Card variant="panel">
         <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Mapa de Calor — Hora × Día</h3>
         <p className="text-[11px] text-gray-400 mb-4">
-          Intensidad de ventas por franja horaria y día de semana · pasa el cursor para ver el detalle
+          Intensidad de ventas por franja horaria y día de semana · pasa el cursor para el detalle
         </p>
         {byDayHour.length > 0 ? (
           <HeatMapChart data={byDayHour} />
@@ -215,23 +169,21 @@ export function AdvancedTab({
         )}
       </Card>
 
-      {/* ── Row 5: Ventas por hora (bar) ───────────────────────────────── */}
-      <Card variant="panel">
-        <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Ventas por Hora</h3>
-        <p className="text-[11px] text-gray-400 mb-4">
-          Total acumulado por franja horaria en el período seleccionado
-        </p>
-        {byHour.length > 0 ? (
-          <HourlyBarChart data={byHour} />
-        ) : (
-          <div className="flex items-center justify-center h-24 text-gray-400">
-            <p className="text-xs">Sin datos en este período</p>
-          </div>
-        )}
-      </Card>
-
-      {/* ── Row 6: Categorías + Cajeros ────────────────────────────────── */}
+      {/* ── Row 3: Cajeros + Categorías ──────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card variant="panel">
+          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Rendimiento por Cajero</h3>
+          <p className="text-[11px] text-gray-400 mb-4">Ranking por ventas · ticket promedio por cajero</p>
+          {byCashier.length > 0 ? (
+            <CashierRankingTable data={byCashier} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+              <Icon name="users" size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
+              <p className="text-xs">Sin datos para este período</p>
+            </div>
+          )}
+        </Card>
+
         <Card variant="panel">
           <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Categorías Más Vendidas</h3>
           <p className="text-[11px] text-gray-400 mb-4">Toggle entre unidades e ingresos</p>
@@ -244,22 +196,9 @@ export function AdvancedTab({
             </div>
           )}
         </Card>
-
-        <Card variant="panel">
-          <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Rendimiento por Cajero</h3>
-          <p className="text-[11px] text-gray-400 mb-4">Ventas totales y pedidos atendidos</p>
-          {byCashier.length > 0 ? (
-            <CashierBarChart data={byCashier} />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-              <Icon name="users" size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
-              <p className="text-xs">Sin datos para este período</p>
-            </div>
-          )}
-        </Card>
       </div>
 
-      {/* ── Row 7: Arqueos de caja ─────────────────────────────────────── */}
+      {/* ── Row 4: Arqueos de caja ────────────────────────────────────────── */}
       <Card variant="panel">
         <h3 className="text-sm font-bold text-gray-700 mb-0.5 font-heading">Arqueos de Caja</h3>
         <p className="text-[11px] text-gray-400 mb-4">Historial de sesiones en el período</p>

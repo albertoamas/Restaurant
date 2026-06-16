@@ -5,7 +5,6 @@ import type {
   DailyReportDto,
   DailySeriesItemDto,
   DayHourDataDto,
-  HourlyDataDto,
   TopCategoryDto,
 } from '@pos/shared';
 import { reportsApi } from '../api/reports.api';
@@ -48,13 +47,6 @@ export function useAdvancedReportData(
     enabled,
   });
 
-  const { data: byHour = [] as HourlyDataDto[], isPending: hourLoading } = useQuery({
-    queryKey: queryKeys.reportByHour(utcFrom, utcTo, branchParam),
-    queryFn:  () => reportsApi.getByHour(utcFrom, utcTo, branchParam),
-    staleTime: 0,
-    enabled,
-  });
-
   const { data: byDayHour = [] as DayHourDataDto[], isPending: dayHourLoading } = useQuery({
     queryKey: queryKeys.reportByDayHour(utcFrom, utcTo, branchParam),
     queryFn:  () => reportsApi.getByDayHour(utcFrom, utcTo, branchParam),
@@ -71,8 +63,8 @@ export function useAdvancedReportData(
 
   const isLoading =
     enabled &&
-    (cashierLoading || catLoading || hourLoading || dayHourLoading || sessionsLoading ||
+    (cashierLoading || catLoading || dayHourLoading || sessionsLoading ||
       (isMultiDay && seriesLoading));
 
-  return { prevReport, dailySeries, byCashier, topCategories, byHour, byDayHour, cashSessions, isLoading };
+  return { prevReport, dailySeries, byCashier, topCategories, byDayHour, cashSessions, isLoading };
 }

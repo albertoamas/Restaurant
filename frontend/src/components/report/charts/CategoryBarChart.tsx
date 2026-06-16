@@ -25,7 +25,7 @@ export function CategoryBarChart({ data }: Props) {
   const [view, setView] = useState<View>('quantity');
 
   const top    = data.slice(0, 8);
-  const height = Math.max(160, top.length * 40);
+  const height = Math.max(180, top.length * 50);
 
   const chartData = top.map((cat) => ({
     name:     cat.categoryName ?? 'Sin cat.',
@@ -61,8 +61,8 @@ export function CategoryBarChart({ data }: Props) {
           layout="vertical"
           data={chartData}
           margin={{ top: 0, right: 56, left: 0, bottom: 0 }}
-          barSize={12}
-          barCategoryGap="30%"
+          barSize={20}
+          barCategoryGap="28%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
           <XAxis
