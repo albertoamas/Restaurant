@@ -318,9 +318,10 @@ ADMIN_SECRET     x-admin-key header value for /admin/* routes.
                  Production: must be set to a strong secret.
 NODE_ENV         development | production
 TZ               America/La_Paz — set at container level in docker-compose.prod.yml; ensures correct timezone for cron, logs, and any node Date calls that leak past the utility layer
-GRAFANA_ADMIN_USER      (default: admin) — Grafana UI login
-GRAFANA_ADMIN_PASSWORD  Required in production. Grafana accessible at :3001; use SSH tunnel or firewall rule.
 ```
+
+Grafana Cloud monitoring uses three GitHub Actions secrets (not `.env` vars — injected at deploy time into `prometheus/prometheus.yml`):
+`GRAFANA_CLOUD_REMOTE_WRITE_URL`, `GRAFANA_CLOUD_INSTANCE_ID`, `GRAFANA_CLOUD_API_KEY`.
 
 ## CI/CD
 
@@ -330,13 +331,13 @@ Two workflows in `.github/workflows/`:
 - **`cd.yml`** — runs on every push to `main`:
   1. **Validate** — same shared-build + typecheck as CI.
   2. **Build & push** — multi-stage Docker images → GitHub Container Registry (`ghcr.io/albertoamas/restaurant`).
-  3. **Deploy** — SSH into VPS (pre-flight disk-space check < 500 MB threshold), update `IMAGE_TAG`, pull images, `docker-compose -f docker-compose.prod.yml up -d`, then prune old images.
+  3. **Deploy** — SSH into VPS (pre-flight disk-space check < 500 MB threshold), update `IMAGE_TAG`, inject Grafana Cloud `remote_write` credentials into `prometheus/prometheus.yml`, pull images, `docker-compose -f docker-compose.prod.yml up -d`, hot-reload Prometheus config, then prune old images.
 
 Migrations run automatically on backend container start (`prisma migrate deploy` in entrypoint).
 
 ## Production Deployment
 
-`docker-compose.prod.yml`: three services — `postgres`, `backend`, `frontend`/nginx.
+`docker-compose.prod.yml`: five services — `postgres`, `backend`, `frontend`/nginx, `prometheus`, `postgres-exporter`. Prometheus scrapes the backend and ships metrics to Grafana Cloud via `remote_write`; the dashboard JSON lives at `grafana/pos-overview-cloud.json`.
 
 - Uploads persist via Docker volume `uploads_data`. Backup script: `scripts/backup-db.sh` (pg_dump + uploads tar). Schedule with cron: `0 3 * * * /opt/pos/scripts/backup-db.sh`.
 - nginx proxies `/api/`, `/uploads/`, `/socket.io/` to backend; stays on HTTP internally.

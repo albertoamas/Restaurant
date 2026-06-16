@@ -78,7 +78,10 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   // Admin
-  | 'table';
+  | 'table'
+  // Tendencia
+  | 'trending-up'
+  | 'trending-down';
 
 interface IconProps {
   name: IconName;
@@ -240,6 +243,9 @@ const PATHS: Record<IconName, string | string[]> = {
 
   /* ── Admin ───────────────────────────────────────────────────── */
   table: 'M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18',
+
+  'trending-up':   'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
+  'trending-down': 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',
 };
 
 export function Icon({ name, size = 18, strokeWidth = 1.75, className = '' }: IconProps) {

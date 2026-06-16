@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
 import { useSettingsStore, type ServerConfig } from '../store/settings.store';
+import { getToken, setToken, clearToken } from '../utils/token-storage';
 import type { UserRole, SaasPlan, PlanLimits, OrderNumberResetPeriod } from '@pos/shared';
 
 interface TenantModules {
@@ -42,7 +43,7 @@ interface AuthContextType {
   isLoading:        boolean;
   currentBranchId:  string | null;
   setCurrentBranch: (id: string) => void;
-  login:            (email: string, password: string) => Promise<void>;
+  login:            (email: string, password: string, remember: boolean) => Promise<void>;
   logout:           () => void;
   refreshUser:      () => Promise<void>;
 }
@@ -51,7 +52,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]           = useState<AuthUser | null>(null);
-  const [token, setToken]         = useState<string | null>(() => localStorage.getItem('pos_token'));
+  const [token, setTokenState]    = useState<string | null>(() => getToken());
   const [isLoading, setIsLoading] = useState(true);
   const [currentBranchId, setCurrentBranchId] = useState<string | null>(
     () => localStorage.getItem('pos_branch'),
@@ -89,14 +90,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyServerConfig]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('pos_token');
+    const stored = getToken();
     if (!stored) { setIsLoading(false); return; }
     authApi
       .getMe()
       .then(applyUser)
       .catch(() => {
-        localStorage.removeItem('pos_token');
-        setToken(null);
+        clearToken();
+        setTokenState(null);
       })
       .finally(() => setIsLoading(false));
   }, [applyUser]);
@@ -106,10 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentBranchId(id);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, remember: boolean) => {
     const res = await authApi.login({ email, password });
-    localStorage.setItem('pos_token', res.accessToken);
-    setToken(res.accessToken);
+    setToken(res.accessToken, remember);
+    setTokenState(res.accessToken);
     applyUser(res.user as AuthUser);
     navigate('/pos');
   }, [navigate, applyUser]);
@@ -129,9 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyUser]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('pos_token');
+    clearToken();
     localStorage.removeItem('pos_branch');
-    setToken(null);
+    setTokenState(null);
     setUser(null);
     setCurrentBranchId(null);
     navigate('/login');

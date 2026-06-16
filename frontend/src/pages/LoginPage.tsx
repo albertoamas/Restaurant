@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/auth.context';
 import { Icon } from '../components/ui/Icon';
 import toast from 'react-hot-toast';
-import { handleApiError } from '../utils/api-error';
+import { getApiErrorMessage } from '../utils/api-error';
 
 const BG   = 'oklch(0.10  0.012 38)';
 const BG2  = 'oklch(0.145 0.016 40)';
@@ -19,27 +20,43 @@ export function LoginPage() {
   const BRAND_TAGLINE = 'Control total de tu negocio, en un solo lugar.';
 
   const { login, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm]               = useState({ email: '', password: '' });
+  const [remember, setRemember]       = useState(true);
+  const [errorMsg, setErrorMsg]       = useState<string | null>(null);
 
   if (isAuthenticated) return <Navigate to="/pos" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     setLoading(true);
     try {
-      await login(form.email, form.password);
+      await login(form.email, form.password, remember);
       toast.success('Bienvenido');
     } catch (err) {
-      handleApiError(err, 'Error al iniciar sesión');
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401) {
+          setErrorMsg('Correo o contraseña incorrectos.');
+        } else if (status === 429) {
+          setErrorMsg('Demasiados intentos fallidos. Espera un momento e intenta de nuevo.');
+        } else {
+          setErrorMsg(getApiErrorMessage(err, 'Error al conectar con el servidor.'));
+        }
+      } else {
+        setErrorMsg('Error inesperado. Intenta de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    setErrorMsg(null);
+  };
 
   return (
     <div
@@ -181,6 +198,8 @@ export function LoginPage() {
                 >
                   <input
                     type="email"
+                    name="email"
+                    autoComplete="email"
                     placeholder="correo@tu-negocio.bo"
                     value={form.email}
                     onChange={set('email')}
@@ -205,6 +224,8 @@ export function LoginPage() {
                 >
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={set('password')}
@@ -223,6 +244,36 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Recuérdame */}
+              <label className="flex items-center gap-2.5 cursor-pointer select-none mt-1">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  aria-hidden="true"
+                  className={`w-4 h-4 rounded flex items-center justify-center border transition-all duration-150 shrink-0 ${
+                    remember
+                      ? 'bg-primary-600 border-primary-600'
+                      : 'bg-white/5 border-white/20 hover:border-white/40'
+                  }`}
+                >
+                  {remember && <Icon name="check" size={10} strokeWidth={3} className="text-white" />}
+                </div>
+                <span className="text-sm" style={{ color: CR2 }}>Recordar sesión</span>
+              </label>
+
+              {/* Error inline */}
+              {errorMsg && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm text-red-400">
+                  <Icon name="warning" size={16} strokeWidth={2} className="shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
               {/* Submit */}
               <button

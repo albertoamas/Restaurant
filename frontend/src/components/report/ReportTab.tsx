@@ -69,15 +69,47 @@ export function ReportTab({
     <>
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Ventas Totales"  value={`Bs ${report!.totalSales.toFixed(2)}`}    icon={<Icon name="dollar"  size={24} />} accent="text-emerald-400" bg="bg-emerald-500/10" />
-        <StatCard label="Pedidos"          value={String(report!.orderCount)}               icon={<Icon name="orders"  size={24} />} accent="text-primary-400" bg="bg-primary-500/10" />
-        <StatCard label="Ticket Promedio"  value={`Bs ${report!.averageTicket.toFixed(2)}`} icon={<Icon name="receipt" size={24} />} accent="text-violet-400"  bg="bg-violet-500/10"  />
+        <StatCard
+          label="Ventas Totales"
+          value={`Bs ${report!.totalSales.toFixed(2)}`}
+          icon={<Icon name="dollar" size={24} />}
+          accent="text-emerald-400"
+          bg="bg-emerald-500/10"
+        />
+        <StatCard
+          label="Ticket Promedio"
+          value={`Bs ${report!.averageTicket.toFixed(2)}`}
+          icon={<Icon name="receipt" size={24} />}
+          accent="text-violet-400"
+          bg="bg-violet-500/10"
+        />
         <StatCard
           label="Gastos Totales"
           value={expenseSummary ? `Bs ${expenseSummary.total.toFixed(2)}` : 'Bs 0.00'}
           icon={<Icon name="minus" size={24} />}
           accent="text-red-400"
           bg="bg-red-500/10"
+        />
+        <StatCard
+          label="Ganancia Neta"
+          value={`${!isPositive ? '−' : ''}Bs ${Math.abs(netProfit).toFixed(2)}`}
+          icon={<Icon name={isPositive ? 'trending-up' : 'trending-down'} size={24} />}
+          accent={isPositive ? 'text-emerald-400' : 'text-red-400'}
+          bg={isPositive ? 'bg-emerald-500/10' : 'bg-red-500/10'}
+          valueClassName={isPositive ? 'text-emerald-600' : 'text-red-600'}
+          sub={
+            expenseSummary !== null ? (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                isPositive
+                  ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+                  : 'bg-red-500/10 text-red-700 border-red-500/20'
+              }`}>
+                {isPositive ? '↑' : '↓'} {Math.abs(marginPct).toFixed(1)}% margen
+              </span>
+            ) : (
+              <span className="text-[10px] text-gray-400 font-medium">Sin gastos registrados</span>
+            )
+          }
         />
       </div>
 
@@ -95,7 +127,13 @@ export function ReportTab({
           </div>
         </Card>
         <Card variant="panel">
-          <h3 className="text-sm font-bold text-gray-700 mb-4 font-heading">Tipo de Pedido</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-700 font-heading">Tipo de Pedido</h3>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-primary-500/10 text-primary-600 border border-primary-500/20">
+              <Icon name="orders" size={12} strokeWidth={2.5} />
+              {report!.orderCount} pedidos
+            </span>
+          </div>
           <div className="space-y-4">
             <TypeRow label="Local"       count={report!.ordersByType.dineIn}   total={report!.orderCount} color="bg-primary-500" />
             <TypeRow label="Para Llevar" count={report!.ordersByType.takeout}  total={report!.orderCount} color="bg-amber-500"   />

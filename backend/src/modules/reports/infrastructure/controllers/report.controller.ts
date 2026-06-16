@@ -50,6 +50,7 @@ export class ReportController {
   }
 
   @Get('range')
+  @Roles(UserRole.OWNER, UserRole.CASHIER)
   getReportByRange(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,

@@ -6,9 +6,10 @@ import { useBranchSelector } from '../../hooks/useBranchSelector';
 import { BranchSelector } from './BranchSelector';
 import { Icon } from '../ui/Icon';
 
-const cashNavItem    = { to: '/cash',     label: 'Caja',          icon: <Icon name="cash"     /> };
-const rafflesNavItem = { to: '/raffles',  label: 'Sorteos',       icon: <Icon name="ticket"   /> };
-const kitchenNavItem = { to: '/kitchen', label: 'Cocina',        icon: <Icon name="flame"    /> };
+const cashNavItem        = { to: '/cash',        label: 'Caja',         icon: <Icon name="cash"     /> };
+const rafflesNavItem     = { to: '/raffles',     label: 'Sorteos',      icon: <Icon name="ticket"   /> };
+const kitchenNavItem     = { to: '/kitchen',     label: 'Cocina',       icon: <Icon name="flame"    /> };
+const cashierReportItem  = { to: '/mi-reporte',  label: 'Mi Rendición', icon: <Icon name="document" /> };
 
 const ownerNav = [
   { to: '/pos',       label: 'POS',           icon: <Icon name="cart"     /> },
@@ -50,6 +51,7 @@ export function Sidebar() {
         ownerNav[0],
         ...(ordersEnabled ? [ownerNav[1]] : []),
         ...(cashEnabled ? [cashNavItem] : []),
+        cashierReportItem,
       ];
     }
     return [

@@ -15,14 +15,18 @@ export const RANK_COLORS = [
 /* ── StatCard ─────────────────────────────────────────────────────────────── */
 
 export interface StatCardProps {
-  label:  string;
-  value:  string;
-  icon:   React.ReactNode;
-  accent: string;
-  bg:     string;
+  label:           string;
+  value:           string;
+  icon:            React.ReactNode;
+  accent:          string;
+  bg:              string;
+  /** Clase Tailwind para el color del valor. Default: text-gray-900 */
+  valueClassName?: string;
+  /** Contenido opcional debajo del valor (badge, subtítulo, etc.) */
+  sub?:            React.ReactNode;
 }
 
-export function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
+export function StatCard({ label, value, icon, accent, bg, valueClassName, sub }: StatCardProps) {
   return (
     <div className="relative rounded-2xl border border-white/8 shadow-[0_8px_28px_oklch(0.06_0.010_38/0.6)] p-5 flex flex-col gap-4 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
       {/* Accent orb de fondo */}
@@ -33,7 +37,8 @@ export function StatCard({ label, value, icon, accent, bg }: StatCardProps) {
       </div>
       <div className="relative">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-        <p className="font-heading font-black text-2xl text-gray-900 leading-tight">{value}</p>
+        <p className={`font-heading font-black text-2xl leading-tight ${valueClassName ?? 'text-gray-900'}`}>{value}</p>
+        {sub && <div className="mt-1.5">{sub}</div>}
       </div>
     </div>
   );

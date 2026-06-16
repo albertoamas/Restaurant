@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const TOKEN_KEY = 'pos_token';
+import { getToken, clearToken } from '../utils/token-storage';
 
 const client = axios.create({
   baseURL: '',
@@ -8,7 +7,7 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -18,8 +17,9 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
+    const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+    if (error.response?.status === 401 && !isLoginEndpoint) {
+      clearToken();
       window.location.href = '/login';
     }
     return Promise.reject(error);
