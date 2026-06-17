@@ -56,13 +56,13 @@ function expenseCategoryLabel(expense: ExpenseDto): string {
 }
 
 const CAT_COLORS = [
-  { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200'    },
-  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'   },
-  { bg: 'bg-violet-50',  text: 'text-violet-700',  border: 'border-violet-200'  },
-  { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200'    },
-  { bg: 'bg-cyan-50',    text: 'text-cyan-700',    border: 'border-cyan-200'    },
-  { bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200'  },
+  { bg: 'bg-sky-500/12',   text: 'text-sky-600',    border: 'border-sky-500/25'    },
+  { bg: 'bg-amber-500/12', text: 'text-amber-600',  border: 'border-amber-500/25'   },
+  { bg: 'bg-violet-500/12', text: 'text-violet-600', border: 'border-violet-500/25'  },
+  { bg: 'bg-emerald-500/12', text: 'text-emerald-600', border: 'border-emerald-500/25' },
+  { bg: 'bg-rose-500/12',   text: 'text-rose-600',   border: 'border-rose-500/25'   },
+  { bg: 'bg-cyan-500/12',   text: 'text-cyan-600',   border: 'border-cyan-500/25'   },
+  { bg: 'bg-orange-500/12', text: 'text-orange-600', border: 'border-orange-500/25' },
 ];
 
 function categoryColor(name: string) {
@@ -113,7 +113,7 @@ export function ExpensesPage() {
 
   const netProfit = totalSales !== null ? totalSales - summary.total : null;
   const activeClass   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const inactiveClass = 'bg-white/5 border border-white/10 text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+  const inactiveClass = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
 
   const summaryCategories = Object.entries(summary.byCategory)
     .filter(([, v]) => v > 0)
@@ -123,24 +123,29 @@ export function ExpensesPage() {
     ? expenses.filter((e) => expenseCategoryLabel(e) === selectedCategory)
     : expenses;
 
+  const dateInputCls = [
+    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
+    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
+  ].join(' ');
+
   return (
     <PageShell>
       {/* Period selector */}
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Gastos Operativos</h2>
             <p className="text-xs text-gray-500 mt-0.5">Control por categoría, período y rentabilidad neta.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100/60 border border-primary-500/25 text-primary-400">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20">
               {rangeLabel}
             </span>
             <Button size="sm" onClick={() => setShowModal(true)}>+ Agregar gasto</Button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {PERIODS.map((p) => (
             <button
               key={p.key}
@@ -152,31 +157,19 @@ export function ExpensesPage() {
               {p.label}
             </button>
           ))}
+          {period === 'custom' && (
+            <>
+              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={dateInputCls} />
+              <span className="text-gray-400 text-sm shrink-0">→</span>
+              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={dateInputCls} />
+            </>
+          )}
         </div>
       </div>
 
-      {/* Custom range */}
-      {period === 'custom' && (
-        <div className="flex items-center gap-2 mb-4">
-          <input
-            type="date" value={customFrom}
-            onChange={(e) => setCustomFrom(e.target.value)}
-            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
-          />
-          <span className="text-gray-400 text-sm">→</span>
-          <input
-            type="date" value={customTo}
-            onChange={(e) => setCustomTo(e.target.value)}
-            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
-          />
-        </div>
-      )}
-
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
             <Icon name="minus" size={16} />
           </div>
@@ -186,7 +179,7 @@ export function ExpensesPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md p-4 flex flex-col gap-2" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
             <Icon name="dollar" size={16} />
           </div>
@@ -201,10 +194,10 @@ export function ExpensesPage() {
             ? 'bg-emerald-50 border-emerald-200'
             : netProfit !== null
             ? 'bg-red-50 border-red-200'
-            : 'bg-white/5 border-white/8'
+            : 'bg-[var(--color-surface-2)] border-[var(--border-subtle)]'
         }`}>
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-            netProfit !== null && netProfit >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
+            netProfit !== null && netProfit >= 0 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-red-500/15 text-red-500'
           }`}>
             <Icon name="chart" size={16} />
           </div>
@@ -259,9 +252,9 @@ export function ExpensesPage() {
           <p className="text-xs mt-1">Agrega el primer gasto del período</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/8 shadow-[0_4px_16px_oklch(0.06_0.010_38/0.4)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {/* Table header */}
-          <div className="grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-2.5 bg-white/3 border-b border-white/8">
+          <div className="grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-2.5 bg-[var(--color-surface-2)] border-b border-[var(--border-subtle)]">
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Fecha</span>
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Detalle</span>
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider text-right">Total</span>
@@ -309,8 +302,8 @@ function ExpenseRow({
   const legacyCol  = categoryColor(legacyLabel);
 
   return (
-    <div className={`group grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-4 border-t border-white/8 transition-colors
-      ${isDeleting ? 'bg-red-50/40' : 'hover:bg-gray-50/50'}`}
+    <div className={`group grid grid-cols-[90px_1fr_100px_60px] gap-4 px-5 py-4 border-t border-[var(--border-subtle)] transition-colors
+      ${isDeleting ? 'bg-red-50/40' : 'hover:bg-[var(--color-surface-2)]'}`}
     >
       {/* Date */}
       <div className="flex flex-col pt-0.5">

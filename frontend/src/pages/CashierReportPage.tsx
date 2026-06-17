@@ -13,7 +13,7 @@ const PERIODS: { key: CashierPeriod; label: string }[] = [
 ];
 
 const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-const pInactive = 'bg-white/5 border border-white/10 text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+const pInactive = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
 
 export function CashierReportPage() {
   const { user } = useAuth();
@@ -35,7 +35,7 @@ export function CashierReportPage() {
       {/* Header card */}
       <div
         data-print-hide
-        className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5"
+        className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5"
         style={{ background: 'var(--color-surface-card)' }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -48,14 +48,14 @@ export function CashierReportPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100/60 border border-primary-500/25 text-primary-400">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20">
               {rangeLabel}
             </span>
             <button
               onClick={() => window.print()}
               disabled={!hasData}
               title="Imprimir / PDF"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Icon name="print" size={14} />PDF
             </button>

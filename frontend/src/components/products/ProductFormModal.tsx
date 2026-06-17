@@ -112,7 +112,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
             value={form.categoryId}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             required
-            className="w-full border border-white/10 rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark]
+            className="w-full border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface-card)] text-gray-700
               focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
               transition-[border-color,box-shadow]"
           >
@@ -130,7 +130,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
           </label>
 
           {imagePreview ? (
-            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-white/10">
+            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-[var(--border-subtle)]">
               <img src={imagePreview} alt="Vista previa" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -144,8 +144,8 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
           ) : (
             <label
               htmlFor="product-image-input"
-              className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-gray-200
-                rounded-xl hover:border-primary-400 hover:bg-primary-50/30 transition-colors text-gray-400 hover:text-primary-500 cursor-pointer"
+              className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-[var(--border-subtle)]
+                rounded-xl hover:border-primary-400 hover:bg-primary-500/8 transition-colors text-gray-400 hover:text-primary-500 cursor-pointer"
             >
               <Icon name="photo" size={28} strokeWidth={1.5} />
               <span className="text-sm font-semibold">Haz clic para subir imagen</span>

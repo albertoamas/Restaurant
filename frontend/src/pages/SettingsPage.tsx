@@ -40,8 +40,8 @@ function SettingsLock({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="w-14 h-14 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center mx-auto mb-5">
           <Icon name="lock" size={28} className="text-primary-600" />
         </div>
         <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Ajustes protegidos</h2>
@@ -82,7 +82,7 @@ function SettingRow({ label, description, value, onChange, icon }: SettingRowPro
     ].join(' ')}>
       <div className="flex items-start gap-3 flex-1 pr-4">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-          value ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-400'
+          value ? 'bg-primary-500/15 text-primary-600' : 'bg-[var(--color-surface-2)] text-gray-400'
         }`}>
           {icon}
         </div>
@@ -184,8 +184,8 @@ export function SettingsPage() {
   };
 
   return (
-    <PageShell maxWidth="3xl" className="space-y-4">
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5" style={{ background: 'var(--color-surface-card)' }}>
+    <PageShell className="space-y-4">
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5" style={{ background: 'var(--color-surface-card)' }}>
         <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Ajustes del Negocio</h2>
         <p className="text-xs text-gray-500 mt-1">Configura impresión, datos del recibo y seguridad de acceso.</p>
       </div>
@@ -197,12 +197,12 @@ export function SettingsPage() {
           <h3 className="text-sm font-bold text-gray-700">Datos del negocio</h3>
         </div>
         <p className="text-xs text-gray-400 mb-4 ml-6">Aparecen en el recibo que se entrega al cliente</p>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-[var(--border-subtle)]">
           <div className="py-4">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nombre del negocio</label>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+            <div className="flex items-center gap-2 bg-[var(--color-surface-2)] rounded-xl px-4 py-3 border border-[var(--border-subtle)]">
               <span className="text-sm font-semibold text-gray-800">{user?.tenantName || '—'}</span>
-              <span className="ml-auto text-xs text-gray-400 bg-gray-200 rounded-md px-2 py-0.5">Solo lectura</span>
+              <span className="ml-auto text-xs text-gray-400 bg-[var(--color-surface-3)] rounded-md px-2 py-0.5">Solo lectura</span>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
           </div>
@@ -211,11 +211,11 @@ export function SettingsPage() {
             <p className="text-xs text-gray-400 mb-3">Se muestra en el recibo del cliente. PNG o WEBP, fondo blanco o transparente recomendado.</p>
             <div className="flex items-center gap-4">
               {tenantLogo ? (
-                <div className="w-20 h-20 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-20 h-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center overflow-hidden shrink-0">
                   <img src={tenantLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
                 </div>
               ) : (
-                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center shrink-0">
+                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center shrink-0">
                   <Icon name="photo" size={28} strokeWidth={1.5} className="text-gray-300" />
                 </div>
               )}
@@ -281,7 +281,7 @@ export function SettingsPage() {
               placeholder="Ej: El mejor sabor de la ciudad"
               rows={2}
               maxLength={RECEIPT_MAX}
-              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5
+              className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2.5
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
                 resize-none transition-[border-color,box-shadow] bg-[var(--color-surface-card)] text-gray-700"
             />
@@ -325,7 +325,7 @@ export function SettingsPage() {
                   'flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all',
                   active
                     ? 'border-primary-400 bg-primary-50 text-primary-800'
-                    : 'border-white/10 bg-white/5 text-gray-500 hover:border-white/18',
+                    : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-[var(--border-strong)]',
                   resetPeriodLoading ? 'opacity-50 cursor-not-allowed' : '',
                 ].join(' ')}
               >
@@ -336,7 +336,7 @@ export function SettingsPage() {
           })}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
+        <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
           {!resetNowConfirm ? (
             <button
               type="button"

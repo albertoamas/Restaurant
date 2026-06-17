@@ -6,7 +6,7 @@ import { productsApi } from '../../api/products.api';
 import { handleApiError } from '../../utils/api-error';
 import type { RaffleDto, ProductDto, RaffleTicketMode } from '@pos/shared';
 
-const inputCls = 'w-full text-sm border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark] transition-[border-color,box-shadow]';
+const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-[var(--color-surface-card)] text-gray-700 transition-[border-color,box-shadow]';
 const labelCls = 'text-xs font-semibold text-gray-600 mb-1.5 block';
 
 function ordinalLabel(n: number): string {
@@ -104,7 +104,7 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
         {/* Toggle de modo */}
         <div>
           <label className={labelCls}>Tipo de sorteo *</label>
-          <div className="flex gap-0.5 bg-gray-100 rounded-xl p-1">
+          <div className="flex gap-0.5 bg-[var(--color-surface-2)] rounded-xl p-1">
             <button
               type="button"
               onClick={() => handleModeChange('PRODUCT_MATCH')}

@@ -28,7 +28,7 @@ export interface StatCardProps {
 
 export function StatCard({ label, value, icon, accent, bg, valueClassName, sub }: StatCardProps) {
   return (
-    <div className="relative rounded-2xl border border-white/8 shadow-[0_8px_28px_oklch(0.06_0.010_38/0.6)] p-5 flex flex-col gap-4 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+    <div className="relative rounded-2xl border border-[var(--border-subtle)] p-5 flex flex-col gap-4 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
       {/* Accent orb de fondo */}
       <div className={`absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-25 blur-2xl ${bg}`} />
 
@@ -64,7 +64,7 @@ export function PaymentBar({ label, amount, total, color }: PaymentBarProps) {
           <span className="text-[11px] text-gray-400 tabular-nums">{pct.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-[width] duration-700 ease-out ${color}`}
           style={{ width: `${pct}%` }}
@@ -94,7 +94,7 @@ export function TypeRow({ label, count, total, color }: TypeRowProps) {
           <span className="text-[11px] font-semibold text-gray-400 tabular-nums">{pct}%</span>
         </div>
       </div>
-      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-[width] duration-700 ease-out ${color}`}
           style={{ width: `${pct}%` }}
@@ -119,7 +119,7 @@ export function TopProductRow({ rank, product, maxQty }: TopProductRowProps) {
   return (
     <div className="flex items-center gap-3 py-0.5">
       <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black ${
-        isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-gray-100 text-gray-400'
+        isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-[var(--color-surface-2)] text-gray-400'
       }`}>
         {rank}
       </div>
@@ -136,10 +136,10 @@ export function TopProductRow({ rank, product, maxQty }: TopProductRowProps) {
             </span>
           </div>
         </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-[width] duration-700 ease-out ${
-              rank === 1 ? 'bg-primary-500' : rank === 2 ? 'bg-primary-400' : rank === 3 ? 'bg-primary-300' : 'bg-gray-200'
+              rank === 1 ? 'bg-primary-500' : rank === 2 ? 'bg-primary-400' : rank === 3 ? 'bg-primary-300' : 'bg-[var(--border-strong)]'
             }`}
             style={{ width: `${pct}%` }}
           />
@@ -167,7 +167,7 @@ export function TopCustomerRow({ rank, customer, maxSpent }: TopCustomerRowProps
   return (
     <div className="flex items-center gap-3 py-0.5">
       <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black ${
-        isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-gray-100 text-gray-400'
+        isTop3 ? `${RANK_COLORS[rank - 1]} text-white` : 'bg-[var(--color-surface-2)] text-gray-400'
       }`}>
         {rank}
       </div>
@@ -189,10 +189,10 @@ export function TopCustomerRow({ rank, customer, maxSpent }: TopCustomerRowProps
             </span>
           </div>
         </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-[width] duration-700 ease-out ${
-              rank === 1 ? 'bg-emerald-500' : rank === 2 ? 'bg-emerald-400' : rank === 3 ? 'bg-emerald-300' : 'bg-gray-200'
+              rank === 1 ? 'bg-emerald-500' : rank === 2 ? 'bg-emerald-400' : rank === 3 ? 'bg-emerald-300' : 'bg-[var(--border-strong)]'
             }`}
             style={{ width: `${pct}%` }}
           />

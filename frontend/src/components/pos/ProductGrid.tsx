@@ -27,7 +27,7 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
         'active:scale-[0.93] active:translate-y-0',
         flash
           ? 'border-primary-500/60 shadow-[0_4px_16px_oklch(0.60_0.22_42/0.30)]'
-          : 'border-white/8 shadow-[0_2px_8px_oklch(0.06_0.010_38/0.5)]',
+          : 'border-[var(--border-subtle)] shadow-card-md',
       ].join(' ')}
       style={{ background: 'var(--color-surface-card)' }}
     >
@@ -49,7 +49,7 @@ function ProductCard({ product, onSelect }: { product: ProductDto; onSelect: (p:
           </div>
         </div>
       ) : (
-        <div className="w-full h-24 flex items-center justify-center bg-white/4 group-hover:bg-white/6 transition-all duration-300">
+        <div className="w-full h-24 flex items-center justify-center bg-[var(--color-surface-2)] group-hover:bg-[var(--color-surface-3)] transition-all duration-300">
           <Icon name="photo" size={32} strokeWidth={1.5} className="text-gray-400 group-hover:text-gray-300 transition-colors" />
         </div>
       )}

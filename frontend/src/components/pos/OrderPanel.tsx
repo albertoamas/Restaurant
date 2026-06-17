@@ -19,7 +19,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
     <div className="flex flex-col h-full" style={{ background: 'var(--color-surface-card)' }}>
       {/* Header — solo en drawer mobile */}
       {onClose && (
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/8 shrink-0">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border-subtle)] shrink-0">
           <div>
             <h3 className="font-heading font-black text-base text-gray-800 leading-tight">Tu pedido</h3>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -28,7 +28,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/8 hover:bg-white/14 text-gray-500 hover:text-gray-300 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Cerrar carrito"
           >
             <Icon name="x" size={18} strokeWidth={2} />
@@ -56,7 +56,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
       <div className="flex-1 overflow-y-auto px-3">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 py-10">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)] flex items-center justify-center">
               <Icon name="cart" size={32} strokeWidth={1} className="opacity-30" />
             </div>
             <div className="text-center">
@@ -80,20 +80,20 @@ export function OrderPanel({ onCharge, onClose }: Props) {
       </div>
 
       {/* Notes */}
-      <div className="px-4 py-2.5 border-t border-white/8 shrink-0">
+      <div className="px-4 py-2.5 border-t border-[var(--border-subtle)] shrink-0">
         <textarea
           rows={2}
           placeholder="Notas: sin cebolla, mesa 5..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full text-sm border border-white/10 rounded-xl px-3 py-2 resize-none bg-white/5
+          className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 resize-none bg-[var(--color-surface-card)]
             placeholder:text-gray-400 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50
             transition-[border-color,box-shadow] duration-150"
         />
       </div>
 
       {/* Footer total + cobrar */}
-      <div className="px-4 pb-4 pt-3 shrink-0 space-y-3 border-t border-white/8">
+      <div className="px-4 pb-4 pt-3 shrink-0 space-y-3 border-t border-[var(--border-subtle)]">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</span>
           <div className="text-right">

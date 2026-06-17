@@ -67,7 +67,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
             onChange={(e) => setName(e.target.value)}
             maxLength={255}
             required
-            className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+            className="w-full px-3 py-2.5 text-sm bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
           />
         </div>
 
@@ -81,7 +81,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
             rows={2}
-            className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 resize-none"
+            className="w-full px-3 py-2.5 text-sm bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 resize-none"
           />
         </div>
 
@@ -103,7 +103,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
                     }}
                     maxLength={500}
                     required
-                    className="flex-1 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+                    className="flex-1 px-3 py-2 text-sm bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
                   />
                 </div>
               ))}
@@ -115,7 +115,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
         )}
 
         {/* Info de campos bloqueados */}
-        <div className="rounded-xl bg-amber-50 border border-amber-100 px-3.5 py-2.5 text-[11px] text-amber-700 leading-relaxed">
+        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 text-[11px] text-amber-600 leading-relaxed">
           El modo de tickets, monto acumulativo y número de ganadores <strong>no se pueden cambiar</strong> en un sorteo existente para no afectar los tickets ya generados.
         </div>
 
@@ -124,7 +124,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-40"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] rounded-xl transition-colors disabled:opacity-40"
           >
             Cancelar
           </button>

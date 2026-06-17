@@ -267,7 +267,7 @@ export class OrderRepository implements OrderRepositoryPort {
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
-          AND DATE(o.created_at AT TIME ZONE ${BOLIVIA_TZ}) = ${date}::date
+          AND DATE(o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ}) = ${date}::date
           AND o.status != ${OrderStatus.CANCELLED}
           AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
       ),
@@ -521,7 +521,7 @@ export class OrderRepository implements OrderRepositoryPort {
     const rows = await this.prisma.$queryRaw<RawRow[]>`
       WITH filtered_orders AS (
         SELECT o.id, o.total,
-          DATE(o.created_at AT TIME ZONE ${BOLIVIA_TZ}) AS day,
+          DATE(o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ}) AS day,
           NOT EXISTS (
             SELECT 1 FROM order_payments op
             WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
@@ -662,7 +662,7 @@ export class OrderRepository implements OrderRepositoryPort {
     const rows = await this.prisma.$queryRaw<RawRow[]>`
       WITH filtered_orders AS (
         SELECT o.id, o.total,
-          EXTRACT(HOUR FROM o.created_at AT TIME ZONE ${BOLIVIA_TZ})::int AS hour,
+          EXTRACT(HOUR FROM o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ})::int AS hour,
           NOT EXISTS (
             SELECT 1 FROM order_payments op
             WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
@@ -705,8 +705,8 @@ export class OrderRepository implements OrderRepositoryPort {
     const rows = await this.prisma.$queryRaw<RawRow[]>`
       WITH filtered_orders AS (
         SELECT o.id, o.total,
-          EXTRACT(DOW  FROM o.created_at AT TIME ZONE ${BOLIVIA_TZ})::int AS day_of_week,
-          EXTRACT(HOUR FROM o.created_at AT TIME ZONE ${BOLIVIA_TZ})::int AS hour,
+          EXTRACT(DOW  FROM o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ})::int AS day_of_week,
+          EXTRACT(HOUR FROM o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ})::int AS hour,
           NOT EXISTS (
             SELECT 1 FROM order_payments op
             WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}

@@ -34,6 +34,12 @@ export function AppLayout() {
   const { kitchenEnabled, ordersEnabled, cashEnabled, branchesEnabled, teamEnabled, rafflesEnabled } = useSettingsStore();
   const [drawerOpen, setDrawerOpen]                 = useState(false);
   const [drawerUserMenuOpen, setDrawerUserMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed]     = useState(() => localStorage.getItem('pos_sidebar') === '1');
+
+  const toggleSidebar = () => setSidebarCollapsed((c) => {
+    localStorage.setItem('pos_sidebar', c ? '0' : '1');
+    return !c;
+  });
   const drawerUserMenuRef = useRef<HTMLDivElement>(null);
   const navigate          = useNavigate();
 
@@ -107,7 +113,7 @@ export function AppLayout() {
   if (user?.role === 'CASHIER' && !user.branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="rounded-2xl border border-white/8 p-8 max-w-sm w-full text-center animate-in shadow-[0_8px_32px_oklch(0.06_0.010_38/0.7)]" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] p-8 max-w-sm w-full text-center animate-in shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
           <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
             <Icon name="warning" size={28} className="text-amber-400" />
           </div>
@@ -128,7 +134,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} />
 
       {/* Mobile drawer overlay */}
       {drawerOpen && (
@@ -277,8 +283,12 @@ export function AppLayout() {
         </div>
       </div>
 
-      <div data-print-main className="lg:ml-60 flex flex-col min-h-screen">
-        <Header onMenuOpen={() => setDrawerOpen(true)} />
+      <div data-print-main className={`${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'} flex flex-col min-h-screen transition-[margin] duration-200`}>
+        <Header
+          onMenuOpen={() => setDrawerOpen(true)}
+          onToggleSidebar={toggleSidebar}
+          sidebarCollapsed={sidebarCollapsed}
+        />
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>

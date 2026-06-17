@@ -7,13 +7,10 @@ interface Props {
 }
 
 export function CategoryTabs({ categories, selected, onSelect }: Props) {
-  const activeClass = [
-    'bg-primary-600 text-white border border-primary-600',
-    'shadow-[0_2px_8px_oklch(0.60_0.22_42/0.35)]',
-  ].join(' ');
+  const activeClass = 'bg-primary-600 text-white border border-primary-600';
 
   const inactiveClass = [
-    'bg-white/5 text-gray-500 border border-white/8',
+    'bg-[var(--color-surface-2)] text-gray-500 border border-[var(--border-subtle)]',
     'hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8',
   ].join(' ');
 

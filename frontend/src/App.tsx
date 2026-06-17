@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useTheme } from './hooks/useTheme';
 import { AuthProvider } from './context/auth.context';
 import { SocketProvider } from './context/socket.context';
 import { PrivateRoute } from './routes/PrivateRoute';
@@ -97,6 +98,8 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useTheme();
+
   return (
     <AuthProvider>
       <SocketProvider>

@@ -12,9 +12,9 @@ export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: ()
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl overflow-hidden border border-white/8
-        shadow-[0_2px_10px_oklch(0.06_0.010_38/0.5)]
-        hover:shadow-[0_6px_22px_oklch(0.06_0.010_38/0.7)]
+      className="w-full text-left rounded-2xl overflow-hidden border border-[var(--border-subtle)]
+        shadow-card-md
+        hover:shadow-card-xl
         hover:-translate-y-0.5 transition-all duration-200 flex flex-col"
       style={{ background: 'var(--color-surface-card)' }}
     >
@@ -79,7 +79,7 @@ export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: ()
       </div>
 
       {/* Footer */}
-      <div className="border-t border-white/8 mx-4" />
+      <div className="border-t border-[var(--border-subtle)] mx-4" />
       <div className="px-4 py-2.5 flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-xs text-gray-500">
           <IconTicket className="w-3.5 h-3.5" />

@@ -62,7 +62,7 @@ export function WinnerModal({
         />
 
         <div
-          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-white/10"
+          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-[var(--border-subtle)]"
           style={{ background: 'var(--color-surface-card)', animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
         >
           <div className={`h-1 w-full bg-gradient-to-r ${medal.badge}`} />
@@ -94,7 +94,7 @@ export function WinnerModal({
             )}
 
             {/* Ticket */}
-            <div className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 mb-4">
               <IconTicket className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-sm font-mono font-bold text-gray-600">
                 Ticket #{winner.ticketNumber}
@@ -103,7 +103,7 @@ export function WinnerModal({
 
             {/* Prize */}
             {winner.prizeDescription && (
-              <div className="flex items-center justify-center gap-2 mb-4 px-4 py-2.5 bg-primary-50 border border-primary-100 rounded-xl">
+              <div className="flex items-center justify-center gap-2 mb-4 px-4 py-2.5 bg-primary-500/10 border border-primary-500/20 rounded-xl">
                 <IconGift className="w-4 h-4 text-primary-500 shrink-0" />
                 <span className="text-sm font-semibold text-primary-700">{winner.prizeDescription}</span>
               </div>

@@ -23,7 +23,7 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
 
       <div className="relative w-full max-w-xs animate-in">
         <div className="flex flex-col items-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_40)] border border-white/10 flex items-center justify-center mb-3 shadow-[0_8px_32px_oklch(0_0_0/0.5)]">
+          <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_40)] border border-white/10 flex items-center justify-center mb-3 shadow-card-xl">
             <Icon name="lock" size={28} strokeWidth={1.5} className="text-white/80" />
           </div>
           <h1 className="font-heading font-black text-xl text-white tracking-tight">Admin Console</h1>

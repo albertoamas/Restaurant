@@ -36,7 +36,7 @@ export function ConfirmModal({
         <button
           onClick={onClose}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-40"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] rounded-xl transition-colors disabled:opacity-40"
         >
           {cancelLabel}
         </button>

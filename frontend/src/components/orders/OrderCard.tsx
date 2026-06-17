@@ -21,10 +21,10 @@ export const STEPS = [
 const stepIndex = (s: OrderStatus) => STEPS.findIndex((x) => x.status === s);
 
 export const statusAccent: Record<string, { border: string; bg: string; badge: string }> = {
-  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-400/8',   badge: 'bg-amber-100 text-amber-600 border-amber-200' },
-  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-400/8', badge: 'bg-emerald-100 text-emerald-600 border-emerald-200' },
-  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-400/8',     badge: 'bg-sky-100 text-sky-600 border-sky-200' },
-  [OrderStatus.CANCELLED]: { border: 'border-l-red-400',     bg: '',                 badge: 'bg-red-100 text-red-600 border-red-200' },
+  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-400/8',   badge: 'bg-amber-500/12 text-amber-600 border-amber-500/25' },
+  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-400/8', badge: 'bg-emerald-500/12 text-emerald-600 border-emerald-500/25' },
+  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-400/8',     badge: 'bg-sky-500/12 text-sky-600 border-sky-500/25' },
+  [OrderStatus.CANCELLED]: { border: 'border-l-red-400',     bg: '',                 badge: 'bg-red-500/12 text-red-600 border-red-500/25' },
 };
 
 export const statusLabel: Record<string, string> = {
@@ -68,10 +68,10 @@ function ElapsedChip({ createdAt }: { createdAt: string }) {
     <span className={[
       'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums',
       urgent
-        ? 'bg-red-100 text-red-600 border-red-200 animate-pulse'
+        ? 'bg-red-500/12 text-red-600 border-red-500/25 animate-pulse'
         : warning
-          ? 'bg-amber-100 text-amber-600 border-amber-200'
-          : 'bg-emerald-100 text-emerald-600 border-emerald-200',
+          ? 'bg-amber-500/12 text-amber-600 border-amber-500/25'
+          : 'bg-emerald-500/12 text-emerald-600 border-emerald-500/25',
     ].join(' ')}>
       <Icon name="clock" size={12} strokeWidth={2} className="shrink-0" />
       {text}
@@ -85,7 +85,7 @@ function DeliveredAtChip({ createdAt, updatedAt }: { createdAt: string; updatedA
       <span className="text-xs font-medium text-gray-400 tabular-nums">
         {formatBoliviaTime(updatedAt)}
       </span>
-      <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-sky-50 text-sky-600 border-sky-200">
+      <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-sky-500/10 text-sky-600 border-sky-500/20">
         <Icon name="check" size={12} strokeWidth={2} className="shrink-0" />
         {elapsedBetween(createdAt, updatedAt)}
       </span>
@@ -121,11 +121,11 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
   const handlePrintKitchen = () => printKitchenTicket(order);
   const handlePrintReceipt = () => printReceipt(order, receiptSettings);
 
-  const accent = statusAccent[order.status] ?? { border: 'border-l-gray-200', bg: '', badge: 'bg-gray-100 text-gray-500 border-gray-200' };
+  const accent = statusAccent[order.status] ?? { border: 'border-l-[var(--border-strong)]', bg: '', badge: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)]' };
 
   return (
     <div className={[
-      'rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)]',
+      'rounded-2xl border border-[var(--border-subtle)] shadow-card-lg',
       'overflow-hidden border-l-4 animate-fade',
       accent.border,
       accent.bg,
@@ -155,7 +155,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
             {statusLabel[order.status]}
           </span>
-          <span className="text-xs font-semibold bg-white/8 text-gray-500 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-semibold bg-[var(--color-surface-2)] text-gray-500 px-2.5 py-1 rounded-lg">
             {orderTypeLabels[order.type]}
           </span>
         </div>
@@ -166,7 +166,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
         {order.items.map((item) => (
           <span
             key={item.id}
-            className="inline-flex items-center gap-1 text-xs bg-white/5 border border-white/10 text-gray-600 rounded-lg px-2.5 py-1"
+            className="inline-flex items-center gap-1 text-xs bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-600 rounded-lg px-2.5 py-1"
           >
             <span className="font-heading font-bold text-gray-900">{item.quantity}×</span>
             {item.productName}
@@ -177,7 +177,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
       {/* Customer */}
       {order.customer && (
         <div className="px-4 pb-2 -mt-1">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
             <Icon name="user" size={12} strokeWidth={2} className="shrink-0" />
             {order.customer.name}
           </span>
@@ -187,7 +187,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
       {/* Notes */}
       {order.notes && (
         <div className="px-4 pb-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-xl">
+          <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-xl">
             <Icon name="chat" size={12} strokeWidth={2} className="shrink-0" />
             {order.notes}
           </span>
@@ -213,8 +213,8 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
                             : order.status === OrderStatus.PREPARING
                               ? 'bg-emerald-500 shadow-[0_0_0_3px_oklch(0.70_0.18_145/0.25)]'
                               : 'bg-sky-500 shadow-[0_0_0_3px_oklch(0.65_0.15_220/0.25)]'
-                          : 'bg-gray-200'
-                        : 'bg-gray-100 border-2 border-gray-200',
+                          : 'bg-[var(--border-strong)]'
+                        : 'bg-[var(--color-surface-2)] border-2 border-[var(--border-subtle)]',
                     ].join(' ')}>
                       {done && !active && (
                         <Icon name="check" size={12} strokeWidth={3} className="text-gray-500" />
@@ -227,7 +227,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
                   </div>
                   {i < STEPS.length - 1 && (
                     <div className={`flex-1 h-0.5 mb-4 mx-1 rounded-full transition-all ${
-                      i < currentStep ? 'bg-gray-300' : 'bg-gray-150'
+                      i < currentStep ? 'bg-[var(--border-strong)]' : 'bg-[var(--border-subtle)]'
                     }`} />
                   )}
                 </div>
@@ -237,7 +237,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
         </div>
       ) : (
         <div className="px-4 pb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg">
             <Icon name="x" size={14} strokeWidth={2} />
             Cancelado
           </span>
@@ -246,7 +246,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
 
       {/* Footer */}
       <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-white/8 bg-white/3',
+        'flex items-center gap-3 px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--color-surface-2)]',
         action ? 'flex-col sm:flex-row' : '',
       ].join(' ')}>
         <div className="flex items-center gap-2 shrink-0">
@@ -254,13 +254,13 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
             Bs {order.total.toFixed(2)}
           </span>
           {order.isPaid ? (
-            <span className="text-xs font-medium text-gray-500 bg-white/8 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-medium text-gray-500 bg-[var(--color-surface-2)] px-2 py-0.5 rounded-md">
               {order.payments.length > 1
                 ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
                 : (paymentLabel[order.payments[0]?.method] ?? '—')}
             </span>
           ) : (
-            <span className="text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+            <span className="text-xs font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-0.5 rounded-md">
               Pendiente de cobro
             </span>
           )}
@@ -278,7 +278,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
             <button
               onClick={() => onEdit(order)}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-white/10 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Editar pedido"
             >
               <Icon name="edit" size={14} strokeWidth={2} />
@@ -287,7 +287,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {!isCancelled && (
             <button
               onClick={handlePrintKitchen}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Imprimir comanda"
             >
               <Icon name="print" size={14} strokeWidth={2} />
@@ -296,7 +296,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
           {order.isPaid && (
             <button
               onClick={handlePrintReceipt}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-gray-200 hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
               title="Imprimir recibo"
             >
               <Icon name="document" size={14} strokeWidth={2} />
@@ -319,7 +319,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
                 </button>
                 <button
                   onClick={() => setConfirming(false)}
-                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-white/10 rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
+                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
                 >
                   No
                 </button>
@@ -327,7 +327,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
             ) : (
               <button
                 onClick={() => setConfirming(true)}
-                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-white/10
+                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)]
                   rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 Cancelar

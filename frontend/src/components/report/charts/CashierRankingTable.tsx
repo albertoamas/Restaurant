@@ -24,7 +24,7 @@ export function CashierRankingTable({ data }: Props) {
         return (
           <div
             key={c.userName}
-            className="relative overflow-hidden rounded-xl border border-white/8 p-3 transition-colors hover:border-white/14"
+            className="relative overflow-hidden rounded-xl border border-[var(--border-subtle)] p-3 transition-colors hover:border-[var(--border-strong)]"
           >
             {/* Progress bar — fills behind the content */}
             <div
@@ -41,7 +41,7 @@ export function CashierRankingTable({ data }: Props) {
               {/* Rank badge */}
               <div
                 className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${
-                  RANK_STYLES[i] ?? 'bg-white/5 text-gray-500 border border-white/8'
+                  RANK_STYLES[i] ?? 'bg-[var(--color-surface-2)] text-gray-500 border border-[var(--border-subtle)]'
                 }`}
               >
                 {i + 1}

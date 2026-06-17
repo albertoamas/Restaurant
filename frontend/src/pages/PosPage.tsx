@@ -96,18 +96,18 @@ export function PosPage() {
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       {/* Left: Products */}
       <div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
-        <div className="mb-3 rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] shadow-card-lg p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-black text-gray-900 leading-tight">Punto de Venta</h2>
               <p className="text-xs text-gray-500 mt-0.5">Selecciona productos y cobra en segundos.</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-100/60 border border-primary-500/25 text-xs font-semibold text-primary-400">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-xs font-semibold text-primary-600">
                 {filteredProducts.length} productos
               </span>
               {currentBranch && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/12 border border-emerald-500/25 text-xs font-semibold text-emerald-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
                   {currentBranch.name}
                 </span>
@@ -126,7 +126,7 @@ export function PosPage() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 text-sm border border-white/10 rounded-2xl bg-white/5 text-gray-700 placeholder:text-gray-400
+              className="w-full pl-10 pr-10 py-2.5 text-sm border border-[var(--border-subtle)] rounded-2xl bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
                 transition-[border-color,box-shadow] duration-150"
             />
@@ -147,13 +147,13 @@ export function PosPage() {
           selected={selectedCategory}
           onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
-        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-white/6 p-2 shadow-[0_6px_20px_oklch(0.06_0.010_38/0.5)]" style={{ background: 'var(--color-surface-2)' }}>
+        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-[var(--border-subtle)] p-2 shadow-card-md" style={{ background: 'var(--color-surface-2)' }}>
           <ProductGrid products={filteredProducts} onSelect={handleProductSelect} />
         </div>
       </div>
 
       {/* Right: Order panel (desktop) */}
-      <div className="hidden lg:block w-80 border-l border-white/8" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="hidden lg:block w-80 border-l border-[var(--border-subtle)]" style={{ background: 'var(--color-surface-card)' }}>
         <OrderPanel onCharge={handleCharge} />
       </div>
 
@@ -185,7 +185,7 @@ export function PosPage() {
       {showCart && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-white/8" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-[var(--border-subtle)]" style={{ background: 'var(--color-surface-card)' }}>
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />

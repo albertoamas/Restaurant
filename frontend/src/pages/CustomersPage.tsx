@@ -22,10 +22,10 @@ const ORDER_TYPE_LABEL: Record<OrderType, string> = {
 };
 
 const STATUS_STYLE: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: 'bg-yellow-100 text-yellow-700',
-  [OrderStatus.PREPARING]: 'bg-blue-100 text-blue-700',
-  [OrderStatus.DELIVERED]: 'bg-gray-100 text-gray-600',
-  [OrderStatus.CANCELLED]: 'bg-red-100 text-red-500',
+  [OrderStatus.PENDING]: 'bg-amber-500/12 text-amber-600',
+  [OrderStatus.PREPARING]: 'bg-sky-500/12 text-sky-600',
+  [OrderStatus.DELIVERED]: 'bg-[var(--color-surface-2)] text-gray-600',
+  [OrderStatus.CANCELLED]: 'bg-red-500/12 text-red-500',
 };
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -94,7 +94,7 @@ function CustomerOrderHistory({ customerId }: { customerId: string }) {
   return (
     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
       {orders.map((o) => (
-        <div key={o.id} className="bg-gray-50 rounded-xl px-3 py-2.5">
+        <div key={o.id} className="bg-[var(--color-surface-2)] rounded-xl px-3 py-2.5">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-gray-700">#{o.orderNumber}</span>
@@ -155,15 +155,17 @@ function CustomerDetailModal({
     }
   }
 
+  const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors';
+
   return (
     <Modal isOpen onClose={onClose} title="Detalle del Cliente" size="sm">
       {/* Purchase stats */}
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <div className="bg-[var(--color-surface-2)] rounded-xl p-3 text-center">
           <p className="text-2xl font-bold text-gray-900 font-heading">{customer.purchaseCount}</p>
           <p className="text-xs text-gray-400 mt-0.5">Compras</p>
         </div>
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <div className="bg-[var(--color-surface-2)] rounded-xl p-3 text-center">
           <p className="text-lg font-bold text-gray-900 font-heading">Bs {customer.totalSpent.toFixed(0)}</p>
           <p className="text-xs text-gray-400 mt-0.5">Total gastado</p>
         </div>
@@ -173,14 +175,11 @@ function CustomerDetailModal({
       {/* Customer info */}
       {editMode ? (
         <div className="space-y-2 mb-4">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *"
-            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono"
-            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
-            className="w-full text-sm border border-white/10 rounded-lg px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors" />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *" className={inputCls} />
+          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputCls} />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-white/5 text-gray-700 placeholder:text-gray-400" />
+            className="w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400" />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setEditMode(false)} disabled={saving}>Cancelar</Button>
             <Button variant="primary" fullWidth onClick={handleSaveEdit} loading={saving}>Guardar</Button>
@@ -203,7 +202,7 @@ function CustomerDetailModal({
       )}
 
       {/* Order history */}
-      <div className="border-t border-gray-100 pt-4 mt-2">
+      <div className="border-t border-[var(--border-subtle)] pt-4 mt-2">
         <p className="text-sm font-medium text-gray-800 mb-3">Historial de pedidos</p>
         <CustomerOrderHistory customerId={customer.id} />
       </div>
@@ -239,17 +238,16 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
     }
   }
 
+  const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 transition-colors';
+
   return (
     <Modal isOpen onClose={onClose} title="Nuevo Cliente" size="sm">
       <div className="space-y-3">
-        <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
-        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+        <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *" className={inputCls} />
+        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputCls} />
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-white/5 text-gray-700 placeholder:text-gray-400" />
+          className="w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400" />
         <div className="flex gap-2 pt-1">
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button variant="primary" fullWidth onClick={handleSubmit} loading={saving} disabled={!name.trim()}>
@@ -277,14 +275,22 @@ export function CustomersPage() {
     setSearchTimer(t);
   }
 
+  const paginationBtn = 'px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600';
+  const paginationPage = (active: boolean) =>
+    `w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
+      active
+        ? 'bg-primary-500 border-primary-500 text-white'
+        : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] text-gray-600'
+    }`;
+
   return (
-    <div className="p-4 lg:p-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-6 animate-slide">
       {/* Header */}
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{total} registrado{total !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Historial de compras, tickets y fidelización.</p>
           </div>
           <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo cliente</Button>
         </div>
@@ -298,7 +304,7 @@ export function CustomersPage() {
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar por nombre o teléfono..."
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-[var(--border-subtle)] rounded-xl bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
         />
       </div>
 
@@ -307,7 +313,7 @@ export function CustomersPage() {
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : customers.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+          <div className="w-14 h-14 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center mx-auto mb-3">
             <Icon name="users" size={28} strokeWidth={1.5} className="text-gray-400" />
           </div>
           <p className="text-sm font-medium text-gray-500">
@@ -320,9 +326,9 @@ export function CustomersPage() {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-lg overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-white/8 bg-white/3">
+          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
             <SortHeader label="Nombre" col="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
             <SortHeader label="Gastado" col="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
             <SortHeader label="Compras" col="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
@@ -333,7 +339,7 @@ export function CustomersPage() {
             <button
               key={c.id}
               onClick={() => setSelected(c)}
-              className="w-full grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-left"
+              className="w-full grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors text-left"
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
@@ -353,11 +359,7 @@ export function CustomersPage() {
             Página {page} de {totalPages} · {total} clientes
           </p>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page <= 1}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-            >
+            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className={paginationBtn}>
               ← Anterior
             </button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -372,24 +374,12 @@ export function CustomersPage() {
                 pg = page - 3 + i;
               }
               return (
-                <button
-                  key={pg}
-                  onClick={() => setPage(pg)}
-                  className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
-                    pg === page
-                      ? 'bg-primary-500 border-primary-500 text-white'
-                      : 'border-white/10 bg-white/5 hover:bg-white/8 text-gray-600'
-                  }`}
-                >
+                <button key={pg} onClick={() => setPage(pg)} className={paginationPage(pg === page)}>
                   {pg}
                 </button>
               );
             })}
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={page >= totalPages}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
-            >
+            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className={paginationBtn}>
               Siguiente →
             </button>
           </div>

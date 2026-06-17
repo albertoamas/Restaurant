@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>POS - Sistema de Ventas</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- FOUC prevention: apply stored theme before first paint -->
+    <script>
+      try {
+        var t = localStorage.getItem('pos_theme') || 'dark';
+        if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch(e) {}
+    </script>
   </head>
-  <body class="bg-gray-50 text-gray-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

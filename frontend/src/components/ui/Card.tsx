@@ -10,18 +10,18 @@ interface CardProps {
 }
 
 const variants = {
-  default:  'bg-[var(--color-surface-card)] border border-white/6 shadow-[0_2px_12px_oklch(0.06_0.010_38/0.6)]',
+  default:  'bg-[var(--color-surface-card)] border border-[var(--border-subtle)] shadow-card-md',
   elevated: [
-    'bg-[var(--color-surface-card)] border border-white/6',
-    'shadow-[0_4px_20px_oklch(0.06_0.010_38/0.7)]',
-    'hover:-translate-y-0.5 hover:shadow-[0_8px_28px_oklch(0.06_0.010_38/0.8)]',
+    'bg-[var(--color-surface-card)] border border-[var(--border-subtle)]',
+    'shadow-card-md',
+    'hover:-translate-y-0.5 hover:shadow-card-lg',
     'transition-[transform,box-shadow] duration-200',
   ].join(' '),
-  inset:    'bg-white/4 border border-white/8',
-  glass:    'bg-white/5 backdrop-blur-xl border border-white/8 shadow-[0_8px_32px_oklch(0.06_0.010_38/0.5)]',
-  'glass-strong': 'bg-white/8 backdrop-blur-2xl border border-white/10 shadow-[0_10px_40px_oklch(0.06_0.010_38/0.6),inset_0_1px_0_oklch(1_0_0/0.06)]',
-  flat:     'bg-[var(--color-surface-2)] border border-white/6',
-  panel:    'bg-white/4 backdrop-blur-md border border-white/8 shadow-[inset_0_1px_0_oklch(1_0_0/0.06)]',
+  inset:        'bg-[var(--color-surface-2)] border border-[var(--border-subtle)]',
+  glass:        'bg-[var(--color-surface-2)] backdrop-blur-xl border border-[var(--border-subtle)] shadow-card-lg',
+  'glass-strong': 'bg-[var(--color-surface-2)] backdrop-blur-2xl border border-[var(--border-subtle)] shadow-[0_10px_40px_oklch(0.06_0.010_38/0.5)]',
+  flat:         'bg-[var(--color-surface-2)] border border-[var(--border-subtle)]',
+  panel:        'bg-[var(--color-surface-2)] backdrop-blur-md border border-[var(--border-subtle)]',
   feature: [
     'bg-[var(--color-surface-card)] border border-primary-800/50',
     'shadow-[0_12px_32px_oklch(0.60_0.22_42/0.15),0_1px_2px_oklch(0.06_0.010_38/0.4)]',

@@ -24,7 +24,11 @@ const ownerNav = [
   { to: '/settings',  label: 'Configuración',  icon: <Icon name="settings" /> },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+}
+
+export function Sidebar({ collapsed }: SidebarProps) {
   const { user, logout, currentBranchId } = useAuth();
   const { kitchenEnabled, ordersEnabled, cashEnabled, teamEnabled, branchesEnabled, rafflesEnabled } = useSettingsStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -76,10 +80,66 @@ export function Sidebar() {
 
   const userInitial = (user?.name ?? '?')[0].toUpperCase();
 
+  if (collapsed) {
+    return (
+      <aside
+        data-print-hide
+        className="hidden lg:flex lg:flex-col w-16 h-screen fixed left-0 top-0 border-r border-white/5 transition-all duration-200"
+        style={{ background: 'linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)' }}
+      >
+        {/* Logo only */}
+        <div className="flex items-center justify-center py-4 border-b border-white/8">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
+            <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
+          </div>
+        </div>
+
+        {/* Icons only nav */}
+        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              className={({ isActive }) =>
+                [
+                  'relative flex items-center justify-center p-2.5 rounded-xl transition-all duration-150',
+                  isActive
+                    ? 'text-primary-400 bg-white/10 border border-white/8'
+                    : 'text-white/35 hover:text-white/80 hover:bg-white/5',
+                ].join(' ')
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-400 rounded-full" />
+                  )}
+                  {item.icon}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* User avatar only */}
+        <div className="px-2 py-3 border-t border-white/8 flex justify-center">
+          <button
+            title={user?.name}
+            onClick={() => navigate('/account')}
+            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
+          >
+            <span className="text-xs font-bold text-white/70">{userInitial}</span>
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside
       data-print-hide
-      className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-white/5"
+      className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-white/5 transition-all duration-200"
       style={{
         background: 'linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)',
       }}
@@ -87,7 +147,6 @@ export function Sidebar() {
       {/* Brand header */}
       <div className="px-4 pt-5 pb-4 border-b border-white/8">
         <div className="flex items-center gap-3 mb-3">
-          {/* Logo mark */}
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
             <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
           </div>
@@ -99,7 +158,6 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Branch selector for OWNER */}
         {user?.role === 'OWNER' && (
           <div className="relative">
             <BranchSelector
@@ -114,7 +172,6 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Fixed branch for CASHIER */}
         {user?.role === 'CASHIER' && user.branchId && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/12 border border-primary-500/20 text-xs text-primary-300">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse-dot shrink-0" />
@@ -156,7 +213,6 @@ export function Sidebar() {
       {/* User menu */}
       <div className="px-3 py-3 border-t border-white/8">
         <div ref={userMenuRef} className="relative">
-          {/* Dropdown — opens upward */}
           {userMenuOpen && (
             <div
               className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
@@ -180,7 +236,6 @@ export function Sidebar() {
             </div>
           )}
 
-          {/* Trigger button */}
           <button
             onClick={() => setUserMenuOpen((o) => !o)}
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-white/6 transition-colors"

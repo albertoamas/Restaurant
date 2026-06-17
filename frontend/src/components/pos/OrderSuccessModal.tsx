@@ -38,7 +38,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
         {/* Botón X */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Cerrar"
         >
           <Icon name="x" size={16} strokeWidth={2} />
@@ -59,10 +59,10 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
           ))}
 
           {/* Pulse ring */}
-          <span className="absolute w-20 h-20 rounded-full bg-emerald-100 animate-ping opacity-60" />
+          <span className="absolute w-20 h-20 rounded-full bg-emerald-500/20 animate-ping opacity-60" />
 
           {/* Icon circle */}
-          <div className="relative w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center ring-4 ring-emerald-200/60">
+          <div className="relative w-16 h-16 bg-emerald-500/15 rounded-full flex items-center justify-center ring-4 ring-emerald-500/20">
             <svg className="w-9 h-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -101,7 +101,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
               variant="ghost"
               fullWidth
               onClick={handlePrintReceipt}
-              className="border border-gray-200"
+              className="border border-[var(--border-subtle)]"
             >
               Imprimir recibo
             </Button>

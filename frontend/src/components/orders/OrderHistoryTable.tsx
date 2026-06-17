@@ -48,7 +48,7 @@ interface RowProps {
 }
 
 function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onStatusChange }: RowProps) {
-  const accent      = statusAccent[order.status] ?? { badge: 'bg-gray-100 text-gray-500 border-gray-200' };
+  const accent      = statusAccent[order.status] ?? { badge: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)]' };
   const { date, time } = formatDateCell(order.createdAt);
   const isCancelled = order.status === OrderStatus.CANCELLED;
   const isDelivered = order.status === OrderStatus.DELIVERED;
@@ -59,7 +59,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
   const canCancel = !isCancelled && (isActive || (isDelivered && isOwner));
 
   return (
-    <tr className={`transition-colors hover:bg-white/5 ${isCancelled ? 'opacity-50' : ''}`}>
+    <tr className={`transition-colors hover:bg-[var(--color-surface-2)] ${isCancelled ? 'opacity-50' : ''}`}>
 
       {/* # */}
       <td className="pl-4 pr-3 py-3.5 whitespace-nowrap">
@@ -104,8 +104,8 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
       {/* Pago — oculto en mobile */}
       <td className="px-3 py-3.5 hidden sm:table-cell whitespace-nowrap">
         {payment != null
-          ? <span className="text-xs font-medium text-gray-600 bg-white/8 px-2 py-0.5 rounded-md">{payment}</span>
-          : <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+          ? <span className="text-xs font-medium text-gray-600 bg-[var(--color-surface-2)] px-2 py-0.5 rounded-md">{payment}</span>
+          : <span className="text-xs font-semibold text-amber-700 bg-amber-500/12 border border-amber-500/25 px-2 py-0.5 rounded-md">
               Pendiente
             </span>
         }
@@ -125,7 +125,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
               </button>
               <button
                 onClick={() => setConfirming(false)}
-                className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-400 border border-white/10 hover:border-gray-400/40 transition-colors"
+                className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-400 border border-[var(--border-subtle)] hover:border-gray-400/40 transition-colors"
               >
                 No
               </button>
@@ -140,7 +140,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
               )}
               {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
                 <button onClick={() => onEdit(order)} title="Editar pedido"
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-white/8 hover:text-gray-600 transition-colors">
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-[var(--color-surface-2)] hover:text-gray-600 transition-colors">
                   <Icon name="edit" size={16} strokeWidth={2} />
                 </button>
               )}
@@ -192,11 +192,11 @@ export function OrderHistoryTable({ orders, total, onPayOrder, onEdit, onStatusC
   const isOwner = user?.role === UserRole.OWNER;
 
   return (
-    <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+    <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[580px] border-collapse">
           <thead>
-            <tr className="bg-white/3 border-b border-white/8">
+            <tr className="bg-[var(--color-surface-2)] border-b border-[var(--border-subtle)]">
               <TH className="pl-4 pr-3 text-left">#</TH>
               <TH className="px-3 text-left">Fecha</TH>
               <TH className="px-3 text-left hidden sm:table-cell">Cliente</TH>
@@ -207,7 +207,7 @@ export function OrderHistoryTable({ orders, total, onPayOrder, onEdit, onStatusC
               <TH className="pl-2 pr-4 text-right">Acciones</TH>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/8">
+          <tbody className="divide-y divide-[var(--border-subtle)]">
             {orders.map((order) => (
               <HistoryRow
                 key={order.id}
@@ -224,7 +224,7 @@ export function OrderHistoryTable({ orders, total, onPayOrder, onEdit, onStatusC
       </div>
 
       {total > orders.length && (
-        <div className="px-4 py-3 border-t border-white/8 bg-white/3 text-center">
+        <div className="px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-center">
           <p className="text-xs text-gray-400">
             Mostrando{' '}
             <span className="font-semibold text-gray-600">{orders.length}</span>

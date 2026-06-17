@@ -7,11 +7,11 @@ interface BadgeProps {
 }
 
 const variants = {
-  success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  warning: 'bg-amber-50 text-amber-700 border border-amber-200',
-  error:   'bg-red-50 text-red-700 border border-red-200',
-  info:    'bg-primary-50 text-primary-700 border border-primary-200',
-  neutral: 'bg-gray-100 text-gray-700 border border-gray-200',
+  success: 'bg-emerald-500/12 text-emerald-600 border border-emerald-500/25',
+  warning: 'bg-amber-500/12 text-amber-600 border border-amber-500/25',
+  error:   'bg-red-500/12 text-red-600 border border-red-500/25',
+  info:    'bg-primary-500/10 text-primary-600 border border-primary-500/20',
+  neutral: 'bg-[var(--color-surface-2)] text-gray-700 border border-[var(--border-subtle)]',
 };
 
 const dotColors = {

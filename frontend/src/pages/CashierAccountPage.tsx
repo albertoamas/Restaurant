@@ -34,8 +34,8 @@ function AccountLock({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="w-14 h-14 rounded-2xl bg-primary-100 border border-primary-200 flex items-center justify-center mx-auto mb-5">
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="w-14 h-14 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center mx-auto mb-5">
           <Icon name="lock" size={28} strokeWidth={2} className="text-primary-600" />
         </div>
         <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Acción protegida</h2>
@@ -106,19 +106,19 @@ export function CashierAccountPage() {
     <div className="p-4 sm:p-6 max-w-lg mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-heading font-black text-gray-900">Mi cuenta</h1>
-        <p className="text-sm text-gray-500 mt-1">Información de tu perfil</p>
+        <p className="text-xs text-gray-500 mt-0.5">Gestiona tu contraseña e información de perfil.</p>
       </div>
 
       {/* Profile card */}
       <Card className="mb-4 p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-primary-100 border border-primary-200 flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 rounded-full bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
           <span className="text-xl font-bold text-primary-600">{userInitial}</span>
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
           <p className="text-sm text-gray-500 truncate">{user?.email}</p>
           {roleLabel && (
-            <span className="inline-block mt-1 text-xs font-medium text-primary-600 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-full">
+            <span className="inline-block mt-1 text-xs font-medium text-primary-600 bg-primary-500/10 border border-primary-500/20 px-2 py-0.5 rounded-full">
               {roleLabel}
             </span>
           )}

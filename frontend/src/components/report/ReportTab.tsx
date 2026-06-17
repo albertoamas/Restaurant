@@ -151,7 +151,7 @@ export function ReportTab({
               data-print-hide
               value={selectedCategory}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="text-xs border border-white/10 rounded-xl px-3 py-1.5 bg-[var(--color-surface-card)] text-gray-600 [color-scheme:dark] focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow] cursor-pointer"
+              className="text-xs border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 bg-[var(--color-surface-card)] text-gray-600 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow] cursor-pointer"
             >
               <option value="">Todas las categorías</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -205,7 +205,7 @@ export function ReportTab({
                     <span className="text-gray-600 font-medium">{EXPENSE_LABELS[cat as ExpenseCategory] ?? cat}</span>
                     <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
                   </div>
-                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
                     <div className="h-full rounded-full bg-red-400 transition-[width] duration-700" style={{ width: `${(amount / expenseSummary.total) * 100}%` }} />
                   </div>
                 </div>
@@ -224,11 +224,11 @@ export function ReportTab({
                 {!isPositive && <span className="text-xl mr-0.5">−</span>}Bs {Math.abs(netProfit).toFixed(2)}
               </p>
             </div>
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isPositive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${isPositive ? 'bg-emerald-500/12 text-emerald-600 border-emerald-500/25' : 'bg-red-500/12 text-red-600 border-red-500/25'}`}>
               {isPositive ? '↑' : '↓'} {Math.abs(marginPct).toFixed(1)}% margen
             </span>
           </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex mb-5">
+          <div className="h-1.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden flex mb-5">
             <div className="h-full bg-emerald-500 transition-[width] duration-700" style={{ width: `${profitPct}%` }} />
             <div className="h-full bg-red-400 transition-[width] duration-700"   style={{ width: `${expensePct}%` }} />
           </div>
@@ -241,7 +241,7 @@ export function ReportTab({
               <span className="text-gray-500">Gastos operativos</span>
               <span className="font-heading font-bold text-red-500">− Bs {expenseSummary.total.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between text-sm pt-2.5 border-t border-gray-100">
+            <div className="flex items-center justify-between text-sm pt-2.5 border-t border-[var(--border-subtle)]">
               <span className="font-semibold text-gray-700">Resultado neto</span>
               <span className={`font-heading font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                 {!isPositive && '− '}Bs {Math.abs(netProfit).toFixed(2)}

@@ -3,19 +3,21 @@ import type { PlanDto } from '@pos/shared';
 import { SaasPlan } from '@pos/shared';
 import { usePlans } from '../hooks/usePlans';
 import { Spinner } from '../components/ui/Spinner';
+import { useTheme } from '../hooks/useTheme';
+import { Icon } from '../components/ui/Icon';
 
-/* ─── Paleta ─────────────────────────────────────────────── */
+/* ─── Paleta — semantic tokens, adapts to theme ─────────── */
 const ORG  = 'oklch(0.65 0.22 42)';
 const ORGD = 'oklch(0.45 0.22 40)';
 const ORGG = 'oklch(0.65 0.22 42 / 0.18)';
-const BG   = 'oklch(0.10 0.012 38)';
-const BG2  = 'oklch(0.145 0.016 40)';
-const BG3  = 'oklch(0.19 0.018 40)';
-const BD   = 'oklch(0.22 0.018 40)';
-const BD2  = 'oklch(0.30 0.022 42)';
-const CR   = 'oklch(0.93 0.010 52)';
-const CR2  = 'oklch(0.70 0.012 50)';
-const CR3  = 'oklch(0.46 0.008 48)';
+const BG   = 'var(--color-surface-page)';
+const BG2  = 'var(--color-surface-card)';
+const BG3  = 'var(--color-surface-2)';
+const BD   = 'var(--border-subtle)';
+const BD2  = 'var(--border-strong)';
+const CR   = 'var(--color-text-main)';
+const CR2  = 'var(--color-text-soft)';
+const CR3  = 'var(--color-text-muted)';
 
 /* ─── Data ──────────────────────────────────────────────── */
 const FEATURES = [
@@ -293,14 +295,14 @@ function PlanCard({ plan }: { plan: PlanDto }) {
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20,
         padding: 12, borderRadius: 12,
-        background: meta.highlight ? ORGG : 'oklch(0.12 0.012 38)',
+        background: meta.highlight ? ORGG : BG3,
         border: `1px solid ${meta.highlight ? BD2 : BD}`,
       }}>
         {limits.map((l) => (
           <span key={l} style={{
             fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 8,
-            background: meta.highlight ? 'oklch(0.65 0.22 42 / 0.25)' : BG3,
-            color: meta.highlight ? 'oklch(0.85 0.10 50)' : CR2,
+            background: meta.highlight ? 'oklch(0.65 0.22 42 / 0.25)' : BG2,
+            color: meta.highlight ? ORG : CR,
             border: `1px solid ${meta.highlight ? BD2 : BD}`,
           }}>
             {l}
@@ -379,6 +381,7 @@ function PricingSection() {
 
 /* ─── Landing principal ─────────────────────────────────── */
 export function LandingPage() {
+  const { theme, toggle: toggleTheme } = useTheme();
   return (
     <div style={{ minHeight: '100vh', overflowX: 'hidden', background: BG, color: CR, fontFamily: 'var(--font-sans)' }}>
 
@@ -403,19 +406,26 @@ export function LandingPage() {
                 <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
               </svg>
             </div>
-            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', color: CR }}>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.92)' }}>
               Yanko<span style={{ color: ORG }}>POS</span>
             </span>
           </div>
 
           {/* Links */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <a href="#features" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+            <a href="#features" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}>
               Características
             </a>
-            <a href="#pricing" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: CR2, textDecoration: 'none' }}>
+            <a href="#pricing" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}>
               Precios
             </a>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 8, color: 'rgba(255,255,255,0.50)', display: 'flex', alignItems: 'center' }}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={1.75} />
+            </button>
             <Link to="/login" style={{
               padding: '8px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700,
               background: ORG, color: 'white', textDecoration: 'none',
@@ -436,12 +446,14 @@ export function LandingPage() {
           mixBlendMode: 'overlay',
         }} />
 
-        {/* Orbe de luz naranja */}
-        <div style={{
-          position: 'absolute', top: -120, left: -80, width: 600, height: 600,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, oklch(0.65 0.22 42 / 0.12) 0%, transparent 70%)',
-        }} />
+        {/* Orbe de luz naranja — solo en modo oscuro */}
+        {theme === 'dark' && (
+          <div style={{
+            position: 'absolute', top: -120, left: -80, width: 600, height: 600,
+            borderRadius: '50%', pointerEvents: 'none',
+            background: 'radial-gradient(circle, oklch(0.65 0.22 42 / 0.12) 0%, transparent 70%)',
+          }} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center" style={{ maxWidth: 1200, margin: '0 auto', position: 'relative' }}>
           {/* Texto */}
@@ -453,7 +465,7 @@ export function LandingPage() {
               border: `1px solid ${BD2}`, background: ORGG,
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: ORG, display: 'inline-block', animation: 'pulse 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.82 0.12 50)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: ORG, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Software POS · Bolivia
               </span>
             </div>

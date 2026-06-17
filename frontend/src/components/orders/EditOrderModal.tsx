@@ -19,29 +19,29 @@ interface Props {
 
 type CustomerPayload = { customerId?: string; createCustomer?: CreateCustomerRequest } | null;
 
-/* ─── Static data (same icons as PaymentModal) ──────────────────────────── */
+/* ─── Static data ───────────────────────────────────────────────────────── */
 
 const ORDER_TYPES = [
   {
     value: OrderType.DINE_IN,
     label: 'Local',
     icon: <Icon name="card" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
-    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
   },
   {
     value: OrderType.TAKEOUT,
     label: 'Para Llevar',
     icon: <Icon name="bag" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
-    active: 'border-2 border-amber-500/70 bg-amber-500/18 text-amber-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
+    active: 'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
   },
   {
     value: OrderType.DELIVERY,
     label: 'Delivery',
     icon: <Icon name="map" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
-    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
   },
 ];
 
@@ -50,22 +50,22 @@ const PAYMENT_METHODS = [
     value: PaymentMethod.CASH,
     label: 'Efectivo',
     icon: <Icon name="cash" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
-    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
   },
   {
     value: PaymentMethod.QR,
     label: 'QR',
     icon: <Icon name="qr" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
-    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
   },
   {
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
     icon: <Icon name="card" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-white/12 bg-white/5 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
-    active: 'border-2 border-violet-500/70 bg-violet-500/18 text-violet-300',
+    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
+    active: 'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
   },
 ];
 
@@ -164,9 +164,9 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cliente</p>
           {order.customer && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-xl bg-sky-50 border border-sky-200">
-              <div className="w-7 h-7 rounded-full bg-sky-200 flex items-center justify-center shrink-0">
-                <Icon name="user" size={14} strokeWidth={2} className="text-sky-700" />
+            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-xl bg-sky-500/10 border border-sky-500/20">
+              <div className="w-7 h-7 rounded-full bg-sky-500/20 flex items-center justify-center shrink-0">
+                <Icon name="user" size={14} strokeWidth={2} className="text-sky-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-sky-500 font-semibold leading-none mb-0.5">Cliente actual</p>
@@ -186,7 +186,8 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Sin especificaciones especiales..."
-            className="w-full border-2 border-gray-200 rounded-2xl px-3 py-2.5 text-sm resize-none
+            className="w-full border-2 border-[var(--border-subtle)] rounded-2xl px-3 py-2.5 text-sm resize-none
+              bg-[var(--color-surface-card)] text-gray-700
               focus:outline-none focus:border-primary-400 transition-colors placeholder-gray-400"
           />
         </div>

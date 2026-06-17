@@ -19,7 +19,7 @@ function ModuleToggleRow({ def, value, disabled, onChange }: {
   onChange: (key: keyof TenantModules, value: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-white/6 transition-colors">
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors">
       <div className="min-w-0 pr-4">
         <p className="text-sm font-semibold text-gray-700">{def.label}</p>
         <p className="text-xs text-gray-500 mt-0.5">{def.description}</p>
@@ -27,7 +27,7 @@ function ModuleToggleRow({ def, value, disabled, onChange }: {
       <button
         onClick={() => onChange(def.key, !value)}
         disabled={disabled}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${value ? 'bg-primary-500' : 'bg-white/12'}`}
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${value ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
         role="switch" aria-checked={value}
       >
         <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -85,8 +85,8 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
   };
 
   return (
-    <div className="border-t border-white/6 animate-slide-down">
-      <div className="grid md:grid-cols-2 divide-y divide-white/6 md:divide-y-0 md:divide-x md:divide-white/6">
+    <div className="border-t border-[var(--border-subtle)] animate-slide-down">
+      <div className="grid md:grid-cols-2 divide-y divide-[var(--border-subtle)] md:divide-y-0 md:divide-x md:divide-[var(--border-subtle)]">
 
         {/* Plan selector */}
         <div className="p-5">
@@ -102,7 +102,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
                   disabled={savingPlan}
                   className={[
                     'flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all',
-                    isActive ? cfg.cardActive : 'border-white/8 bg-white/3 hover:border-white/14 hover:bg-white/6',
+                    isActive ? cfg.cardActive : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:border-[var(--border-strong)] hover:bg-[var(--color-surface-3)]',
                     savingPlan ? 'opacity-50 cursor-not-allowed' : '',
                   ].join(' ')}
                 >
@@ -126,13 +126,13 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
 
           {activePlan && (
             <div className="mt-3 flex gap-2">
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && activePlan.maxBranches !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-white/5 text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && activePlan.maxBranches !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.branchCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxBranches)}</span>
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Sucursales</p>
               </div>
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && activePlan.maxCashiers !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-white/5 text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && activePlan.maxCashiers !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.cashierCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxCashiers)}</span>
                 </p>
@@ -143,7 +143,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
         </div>
 
         {/* Module overrides */}
-        <div className="p-5 bg-white/2">
+        <div className="p-5 bg-[var(--color-surface-2)]">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-3">Módulos activos</p>
           <div className="space-y-0.5">
             {MODULE_DEFS.map((def) => (

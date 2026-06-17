@@ -56,7 +56,7 @@ export function CashAmountModal({
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         {breakdown && (
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2.5">
+          <div className="bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl p-4 space-y-2.5">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Monto inicial</span>
               <span className="font-medium text-gray-700">Bs {breakdown.openingAmount.toFixed(2)}</span>
@@ -65,7 +65,7 @@ export function CashAmountModal({
               <span className="text-gray-500">Ventas en efectivo</span>
               <span className="font-medium text-emerald-600">+ Bs {breakdown.cashSales.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center pt-2.5 border-t border-gray-200">
+            <div className="flex justify-between items-center pt-2.5 border-t border-[var(--border-subtle)]">
               <span className="text-sm font-semibold text-gray-700">Esperado en caja</span>
               <span className="font-heading font-black text-base text-gray-900">
                 Bs {breakdown.expectedAmount.toFixed(2)}

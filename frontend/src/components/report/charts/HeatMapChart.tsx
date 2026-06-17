@@ -145,10 +145,10 @@ export function HeatMapChart({ data }: Props) {
               ? 'translateX(-50%)'
               : 'translateX(-50%) translateY(-100%)',
             background:   'var(--color-surface-card)',
-            border:       '1px solid rgba(255,255,255,0.12)',
+            border:       '1px solid var(--border-strong)',
             borderRadius: '10px',
             padding:      '8px 12px',
-            boxShadow:    '0 8px 24px rgba(0,0,0,0.45)',
+            boxShadow:    'var(--shadow-card-lg)',
             whiteSpace:   'nowrap',
           }}
         >
@@ -158,10 +158,10 @@ export function HeatMapChart({ data }: Props) {
           {hovered.totalSales > 0 ? (
             <>
               <p style={{ color: C.primary, fontSize: 12, fontWeight: 700 }}>
-                Ventas: <span style={{ color: '#f9fafb' }}>Bs {hovered.totalSales.toFixed(2)}</span>
+                Ventas: <span style={{ color: 'var(--color-text-main)' }}>Bs {hovered.totalSales.toFixed(2)}</span>
               </p>
               <p style={{ color: C.emerald, fontSize: 12, fontWeight: 700 }}>
-                Pedidos: <span style={{ color: '#f9fafb' }}>{hovered.orderCount}</span>
+                Pedidos: <span style={{ color: 'var(--color-text-main)' }}>{hovered.orderCount}</span>
               </p>
             </>
           ) : (

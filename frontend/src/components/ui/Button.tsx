@@ -17,9 +17,9 @@ const variants = {
   ].join(' '),
 
   secondary: [
-    'bg-white/8 border border-white/12 text-gray-700',
+    'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-700',
     'shadow-[0_1px_2px_oklch(0.06_0.010_38/0.2)]',
-    'hover:border-white/20 hover:bg-white/12 hover:text-gray-600',
+    'hover:border-[var(--border-strong)] hover:bg-[var(--color-surface-card-hover)] hover:text-gray-600',
   ].join(' '),
 
   danger: [
@@ -31,17 +31,17 @@ const variants = {
 
   ghost: [
     'bg-transparent text-gray-500',
-    'hover:bg-white/8 hover:text-gray-300',
+    'hover:bg-[var(--color-surface-2)] hover:text-gray-700',
   ].join(' '),
 
   outline: [
-    'bg-transparent border border-white/14 text-gray-600',
+    'bg-transparent border border-[var(--border-subtle)] text-gray-600',
     'hover:border-primary-500/50 hover:text-primary-400 hover:bg-primary-500/8',
   ].join(' '),
 
   soft: [
-    'bg-primary-100 text-primary-400 border border-primary-200/50',
-    'hover:bg-primary-200/80 hover:border-primary-300/50',
+    'bg-primary-500/10 text-primary-600 border border-primary-500/20',
+    'hover:bg-primary-500/18 hover:border-primary-500/35',
   ].join(' '),
 
   emerald: [

@@ -13,7 +13,7 @@ import { queryKeys } from '../lib/query-keys';
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
         <Icon name="ticket" size={32} strokeWidth={1.5} className="text-gray-400" />
       </div>
       <h3 className="text-base font-bold font-heading text-gray-700 mb-1">Sin sorteos aún</h3>
@@ -39,8 +39,8 @@ export function RafflesPage() {
   const activeCount = raffles.filter((r) => r.status === 'ACTIVE' || r.status === 'DRAWING').length;
 
   return (
-    <div className="p-4 lg:p-6 max-w-5xl mx-auto">
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
+    <div className="p-4 lg:p-6 animate-slide">
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Sorteos</h1>

@@ -35,9 +35,9 @@ const MAX_WIDTH_CLASS: Record<MaxWidth, string> = {
   full:  'max-w-full',
 };
 
-export function PageShell({ children, maxWidth = '5xl', className = '' }: PageShellProps) {
+export function PageShell({ children, maxWidth = 'full', className = '' }: PageShellProps) {
   return (
-    <div className={`p-4 sm:p-6 ${MAX_WIDTH_CLASS[maxWidth]} mx-auto animate-slide ${className}`}>
+    <div className={`p-4 sm:p-6 ${MAX_WIDTH_CLASS[maxWidth]} animate-slide ${className}`}>
       {children}
     </div>
   );

@@ -33,7 +33,7 @@ interface StatRowProps {
 
 function StatRow({ label, value, muted, bold, bordered, valueClass }: StatRowProps) {
   return (
-    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-white/8' : ''}`}>
+    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-[var(--border-subtle)]' : ''}`}>
       <span className={`text-sm ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
       <span className={`text-sm ${bold ? 'font-heading font-bold' : 'font-medium'} ${valueClass || 'text-gray-900'}`}>
         {value}
@@ -56,7 +56,7 @@ export function CashPage() {
   if (!currentBranchId) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400 px-6">
-        <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mb-4">
           <Icon name="building" size={28} strokeWidth={1.5} className="text-gray-300" />
         </div>
         <p className="text-sm font-semibold text-gray-500 text-center">Selecciona una sucursal</p>
@@ -96,8 +96,8 @@ export function CashPage() {
   };
 
   return (
-    <PageShell maxWidth="2xl">
-      <div className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
+    <PageShell>
+      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl font-black text-gray-900">Control de Caja</h2>
@@ -105,8 +105,8 @@ export function CashPage() {
           </div>
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
             isOpen
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-gray-100 text-gray-600 border-gray-200'
+              ? 'bg-emerald-500/12 text-emerald-600 border-emerald-500/30'
+              : 'bg-[var(--color-surface-2)] text-gray-600 border-[var(--border-subtle)]'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-400'}`} />
             {isOpen ? 'Turno abierto' : 'Turno cerrado'}
@@ -115,47 +115,48 @@ export function CashPage() {
       </div>
 
       {/* Hero status card */}
-      <div className={[
-        'rounded-2xl p-6 mb-4 border shadow-[0_8px_26px_oklch(0.13_0.012_260/0.08)]',
-        isOpen
-          ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/60 border-emerald-200/80'
-          : 'bg-gradient-to-br from-gray-50 to-gray-100/60 border-gray-200/80',
-      ].join(' ')}>
+      <div
+        className="rounded-2xl p-6 mb-4 border shadow-[0_8px_26px_oklch(0.13_0.012_260/0.08)]"
+        style={isOpen
+          ? { background: 'var(--cash-open-bg)', borderColor: 'var(--cash-open-border)' }
+          : { background: 'var(--color-surface-2)', borderColor: 'var(--border-subtle)' }
+        }
+      >
         <div className="flex items-start justify-between mb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-300'}`} />
-              <span className={`text-sm font-bold ${isOpen ? 'text-emerald-700' : 'text-gray-500'}`}>
+              <span className={`text-sm font-bold ${isOpen ? 'text-[var(--cash-open-text)]' : 'text-gray-500'}`}>
                 {isOpen ? 'Caja abierta' : 'Caja cerrada'}
               </span>
             </div>
             {isOpen && session && (
-              <p className="text-xs text-emerald-600/70 ml-4">Desde {formatDate(session.openedAt)}</p>
+              <p className="text-xs ml-4" style={{ color: 'var(--cash-open-text-soft)' }}>Desde {formatDate(session.openedAt)}</p>
             )}
           </div>
           <div className={[
             'w-12 h-12 rounded-xl flex items-center justify-center',
-            isOpen ? 'bg-emerald-500/15' : 'bg-gray-200/60',
+            isOpen ? 'bg-[var(--cash-open-border)]/20' : 'bg-gray-200/60',
           ].join(' ')}>
-            <Icon name="cash" size={24} className={isOpen ? 'text-emerald-600' : 'text-gray-400'} />
+            <Icon name="cash" size={24} className={isOpen ? 'text-[var(--cash-open-text)]' : 'text-gray-400'} />
           </div>
         </div>
 
         {isOpen && session ? (
           <>
             <div className="mb-5">
-              <p className="text-xs font-semibold text-emerald-600/70 uppercase tracking-wide mb-1">Monto inicial</p>
-              <p className="font-heading font-black text-3xl text-emerald-700">Bs {session.openingAmount.toFixed(2)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cash-open-text-soft)' }}>Monto inicial</p>
+              <p className="font-heading font-black text-3xl" style={{ color: 'var(--cash-open-text)' }}>Bs {session.openingAmount.toFixed(2)}</p>
             </div>
             {session.notes && (
-              <p className="text-xs text-emerald-600/60 bg-emerald-500/8 rounded-lg px-3 py-2 mb-4">{session.notes}</p>
+              <p className="text-xs rounded-lg px-3 py-2 mb-4" style={{ color: 'var(--cash-open-text-soft)', background: 'oklch(from var(--cash-open-bg) l c h / 0.5)' }}>{session.notes}</p>
             )}
             {isOwner ? (
               <Button variant="secondary" fullWidth onClick={() => setShowClose(true)}>
                 Cerrar caja
               </Button>
             ) : (
-              <p className="text-sm text-emerald-600/70 text-center bg-emerald-500/8 rounded-xl px-3 py-2.5">
+              <p className="text-sm text-center rounded-xl px-3 py-2.5" style={{ color: 'var(--cash-open-text-soft)' }}>
                 El administrador es quien cierra el turno.
               </p>
             )}
@@ -170,7 +171,7 @@ export function CashPage() {
                 Abrir caja
               </Button>
             ) : (
-              <p className="text-sm text-gray-400 text-center bg-gray-100 rounded-xl px-3 py-2.5">
+              <p className="text-sm text-gray-400 text-center bg-[var(--color-surface-2)] rounded-xl px-3 py-2.5">
                 El administrador abre el turno al inicio del día.
               </p>
             )}
@@ -180,7 +181,7 @@ export function CashPage() {
 
       {/* Last closing summary */}
       {!isOpen && lastClosed && (
-        <div className="rounded-2xl border border-white/8 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.4)] p-5" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md p-5" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Icon name="orders" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
             <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
@@ -189,7 +190,7 @@ export function CashPage() {
             )}
           </div>
 
-          <div className="divide-y divide-white/8">
+          <div className="divide-y divide-[var(--border-subtle)]">
             <StatRow label="Monto inicial" value={`Bs ${lastClosed.openingAmount.toFixed(2)}`} />
             <StatRow
               label="Ventas en efectivo"
@@ -223,7 +224,7 @@ export function CashPage() {
         <button
           onClick={() => setShowHistory(true)}
           className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
-            bg-white/5 border border-white/10 rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-[0_6px_18px_oklch(0.06_0.010_38/0.4)]"
+            bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-card-md"
         >
           Ver historial de cierres ({closedSessions.length}) →
         </button>

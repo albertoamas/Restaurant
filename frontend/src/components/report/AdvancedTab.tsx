@@ -50,7 +50,7 @@ function KpiCard({ label, value, prevValue, pct, accent, bg, iconName }: KpiCard
 
   return (
     <div
-      className="relative rounded-2xl border border-white/8 shadow-[0_8px_28px_oklch(0.06_0.010_38/0.6)] p-4 flex flex-col gap-3 overflow-hidden"
+      className="relative rounded-2xl border border-[var(--border-subtle)] shadow-card-lg p-4 flex flex-col gap-3 overflow-hidden"
       style={{ background: 'var(--color-surface-card)' }}
     >
       <div className={`absolute -top-5 -right-5 w-24 h-24 rounded-full opacity-20 blur-2xl ${bg}`} />
@@ -212,7 +212,7 @@ export function AdvancedTab({
           <div className="overflow-x-auto -mx-1">
             <table className="w-full text-xs min-w-[560px]">
               <thead>
-                <tr className="border-b border-white/8">
+                <tr className="border-b border-[var(--border-subtle)]">
                   <th className="text-left font-semibold text-gray-400 pb-2 pr-3 pl-1">Sucursal</th>
                   <th className="text-left font-semibold text-gray-400 pb-2 pr-3">Apertura</th>
                   <th className="text-left font-semibold text-gray-400 pb-2 pr-3">Cierre</th>
@@ -222,7 +222,7 @@ export function AdvancedTab({
                   <th className="text-right font-semibold text-gray-400 pb-2 pr-1">Diferencia</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[var(--border-subtle)]">
                 {cashSessions.map((s) => {
                   const diff = s.difference;
                   const diffColor =
@@ -230,7 +230,7 @@ export function AdvancedTab({
                     diff > 0    ? 'text-emerald-500' :
                     diff < 0    ? 'text-red-500'     : 'text-gray-500';
                   return (
-                    <tr key={s.id} className="hover:bg-white/3 transition-colors">
+                    <tr key={s.id} className="hover:bg-[var(--color-surface-2)] transition-colors">
                       <td className="py-2.5 pr-3 pl-1 font-medium text-gray-700">{s.branchName}</td>
                       <td className="py-2.5 pr-3 text-gray-500">
                         {fmtDate(s.openedAt)}{' '}<span className="text-gray-400">{fmtTime(s.openedAt)}</span>

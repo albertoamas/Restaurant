@@ -51,7 +51,12 @@ export function ReportPage() {
   };
 
   const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const pInactive = 'bg-white/5 border border-white/10 text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+  const pInactive = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+
+  const dateInputCls = [
+    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
+    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
+  ].join(' ');
 
   return (
     <PageShell>
@@ -65,7 +70,7 @@ export function ReportPage() {
       </div>
 
       {/* ── Header card ──────────────────────────────────────────────── */}
-      <div data-print-hide className="rounded-2xl border border-white/8 shadow-[0_10px_30px_oklch(0.06_0.010_38/0.6)] p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
+      <div data-print-hide className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
 
         {/* Title + export */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -74,40 +79,40 @@ export function ReportPage() {
             <p className="text-xs text-gray-500 mt-0.5">Vista consolidada de ventas, gastos y desempeño por periodo.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100/60 border border-primary-500/25 text-primary-400">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20">
               {rangeLabel}
             </span>
             {activeTab === 'reportes' && (
               canExport ? (
                 <>
                   <button onClick={handleExportExcel} disabled={!reportData.report || reportData.loading} title="Exportar a Excel"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-xs font-semibold text-gray-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
                     <Icon name="download" size={14} />Excel
                   </button>
                   <button onClick={() => window.print()} disabled={!reportData.report || reportData.loading} title="Imprimir / PDF"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-xs font-semibold text-gray-600 hover:border-primary-400 hover:text-primary-700 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed">
                     <Icon name="print" size={14} />PDF
                   </button>
                 </>
               ) : (
                 <div className="relative group">
-                  <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-xs font-semibold text-gray-400 cursor-not-allowed">
+                  <button disabled className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-xs font-semibold text-gray-400 cursor-not-allowed">
                     <Icon name="lock" size={14} />Exportar
                   </button>
-                  <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-white/10 shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug" style={{ background: 'var(--color-surface-card)' }}>
+                  <div className="absolute right-0 top-full mt-1.5 z-10 hidden group-hover:block w-48 rounded-xl border border-[var(--border-subtle)] shadow-lg px-3 py-2.5 text-xs text-gray-500 leading-snug" style={{ background: 'var(--color-surface-card)' }}>
                     Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
                   </div>
                 </div>
               )
             )}
-            {/* Tab switcher — top right, same style as Orders page */}
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+            {/* Tab switcher */}
+            <div className="flex gap-1 bg-[var(--color-surface-2)] rounded-lg p-0.5">
               {TABS.map((t) => (
                 <button key={t.key} onClick={() => setActiveTab(t.key)}
                   className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
                     activeTab === t.key
                       ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-white/8'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-[var(--color-surface-2)]'
                   }`}>
                   {t.label}
                 </button>
@@ -116,27 +121,23 @@ export function ReportPage() {
           </div>
         </div>
 
-        {/* Period selector */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Period selector + inline custom range */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {PERIODS.map((p) => (
             <button key={p.key} onClick={() => setPeriod(p.key)}
               className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${period === p.key ? pActive : pInactive}`}>
               {p.label}
             </button>
           ))}
+          {period === 'custom' && (
+            <>
+              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={dateInputCls} />
+              <span className="text-gray-400 text-sm shrink-0">→</span>
+              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={dateInputCls} />
+            </>
+          )}
         </div>
       </div>
-
-      {/* Custom range */}
-      {period === 'custom' && (
-        <div data-print-hide className="flex items-center gap-2 mb-4 rounded-2xl border border-white/8 p-3" style={{ background: 'var(--color-surface-card)' }}>
-          <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
-            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark] focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]" />
-          <span className="text-gray-400 text-sm">→</span>
-          <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
-            className="border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark] focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]" />
-        </div>
-      )}
 
       {/* Tab content */}
       {activeTab === 'reportes' ? (

@@ -9,6 +9,7 @@ import { PlansSection } from '../components/admin/PlansSection';
 import { TenantPanel } from '../components/admin/TenantPanel';
 import { TenantAvatar } from '../components/admin/TenantAvatar';
 import { PlanBadge } from '../components/admin/PlanBadge';
+import { useTheme } from '../hooks/useTheme';
 
 function formatTenantDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -24,6 +25,7 @@ const CREATE_FIELDS: [keyof CreateTenantPayload, string, string, string][] = [
 ];
 
 export function AdminPage() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [authenticated, setAuthenticated] = useState(adminApi.hasKey());
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState('');
@@ -158,6 +160,13 @@ export function AdminPage() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} strokeWidth={1.75} />
+            </button>
+            <button
               onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${showForm ? 'bg-white/10 text-white/60 hover:bg-white/15' : 'bg-primary-600 hover:bg-primary-500 text-white shadow-sm'}`}
             >
@@ -177,7 +186,7 @@ export function AdminPage() {
 
         {/* Create tenant form */}
         {showForm && (
-          <div className="rounded-2xl p-5 mb-6 shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] border border-white/8 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl p-5 mb-6 shadow-card-lg border border-[var(--border-subtle)] animate-slide" style={{ background: 'var(--color-surface-card)' }}>
             <h2 className="font-heading font-bold text-sm text-gray-900 mb-4">Nuevo negocio</h2>
             <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
               {CREATE_FIELDS.map(([field, label, type, placeholder]) => (
@@ -186,7 +195,7 @@ export function AdminPage() {
                   <input
                     type={type} value={form[field]} onChange={setField(field)}
                     placeholder={placeholder} required minLength={field === 'password' ? 6 : undefined}
-                    className="w-full text-sm border border-white/10 rounded-xl px-3 py-2 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
+                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
                   />
                 </div>
               ))}
@@ -210,12 +219,12 @@ export function AdminPage() {
             <p className="text-xs text-gray-400 mt-0.5">Gestión de tenants, planes y módulos</p>
           </div>
 
-          <div className="rounded-2xl shadow-[0_8px_24px_oklch(0.06_0.010_38/0.6)] border border-white/8 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl shadow-card-lg border border-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
             {loading ? (
               <div className="flex justify-center py-12"><Spinner /></div>
             ) : tenants.length === 0 ? (
               <div className="flex flex-col items-center py-14 text-center">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-2)] flex items-center justify-center mb-3">
                   <Icon name="building" size={20} strokeWidth={1.5} className="text-gray-300" />
                 </div>
                 <p className="text-sm text-gray-400">No hay negocios registrados</p>
@@ -224,11 +233,11 @@ export function AdminPage() {
             ) : (
               <div>
                 {tenants.map((t, idx) => (
-                  <div key={t.id} className={idx !== 0 ? 'border-t border-white/6' : ''}>
-                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/4 transition-colors">
+                  <div key={t.id} className={idx !== 0 ? 'border-t border-[var(--border-subtle)]' : ''}>
+                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--color-surface-2)] transition-colors">
                       <button
                         onClick={() => setExpandedId((prev) => prev === t.id ? null : t.id)}
-                        className="p-1 rounded-lg text-gray-500 hover:text-gray-400 hover:bg-white/8 transition-colors shrink-0"
+                        className="p-1 rounded-lg text-gray-500 hover:text-gray-400 hover:bg-[var(--color-surface-2)] transition-colors shrink-0"
                         aria-expanded={expandedId === t.id}
                       >
                         <Icon

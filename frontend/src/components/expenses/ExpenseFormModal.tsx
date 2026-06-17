@@ -169,7 +169,7 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
           Agregar ítem
         </button>
 
-        <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
+        <div className="border-t border-[var(--border-subtle)] pt-4 flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-500">Total del gasto</span>
           <span className="font-heading font-black text-xl text-gray-900">
             Bs {totalAmount.toFixed(2)}
@@ -184,7 +184,7 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
             placeholder="Ej: Compra semanal de insumos"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full border border-white/10 rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700
+            className="w-full border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700
               focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
               transition-[border-color,box-shadow] placeholder:text-gray-300"
           />
@@ -223,12 +223,12 @@ function ItemRowForm({
   const total = rowTotal(row);
 
   const inputBase =
-    'border border-white/10 rounded-xl px-2.5 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 [color-scheme:dark] ' +
+    'border border-[var(--border-subtle)] rounded-xl px-2.5 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700 ' +
     'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500 ' +
     'transition-[border-color,box-shadow]';
 
   return (
-    <div className="flex items-center gap-2 bg-gray-50/60 border border-gray-100 rounded-xl px-3 py-2.5">
+    <div className="flex items-center gap-2 bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5">
 
       {/* Category */}
       <select
@@ -296,7 +296,7 @@ function ItemRowForm({
             required
           />
           <span className="text-gray-300 text-xs">=</span>
-          <div className="w-[88px] rounded-xl border border-white/10 bg-white/5 px-2.5 py-2 text-sm text-right font-semibold text-gray-700 tabular-nums">
+          <div className="w-[88px] rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-2.5 py-2 text-sm text-right font-semibold text-gray-700 tabular-nums">
             {total > 0
               ? `Bs ${total.toFixed(2)}`
               : <span className="text-gray-300 font-normal">—</span>}
@@ -310,7 +310,7 @@ function ItemRowForm({
           type="button"
           onClick={onRemove}
           className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-gray-300
-            hover:text-red-500 hover:bg-red-50 transition-colors"
+            hover:text-red-500 hover:bg-red-500/8 transition-colors"
         >
           <Icon name="x" size={14} strokeWidth={2} />
         </button>

@@ -53,7 +53,7 @@ function PrintSelectModal({
             <button
               key={t.id}
               onClick={() => handlePrint(t)}
-              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-violet-50 hover:border-violet-200 border border-gray-100 transition-colors text-left"
+              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[var(--color-surface-2)] hover:bg-violet-500/80/8 hover:border-violet-500/25 border border-[var(--border-subtle)] transition-colors text-left"
             >
               <span className="font-mono font-bold text-sm text-gray-700 w-10 shrink-0">
                 #{t.ticketNumber}
@@ -91,7 +91,7 @@ function PrintButton({ onClick, title }: { onClick: () => void; title: string })
     <button
       onClick={onClick}
       title={title}
-      className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors shrink-0"
+      className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-violet-400 hover:bg-violet-500/80/10 transition-colors shrink-0"
     >
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <polyline points="6 9 6 2 18 2 18 9" />
@@ -111,7 +111,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         placeholder="Buscar por nombre o teléfono…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2.5 text-sm bg-white/5 border border-white/10 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
+        className="w-full pl-10 pr-3 py-2.5 text-sm bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
       />
       {value && (
         <button onClick={() => onChange('')}
@@ -172,7 +172,7 @@ function SpendingRow({
   };
 
   return (
-    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50 border border-gray-100'}`}>
+    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)]'}`}>
 
       {/* ── Cabecera — clic para expandir/colapsar ── */}
       <div
@@ -196,7 +196,7 @@ function SpendingRow({
         <div className="flex items-center gap-1.5 shrink-0">
 
           {/* Tickets ganados */}
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-600 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
             <IconTicket className="w-3 h-3" />
             {spending.ticketsEarned}
           </span>
@@ -204,11 +204,11 @@ function SpendingRow({
           {/* Resumen de entrega */}
           {hasTickets && (
             allDelivered ? (
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/12 border border-emerald-500/25 px-2 py-0.5 rounded-full whitespace-nowrap">
                 ✓ todos
               </span>
             ) : deliveredCount > 0 ? (
-              <span className="text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-orange-600 bg-orange-500/12 border border-orange-500/20 px-2 py-0.5 rounded-full whitespace-nowrap">
                 {deliveredCount}/{customerTickets.length}
               </span>
             ) : null
@@ -216,7 +216,7 @@ function SpendingRow({
 
           {/* Ganador */}
           {isWinner && winnerPosition !== undefined && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-500/12 px-2.5 py-1 rounded-full uppercase tracking-wide">
               <IconStar className="w-2.5 h-2.5" />
               {positionLabel(winnerPosition)}
             </span>
@@ -242,7 +242,7 @@ function SpendingRow({
       {/* ── Barra de progreso (siempre visible) ── */}
       <div className="px-4 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
             <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
               style={{ width: `${pct}%` }} />
           </div>
@@ -254,13 +254,13 @@ function SpendingRow({
 
       {/* ── Lista de tickets (colapsable) ── */}
       {!collapsed && hasTickets && (
-        <div className="border-t border-white/8 px-4 pt-2 pb-3 space-y-0.5 bg-white/3">
+        <div className="border-t border-[var(--border-subtle)] px-4 pt-2 pb-3 space-y-0.5 bg-[var(--color-surface-card)]">
           {customerTickets.map((t) => {
             const delivered     = isEffectivelyDelivered(t);
             const isToggling    = togglingId === t.id;
             const isWinnerTicket = t.winnerPosition !== undefined;
             return (
-              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-white/6 transition-colors">
+              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-[var(--color-surface-2)] transition-colors">
                 <span className={`font-mono font-bold text-xs w-9 shrink-0 ${isWinnerTicket ? 'text-amber-700' : 'text-gray-500'}`}>
                   #{t.ticketNumber}
                 </span>
@@ -276,8 +276,8 @@ function SpendingRow({
                   disabled={isToggling}
                   className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40 ${
                     delivered
-                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-50'
+                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-500/8'
+                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-500/8'
                   }`}
                 >
                   {isToggling ? '…' : delivered ? '↩ Revertir' : '✓ Entregar'}
@@ -368,15 +368,15 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
             {totalTickets > 0 && (
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                 totalPending === 0
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-orange-50 text-orange-700 border border-orange-200'
+                  ? 'bg-emerald-500/12 text-emerald-600 border border-emerald-500/25'
+                  : 'bg-orange-500/12 text-orange-600 border border-orange-500/25'
               }`}>
                 {totalPending === 0
                   ? '✓ Todos entregados'
                   : `${totalTickets - totalPending}/${totalTickets} entregados`}
               </span>
             )}
-            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 bg-amber-500/12 border border-amber-500/20 px-2 py-0.5 rounded-full">
               <IconCoins className="w-3 h-3" />
               Cada {threshold} Bs = 1 ticket
             </span>
@@ -384,7 +384,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
         </div>
 
         {raffle.spendings.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
+          <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-[var(--border-subtle)] rounded-xl">
             Sin acumulados aún
           </div>
         ) : filtered.length === 0 ? (
@@ -469,7 +469,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
             const isToggling = togglingId === t.id;
             return (
               <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
-                win ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'
+                win ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-[var(--color-surface-2)]'
               }`}>
                 <span className={`text-xs font-mono font-bold shrink-0 w-9 text-center ${
                   win ? 'text-amber-700' : 'text-gray-400'
@@ -490,8 +490,8 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
                   title={delivered ? 'Revertir entrega' : 'Marcar como entregado'}
                   className={`text-[10px] font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-40 shrink-0 ${
                     delivered
-                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-50'
+                      ? 'text-gray-400 hover:text-red-500 hover:bg-red-500/8'
+                      : 'text-violet-600 hover:text-violet-700 hover:bg-violet-500/8'
                   }`}
                 >
                   {isToggling ? '…' : delivered ? '↩' : '✓ Entregar'}
@@ -507,7 +507,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
                   title={`Imprimir ticket #${t.ticketNumber} de ${t.customer.name}`}
                 />
                 {win && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-500/12 px-2.5 py-1 rounded-full shrink-0 uppercase tracking-wide">
                     <IconStar className="w-2.5 h-2.5" />
                     {positionLabel(win.position)}
                   </span>

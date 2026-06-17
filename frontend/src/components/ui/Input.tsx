@@ -31,10 +31,10 @@ export function Input({ label, error, hint, leftAddon, rightAddon, inputSize = '
       <div className={[
         'flex items-center rounded-xl border bg-[var(--color-surface-card)] transition-[border-color,box-shadow] duration-150',
         'focus-within:ring-[3px] focus-within:ring-primary-500/20 focus-within:border-primary-500',
-        props.disabled ? 'bg-gray-100 border-gray-200 opacity-75' : '',
+        props.disabled ? 'opacity-60 pointer-events-none' : '',
         error
-          ? 'border-red-600/60 bg-red-50/10'
-          : 'border-white/10 hover:border-white/18',
+          ? 'border-red-600/60'
+          : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]',
       ].join(' ')}>
         {leftAddon && (
           <span className="pl-3 text-sm text-gray-500 shrink-0 select-none">{leftAddon}</span>

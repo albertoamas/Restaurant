@@ -1,10 +1,98 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ─── Theme-aware custom properties ─────────────────────── */
+/*
+ * Phase 1: :root holds dark values (current default).
+ * Phase 2 will flip :root to light; [data-theme="dark"] stays dark.
+ * The @theme block references these via var() so Tailwind utilities
+ * update automatically when the attribute changes on <html>.
+ */
+/*
+ * Light mode: warm whites and near-blacks with orange undertone.
+ * Sidebar stays dark (intentional zone contrast, common in premium apps).
+ */
+:root {
+  /* Surfaces */
+  --surface-page:       oklch(0.97 0.006 50);
+  --surface-card:       oklch(1.00 0.000  0);
+  --surface-2:          oklch(0.95 0.006 48);
+  --surface-3:          oklch(0.92 0.006 46);
+  --surface-card-hover: oklch(0.97 0.004 48);
+  --surface-sidebar:    oklch(0.14 0.016 40);  /* dark sidebar in light mode — intentional */
+  --surface-overlay:    oklch(0.10 0.012 38);  /* modal dims stay dark */
+  /* Text hierarchy */
+  --text-main:          oklch(0.15 0.010 40);
+  --text-soft:          oklch(0.38 0.008 44);
+  --text-muted:         oklch(0.60 0.006 48);
+  /* Border */
+  --border-subtle:      oklch(0.88 0.006 46);
+  --border-strong:      oklch(0.75 0.006 44);
+  /* Scrollbar */
+  --scrollbar-thumb:       oklch(0.80 0.006 44);
+  --scrollbar-thumb-hover: oklch(0.65 0.008 44);
+  /* Aurora — hidden in light mode */
+  --aurora-opacity: 0;
+  /* Card shadows — light mode uses warm subtle tone */
+  --shadow-card:    0 1px 4px  oklch(0.50 0.008 44 / 0.12);
+  --_shadow-xl:     0 6px 24px oklch(0.30 0.008 44 / 0.14);
+  --_shadow-lg:     0 4px 18px oklch(0.30 0.008 44 / 0.11);
+  --_shadow-md:     0 2px 12px oklch(0.35 0.008 44 / 0.08);
+  /* Cash open session */
+  --cash-open-bg:          oklch(0.82 0.13 148);
+  --cash-open-border:      oklch(0.62 0.18 148);
+  --cash-open-text:        oklch(0.20 0.09 148);
+  --cash-open-text-soft:   oklch(0.32 0.08 148);
+  /* Skeleton shimmer */
+  --shimmer-from: oklch(0.92 0.006 46);
+  --shimmer-to:   oklch(0.96 0.004 48);
+}
+
+[data-theme="dark"] {
+  --surface-page:       oklch(0.10  0.012 38);
+  --surface-card:       oklch(0.145 0.016 40);
+  --surface-2:          oklch(0.17  0.016 40);
+  --surface-3:          oklch(0.20  0.018 40);
+  --surface-card-hover: oklch(0.18  0.016 40);
+  --surface-sidebar:    oklch(0.09  0.012 38);
+  --surface-overlay:    oklch(0.06  0.010 38);
+  --text-main:          oklch(0.93  0.010 52);
+  --text-soft:          oklch(0.70  0.012 50);
+  --text-muted:         oklch(0.46  0.008 48);
+  --border-subtle:      oklch(0.23  0.014 40);
+  --border-strong:      oklch(0.32  0.014 40);
+  --scrollbar-thumb:       oklch(0.28 0.016 40);
+  --scrollbar-thumb-hover: oklch(0.40 0.020 42);
+  --aurora-opacity: 1;
+  --shadow-card:    0 1px 3px   oklch(0.06 0.010 38 / 0.50);
+  --_shadow-xl:     0 10px 30px oklch(0.06 0.010 38 / 0.60);
+  --_shadow-lg:     0 8px 24px  oklch(0.06 0.010 38 / 0.55);
+  --_shadow-md:     0 6px 20px  oklch(0.06 0.010 38 / 0.45);
+  --shimmer-from: oklch(0.17 0.012 40);
+  --shimmer-to:   oklch(0.24 0.016 42);
+  /* Cash open session */
+  --cash-open-bg:          oklch(0.26 0.08 148);
+  --cash-open-border:      oklch(0.40 0.11 148);
+  --cash-open-text:        oklch(0.88 0.10 148);
+  --cash-open-text-soft:   oklch(0.72 0.12 148);
+
+  /* Gray scale — inverted for dark mode (gray-50 = darkest, gray-900 = lightest) */
+  --color-gray-50:  oklch(0.12 0.008 38);
+  --color-gray-100: oklch(0.17 0.010 40);
+  --color-gray-200: oklch(0.23 0.012 40);
+  --color-gray-300: oklch(0.31 0.010 42);
+  --color-gray-400: oklch(0.46 0.008 46);
+  --color-gray-500: oklch(0.57 0.008 46);
+  --color-gray-600: oklch(0.68 0.010 48);
+  --color-gray-700: oklch(0.78 0.010 50);
+  --color-gray-800: oklch(0.87 0.010 52);
+  --color-gray-900: oklch(0.94 0.010 52);
+}
+
 /* ─── Design Tokens ──────────────────────────────────────── */
 @theme {
   /* Fonts */
-  --font-sans: 'Outfit', sans-serif;
+  --font-sans:    'Outfit', sans-serif;
   --font-heading: 'Plus Jakarta Sans', sans-serif;
 
   /* Primary — orange vivid */
@@ -19,19 +107,23 @@
   --color-primary-800: oklch(0.36 0.15  36);
   --color-primary-900: oklch(0.22 0.10  34);
 
-  /* Gray scale — dark mode (inverted brightness, warm charcoal tint) */
-  --color-gray-50:  oklch(0.12 0.008 38);
-  --color-gray-100: oklch(0.17 0.010 40);
-  --color-gray-200: oklch(0.23 0.012 40);
-  --color-gray-300: oklch(0.31 0.010 42);
-  --color-gray-400: oklch(0.46 0.008 46);
-  --color-gray-500: oklch(0.57 0.008 46);
-  --color-gray-600: oklch(0.68 0.010 48);
-  --color-gray-700: oklch(0.78 0.010 50);
-  --color-gray-800: oklch(0.87 0.010 52);
-  --color-gray-900: oklch(0.94 0.010 52);
+  /*
+   * Gray scale — light mode values (dark text on light bg).
+   * Dark mode overrides these via [data-theme="dark"] below.
+   * Warm hue (40-52) to match the orange accent family.
+   */
+  --color-gray-50:  oklch(0.985 0.003 48);
+  --color-gray-100: oklch(0.965 0.004 47);
+  --color-gray-200: oklch(0.928 0.006 46);
+  --color-gray-300: oklch(0.878 0.008 46);
+  --color-gray-400: oklch(0.718 0.010 46);
+  --color-gray-500: oklch(0.568 0.010 46);
+  --color-gray-600: oklch(0.455 0.010 46);
+  --color-gray-700: oklch(0.362 0.008 44);
+  --color-gray-800: oklch(0.265 0.008 42);
+  --color-gray-900: oklch(0.165 0.008 40);
 
-  /* Semantic status — dark mode variants */
+  /* Semantic status */
   --color-amber-50:   oklch(0.14 0.06  80);
   --color-amber-100:  oklch(0.20 0.10  80);
   --color-amber-200:  oklch(0.28 0.14  80);
@@ -62,6 +154,9 @@
 
   --color-blue-50:  oklch(0.13 0.05 245);
   --color-blue-100: oklch(0.18 0.09 245);
+  --color-blue-200: oklch(0.26 0.12 245);
+  --color-blue-600: oklch(0.68 0.18 245);
+  --color-blue-700: oklch(0.72 0.18 245);
 
   --color-rose-50:  oklch(0.13 0.05  10);
   --color-rose-100: oklch(0.18 0.09  10);
@@ -73,14 +168,17 @@
   --color-yellow-200: oklch(0.28 0.15  90);
   --color-yellow-700: oklch(0.80 0.18  90);
 
-  --color-blue-200: oklch(0.26 0.12 245);
-  --color-blue-600: oklch(0.68 0.18 245);
-  --color-blue-700: oklch(0.72 0.18 245);
-
+  /* Violet — secondary accent (complete scale, single definition) */
   --color-violet-50:  oklch(0.14 0.04 285);
-  --color-violet-100: oklch(0.20 0.09 285);
-  --color-violet-200: oklch(0.28 0.13 285);
-  --color-violet-700: oklch(0.70 0.20 281);
+  --color-violet-100: oklch(0.20 0.08 285);
+  --color-violet-200: oklch(0.28 0.12 285);
+  --color-violet-300: oklch(0.44 0.16 283);
+  --color-violet-400: oklch(0.58 0.20 281);
+  --color-violet-500: oklch(0.65 0.24 279);
+  --color-violet-600: oklch(0.58 0.25 277);
+  --color-violet-700: oklch(0.50 0.22 276);
+  --color-violet-800: oklch(0.40 0.18 275);
+  --color-violet-900: oklch(0.28 0.13 273);
 
   --color-cyan-50:  oklch(0.13 0.05 200);
   --color-cyan-100: oklch(0.18 0.09 200);
@@ -92,14 +190,19 @@
   --color-orange-200: oklch(0.28 0.14  55);
   --color-orange-700: oklch(0.76 0.18  55);
 
-  /* Surfaces — dark charcoal with warm orange undertone */
-  --color-surface-page:       oklch(0.10  0.012 38);
-  --color-surface-card:       oklch(0.145 0.016 40);
-  --color-surface-2:          oklch(0.17  0.016 40);
-  --color-surface-3:          oklch(0.20  0.018 40);
-  --color-surface-card-hover: oklch(0.18  0.016 40);
-  --color-surface-sidebar:    oklch(0.09  0.012 38);
-  --color-surface-overlay:    oklch(0.06  0.010 38);
+  /* Shadows — var() references so utilities update with theme */
+  --shadow-card-xl: var(--_shadow-xl);
+  --shadow-card-lg: var(--_shadow-lg);
+  --shadow-card-md: var(--_shadow-md);
+
+  /* Surfaces — var() references so Tailwind utilities update with theme */
+  --color-surface-page:       var(--surface-page);
+  --color-surface-card:       var(--surface-card);
+  --color-surface-2:          var(--surface-2);
+  --color-surface-3:          var(--surface-3);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-surface-sidebar:    var(--surface-sidebar);
+  --color-surface-overlay:    var(--surface-overlay);
 
   /* Semantic states */
   --color-state-success: oklch(0.72 0.18 148);
@@ -107,22 +210,10 @@
   --color-state-danger:  oklch(0.70 0.22  28);
   --color-state-info:    oklch(0.68 0.20 225);
 
-  /* Text hierarchy — dark mode (cream/warm white) */
-  --color-text-main:  oklch(0.93 0.010 52);
-  --color-text-soft:  oklch(0.70 0.012 50);
-  --color-text-muted: oklch(0.46 0.008 48);
-
-  /* Violet — acento secundario */
-  --color-violet-50:  oklch(0.14 0.04 285);
-  --color-violet-100: oklch(0.20 0.08 285);
-  --color-violet-200: oklch(0.28 0.12 285);
-  --color-violet-300: oklch(0.44 0.16 283);
-  --color-violet-400: oklch(0.58 0.20 281);
-  --color-violet-500: oklch(0.65 0.24 279);
-  --color-violet-600: oklch(0.58 0.25 277);
-  --color-violet-700: oklch(0.50 0.22 276);
-  --color-violet-800: oklch(0.40 0.18 275);
-  --color-violet-900: oklch(0.28 0.13 273);
+  /* Text hierarchy — var() references */
+  --color-text-main:  var(--text-main);
+  --color-text-soft:  var(--text-soft);
+  --color-text-muted: var(--text-muted);
 
   /* Animation durations */
   --animate-fade:        fade-in        0.25s ease-out both;
@@ -170,7 +261,7 @@
 }
 
 @keyframes confetti-fall {
-  0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+  0%   { transform: translateY(0) rotate(0deg);       opacity: 1; }
   100% { transform: translateY(-60px) rotate(180deg); opacity: 0; }
 }
 
@@ -228,13 +319,13 @@
 
 @utility surface-card {
   background: var(--color-surface-card);
-  border: 1px solid oklch(0.23 0.014 40);
-  box-shadow: 0 1px 3px oklch(0.06 0.010 38 / 0.5);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
 }
 
 @utility surface-panel {
   background: var(--color-surface-2);
-  border: 1px solid oklch(0.23 0.014 40);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Stagger delays for list animations */
@@ -269,17 +360,26 @@
     position: relative;
   }
 
-  /* Aurora oscura — orbes naranja/ámbar sobre fondo charcoal */
+  /* Aurora — visible in dark mode only, fades on theme toggle */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
+    opacity: var(--aurora-opacity);
+    transition: opacity 0.3s ease;
     background:
       radial-gradient(ellipse 80% 60% at 5% 0%,   oklch(0.55 0.20 42 / 0.14) 0%, transparent 65%),
       radial-gradient(ellipse 60% 45% at 95% 5%,  oklch(0.50 0.18 38 / 0.08) 0%, transparent 60%),
       radial-gradient(ellipse 65% 50% at 50% 100%, oklch(0.48 0.16 48 / 0.07) 0%, transparent 65%);
+  }
+
+  /* Date/time inputs adapt color-scheme to theme */
+  [data-theme="dark"] input[type="date"],
+  [data-theme="dark"] input[type="time"],
+  [data-theme="dark"] input[type="datetime-local"] {
+    color-scheme: dark;
   }
 
   /* Focus ring — orange */
@@ -300,12 +400,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.28 0.016 40);
+    background: var(--scrollbar-thumb);
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.40 0.020 42);
+    background: var(--scrollbar-thumb-hover);
   }
 }
 

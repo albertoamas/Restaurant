@@ -1,31 +1,14 @@
-/**
- * Skeleton — Placeholders animados para estados de carga.
- *
- * Uso:
- *   <Skeleton />                         ← línea de texto (default)
- *   <Skeleton variant="title" />         ← título ancho
- *   <Skeleton variant="circle" size={40} />   ← avatar / ícono circular
- *   <Skeleton variant="rect" h={120} />  ← bloque rectangular libre
- *   <Skeleton variant="card" />          ← card completa
- *
- * Composición:
- *   <SkeletonGroup count={3} />          ← lista de N líneas con gap
- */
-
 interface SkeletonProps {
   variant?: 'text' | 'title' | 'circle' | 'rect' | 'card';
-  /** Ancho CSS (aplica a text / title / rect). Default 'auto'. */
   w?: string;
-  /** Alto CSS (aplica a rect). Default según variante. */
   h?: string;
-  /** Diámetro en px (aplica solo a circle). Default 40. */
   size?: number;
   className?: string;
 }
 
 const shimmer = [
   'animate-shimmer',
-  'bg-[linear-gradient(90deg,oklch(0.17_0.012_40)_25%,oklch(0.24_0.016_42)_50%,oklch(0.17_0.012_40)_75%)]',
+  'bg-[linear-gradient(90deg,var(--shimmer-from)_25%,var(--shimmer-to)_50%,var(--shimmer-from)_75%)]',
   'rounded-lg',
 ].join(' ');
 
@@ -69,7 +52,7 @@ export function Skeleton({
   if (variant === 'card') {
     return (
       <div
-        className={`rounded-xl border border-white/6 p-6 ${className}`}
+        className={`rounded-xl border border-[var(--border-subtle)] p-6 ${className}`}
         style={{ background: 'var(--color-surface-card)' }}
         aria-hidden="true"
       >
@@ -89,7 +72,6 @@ export function Skeleton({
     );
   }
 
-  // text (default)
   return (
     <span
       className={`${shimmer} block h-4 ${className}`}
@@ -102,7 +84,6 @@ export function Skeleton({
 /* ── SkeletonGroup ─────────────────────────────────────────── */
 
 interface SkeletonGroupProps {
-  /** Número de líneas de texto a mostrar. Default 3. */
   count?: number;
   className?: string;
 }

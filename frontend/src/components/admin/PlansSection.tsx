@@ -93,7 +93,7 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   return (
-    <div className="p-4 bg-white/5 space-y-3">
+    <div className="p-4 bg-[var(--color-surface-2)] space-y-3">
       <div className="flex items-center gap-2 mb-1">
         <PlanBadge plan={plan.id as SaasPlan} />
         <span className="text-xs text-gray-500">editando</span>
@@ -109,7 +109,7 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
                 ...prev,
                 [field]: type === 'number' ? Number(e.target.value) : e.target.value,
               }))}
-              className="w-full text-sm border border-white/10 rounded-lg px-2.5 py-1.5 bg-white/5 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
+              className="w-full text-sm border border-[var(--border-subtle)] rounded-lg px-2.5 py-1.5 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
             />
           </div>
         ))}
@@ -117,7 +117,7 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
           <label className="text-sm font-medium text-gray-600">Cocina</label>
           <button
             onClick={() => onFormChange((prev) => ({ ...prev, kitchenEnabled: !prev.kitchenEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.kitchenEnabled ? 'bg-primary-500' : 'bg-white/12'}`}
+            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.kitchenEnabled ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.kitchenEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
@@ -126,14 +126,14 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
           <label className="text-sm font-medium text-gray-600">Sorteos</label>
           <button
             onClick={() => onFormChange((prev) => ({ ...prev, rafflesEnabled: !prev.rafflesEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-white/12'}`}
+            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.rafflesEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
         </div>
       </div>
       <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-300 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/8 transition-colors">
+        <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-700 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] transition-colors">
           Cancelar
         </button>
         <button
@@ -159,7 +159,7 @@ function PlanViewCard({ plan, cfg, onEdit }: {
         <PlanBadge plan={plan.id as SaasPlan} />
         <button
           onClick={onEdit}
-          className="text-[11px] font-medium text-gray-500 hover:text-gray-300 px-2 py-1 rounded-lg hover:bg-white/8 transition-colors"
+          className="text-[11px] font-medium text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-[var(--color-surface-2)] transition-colors"
         >
           Editar
         </button>
