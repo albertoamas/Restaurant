@@ -37,12 +37,11 @@ export function WinnerModal({
   useEffect(() => { playWinnerFanfare(); }, []);
 
   const { user } = useAuth();
-  const { businessAddress, businessPhone, tenantLogo } = useSettingsStore();
+  const { businessAddress, businessPhone } = useSettingsStore();
   const business = {
     name:    user?.tenantName ?? '',
     address: businessAddress || undefined,
     phone:   businessPhone   || undefined,
-    logoUrl: tenantLogo,
   };
 
   const medal = MEDAL[winner.position] ?? DEFAULT_MEDAL;

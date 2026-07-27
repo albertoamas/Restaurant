@@ -1,12 +1,11 @@
 import toast from 'react-hot-toast';
 import type { RaffleWinnerDto } from '@pos/shared';
-import { escapeHtml as esc, resolveUploadUrl } from './print';
+import { escapeHtml as esc } from './print';
 
 export interface BusinessInfo {
   name:     string;
   address?: string;
   phone?:   string;
-  logoUrl?: string | null;
 }
 
 function initials(name: string): string {
@@ -38,11 +37,7 @@ export function printWinnerCertificate(
   const drawnDate = new Date(winner.drawnAt);
   const dateStr   = drawnDate.toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const logoSrc = business.logoUrl ? resolveUploadUrl(business.logoUrl) : null;
-
-  const logoBlock = logoSrc
-    ? `<img src="${esc(logoSrc)}" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #DC2626">`
-    : `<div style="width:52px;height:52px;border-radius:50%;background:#DC2626;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:900;font-family:'Montserrat',sans-serif;flex-shrink:0">${esc(initials(business.name))}</div>`;
+  const logoBlock = `<div style="width:52px;height:52px;border-radius:50%;background:#DC2626;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:900;font-family:'Montserrat',sans-serif;flex-shrink:0">${esc(initials(business.name))}</div>`;
 
   const prizeBlock = winner.prizeDescription
     ? `<div style="width:100%;margin:10px 0 14px">
@@ -182,7 +177,7 @@ export function printWinnerCertificate(
 
   <script>
     (function () {
-      var delay = ${logoSrc ? 700 : 400};
+      var delay = 400;
       window.addEventListener('load', function () {
         setTimeout(function () {
           window.focus();

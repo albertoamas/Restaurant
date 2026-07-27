@@ -11,7 +11,6 @@ export interface ServerConfig {
   kitchenEnabled?:         boolean;
   rafflesEnabled?:         boolean;
   orderNumberResetPeriod?: OrderNumberResetPeriod;
-  tenantLogo?:             string | null;
   businessAddress?:        string;
   businessPhone?:          string;
   receiptSlogan?:          string;
@@ -51,10 +50,6 @@ interface SettingsState {
   setBusinessAddress: (value: string) => void;
   setBusinessPhone: (value: string) => void;
   setReceiptSlogan: (value: string) => void;
-
-  // Logo del negocio (server-controlled — set by auth context on login/getMe)
-  tenantLogo: string | null;
-  setTenantLogo: (value: string | null) => void;
 
   // Plan SaaS (server-controlled — set by auth context on login/getMe)
   plan: SaasPlan;
@@ -98,9 +93,6 @@ export const useSettingsStore = create<SettingsState>()(
       setBusinessPhone:   (value) => set({ businessPhone: value }),
       setReceiptSlogan:   (value) => set({ receiptSlogan: value }),
 
-      tenantLogo: null,
-      setTenantLogo: (value) => set({ tenantLogo: value }),
-
       plan: 'BASICO' as SaasPlan,
       setPlan: (value) => set({ plan: value }),
       planLimits: { maxBranches: 1, maxCashiers: 2, maxProducts: 80, kitchenEnabled: false } as PlanLimits,
@@ -114,8 +106,6 @@ export const useSettingsStore = create<SettingsState>()(
         kitchenEnabled:         config.kitchenEnabled         ?? state.kitchenEnabled,
         rafflesEnabled:         config.rafflesEnabled         ?? state.rafflesEnabled,
         orderNumberResetPeriod: config.orderNumberResetPeriod ?? state.orderNumberResetPeriod,
-        // tenantLogo can be null (valid) vs undefined (not provided)
-        tenantLogo:             config.tenantLogo !== undefined ? config.tenantLogo : state.tenantLogo,
         businessAddress:        config.businessAddress        ?? state.businessAddress,
         businessPhone:          config.businessPhone          ?? state.businessPhone,
         receiptSlogan:          config.receiptSlogan          ?? state.receiptSlogan,

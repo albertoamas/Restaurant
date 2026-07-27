@@ -28,6 +28,11 @@ export class UserRepository implements UserRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
+  async findByIdGlobal(id: string): Promise<User | null> {
+    const row = await this.prisma.user.findUnique({ where: { id } });
+    return row ? toDomain(row) : null;
+  }
+
   async findByEmail(tenantId: string, email: string): Promise<User | null> {
     const row = await this.prisma.user.findUnique({
       where: { tenantId_email: { tenantId, email } },
@@ -41,7 +46,7 @@ export class UserRepository implements UserRepositoryPort {
   }
 
   async countCashiersByTenant(tenantId: string): Promise<number> {
-    return this.prisma.user.count({ where: { tenantId, role: 'CASHIER' } });
+    return this.prisma.user.count({ where: { tenantId, role: 'CASHIER', isActive: true } });
   }
 
   async findAllByTenant(tenantId: string): Promise<User[]> {
@@ -78,6 +83,26 @@ export class UserRepository implements UserRepositoryPort {
       where: { id: userId, tenantId },
       data: { passwordHash: newPasswordHash },
     });
+  }
+
+  async updatePasswordAdmin(userId: string, newPasswordHash: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+  }
+
+  async updateProfile(
+    userId: string,
+    tenantId: string,
+    data: { name?: string; email?: string },
+  ): Promise<User> {
+    await this.prisma.user.updateMany({
+      where: { id: userId, tenantId },
+      data,
+    });
+    const row = await this.prisma.user.findFirst({ where: { id: userId, tenantId } });
+    return toDomain(row!);
   }
 
   async updateBranch(userId: string, tenantId: string, branchId: string | null): Promise<void> {

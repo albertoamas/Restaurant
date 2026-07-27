@@ -26,7 +26,6 @@ export class GetProfileUseCase {
       id:         user.id,
       tenantId:   user.tenantId,
       tenantName:    tenant?.name            ?? '',
-      tenantLogo:    tenant?.logoUrl         ?? null,
       tenantAddress: tenant?.businessAddress ?? null,
       tenantPhone:   tenant?.businessPhone   ?? null,
       tenantSlogan:  tenant?.receiptSlogan   ?? null,

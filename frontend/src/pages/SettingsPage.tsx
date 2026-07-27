@@ -1,13 +1,11 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { OrderNumberResetPeriod } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
-import { usersApi } from '../api/users.api';
 import { adminApi } from '../api/admin.api';
 import { tenantsApi } from '../api/tenants.api';
 import { ordersApi } from '../api/orders.api';
-import { uploadsApi } from '../api/uploads.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -78,7 +76,7 @@ function SettingRow({ label, description, value, onChange, icon }: SettingRowPro
   return (
     <div className={[
       'flex items-center justify-between py-4 px-1 rounded-xl transition-colors',
-      value ? 'bg-primary-50/40' : '',
+      value ? 'bg-primary-500/8' : '',
     ].join(' ')}>
       <div className="flex items-start gap-3 flex-1 pr-4">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
@@ -97,7 +95,6 @@ function SettingRow({ label, description, value, onChange, icon }: SettingRowPro
 }
 
 const RECEIPT_MAX = 120;
-const EMPTY_PW = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -107,7 +104,6 @@ export function SettingsPage() {
     businessPhone, setBusinessPhone,
     receiptSlogan, setReceiptSlogan,
     orderNumberResetPeriod, setOrderNumberResetPeriod,
-    tenantLogo, setTenantLogo,
   } = useSettingsStore();
 
   const saveReceiptField = async (field: 'businessAddress' | 'businessPhone' | 'receiptSlogan', value: string) => {
@@ -121,67 +117,12 @@ export function SettingsPage() {
   const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
   const [resetNowConfirm, setResetNowConfirm] = useState(false);
   const [resetNowLoading, setResetNowLoading] = useState(false);
-  const [logoLoading, setLogoLoading] = useState(false);
-  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [unlocked, setUnlocked] = useState(() =>
     sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1',
   );
-  const [pw, setPw] = useState(EMPTY_PW);
-  const [pwLoading, setPwLoading] = useState(false);
 
   if (!unlocked) return <SettingsLock onUnlock={() => setUnlocked(true)} />;
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoLoading(true);
-    try {
-      const url = await uploadsApi.image(file);
-      await tenantsApi.updateSettings({ logoUrl: url });
-      setTenantLogo(url);
-      toast.success('Logo actualizado');
-    } catch (err) {
-      handleApiError(err, 'Error al subir logo');
-    } finally {
-      setLogoLoading(false);
-      if (logoInputRef.current) logoInputRef.current.value = '';
-    }
-  };
-
-  const handleLogoRemove = async () => {
-    setLogoLoading(true);
-    try {
-      await tenantsApi.updateSettings({ logoUrl: null });
-      setTenantLogo(null);
-      toast.success('Logo eliminado');
-    } catch (err) {
-      handleApiError(err, 'Error al eliminar logo');
-    } finally {
-      setLogoLoading(false);
-    }
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pw.newPassword !== pw.confirmPassword) {
-      toast.error('Las contraseñas nuevas no coinciden');
-      return;
-    }
-    setPwLoading(true);
-    try {
-      await usersApi.changePassword({
-        currentPassword: pw.currentPassword,
-        newPassword: pw.newPassword,
-      });
-      toast.success('Contraseña actualizada');
-      setPw(EMPTY_PW);
-    } catch (err) {
-      handleApiError(err, 'Error al cambiar contraseña');
-    } finally {
-      setPwLoading(false);
-    }
-  };
 
   return (
     <PageShell className="space-y-4">
@@ -205,49 +146,6 @@ export function SettingsPage() {
               <span className="ml-auto text-xs text-gray-400 bg-[var(--color-surface-3)] rounded-md px-2 py-0.5">Solo lectura</span>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
-          </div>
-          <div className="py-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Logo del negocio</label>
-            <p className="text-xs text-gray-400 mb-3">Se muestra en el recibo del cliente. PNG o WEBP, fondo blanco o transparente recomendado.</p>
-            <div className="flex items-center gap-4">
-              {tenantLogo ? (
-                <div className="w-20 h-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center overflow-hidden shrink-0">
-                  <img src={tenantLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
-                </div>
-              ) : (
-                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center shrink-0">
-                  <Icon name="photo" size={28} strokeWidth={1.5} className="text-gray-300" />
-                </div>
-              )}
-              <div className="flex flex-col gap-2">
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  loading={logoLoading}
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  {tenantLogo ? 'Cambiar logo' : 'Subir logo'}
-                </Button>
-                {tenantLogo && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    loading={logoLoading}
-                    onClick={handleLogoRemove}
-                    className="text-red-500 hover:text-red-600 text-xs"
-                  >
-                    Eliminar logo
-                  </Button>
-                )}
-              </div>
-            </div>
           </div>
           <div className="py-4">
             <Input
@@ -324,7 +222,7 @@ export function SettingsPage() {
                 className={[
                   'flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all',
                   active
-                    ? 'border-primary-400 bg-primary-50 text-primary-800'
+                    ? 'border-primary-500/50 bg-primary-500/10 text-primary-700'
                     : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-[var(--border-strong)]',
                   resetPeriodLoading ? 'opacity-50 cursor-not-allowed' : '',
                 ].join(' ')}
@@ -404,45 +302,6 @@ export function SettingsPage() {
         </div>
       </Card>
 
-      {/* Password change */}
-      <Card variant="panel">
-        <div className="flex items-center gap-2 mb-1">
-          <Icon name="lock" size={16} className="text-gray-400 shrink-0" />
-          <h3 className="text-sm font-bold text-gray-700">Seguridad</h3>
-        </div>
-        <p className="text-xs text-gray-400 mb-4 ml-6">Cambia tu contraseña de acceso</p>
-        <form onSubmit={handleChangePassword} className="space-y-3">
-          <Input
-            label="Contraseña actual"
-            type="password"
-            autoComplete="current-password"
-            value={pw.currentPassword}
-            onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })}
-            required
-          />
-          <Input
-            label="Nueva contraseña"
-            type="password"
-            autoComplete="new-password"
-            value={pw.newPassword}
-            onChange={(e) => setPw({ ...pw, newPassword: e.target.value })}
-            minLength={6}
-            required
-          />
-          <Input
-            label="Confirmar nueva contraseña"
-            type="password"
-            autoComplete="new-password"
-            value={pw.confirmPassword}
-            onChange={(e) => setPw({ ...pw, confirmPassword: e.target.value })}
-            minLength={6}
-            required
-          />
-          <Button type="submit" loading={pwLoading}>
-            Cambiar contraseña
-          </Button>
-        </form>
-      </Card>
     </PageShell>
   );
 }

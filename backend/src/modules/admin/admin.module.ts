@@ -10,6 +10,7 @@ import { UpdateTenantPlanUseCase } from './application/use-cases/update-tenant-p
 import { UpdateTenantModulesUseCase } from './application/use-cases/update-tenant-modules.use-case';
 import { ListPlansUseCase } from './application/use-cases/list-plans.use-case';
 import { UpdatePlanLimitsUseCase } from './application/use-cases/update-plan-limits.use-case';
+import { ResetUserPasswordAdminUseCase } from './application/use-cases/reset-user-password-admin.use-case';
 
 @Module({
   imports: [TenantModule, AuthModule, PlansModule, EventsModule],
@@ -21,6 +22,7 @@ import { UpdatePlanLimitsUseCase } from './application/use-cases/update-plan-lim
     UpdateTenantModulesUseCase,
     ListPlansUseCase,
     UpdatePlanLimitsUseCase,
+    ResetUserPasswordAdminUseCase,
   ],
 })
 export class AdminModule {}

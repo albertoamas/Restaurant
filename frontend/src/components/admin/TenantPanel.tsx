@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
+import toast from 'react-hot-toast';
 
 interface ModuleDef { key: keyof TenantModules; label: string; description: string; }
 
@@ -47,6 +48,10 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
   const [modules, setModules] = useState<TenantModules>(tenant.modules);
   const [savingModule, setSavingModule] = useState<keyof TenantModules | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [resettingPw, setResettingPw] = useState(false);
 
   useEffect(() => { setModules(tenant.modules); }, [tenant.modules]);
 
@@ -67,6 +72,27 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
       });
     } finally {
       setSavingPlan(false);
+    }
+  };
+
+  const handleResetOwnerPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenant.owner) return;
+    if (newPw !== confirmPw) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+    setResettingPw(true);
+    try {
+      await adminApi.resetUserPassword(tenant.owner.id, newPw);
+      toast.success(`Contraseña del owner reseteada`);
+      setShowResetPw(false);
+      setNewPw('');
+      setConfirmPw('');
+    } catch {
+      toast.error('Error al resetear contraseña');
+    } finally {
+      setResettingPw(false);
     }
   };
 
@@ -138,6 +164,57 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Cajeros</p>
               </div>
+            </div>
+          )}
+
+          {tenant.owner && (
+            <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
+              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Acceso del owner</p>
+              {!showResetPw ? (
+                <button
+                  onClick={() => setShowResetPw(true)}
+                  className="w-full text-left text-xs font-medium px-3 py-2.5 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/15 transition-colors"
+                >
+                  Resetear contraseña de {tenant.owner.name}
+                </button>
+              ) : (
+                <form onSubmit={handleResetOwnerPassword} className="space-y-2">
+                  <input
+                    type="password"
+                    placeholder="Nueva contraseña (mín. 6 caracteres)"
+                    value={newPw}
+                    onChange={(e) => setNewPw(e.target.value)}
+                    minLength={6}
+                    required
+                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirmar contraseña"
+                    value={confirmPw}
+                    onChange={(e) => setConfirmPw(e.target.value)}
+                    minLength={6}
+                    required
+                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => { setShowResetPw(false); setNewPw(''); setConfirmPw(''); }}
+                      className="flex-1 text-xs font-medium px-3 py-2 rounded-xl border border-[var(--border-subtle)] text-gray-500 hover:bg-[var(--color-surface-2)] transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resettingPw}
+                      className="flex-1 text-xs font-semibold px-3 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-400 disabled:opacity-50 transition-colors"
+                    >
+                      {resettingPw ? 'Guardando…' : 'Confirmar reset'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
         </div>

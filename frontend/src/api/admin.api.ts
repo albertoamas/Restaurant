@@ -17,7 +17,7 @@ export interface TenantRow {
   isActive: boolean;
   createdAt: string;
   plan: SaasPlan;
-  owner: { name: string; email: string } | null;
+  owner: { id: string; name: string; email: string } | null;
   modules: TenantModules;
   branchCount: number;
   cashierCount: number;
@@ -80,4 +80,7 @@ export const adminApi = {
 
   updatePlan: (id: SaasPlan, updates: Partial<Omit<PlanDto, 'id'>>) =>
     client.patch<PlanDto>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data),
+
+  resetUserPassword: (userId: string, newPassword: string) =>
+    client.patch(`/api/v1/admin/users/${userId}/password`, { newPassword }, { headers: adminHeaders() }),
 };

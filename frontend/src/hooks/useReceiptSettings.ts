@@ -4,12 +4,11 @@ import type { ReceiptSettings } from '../utils/print';
 
 export function useReceiptSettings(): ReceiptSettings {
   const { user } = useAuth();
-  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
+  const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();
   return {
     businessName:    user?.tenantName ?? 'Mi Negocio',
     businessAddress,
     businessPhone,
     receiptSlogan,
-    logoUrl:         tenantLogo,
   };
 }

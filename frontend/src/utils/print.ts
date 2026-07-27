@@ -176,7 +176,6 @@ export interface ReceiptSettings {
   businessAddress?: string;
   businessPhone?:   string;
   receiptSlogan?:   string;
-  logoUrl?:         string | null;
 }
 
 /**
@@ -207,13 +206,6 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   const customerLine = order.customer?.name
     ? `<div class="center" style="font-size:8pt">Cliente: ${escapeHtml(order.customer.name)}</div>` : '';
 
-  const logoSrc = settings.logoUrl ? resolveUploadUrl(settings.logoUrl) : null;
-  const logoBlock = logoSrc
-    ? `<div class="center" style="margin-bottom:4pt">
-         <img src="${logoSrc}" alt="" style="width:40mm;height:auto;display:block;margin:0 auto"/>
-       </div>`
-    : '';
-
   // Desglose de pagos (soporta split: "Efectivo Bs 50.00 + QR Bs 30.00")
   const pagoStr = order.payments.length > 0
     ? order.payments
@@ -225,7 +217,6 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     <div class="center" style="font-size:36pt;font-weight:900;line-height:1.1">#${order.orderNumber}</div>
     ${customerLine}
     <div class="divider"></div>
-    ${logoBlock}
     <div class="center bold" style="font-size:12pt">${escapeHtml(settings.businessName)}</div>
     ${addressLine}
     ${phoneLine}
@@ -243,7 +234,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   `;
 
   // 650ms si hay logo (imagen async), 450ms si no
-  printViaIframe(html, logoSrc ? 650 : 450);
+  printViaIframe(html, 450);
 }
 
 /* ─── Tickets físicos de sorteo ──────────────────────────────────────────── */

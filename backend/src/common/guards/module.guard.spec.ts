@@ -11,7 +11,7 @@ function makeTenant(rafflesEnabled = false, ordersEnabled = true): Tenant {
   return new Tenant(
     'tenant-1', 'Test', 'test', true, new Date(), SaasPlan.BASICO,
     ordersEnabled, true, true, true, false, rafflesEnabled,
-    OrderNumberResetPeriod.DAILY, null, null, null, null,
+    OrderNumberResetPeriod.DAILY, null, null, null,
   );
 }
 

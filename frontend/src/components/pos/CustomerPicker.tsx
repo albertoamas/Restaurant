@@ -1,4 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
+
+function toTitleCase(str: string): string {
+  return str
+    .trim()
+    .toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 import type { CreateCustomerRequest, CustomerSearchResult } from '@pos/shared';
 import { Icon } from '../ui/Icon';
 import { useCustomerSearch } from '../../hooks/useCustomerSearch';
@@ -66,7 +76,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
   function handleSaveNew() {
     if (!newName.trim()) return;
     const createCustomer: CreateCustomerRequest = {
-      name: newName.trim(),
+      name: toTitleCase(newName),
       phone: newPhone.trim() || undefined,
     };
     setSelected({ type: 'new', createCustomer });

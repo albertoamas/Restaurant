@@ -1,5 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 
+function toTitleCase(str: string): string {
+  return str
+    .trim()
+    .toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export interface CustomerProps {
   id: string;
   tenantId: string;
@@ -45,7 +55,7 @@ export class Customer {
     return new Customer({
       id: uuidv4(),
       tenantId: props.tenantId,
-      name: props.name.trim(),
+      name: toTitleCase(props.name),
       phone: props.phone?.trim() || null,
       email: props.email?.trim() || null,
       notes: props.notes?.trim() || null,
@@ -59,7 +69,7 @@ export class Customer {
   }
 
   update(patch: Partial<Pick<CustomerProps, 'name' | 'phone' | 'email' | 'notes'>>): void {
-    if (patch.name !== undefined) this.name = patch.name.trim();
+    if (patch.name !== undefined) this.name = toTitleCase(patch.name);
     if (patch.phone !== undefined) this.phone = patch.phone?.trim() || null;
     if (patch.email !== undefined) this.email = patch.email?.trim() || null;
     if (patch.notes !== undefined) this.notes = patch.notes?.trim() || null;

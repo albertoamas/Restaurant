@@ -20,7 +20,6 @@ function toDomain(row: PrismaTenant): Tenant {
     row.kitchenEnabled,
     row.rafflesEnabled,
     (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
-    row.logoUrl         ?? null,
     row.businessAddress ?? null,
     row.businessPhone   ?? null,
     row.receiptSlogan   ?? null,
@@ -56,7 +55,6 @@ export class TenantRepository implements TenantRepositoryPort {
       kitchenEnabled:          tenant.kitchenEnabled,
       rafflesEnabled:          tenant.rafflesEnabled,
       orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
-      logoUrl:                 tenant.logoUrl,
       businessAddress:         tenant.businessAddress,
       businessPhone:           tenant.businessPhone,
       receiptSlogan:           tenant.receiptSlogan,
@@ -75,7 +73,7 @@ export class TenantRepository implements TenantRepositoryPort {
       include: {
         users: {
           where:  { role: 'OWNER' },
-          select: { name: true, email: true },
+          select: { id: true, name: true, email: true },
           take:   1,
         },
         _count: {
@@ -108,7 +106,6 @@ export class TenantRepository implements TenantRepositoryPort {
       },
       settings: {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
-        logoUrl:         r.logoUrl         ?? null,
         businessAddress: r.businessAddress ?? null,
         businessPhone:   r.businessPhone   ?? null,
         receiptSlogan:   r.receiptSlogan   ?? null,
@@ -162,7 +159,6 @@ export class TenantRepository implements TenantRepositoryPort {
         ...(settings.orderNumberResetPeriod !== undefined && {
           orderNumberResetPeriod: settings.orderNumberResetPeriod,
         }),
-        ...(settings.logoUrl         !== undefined && { logoUrl:         settings.logoUrl }),
         ...(settings.businessAddress !== undefined && { businessAddress: settings.businessAddress }),
         ...(settings.businessPhone   !== undefined && { businessPhone:   settings.businessPhone }),
         ...(settings.receiptSlogan   !== undefined && { receiptSlogan:   settings.receiptSlogan }),

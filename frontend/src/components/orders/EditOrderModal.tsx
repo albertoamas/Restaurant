@@ -76,6 +76,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
   const [notes,           setNotes]           = useState(order.notes ?? '');
   const [customerValue,   setCustomerValue]   = useState<CustomerPayload>(null);
   const [pickerKey,       setPickerKey]       = useState(0);
+  const [showPicker,      setShowPicker]      = useState(!order.customer);
   const [selectedMethod,  setSelectedMethod]  = useState<PaymentMethod | null>(
     order.isPaid && order.payments.length === 1 ? order.payments[0].method : null,
   );
@@ -89,6 +90,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
       setNotes(order.notes ?? '');
       setCustomerValue(null);
       setPickerKey((k) => k + 1);
+      setShowPicker(!order.customer);
       setSelectedMethod(canEditPayment ? order.payments[0].method : null);
     }
   }, [isOpen, order.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -163,19 +165,48 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
         {/* Customer */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cliente</p>
-          {order.customer && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-xl bg-sky-500/10 border border-sky-500/20">
-              <div className="w-7 h-7 rounded-full bg-sky-500/20 flex items-center justify-center shrink-0">
-                <Icon name="user" size={14} strokeWidth={2} className="text-sky-600" />
+
+          {/* Current customer row */}
+          {order.customer && !showPicker && (
+            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
+              <div className="w-8 h-8 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0">
+                <Icon name="user" size={15} strokeWidth={2} className="text-primary-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-sky-500 font-semibold leading-none mb-0.5">Cliente actual</p>
-                <p className="text-sm font-bold text-sky-900 truncate">{order.customer.name}</p>
+                <p className="text-xs text-gray-400 leading-none mb-0.5">Cliente asignado</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{order.customer.name}</p>
               </div>
-              <span className="text-xs text-sky-400 shrink-0">Asignar nuevo abajo ↓</span>
+              <button
+                type="button"
+                onClick={() => setShowPicker(true)}
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--color-surface-card)] border border-[var(--border-subtle)] text-gray-600 hover:text-primary-600 hover:border-primary-500/40 transition-colors"
+              >
+                Cambiar
+              </button>
             </div>
           )}
-          <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
+
+          {/* Picker — visible al agregar o al cambiar */}
+          {showPicker && (
+            <div className="space-y-2">
+              {order.customer && (
+                <button
+                  type="button"
+                  onClick={() => { setShowPicker(false); setCustomerValue(null); setPickerKey((k) => k + 1); }}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Icon name="chevron-left" size={12} strokeWidth={2.5} />
+                  Mantener cliente actual
+                </button>
+              )}
+              <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
+            </div>
+          )}
+
+          {/* No customer and picker not open */}
+          {!order.customer && !showPicker && (
+            <p className="text-xs text-gray-400 italic">Sin cliente asignado</p>
+          )}
         </div>
 
         {/* Notes */}

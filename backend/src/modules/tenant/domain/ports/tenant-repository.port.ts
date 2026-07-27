@@ -8,7 +8,7 @@ export interface TenantWithOwner {
   isActive: boolean;
   createdAt: Date;
   plan: SaasPlan;
-  owner: { name: string; email: string } | null;
+  owner: { id: string; name: string; email: string } | null;
   modules: TenantModules;
   settings: TenantSettings;
   branchCount: number;

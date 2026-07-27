@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Logger,
   Param,
   ParseUUIDPipe,
@@ -20,9 +22,11 @@ import { UpdateTenantPlanUseCase } from '../../application/use-cases/update-tena
 import { UpdateTenantModulesUseCase } from '../../application/use-cases/update-tenant-modules.use-case';
 import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
 import { UpdatePlanLimitsUseCase } from '../../application/use-cases/update-plan-limits.use-case';
+import { ResetUserPasswordAdminUseCase } from '../../application/use-cases/reset-user-password-admin.use-case';
 import { UpdatePlanDto } from '../../application/dto/update-plan.dto';
 import { UpdateModulesDto } from '../../application/dto/update-modules.dto';
 import { UpdatePlanLimitsDto } from '../../application/dto/update-plan-limits.dto';
+import { ResetUserPasswordDto } from '../../application/dto/reset-user-password.dto';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -38,6 +42,7 @@ export class AdminController {
     private readonly listPlansUseCase: ListPlansUseCase,
     private readonly updatePlanLimitsUseCase: UpdatePlanLimitsUseCase,
     private readonly registerUseCase: RegisterUseCase,
+    private readonly resetUserPasswordAdminUseCase: ResetUserPasswordAdminUseCase,
   ) {}
 
   @Get('ping')
@@ -82,6 +87,17 @@ export class AdminController {
     const result = await this.updateTenantModulesUseCase.execute(id, dto);
     this.logger.log(`updateModules tenantId=${id} ${JSON.stringify(dto)}`);
     return result;
+  }
+
+  // ── Users ──────────────────────────────────────────────────
+
+  @Patch('users/:id/password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resetUserPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResetUserPasswordDto,
+  ) {
+    return this.resetUserPasswordAdminUseCase.execute(id, dto);
   }
 
   // ── Plans ──────────────────────────────────────────────────

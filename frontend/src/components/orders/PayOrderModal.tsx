@@ -137,8 +137,8 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro" size="full">
-      <div className="space-y-6">
+    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro" size="md">
+      <div className="space-y-4">
 
         {/* ── Resumen del pedido ─────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
@@ -172,14 +172,14 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
 
           {!splitMode ? (
             <>
-              <div className={`grid gap-3 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              <div className={`grid gap-2.5 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {PAYMENT_METHODS.map((m) => (
                   <button
                     key={m.value}
                     onClick={() => setSelectedMethod(m.value)}
                     disabled={loading}
                     className={[
-                      'flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl transition-all duration-150 disabled:opacity-50',
+                      'flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl transition-all duration-150 disabled:opacity-50',
                       selectedMethod === m.value ? m.active : m.idle,
                     ].join(' ')}
                   >
@@ -303,7 +303,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
         </div>
 
         {/* ── Footer: confirmar ──────────────────────────────────────── */}
-        <div className="border-t border-[var(--border-subtle)] pt-5 space-y-3">
+        <div className="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
           {!canConfirm && (
             <p className="text-[11px] px-1 text-gray-400">
               Selecciona un método de pago para continuar

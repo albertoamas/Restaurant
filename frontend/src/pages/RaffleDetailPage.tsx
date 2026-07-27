@@ -128,12 +128,11 @@ function RaffleDetailContent({ id }: { id: string }) {
   } = useRaffleDetail(id, goBack, () => {});
 
   const { user } = useAuth();
-  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
+  const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();
   const business = {
     name:    user?.tenantName ?? '',
     address: businessAddress || undefined,
     phone:   businessPhone   || undefined,
-    logoUrl: tenantLogo,
   };
   const ticketPrintSettings = {
     businessName:    user?.tenantName ?? '',

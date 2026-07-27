@@ -22,12 +22,21 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface UpdateCashierRequest {
+  name?: string;
+  email?: string;
+}
+
 export const usersApi = {
   getAll: () => api.get<UserDto[]>('/api/v1/auth/users').then((r) => r.data),
   create: (data: CreateCashierRequest) =>
     api.post<UserDto>('/api/v1/auth/users', data).then((r) => r.data),
+  update: (id: string, data: UpdateCashierRequest) =>
+    api.patch<UserDto>(`/api/v1/auth/users/${id}`, data).then((r) => r.data),
   toggle: (id: string) =>
     api.patch<UserDto>(`/api/v1/auth/users/${id}/toggle`).then((r) => r.data),
+  resetPassword: (id: string, newPassword: string) =>
+    api.patch(`/api/v1/auth/users/${id}/password`, { newPassword }),
   changePassword: (data: ChangePasswordRequest) =>
     api.patch('/api/v1/auth/me/password', data),
   updateBranch: (userId: string, branchId: string | null) =>

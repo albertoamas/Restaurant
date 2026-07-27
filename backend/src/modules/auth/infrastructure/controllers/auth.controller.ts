@@ -30,6 +30,10 @@ import { ListUsersUseCase } from '../../application/use-cases/list-users.use-cas
 import { ToggleUserUseCase } from '../../application/use-cases/toggle-user.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { UpdateUserBranchUseCase } from '../../application/use-cases/update-user-branch.use-case';
+import { UpdateCashierUseCase } from '../../application/use-cases/update-cashier.use-case';
+import { ResetCashierPasswordUseCase } from '../../application/use-cases/reset-cashier-password.use-case';
+import { UpdateCashierDto } from '../../application/dto/update-cashier.dto';
+import { ResetCashierPasswordDto } from '../../application/dto/reset-cashier-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +45,8 @@ export class AuthController {
     private readonly toggleUserUseCase: ToggleUserUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
     private readonly updateUserBranchUseCase: UpdateUserBranchUseCase,
+    private readonly updateCashierUseCase: UpdateCashierUseCase,
+    private readonly resetCashierPasswordUseCase: ResetCashierPasswordUseCase,
   ) {}
 
   @Post('login')
@@ -112,5 +118,30 @@ export class AuthController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.toggleUserUseCase.execute(id, tenantId, user.sub);
+  }
+
+  @Patch('users/:id')
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
+  @Roles(UserRole.OWNER)
+  updateCashier(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: UpdateCashierDto,
+  ) {
+    return this.updateCashierUseCase.execute(id, tenantId, dto);
+  }
+
+  @Patch('users/:id/password')
+  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
+  @RequiresModule('teamEnabled')
+  @Roles(UserRole.OWNER)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resetCashierPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: ResetCashierPasswordDto,
+  ) {
+    return this.resetCashierPasswordUseCase.execute(id, tenantId, dto);
   }
 }

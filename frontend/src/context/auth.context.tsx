@@ -30,7 +30,6 @@ interface AuthUser {
 
 /** Extended shape returned by GET /auth/me (includes branding fields). */
 type AuthUserFull = AuthUser & {
-  tenantLogo?:    string | null;
   tenantAddress?: string | null;
   tenantPhone?:   string | null;
   tenantSlogan?:  string | null;
@@ -79,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       kitchenEnabled:         u.modules?.kitchenEnabled         ?? false,
       rafflesEnabled:         u.modules?.rafflesEnabled         ?? false,
       orderNumberResetPeriod: u.modules?.orderNumberResetPeriod as OrderNumberResetPeriod | undefined,
-      tenantLogo:             u.tenantLogo    ?? null,
       businessAddress:        u.tenantAddress ?? '',
       businessPhone:          u.tenantPhone   ?? '',
       receiptSlogan:          u.tenantSlogan  ?? '',

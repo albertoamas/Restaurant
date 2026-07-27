@@ -1,0 +1,1995 @@
+﻿diff --git a/backend/prisma/migrations/20260620000000_drop_tenant_logo_url/migration.sql b/backend/prisma/migrations/20260620000000_drop_tenant_logo_url/migration.sql
+new file mode 100644
+index 0000000..6a663cb
+--- /dev/null
++++ b/backend/prisma/migrations/20260620000000_drop_tenant_logo_url/migration.sql
+@@ -0,0 +1,2 @@
++-- AlterTable
++ALTER TABLE "tenants" DROP COLUMN IF EXISTS "logo_url";
+diff --git a/backend/prisma/migrations/20260620000001_normalize_customer_names/migration.sql b/backend/prisma/migrations/20260620000001_normalize_customer_names/migration.sql
+new file mode 100644
+index 0000000..297d4a8
+--- /dev/null
++++ b/backend/prisma/migrations/20260620000001_normalize_customer_names/migration.sql
+@@ -0,0 +1,8 @@
++-- Normalizar nombres de clientes a Title Case (ej: "ALBERTO AMAS" ÔåÆ "Alberto Amas")
++-- initcap(lower(name)) es seguro con caracteres especiales del espa├▒ol (├▒, tildes)
++-- Solo actualiza los registros que realmente necesitan correcci├│n
++UPDATE "customers"
++SET
++  name       = initcap(lower(name)),
++  updated_at = NOW()
++WHERE name != initcap(lower(name));
+diff --git a/backend/prisma/schema.prisma b/backend/prisma/schema.prisma
+index c5e6cb2..94465b0 100644
+--- a/backend/prisma/schema.prisma
++++ b/backend/prisma/schema.prisma
+@@ -52,7 +52,6 @@ model Tenant {
+   orderNumberResetPeriod String  @default("DAILY") @map("order_number_reset_period")
+ 
+   // Branding & receipt ÔÇö configurable by the tenant owner
+-  logoUrl         String? @map("logo_url")
+   businessAddress String? @map("business_address") @db.VarChar(255)
+   businessPhone   String? @map("business_phone")   @db.VarChar(50)
+   receiptSlogan   String? @map("receipt_slogan")   @db.VarChar(255)
+diff --git a/backend/src/common/guards/module.guard.spec.ts b/backend/src/common/guards/module.guard.spec.ts
+index b3db1ea..cd7f373 100644
+--- a/backend/src/common/guards/module.guard.spec.ts
++++ b/backend/src/common/guards/module.guard.spec.ts
+@@ -11,7 +11,7 @@ function makeTenant(rafflesEnabled = false, ordersEnabled = true): Tenant {
+   return new Tenant(
+     'tenant-1', 'Test', 'test', true, new Date(), SaasPlan.BASICO,
+     ordersEnabled, true, true, true, false, rafflesEnabled,
+-    OrderNumberResetPeriod.DAILY, null, null, null, null,
++    OrderNumberResetPeriod.DAILY, null, null, null,
+   );
+ }
+ 
+diff --git a/backend/src/modules/admin/admin.module.ts b/backend/src/modules/admin/admin.module.ts
+index ed95197..bd4e671 100644
+--- a/backend/src/modules/admin/admin.module.ts
++++ b/backend/src/modules/admin/admin.module.ts
+@@ -10,6 +10,7 @@ import { UpdateTenantPlanUseCase } from './application/use-cases/update-tenant-p
+ import { UpdateTenantModulesUseCase } from './application/use-cases/update-tenant-modules.use-case';
+ import { ListPlansUseCase } from './application/use-cases/list-plans.use-case';
+ import { UpdatePlanLimitsUseCase } from './application/use-cases/update-plan-limits.use-case';
++import { ResetUserPasswordAdminUseCase } from './application/use-cases/reset-user-password-admin.use-case';
+ 
+ @Module({
+   imports: [TenantModule, AuthModule, PlansModule, EventsModule],
+@@ -21,6 +22,7 @@ import { UpdatePlanLimitsUseCase } from './application/use-cases/update-plan-lim
+     UpdateTenantModulesUseCase,
+     ListPlansUseCase,
+     UpdatePlanLimitsUseCase,
++    ResetUserPasswordAdminUseCase,
+   ],
+ })
+ export class AdminModule {}
+diff --git a/backend/src/modules/admin/application/dto/reset-user-password.dto.ts b/backend/src/modules/admin/application/dto/reset-user-password.dto.ts
+new file mode 100644
+index 0000000..11cf742
+--- /dev/null
++++ b/backend/src/modules/admin/application/dto/reset-user-password.dto.ts
+@@ -0,0 +1,8 @@
++import { IsString, MaxLength, MinLength } from 'class-validator';
++
++export class ResetUserPasswordDto {
++  @IsString()
++  @MinLength(6)
++  @MaxLength(128)
++  newPassword: string;
++}
+diff --git a/backend/src/modules/admin/application/use-cases/reset-user-password-admin.use-case.ts b/backend/src/modules/admin/application/use-cases/reset-user-password-admin.use-case.ts
+new file mode 100644
+index 0000000..d6f9249
+--- /dev/null
++++ b/backend/src/modules/admin/application/use-cases/reset-user-password-admin.use-case.ts
+@@ -0,0 +1,20 @@
++import * as bcrypt from 'bcryptjs';
++import { Inject, Injectable, NotFoundException } from '@nestjs/common';
++import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.port';
++import { ResetUserPasswordDto } from '../dto/reset-user-password.dto';
++
++@Injectable()
++export class ResetUserPasswordAdminUseCase {
++  constructor(
++    @Inject('UserRepositoryPort')
++    private readonly userRepository: UserRepositoryPort,
++  ) {}
++
++  async execute(userId: string, dto: ResetUserPasswordDto): Promise<void> {
++    const user = await this.userRepository.findByIdGlobal(userId);
++    if (!user) throw new NotFoundException('Usuario no encontrado');
++
++    const newHash = await bcrypt.hash(dto.newPassword, 10);
++    await this.userRepository.updatePasswordAdmin(userId, newHash);
++  }
++}
+diff --git a/backend/src/modules/admin/infrastructure/controllers/admin.controller.ts b/backend/src/modules/admin/infrastructure/controllers/admin.controller.ts
+index 60681c2..ade26ec 100644
+--- a/backend/src/modules/admin/infrastructure/controllers/admin.controller.ts
++++ b/backend/src/modules/admin/infrastructure/controllers/admin.controller.ts
+@@ -2,6 +2,8 @@ import {
+   Body,
+   Controller,
+   Get,
++  HttpCode,
++  HttpStatus,
+   Logger,
+   Param,
+   ParseUUIDPipe,
+@@ -20,9 +22,11 @@ import { UpdateTenantPlanUseCase } from '../../application/use-cases/update-tena
+ import { UpdateTenantModulesUseCase } from '../../application/use-cases/update-tenant-modules.use-case';
+ import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
+ import { UpdatePlanLimitsUseCase } from '../../application/use-cases/update-plan-limits.use-case';
++import { ResetUserPasswordAdminUseCase } from '../../application/use-cases/reset-user-password-admin.use-case';
+ import { UpdatePlanDto } from '../../application/dto/update-plan.dto';
+ import { UpdateModulesDto } from '../../application/dto/update-modules.dto';
+ import { UpdatePlanLimitsDto } from '../../application/dto/update-plan-limits.dto';
++import { ResetUserPasswordDto } from '../../application/dto/reset-user-password.dto';
+ 
+ @Controller('admin')
+ @UseGuards(AdminGuard)
+@@ -38,6 +42,7 @@ export class AdminController {
+     private readonly listPlansUseCase: ListPlansUseCase,
+     private readonly updatePlanLimitsUseCase: UpdatePlanLimitsUseCase,
+     private readonly registerUseCase: RegisterUseCase,
++    private readonly resetUserPasswordAdminUseCase: ResetUserPasswordAdminUseCase,
+   ) {}
+ 
+   @Get('ping')
+@@ -84,6 +89,17 @@ export class AdminController {
+     return result;
+   }
+ 
++  // ÔöÇÔöÇ Users ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
++
++  @Patch('users/:id/password')
++  @HttpCode(HttpStatus.NO_CONTENT)
++  resetUserPassword(
++    @Param('id', ParseUUIDPipe) id: string,
++    @Body() dto: ResetUserPasswordDto,
++  ) {
++    return this.resetUserPasswordAdminUseCase.execute(id, dto);
++  }
++
+   // ÔöÇÔöÇ Plans ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+ 
+   @Get('plans')
+diff --git a/backend/src/modules/auth/application/dto/reset-cashier-password.dto.ts b/backend/src/modules/auth/application/dto/reset-cashier-password.dto.ts
+new file mode 100644
+index 0000000..d5a2ca1
+--- /dev/null
++++ b/backend/src/modules/auth/application/dto/reset-cashier-password.dto.ts
+@@ -0,0 +1,8 @@
++import { IsString, MaxLength, MinLength } from 'class-validator';
++
++export class ResetCashierPasswordDto {
++  @IsString()
++  @MinLength(6)
++  @MaxLength(128)
++  newPassword: string;
++}
+diff --git a/backend/src/modules/auth/application/dto/update-cashier.dto.ts b/backend/src/modules/auth/application/dto/update-cashier.dto.ts
+new file mode 100644
+index 0000000..170bcf5
+--- /dev/null
++++ b/backend/src/modules/auth/application/dto/update-cashier.dto.ts
+@@ -0,0 +1,16 @@
++import { Transform } from 'class-transformer';
++import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
++
++export class UpdateCashierDto {
++  @IsOptional()
++  @IsString()
++  @MinLength(2)
++  @MaxLength(100)
++  @Transform(({ value }) => value?.trim())
++  name?: string;
++
++  @IsOptional()
++  @IsEmail()
++  @MaxLength(255)
++  email?: string;
++}
+diff --git a/backend/src/modules/auth/application/use-cases/get-profile.use-case.ts b/backend/src/modules/auth/application/use-cases/get-profile.use-case.ts
+index f0d50e9..ec513a7 100644
+--- a/backend/src/modules/auth/application/use-cases/get-profile.use-case.ts
++++ b/backend/src/modules/auth/application/use-cases/get-profile.use-case.ts
+@@ -26,7 +26,6 @@ export class GetProfileUseCase {
+       id:         user.id,
+       tenantId:   user.tenantId,
+       tenantName:    tenant?.name            ?? '',
+-      tenantLogo:    tenant?.logoUrl         ?? null,
+       tenantAddress: tenant?.businessAddress ?? null,
+       tenantPhone:   tenant?.businessPhone   ?? null,
+       tenantSlogan:  tenant?.receiptSlogan   ?? null,
+diff --git a/backend/src/modules/auth/application/use-cases/login.use-case.ts b/backend/src/modules/auth/application/use-cases/login.use-case.ts
+index a4f4aa2..515d506 100644
+--- a/backend/src/modules/auth/application/use-cases/login.use-case.ts
++++ b/backend/src/modules/auth/application/use-cases/login.use-case.ts
+@@ -52,7 +52,6 @@ export class LoginUseCase {
+         id:         user.id,
+         tenantId:   user.tenantId,
+         tenantName:    tenant.name,
+-        tenantLogo:    tenant.logoUrl         ?? null,
+         tenantAddress: tenant.businessAddress ?? null,
+         tenantPhone:   tenant.businessPhone   ?? null,
+         tenantSlogan:  tenant.receiptSlogan   ?? null,
+diff --git a/backend/src/modules/auth/application/use-cases/reset-cashier-password.use-case.ts b/backend/src/modules/auth/application/use-cases/reset-cashier-password.use-case.ts
+new file mode 100644
+index 0000000..f3892a8
+--- /dev/null
++++ b/backend/src/modules/auth/application/use-cases/reset-cashier-password.use-case.ts
+@@ -0,0 +1,24 @@
++import * as bcrypt from 'bcryptjs';
++import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
++import { UserRole } from '@pos/shared';
++import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
++import { ResetCashierPasswordDto } from '../dto/reset-cashier-password.dto';
++
++@Injectable()
++export class ResetCashierPasswordUseCase {
++  constructor(
++    @Inject('UserRepositoryPort')
++    private readonly userRepository: UserRepositoryPort,
++  ) {}
++
++  async execute(userId: string, tenantId: string, dto: ResetCashierPasswordDto): Promise<void> {
++    const user = await this.userRepository.findById(userId, tenantId);
++    if (!user) throw new NotFoundException('Usuario no encontrado');
++    if (user.role !== UserRole.CASHIER) {
++      throw new ForbiddenException('Solo se puede resetear la contrase├▒a de cajeros');
++    }
++
++    const newHash = await bcrypt.hash(dto.newPassword, 10);
++    await this.userRepository.updatePassword(userId, tenantId, newHash);
++  }
++}
+diff --git a/backend/src/modules/auth/application/use-cases/update-cashier.use-case.ts b/backend/src/modules/auth/application/use-cases/update-cashier.use-case.ts
+new file mode 100644
+index 0000000..1925d48
+--- /dev/null
++++ b/backend/src/modules/auth/application/use-cases/update-cashier.use-case.ts
+@@ -0,0 +1,43 @@
++import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
++import { UserRole } from '@pos/shared';
++import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
++import { UpdateCashierDto } from '../dto/update-cashier.dto';
++
++@Injectable()
++export class UpdateCashierUseCase {
++  constructor(
++    @Inject('UserRepositoryPort')
++    private readonly userRepository: UserRepositoryPort,
++  ) {}
++
++  async execute(userId: string, tenantId: string, dto: UpdateCashierDto) {
++    if (!dto.name && !dto.email) {
++      throw new BadRequestException('Debes proporcionar al menos un campo para actualizar');
++    }
++
++    const user = await this.userRepository.findById(userId, tenantId);
++    if (!user) throw new NotFoundException('Usuario no encontrado');
++    if (user.role !== UserRole.CASHIER) {
++      throw new ForbiddenException('Solo se pueden editar cajeros');
++    }
++
++    if (dto.email && dto.email !== user.email) {
++      const existing = await this.userRepository.findByEmail(tenantId, dto.email);
++      if (existing) throw new ConflictException('El email ya est├í en uso en este negocio');
++    }
++
++    const updated = await this.userRepository.updateProfile(userId, tenantId, {
++      name: dto.name,
++      email: dto.email,
++    });
++
++    return {
++      id: updated.id,
++      name: updated.name,
++      email: updated.email,
++      role: updated.role,
++      branchId: updated.branchId,
++      isActive: updated.isActive,
++    };
++  }
++}
+diff --git a/backend/src/modules/auth/auth.module.ts b/backend/src/modules/auth/auth.module.ts
+index 7ca3b1e..30feddd 100644
+--- a/backend/src/modules/auth/auth.module.ts
++++ b/backend/src/modules/auth/auth.module.ts
+@@ -12,6 +12,8 @@ import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
+ import { ToggleUserUseCase } from './application/use-cases/toggle-user.use-case';
+ import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+ import { UpdateUserBranchUseCase } from './application/use-cases/update-user-branch.use-case';
++import { UpdateCashierUseCase } from './application/use-cases/update-cashier.use-case';
++import { ResetCashierPasswordUseCase } from './application/use-cases/reset-cashier-password.use-case';
+ import { UserRepository } from './infrastructure/persistence/user.repository';
+ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
+ import { AuthController } from './infrastructure/controllers/auth.controller';
+@@ -47,6 +49,8 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
+     ToggleUserUseCase,
+     ChangePasswordUseCase,
+     UpdateUserBranchUseCase,
++    UpdateCashierUseCase,
++    ResetCashierPasswordUseCase,
+   ],
+   exports: [JwtStrategy, PassportModule, RegisterUseCase, 'UserRepositoryPort'],
+ })
+diff --git a/backend/src/modules/auth/domain/ports/user-repository.port.ts b/backend/src/modules/auth/domain/ports/user-repository.port.ts
+index 99e9716..febbbdc 100644
+--- a/backend/src/modules/auth/domain/ports/user-repository.port.ts
++++ b/backend/src/modules/auth/domain/ports/user-repository.port.ts
+@@ -2,11 +2,14 @@ import { User } from '../entities/user.entity';
+ 
+ export interface UserRepositoryPort {
+   findById(id: string, tenantId: string): Promise<User | null>;
++  findByIdGlobal(id: string): Promise<User | null>;
+   findByEmail(tenantId: string, email: string): Promise<User | null>;
+   findByEmailGlobal(email: string): Promise<User | null>;
+   findAllByTenant(tenantId: string): Promise<User[]>;
+   countCashiersByTenant(tenantId: string): Promise<number>;
+   save(user: User): Promise<User>;
+   updatePassword(userId: string, tenantId: string, newPasswordHash: string): Promise<void>;
++  updatePasswordAdmin(userId: string, newPasswordHash: string): Promise<void>;
++  updateProfile(userId: string, tenantId: string, data: { name?: string; email?: string }): Promise<User>;
+   updateBranch(userId: string, tenantId: string, branchId: string | null): Promise<void>;
+ }
+diff --git a/backend/src/modules/auth/infrastructure/controllers/auth.controller.ts b/backend/src/modules/auth/infrastructure/controllers/auth.controller.ts
+index 539cef4..b0981d9 100644
+--- a/backend/src/modules/auth/infrastructure/controllers/auth.controller.ts
++++ b/backend/src/modules/auth/infrastructure/controllers/auth.controller.ts
+@@ -30,6 +30,10 @@ import { ListUsersUseCase } from '../../application/use-cases/list-users.use-cas
+ import { ToggleUserUseCase } from '../../application/use-cases/toggle-user.use-case';
+ import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
+ import { UpdateUserBranchUseCase } from '../../application/use-cases/update-user-branch.use-case';
++import { UpdateCashierUseCase } from '../../application/use-cases/update-cashier.use-case';
++import { ResetCashierPasswordUseCase } from '../../application/use-cases/reset-cashier-password.use-case';
++import { UpdateCashierDto } from '../../application/dto/update-cashier.dto';
++import { ResetCashierPasswordDto } from '../../application/dto/reset-cashier-password.dto';
+ 
+ @Controller('auth')
+ export class AuthController {
+@@ -41,6 +45,8 @@ export class AuthController {
+     private readonly toggleUserUseCase: ToggleUserUseCase,
+     private readonly changePasswordUseCase: ChangePasswordUseCase,
+     private readonly updateUserBranchUseCase: UpdateUserBranchUseCase,
++    private readonly updateCashierUseCase: UpdateCashierUseCase,
++    private readonly resetCashierPasswordUseCase: ResetCashierPasswordUseCase,
+   ) {}
+ 
+   @Post('login')
+@@ -113,4 +119,29 @@ export class AuthController {
+   ) {
+     return this.toggleUserUseCase.execute(id, tenantId, user.sub);
+   }
++
++  @Patch('users/:id')
++  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
++  @RequiresModule('teamEnabled')
++  @Roles(UserRole.OWNER)
++  updateCashier(
++    @Param('id', ParseUUIDPipe) id: string,
++    @CurrentTenant() tenantId: string,
++    @Body() dto: UpdateCashierDto,
++  ) {
++    return this.updateCashierUseCase.execute(id, tenantId, dto);
++  }
++
++  @Patch('users/:id/password')
++  @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
++  @RequiresModule('teamEnabled')
++  @Roles(UserRole.OWNER)
++  @HttpCode(HttpStatus.NO_CONTENT)
++  resetCashierPassword(
++    @Param('id', ParseUUIDPipe) id: string,
++    @CurrentTenant() tenantId: string,
++    @Body() dto: ResetCashierPasswordDto,
++  ) {
++    return this.resetCashierPasswordUseCase.execute(id, tenantId, dto);
++  }
+ }
+diff --git a/backend/src/modules/auth/infrastructure/persistence/user.repository.ts b/backend/src/modules/auth/infrastructure/persistence/user.repository.ts
+index cbd19c8..11c9cd5 100644
+--- a/backend/src/modules/auth/infrastructure/persistence/user.repository.ts
++++ b/backend/src/modules/auth/infrastructure/persistence/user.repository.ts
+@@ -28,6 +28,11 @@ export class UserRepository implements UserRepositoryPort {
+     return row ? toDomain(row) : null;
+   }
+ 
++  async findByIdGlobal(id: string): Promise<User | null> {
++    const row = await this.prisma.user.findUnique({ where: { id } });
++    return row ? toDomain(row) : null;
++  }
++
+   async findByEmail(tenantId: string, email: string): Promise<User | null> {
+     const row = await this.prisma.user.findUnique({
+       where: { tenantId_email: { tenantId, email } },
+@@ -41,7 +46,7 @@ export class UserRepository implements UserRepositoryPort {
+   }
+ 
+   async countCashiersByTenant(tenantId: string): Promise<number> {
+-    return this.prisma.user.count({ where: { tenantId, role: 'CASHIER' } });
++    return this.prisma.user.count({ where: { tenantId, role: 'CASHIER', isActive: true } });
+   }
+ 
+   async findAllByTenant(tenantId: string): Promise<User[]> {
+@@ -80,6 +85,26 @@ export class UserRepository implements UserRepositoryPort {
+     });
+   }
+ 
++  async updatePasswordAdmin(userId: string, newPasswordHash: string): Promise<void> {
++    await this.prisma.user.update({
++      where: { id: userId },
++      data: { passwordHash: newPasswordHash },
++    });
++  }
++
++  async updateProfile(
++    userId: string,
++    tenantId: string,
++    data: { name?: string; email?: string },
++  ): Promise<User> {
++    await this.prisma.user.updateMany({
++      where: { id: userId, tenantId },
++      data,
++    });
++    const row = await this.prisma.user.findFirst({ where: { id: userId, tenantId } });
++    return toDomain(row!);
++  }
++
+   async updateBranch(userId: string, tenantId: string, branchId: string | null): Promise<void> {
+     await this.prisma.user.updateMany({
+       where: { id: userId, tenantId },
+diff --git a/backend/src/modules/customers/domain/entities/customer.entity.ts b/backend/src/modules/customers/domain/entities/customer.entity.ts
+index d422005..668168d 100644
+--- a/backend/src/modules/customers/domain/entities/customer.entity.ts
++++ b/backend/src/modules/customers/domain/entities/customer.entity.ts
+@@ -1,5 +1,15 @@
+ import { v4 as uuidv4 } from 'uuid';
+ 
++function toTitleCase(str: string): string {
++  return str
++    .trim()
++    .toLowerCase()
++    .split(' ')
++    .filter(Boolean)
++    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
++    .join(' ');
++}
++
+ export interface CustomerProps {
+   id: string;
+   tenantId: string;
+@@ -45,7 +55,7 @@ export class Customer {
+     return new Customer({
+       id: uuidv4(),
+       tenantId: props.tenantId,
+-      name: props.name.trim(),
++      name: toTitleCase(props.name),
+       phone: props.phone?.trim() || null,
+       email: props.email?.trim() || null,
+       notes: props.notes?.trim() || null,
+@@ -59,7 +69,7 @@ export class Customer {
+   }
+ 
+   update(patch: Partial<Pick<CustomerProps, 'name' | 'phone' | 'email' | 'notes'>>): void {
+-    if (patch.name !== undefined) this.name = patch.name.trim();
++    if (patch.name !== undefined) this.name = toTitleCase(patch.name);
+     if (patch.phone !== undefined) this.phone = patch.phone?.trim() || null;
+     if (patch.email !== undefined) this.email = patch.email?.trim() || null;
+     if (patch.notes !== undefined) this.notes = patch.notes?.trim() || null;
+diff --git a/backend/src/modules/tenant/application/dto/update-tenant-settings.dto.ts b/backend/src/modules/tenant/application/dto/update-tenant-settings.dto.ts
+index aee595d..eaf17d7 100644
+--- a/backend/src/modules/tenant/application/dto/update-tenant-settings.dto.ts
++++ b/backend/src/modules/tenant/application/dto/update-tenant-settings.dto.ts
+@@ -1,21 +1,12 @@
+-import { IsEnum, IsOptional, IsString, Matches, MaxLength, ValidateIf } from 'class-validator';
++import { IsEnum, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+ import { OrderNumberResetPeriod } from '@pos/shared';
+ import { TenantSettings } from '../../domain/entities/tenant.entity';
+ 
+-const LOGO_URL_REGEX = /^(\/uploads\/[\w.-]{1,200}|https?:\/\/.{1,400})$/;
+-
+ export class UpdateTenantSettingsDto implements Partial<TenantSettings> {
+   @IsOptional()
+   @IsEnum(OrderNumberResetPeriod)
+   orderNumberResetPeriod?: OrderNumberResetPeriod;
+ 
+-  @IsOptional()
+-  @ValidateIf((o) => o.logoUrl !== null)
+-  @IsString()
+-  @MaxLength(500)
+-  @Matches(LOGO_URL_REGEX, { message: 'logoUrl debe ser una ruta /uploads/... o una URL https v├ílida' })
+-  logoUrl?: string | null;
+-
+   @IsOptional()
+   @ValidateIf((o) => o.businessAddress !== null)
+   @IsString()
+diff --git a/backend/src/modules/tenant/domain/entities/tenant.entity.ts b/backend/src/modules/tenant/domain/entities/tenant.entity.ts
+index 2a62ca8..dd96d83 100644
+--- a/backend/src/modules/tenant/domain/entities/tenant.entity.ts
++++ b/backend/src/modules/tenant/domain/entities/tenant.entity.ts
+@@ -12,7 +12,6 @@ export interface TenantModules {
+ 
+ export interface TenantSettings {
+   orderNumberResetPeriod: OrderNumberResetPeriod;
+-  logoUrl?: string | null;
+   businessAddress?: string | null;
+   businessPhone?: string | null;
+   receiptSlogan?: string | null;
+@@ -33,7 +32,6 @@ export class Tenant {
+     public readonly kitchenEnabled: boolean,
+     public readonly rafflesEnabled: boolean,
+     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
+-    public readonly logoUrl: string | null = null,
+     public readonly businessAddress: string | null = null,
+     public readonly businessPhone: string | null = null,
+     public readonly receiptSlogan: string | null = null,
+@@ -45,7 +43,7 @@ export class Tenant {
+       SaasPlan.BASICO,
+       true, true, true, true, false, false,
+       OrderNumberResetPeriod.DAILY,
+-      null, null, null, null,
++      null, null, null,
+     );
+   }
+ 
+@@ -56,7 +54,7 @@ export class Tenant {
+       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
+       this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
+       this.orderNumberResetPeriod,
+-      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
++      this.businessAddress, this.businessPhone, this.receiptSlogan,
+     );
+   }
+ 
+@@ -67,7 +65,7 @@ export class Tenant {
+       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
+       this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
+       this.orderNumberResetPeriod,
+-      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
++      this.businessAddress, this.businessPhone, this.receiptSlogan,
+     );
+   }
+ 
+@@ -82,7 +80,7 @@ export class Tenant {
+       modules.kitchenEnabled  ?? this.kitchenEnabled,
+       modules.rafflesEnabled  ?? this.rafflesEnabled,
+       this.orderNumberResetPeriod,
+-      this.logoUrl, this.businessAddress, this.businessPhone, this.receiptSlogan,
++      this.businessAddress, this.businessPhone, this.receiptSlogan,
+     );
+   }
+ 
+@@ -93,7 +91,6 @@ export class Tenant {
+       this.ordersEnabled, this.cashEnabled, this.teamEnabled,
+       this.branchesEnabled, this.kitchenEnabled, this.rafflesEnabled,
+       settings.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
+-      settings.logoUrl         !== undefined ? (settings.logoUrl         ?? null) : this.logoUrl,
+       settings.businessAddress !== undefined ? (settings.businessAddress ?? null) : this.businessAddress,
+       settings.businessPhone   !== undefined ? (settings.businessPhone   ?? null) : this.businessPhone,
+       settings.receiptSlogan   !== undefined ? (settings.receiptSlogan   ?? null) : this.receiptSlogan,
+@@ -114,7 +111,6 @@ export class Tenant {
+   get settings(): TenantSettings {
+     return {
+       orderNumberResetPeriod: this.orderNumberResetPeriod,
+-      logoUrl:         this.logoUrl,
+       businessAddress: this.businessAddress,
+       businessPhone:   this.businessPhone,
+       receiptSlogan:   this.receiptSlogan,
+diff --git a/backend/src/modules/tenant/domain/ports/tenant-repository.port.ts b/backend/src/modules/tenant/domain/ports/tenant-repository.port.ts
+index 34de86b..f12fa6f 100644
+--- a/backend/src/modules/tenant/domain/ports/tenant-repository.port.ts
++++ b/backend/src/modules/tenant/domain/ports/tenant-repository.port.ts
+@@ -8,7 +8,7 @@ export interface TenantWithOwner {
+   isActive: boolean;
+   createdAt: Date;
+   plan: SaasPlan;
+-  owner: { name: string; email: string } | null;
++  owner: { id: string; name: string; email: string } | null;
+   modules: TenantModules;
+   settings: TenantSettings;
+   branchCount: number;
+diff --git a/backend/src/modules/tenant/infrastructure/persistence/tenant.repository.ts b/backend/src/modules/tenant/infrastructure/persistence/tenant.repository.ts
+index 5465a87..b52ab6a 100644
+--- a/backend/src/modules/tenant/infrastructure/persistence/tenant.repository.ts
++++ b/backend/src/modules/tenant/infrastructure/persistence/tenant.repository.ts
+@@ -20,7 +20,6 @@ function toDomain(row: PrismaTenant): Tenant {
+     row.kitchenEnabled,
+     row.rafflesEnabled,
+     (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
+-    row.logoUrl         ?? null,
+     row.businessAddress ?? null,
+     row.businessPhone   ?? null,
+     row.receiptSlogan   ?? null,
+@@ -56,7 +55,6 @@ export class TenantRepository implements TenantRepositoryPort {
+       kitchenEnabled:          tenant.kitchenEnabled,
+       rafflesEnabled:          tenant.rafflesEnabled,
+       orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
+-      logoUrl:                 tenant.logoUrl,
+       businessAddress:         tenant.businessAddress,
+       businessPhone:           tenant.businessPhone,
+       receiptSlogan:           tenant.receiptSlogan,
+@@ -75,7 +73,7 @@ export class TenantRepository implements TenantRepositoryPort {
+       include: {
+         users: {
+           where:  { role: 'OWNER' },
+-          select: { name: true, email: true },
++          select: { id: true, name: true, email: true },
+           take:   1,
+         },
+         _count: {
+@@ -108,7 +106,6 @@ export class TenantRepository implements TenantRepositoryPort {
+       },
+       settings: {
+         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
+-        logoUrl:         r.logoUrl         ?? null,
+         businessAddress: r.businessAddress ?? null,
+         businessPhone:   r.businessPhone   ?? null,
+         receiptSlogan:   r.receiptSlogan   ?? null,
+@@ -162,7 +159,6 @@ export class TenantRepository implements TenantRepositoryPort {
+         ...(settings.orderNumberResetPeriod !== undefined && {
+           orderNumberResetPeriod: settings.orderNumberResetPeriod,
+         }),
+-        ...(settings.logoUrl         !== undefined && { logoUrl:         settings.logoUrl }),
+         ...(settings.businessAddress !== undefined && { businessAddress: settings.businessAddress }),
+         ...(settings.businessPhone   !== undefined && { businessPhone:   settings.businessPhone }),
+         ...(settings.receiptSlogan   !== undefined && { receiptSlogan:   settings.receiptSlogan }),
+diff --git a/frontend/src/api/admin.api.ts b/frontend/src/api/admin.api.ts
+index 311bad4..dbac75c 100644
+--- a/frontend/src/api/admin.api.ts
++++ b/frontend/src/api/admin.api.ts
+@@ -17,7 +17,7 @@ export interface TenantRow {
+   isActive: boolean;
+   createdAt: string;
+   plan: SaasPlan;
+-  owner: { name: string; email: string } | null;
++  owner: { id: string; name: string; email: string } | null;
+   modules: TenantModules;
+   branchCount: number;
+   cashierCount: number;
+@@ -80,4 +80,7 @@ export const adminApi = {
+ 
+   updatePlan: (id: SaasPlan, updates: Partial<Omit<PlanDto, 'id'>>) =>
+     client.patch<PlanDto>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data),
++
++  resetUserPassword: (userId: string, newPassword: string) =>
++    client.patch(`/api/v1/admin/users/${userId}/password`, { newPassword }, { headers: adminHeaders() }),
+ };
+diff --git a/frontend/src/api/tenants.api.ts b/frontend/src/api/tenants.api.ts
+index 69e7dd8..e6a7de6 100644
+--- a/frontend/src/api/tenants.api.ts
++++ b/frontend/src/api/tenants.api.ts
+@@ -3,7 +3,6 @@ import type { OrderNumberResetPeriod } from '@pos/shared';
+ 
+ export interface TenantSettingsPayload {
+   orderNumberResetPeriod?: OrderNumberResetPeriod;
+-  logoUrl?: string | null;
+   businessAddress?: string | null;
+   businessPhone?: string | null;
+   receiptSlogan?: string | null;
+diff --git a/frontend/src/api/users.api.ts b/frontend/src/api/users.api.ts
+index 40ec89d..514efe3 100644
+--- a/frontend/src/api/users.api.ts
++++ b/frontend/src/api/users.api.ts
+@@ -22,12 +22,21 @@ export interface ChangePasswordRequest {
+   newPassword: string;
+ }
+ 
++export interface UpdateCashierRequest {
++  name?: string;
++  email?: string;
++}
++
+ export const usersApi = {
+   getAll: () => api.get<UserDto[]>('/api/v1/auth/users').then((r) => r.data),
+   create: (data: CreateCashierRequest) =>
+     api.post<UserDto>('/api/v1/auth/users', data).then((r) => r.data),
++  update: (id: string, data: UpdateCashierRequest) =>
++    api.patch<UserDto>(`/api/v1/auth/users/${id}`, data).then((r) => r.data),
+   toggle: (id: string) =>
+     api.patch<UserDto>(`/api/v1/auth/users/${id}/toggle`).then((r) => r.data),
++  resetPassword: (id: string, newPassword: string) =>
++    api.patch(`/api/v1/auth/users/${id}/password`, { newPassword }),
+   changePassword: (data: ChangePasswordRequest) =>
+     api.patch('/api/v1/auth/me/password', data),
+   updateBranch: (userId: string, branchId: string | null) =>
+diff --git a/frontend/src/components/admin/TenantPanel.tsx b/frontend/src/components/admin/TenantPanel.tsx
+index 99e3dd9..1fdd558 100644
+--- a/frontend/src/components/admin/TenantPanel.tsx
++++ b/frontend/src/components/admin/TenantPanel.tsx
+@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
+ import { SaasPlan } from '@pos/shared';
+ import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
+ import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
++import toast from 'react-hot-toast';
+ 
+ interface ModuleDef { key: keyof TenantModules; label: string; description: string; }
+ 
+@@ -47,6 +48,10 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
+   const [modules, setModules] = useState<TenantModules>(tenant.modules);
+   const [savingModule, setSavingModule] = useState<keyof TenantModules | null>(null);
+   const [savingPlan, setSavingPlan] = useState(false);
++  const [showResetPw, setShowResetPw] = useState(false);
++  const [newPw, setNewPw] = useState('');
++  const [confirmPw, setConfirmPw] = useState('');
++  const [resettingPw, setResettingPw] = useState(false);
+ 
+   useEffect(() => { setModules(tenant.modules); }, [tenant.modules]);
+ 
+@@ -70,6 +75,27 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
+     }
+   };
+ 
++  const handleResetOwnerPassword = async (e: React.FormEvent) => {
++    e.preventDefault();
++    if (!tenant.owner) return;
++    if (newPw !== confirmPw) {
++      toast.error('Las contrase├▒as no coinciden');
++      return;
++    }
++    setResettingPw(true);
++    try {
++      await adminApi.resetUserPassword(tenant.owner.id, newPw);
++      toast.success(`Contrase├▒a del owner reseteada`);
++      setShowResetPw(false);
++      setNewPw('');
++      setConfirmPw('');
++    } catch {
++      toast.error('Error al resetear contrase├▒a');
++    } finally {
++      setResettingPw(false);
++    }
++  };
++
+   const handleModuleChange = async (key: keyof TenantModules, value: boolean) => {
+     const updated = { ...modules, [key]: value };
+     setModules(updated);
+@@ -140,6 +166,57 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
+               </div>
+             </div>
+           )}
++
++          {tenant.owner && (
++            <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
++              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Acceso del owner</p>
++              {!showResetPw ? (
++                <button
++                  onClick={() => setShowResetPw(true)}
++                  className="w-full text-left text-xs font-medium px-3 py-2.5 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/15 transition-colors"
++                >
++                  Resetear contrase├▒a de {tenant.owner.name}
++                </button>
++              ) : (
++                <form onSubmit={handleResetOwnerPassword} className="space-y-2">
++                  <input
++                    type="password"
++                    placeholder="Nueva contrase├▒a (m├¡n. 6 caracteres)"
++                    value={newPw}
++                    onChange={(e) => setNewPw(e.target.value)}
++                    minLength={6}
++                    required
++                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
++                  />
++                  <input
++                    type="password"
++                    placeholder="Confirmar contrase├▒a"
++                    value={confirmPw}
++                    onChange={(e) => setConfirmPw(e.target.value)}
++                    minLength={6}
++                    required
++                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
++                  />
++                  <div className="flex gap-2 pt-1">
++                    <button
++                      type="button"
++                      onClick={() => { setShowResetPw(false); setNewPw(''); setConfirmPw(''); }}
++                      className="flex-1 text-xs font-medium px-3 py-2 rounded-xl border border-[var(--border-subtle)] text-gray-500 hover:bg-[var(--color-surface-2)] transition-colors"
++                    >
++                      Cancelar
++                    </button>
++                    <button
++                      type="submit"
++                      disabled={resettingPw}
++                      className="flex-1 text-xs font-semibold px-3 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-400 disabled:opacity-50 transition-colors"
++                    >
++                      {resettingPw ? 'GuardandoÔÇª' : 'Confirmar reset'}
++                    </button>
++                  </div>
++                </form>
++              )}
++            </div>
++          )}
+         </div>
+ 
+         {/* Module overrides */}
+diff --git a/frontend/src/components/orders/EditOrderModal.tsx b/frontend/src/components/orders/EditOrderModal.tsx
+index 7aa9613..9f88500 100644
+--- a/frontend/src/components/orders/EditOrderModal.tsx
++++ b/frontend/src/components/orders/EditOrderModal.tsx
+@@ -76,6 +76,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
+   const [notes,           setNotes]           = useState(order.notes ?? '');
+   const [customerValue,   setCustomerValue]   = useState<CustomerPayload>(null);
+   const [pickerKey,       setPickerKey]       = useState(0);
++  const [showPicker,      setShowPicker]      = useState(!order.customer);
+   const [selectedMethod,  setSelectedMethod]  = useState<PaymentMethod | null>(
+     order.isPaid && order.payments.length === 1 ? order.payments[0].method : null,
+   );
+@@ -89,6 +90,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
+       setNotes(order.notes ?? '');
+       setCustomerValue(null);
+       setPickerKey((k) => k + 1);
++      setShowPicker(!order.customer);
+       setSelectedMethod(canEditPayment ? order.payments[0].method : null);
+     }
+   }, [isOpen, order.id]); // eslint-disable-line react-hooks/exhaustive-deps
+@@ -163,19 +165,48 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
+         {/* Customer */}
+         <div>
+           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cliente</p>
+-          {order.customer && (
+-            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-2 rounded-xl bg-sky-500/10 border border-sky-500/20">
+-              <div className="w-7 h-7 rounded-full bg-sky-500/20 flex items-center justify-center shrink-0">
+-                <Icon name="user" size={14} strokeWidth={2} className="text-sky-600" />
++
++          {/* Current customer row */}
++          {order.customer && !showPicker && (
++            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
++              <div className="w-8 h-8 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0">
++                <Icon name="user" size={15} strokeWidth={2} className="text-primary-600" />
+               </div>
+               <div className="flex-1 min-w-0">
+-                <p className="text-xs text-sky-500 font-semibold leading-none mb-0.5">Cliente actual</p>
+-                <p className="text-sm font-bold text-sky-900 truncate">{order.customer.name}</p>
++                <p className="text-xs text-gray-400 leading-none mb-0.5">Cliente asignado</p>
++                <p className="text-sm font-semibold text-gray-900 truncate">{order.customer.name}</p>
+               </div>
+-              <span className="text-xs text-sky-400 shrink-0">Asignar nuevo abajo Ôåô</span>
++              <button
++                type="button"
++                onClick={() => setShowPicker(true)}
++                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--color-surface-card)] border border-[var(--border-subtle)] text-gray-600 hover:text-primary-600 hover:border-primary-500/40 transition-colors"
++              >
++                Cambiar
++              </button>
++            </div>
++          )}
++
++          {/* Picker ÔÇö visible al agregar o al cambiar */}
++          {showPicker && (
++            <div className="space-y-2">
++              {order.customer && (
++                <button
++                  type="button"
++                  onClick={() => { setShowPicker(false); setCustomerValue(null); setPickerKey((k) => k + 1); }}
++                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
++                >
++                  <Icon name="chevron-left" size={12} strokeWidth={2.5} />
++                  Mantener cliente actual
++                </button>
++              )}
++              <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
+             </div>
+           )}
+-          <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
++
++          {/* No customer and picker not open */}
++          {!order.customer && !showPicker && (
++            <p className="text-xs text-gray-400 italic">Sin cliente asignado</p>
++          )}
+         </div>
+ 
+         {/* Notes */}
+diff --git a/frontend/src/components/orders/PayOrderModal.tsx b/frontend/src/components/orders/PayOrderModal.tsx
+index ca51d73..1b8e5da 100644
+--- a/frontend/src/components/orders/PayOrderModal.tsx
++++ b/frontend/src/components/orders/PayOrderModal.tsx
+@@ -137,8 +137,8 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia =
+   };
+ 
+   return (
+-    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro" size="full">
+-      <div className="space-y-6">
++    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro" size="md">
++      <div className="space-y-4">
+ 
+         {/* ÔöÇÔöÇ Resumen del pedido ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */}
+         <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
+@@ -172,14 +172,14 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia =
+ 
+           {!splitMode ? (
+             <>
+-              <div className={`grid gap-3 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
++              <div className={`grid gap-2.5 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                 {PAYMENT_METHODS.map((m) => (
+                   <button
+                     key={m.value}
+                     onClick={() => setSelectedMethod(m.value)}
+                     disabled={loading}
+                     className={[
+-                      'flex flex-col items-center gap-2.5 py-5 px-2 rounded-2xl transition-all duration-150 disabled:opacity-50',
++                      'flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl transition-all duration-150 disabled:opacity-50',
+                       selectedMethod === m.value ? m.active : m.idle,
+                     ].join(' ')}
+                   >
+@@ -303,7 +303,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia =
+         </div>
+ 
+         {/* ÔöÇÔöÇ Footer: confirmar ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */}
+-        <div className="border-t border-[var(--border-subtle)] pt-5 space-y-3">
++        <div className="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
+           {!canConfirm && (
+             <p className="text-[11px] px-1 text-gray-400">
+               Selecciona un m├®todo de pago para continuar
+diff --git a/frontend/src/components/pos/CustomerPicker.tsx b/frontend/src/components/pos/CustomerPicker.tsx
+index e442702..38393f1 100644
+--- a/frontend/src/components/pos/CustomerPicker.tsx
++++ b/frontend/src/components/pos/CustomerPicker.tsx
+@@ -1,4 +1,14 @@
+ import { useState, useRef, useEffect } from 'react';
++
++function toTitleCase(str: string): string {
++  return str
++    .trim()
++    .toLowerCase()
++    .split(' ')
++    .filter(Boolean)
++    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
++    .join(' ');
++}
+ import type { CreateCustomerRequest, CustomerSearchResult } from '@pos/shared';
+ import { Icon } from '../ui/Icon';
+ import { useCustomerSearch } from '../../hooks/useCustomerSearch';
+@@ -66,7 +76,7 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
+   function handleSaveNew() {
+     if (!newName.trim()) return;
+     const createCustomer: CreateCustomerRequest = {
+-      name: newName.trim(),
++      name: toTitleCase(newName),
+       phone: newPhone.trim() || undefined,
+     };
+     setSelected({ type: 'new', createCustomer });
+diff --git a/frontend/src/components/products/CategoryManagerModal.tsx b/frontend/src/components/products/CategoryManagerModal.tsx
+index f69d89d..604e544 100644
+--- a/frontend/src/components/products/CategoryManagerModal.tsx
++++ b/frontend/src/components/products/CategoryManagerModal.tsx
+@@ -3,6 +3,7 @@ import type { CategoryDto } from '@pos/shared';
+ import { categoriesApi } from '../../api/categories.api';
+ import { Modal } from '../ui/Modal';
+ import { Button } from '../ui/Button';
++import { Input } from '../ui/Input';
+ import { Icon } from '../ui/Icon';
+ import { handleApiError } from '../../utils/api-error';
+ import toast from 'react-hot-toast';
+@@ -14,25 +15,19 @@ interface Props {
+   onSaved: () => void;
+ }
+ 
+-const inputCls =
+-  'w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-card)] text-gray-700 ' +
+-  'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]';
+-
+ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: Props) {
+-  const [editingId, setEditingId]       = useState<string | null>(null);
+-  const [editName, setEditName]         = useState('');
+-  const [editOrder, setEditOrder]       = useState('0');
+-  const [deletingId, setDeletingId]     = useState<string | null>(null);
+-  const [saving, setSaving]             = useState(false);
+-  const [deleting, setDeleting]         = useState(false);
+-
+-  // New category form
+-  const [newName, setNewName]           = useState('');
+-  const [newOrder, setNewOrder]         = useState('');
+-  const [showNewForm, setShowNewForm]   = useState(false);
+-  const [creating, setCreating]         = useState(false);
+-
+-  // Reset state when modal closes
++  const [editingId, setEditingId]     = useState<string | null>(null);
++  const [editName, setEditName]       = useState('');
++  const [editOrder, setEditOrder]     = useState('0');
++  const [deletingId, setDeletingId]   = useState<string | null>(null);
++  const [saving, setSaving]           = useState(false);
++  const [deleting, setDeleting]       = useState(false);
++
++  const [newName, setNewName]         = useState('');
++  const [newOrder, setNewOrder]       = useState('');
++  const [showNewForm, setShowNewForm] = useState(false);
++  const [creating, setCreating]       = useState(false);
++
+   useEffect(() => {
+     if (!isOpen) {
+       setEditingId(null);
+@@ -48,6 +43,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
+     setEditName(cat.name);
+     setEditOrder(String(cat.sortOrder));
+     setDeletingId(null);
++    setShowNewForm(false);
+   };
+ 
+   const cancelEdit = () => setEditingId(null);
+@@ -105,140 +101,167 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
+ 
+         {/* Category list */}
+         {categories.length === 0 ? (
+-          <p className="text-sm text-gray-400 text-center py-6">Sin categor├¡as a├║n.</p>
++          <div className="text-center py-10">
++            <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mx-auto mb-3">
++              <Icon name="box" size={22} strokeWidth={1.5} className="text-gray-300" />
++            </div>
++            <p className="text-sm text-gray-400">Sin categor├¡as a├║n</p>
++            <p className="text-xs text-gray-300 mt-1">Crea la primera con el bot├│n de abajo</p>
++          </div>
+         ) : (
+           <div className="rounded-xl border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)] overflow-hidden">
+             {categories.map((cat) => (
+               <div key={cat.id}>
++
+                 {/* View row */}
+                 {editingId !== cat.id && (
+-                  <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${deletingId === cat.id ? 'bg-red-500/5' : 'hover:bg-[var(--color-surface-2)]'}`}>
+-                    <div className="flex-1 min-w-0">
+-                      <span className="text-sm font-medium text-gray-800">{cat.name}</span>
+-                      <span className="text-[11px] text-gray-400 ml-2">orden {cat.sortOrder}</span>
+-                    </div>
+-
+-                    {deletingId === cat.id ? (
+-                      <div className="flex items-center gap-2 shrink-0">
+-                        <span className="text-xs text-red-600 font-medium">┬┐Eliminar?</span>
+-                        <button
+-                          onClick={() => confirmDelete(cat.id)}
+-                          disabled={deleting}
+-                          className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+-                        >
+-                          S├¡
+-                        </button>
+-                        <button
+-                          onClick={() => setDeletingId(null)}
+-                          className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg transition-colors"
+-                        >
+-                          No
+-                        </button>
++                  <div className={`transition-colors ${deletingId === cat.id ? 'bg-red-500/5' : 'hover:bg-[var(--color-surface-2)]'}`}>
++                    <div className="flex items-center gap-3 px-4 py-3.5">
++                      <div className="flex-1 min-w-0">
++                        <p className="text-base font-semibold text-gray-900 truncate">{cat.name}</p>
++                        <p className="text-xs text-gray-400 mt-0.5">Posici├│n {cat.sortOrder}</p>
+                       </div>
+-                    ) : (
+-                      <div className="flex items-center gap-1 shrink-0">
+-                        <button
+-                          onClick={() => startEdit(cat)}
+-                          className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-500/8 transition-colors"
+-                          title="Editar"
+-                        >
+-                          <Icon name="edit" size={14} />
+-                        </button>
+-                        <button
+-                          onClick={() => { setDeletingId(cat.id); setEditingId(null); }}
+-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/8 transition-colors"
+-                          title="Eliminar"
+-                        >
+-                          <Icon name="trash" size={14} />
+-                        </button>
+-                      </div>
+-                    )}
++
++                      {deletingId === cat.id ? (
++                        <div className="flex items-center gap-2 shrink-0">
++                          <span className="text-xs text-red-600 font-semibold">┬┐Eliminar?</span>
++                          <button
++                            onClick={() => confirmDelete(cat.id)}
++                            disabled={deleting}
++                            className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
++                          >
++                            {deleting ? 'ÔÇª' : 'S├¡, eliminar'}
++                          </button>
++                          <button
++                            onClick={() => setDeletingId(null)}
++                            className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] transition-colors"
++                          >
++                            Cancelar
++                          </button>
++                        </div>
++                      ) : (
++                        <div className="flex items-center gap-1 shrink-0">
++                          <button
++                            onClick={() => startEdit(cat)}
++                            className="p-2 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-500/10 transition-colors"
++                            title="Editar"
++                          >
++                            <Icon name="edit" size={15} />
++                          </button>
++                          <button
++                            onClick={() => { setDeletingId(cat.id); setEditingId(null); }}
++                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
++                            title="Eliminar"
++                          >
++                            <Icon name="trash" size={15} />
++                          </button>
++                        </div>
++                      )}
++                    </div>
+                   </div>
+                 )}
+ 
+-                {/* Inline edit form */}
++                {/* Inline edit form ÔÇö apilado y con labels */}
+                 {editingId === cat.id && (
+-                  <div className="px-4 py-3 bg-[var(--color-surface-2)]">
+-                    <div className="flex items-center gap-2">
+-                      <input
++                  <div className="px-4 py-4 bg-[var(--color-surface-2)] border-l-2 border-primary-500/50">
++                    <p className="text-xs font-bold text-primary-600 uppercase tracking-wide mb-3">
++                      Editando categor├¡a
++                    </p>
++                    <div className="space-y-3">
++                      <Input
++                        label="Nombre de la categor├¡a"
+                         autoFocus
+                         value={editName}
+                         onChange={(e) => setEditName(e.target.value)}
+-                        placeholder="Nombre"
+-                        className={`${inputCls} flex-1`}
+-                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(cat.id); if (e.key === 'Escape') cancelEdit(); }}
++                        placeholder="Ej: Bebidas, Entradas, PostresÔÇª"
++                        onKeyDown={(e) => {
++                          if (e.key === 'Enter') saveEdit(cat.id);
++                          if (e.key === 'Escape') cancelEdit();
++                        }}
+                       />
+-                      <input
++                      <Input
++                        label="Orden en men├║"
+                         type="number"
+                         value={editOrder}
+                         onChange={(e) => setEditOrder(e.target.value)}
+-                        placeholder="Orden"
+-                        className={`${inputCls} w-20`}
++                        placeholder="0"
+                       />
+-                      <button
+-                        onClick={() => saveEdit(cat.id)}
+-                        disabled={saving || !editName.trim()}
+-                        className="p-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-white transition-colors disabled:opacity-50"
+-                        title="Guardar"
+-                      >
+-                        <Icon name="check" size={14} strokeWidth={2.5} />
+-                      </button>
+-                      <button
+-                        onClick={cancelEdit}
+-                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-[var(--color-surface-3)] transition-colors"
+-                        title="Cancelar"
+-                      >
+-                        <Icon name="x" size={14} strokeWidth={2} />
+-                      </button>
++                      <p className="text-xs text-gray-400 -mt-1">
++                        N├║mero menor aparece primero en el POS. Usa 0 si no importa el orden.
++                      </p>
++                      <div className="flex gap-2 pt-1">
++                        <Button
++                          onClick={() => saveEdit(cat.id)}
++                          disabled={saving || !editName.trim()}
++                          loading={saving}
++                          fullWidth
++                        >
++                          Guardar cambios
++                        </Button>
++                        <Button variant="secondary" onClick={cancelEdit} fullWidth>
++                          Cancelar
++                        </Button>
++                      </div>
+                     </div>
+                   </div>
+                 )}
++
+               </div>
+             ))}
+           </div>
+         )}
+ 
+-        {/* New category */}
++        {/* New category form */}
+         {showNewForm ? (
+-          <form onSubmit={createCategory} className="rounded-xl border border-[var(--border-subtle)] p-3 bg-[var(--color-surface-2)]">
+-            <p className="text-xs font-semibold text-gray-500 mb-2">Nueva categor├¡a</p>
+-            <div className="flex items-center gap-2">
+-              <input
+-                autoFocus
+-                value={newName}
+-                onChange={(e) => setNewName(e.target.value)}
+-                placeholder="Nombre *"
+-                className={`${inputCls} flex-1`}
+-                required
+-              />
+-              <input
+-                type="number"
+-                value={newOrder}
+-                onChange={(e) => setNewOrder(e.target.value)}
+-                placeholder="Orden"
+-                className={`${inputCls} w-20`}
+-              />
+-              <Button type="submit" size="sm" loading={creating} disabled={!newName.trim()}>
+-                Crear
++          <form
++            onSubmit={createCategory}
++            className="rounded-xl border border-primary-500/30 bg-primary-500/5 px-4 py-4 space-y-3"
++          >
++            <p className="text-xs font-bold text-primary-600 uppercase tracking-wide">
++              Nueva categor├¡a
++            </p>
++            <Input
++              label="Nombre de la categor├¡a"
++              autoFocus
++              value={newName}
++              onChange={(e) => setNewName(e.target.value)}
++              placeholder="Ej: Bebidas, Entradas, PostresÔÇª"
++              required
++            />
++            <Input
++              label="Orden en men├║"
++              type="number"
++              value={newOrder}
++              onChange={(e) => setNewOrder(e.target.value)}
++              placeholder="0 ÔÇö aparece al final"
++            />
++            <p className="text-xs text-gray-400 -mt-1">
++              N├║mero menor aparece primero. D├®jalo en 0 si no importa el orden.
++            </p>
++            <div className="flex gap-2 pt-1">
++              <Button type="submit" loading={creating} disabled={!newName.trim()} fullWidth>
++                Crear categor├¡a
+               </Button>
+-              <button
++              <Button
+                 type="button"
++                variant="secondary"
++                fullWidth
+                 onClick={() => { setShowNewForm(false); setNewName(''); setNewOrder(''); }}
+-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-[var(--color-surface-3)] transition-colors"
+               >
+-                <Icon name="x" size={14} strokeWidth={2} />
+-              </button>
++                Cancelar
++              </Button>
+             </div>
+           </form>
+         ) : (
+           <button
+-            onClick={() => setShowNewForm(true)}
+-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border border-dashed border-[var(--border-subtle)] text-sm font-medium text-gray-400 hover:text-primary-600 hover:border-primary-500/40 hover:bg-primary-500/5 transition-colors"
++            onClick={() => { setShowNewForm(true); setEditingId(null); }}
++            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border border-dashed border-[var(--border-subtle)] text-sm font-medium text-gray-400 hover:text-primary-600 hover:border-primary-500/40 hover:bg-primary-500/5 transition-colors"
+           >
+-            <Icon name="plus" size={16} strokeWidth={2} />
+-            Nueva categor├¡a
++            <Icon name="plus" size={16} strokeWidth={2.5} />
++            Agregar categor├¡a
+           </button>
+         )}
++
+       </div>
+ 
+       <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex justify-end">
+diff --git a/frontend/src/components/raffles/WinnerModal.tsx b/frontend/src/components/raffles/WinnerModal.tsx
+index 5c39162..88c0767 100644
+--- a/frontend/src/components/raffles/WinnerModal.tsx
++++ b/frontend/src/components/raffles/WinnerModal.tsx
+@@ -37,12 +37,11 @@ export function WinnerModal({
+   useEffect(() => { playWinnerFanfare(); }, []);
+ 
+   const { user } = useAuth();
+-  const { businessAddress, businessPhone, tenantLogo } = useSettingsStore();
++  const { businessAddress, businessPhone } = useSettingsStore();
+   const business = {
+     name:    user?.tenantName ?? '',
+     address: businessAddress || undefined,
+     phone:   businessPhone   || undefined,
+-    logoUrl: tenantLogo,
+   };
+ 
+   const medal = MEDAL[winner.position] ?? DEFAULT_MEDAL;
+diff --git a/frontend/src/context/auth.context.tsx b/frontend/src/context/auth.context.tsx
+index 57e7b61..2496d00 100644
+--- a/frontend/src/context/auth.context.tsx
++++ b/frontend/src/context/auth.context.tsx
+@@ -30,7 +30,6 @@ interface AuthUser {
+ 
+ /** Extended shape returned by GET /auth/me (includes branding fields). */
+ type AuthUserFull = AuthUser & {
+-  tenantLogo?:    string | null;
+   tenantAddress?: string | null;
+   tenantPhone?:   string | null;
+   tenantSlogan?:  string | null;
+@@ -79,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+       kitchenEnabled:         u.modules?.kitchenEnabled         ?? false,
+       rafflesEnabled:         u.modules?.rafflesEnabled         ?? false,
+       orderNumberResetPeriod: u.modules?.orderNumberResetPeriod as OrderNumberResetPeriod | undefined,
+-      tenantLogo:             u.tenantLogo    ?? null,
+       businessAddress:        u.tenantAddress ?? '',
+       businessPhone:          u.tenantPhone   ?? '',
+       receiptSlogan:          u.tenantSlogan  ?? '',
+diff --git a/frontend/src/hooks/useReceiptSettings.ts b/frontend/src/hooks/useReceiptSettings.ts
+index 64b5709..f520352 100644
+--- a/frontend/src/hooks/useReceiptSettings.ts
++++ b/frontend/src/hooks/useReceiptSettings.ts
+@@ -4,12 +4,11 @@ import type { ReceiptSettings } from '../utils/print';
+ 
+ export function useReceiptSettings(): ReceiptSettings {
+   const { user } = useAuth();
+-  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
++  const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();
+   return {
+     businessName:    user?.tenantName ?? 'Mi Negocio',
+     businessAddress,
+     businessPhone,
+     receiptSlogan,
+-    logoUrl:         tenantLogo,
+   };
+ }
+diff --git a/frontend/src/pages/CashierAccountPage.tsx b/frontend/src/pages/CashierAccountPage.tsx
+index c916535..c0acf85 100644
+--- a/frontend/src/pages/CashierAccountPage.tsx
++++ b/frontend/src/pages/CashierAccountPage.tsx
+@@ -2,66 +2,14 @@ import { useState } from 'react';
+ import toast from 'react-hot-toast';
+ import { useAuth } from '../context/auth.context';
+ import { usersApi } from '../api/users.api';
+-import { adminApi } from '../api/admin.api';
+ import { Card } from '../components/ui/Card';
+ import { Button } from '../components/ui/Button';
+ import { Icon } from '../components/ui/Icon';
+ import { Input } from '../components/ui/Input';
+ import { handleApiError } from '../utils/api-error';
+ 
+-const ACCOUNT_UNLOCK_KEY = 'pos_account_unlocked';
+ const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
+ 
+-function AccountLock({ onUnlock }: { onUnlock: () => void }) {
+-  const [key, setKey]         = useState('');
+-  const [error, setError]     = useState('');
+-  const [loading, setLoading] = useState(false);
+-
+-  const handleSubmit = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    setError('');
+-    setLoading(true);
+-    try {
+-      await adminApi.ping(key.trim());
+-      sessionStorage.setItem(ACCOUNT_UNLOCK_KEY, '1');
+-      onUnlock();
+-    } catch {
+-      setError('Clave incorrecta');
+-    } finally {
+-      setLoading(false);
+-    }
+-  };
+-
+-  return (
+-    <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
+-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
+-        <div className="w-14 h-14 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center mx-auto mb-5">
+-          <Icon name="lock" size={28} strokeWidth={2} className="text-primary-600" />
+-        </div>
+-        <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Acci├│n protegida</h2>
+-        <p className="text-sm text-gray-500 mb-6">
+-          Ingresa la clave del administrador para cambiar la contrase├▒a.
+-        </p>
+-        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+-          <Input
+-            label="Clave de administrador"
+-            type="password"
+-            placeholder="ÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇó"
+-            value={key}
+-            onChange={(e) => { setKey(e.target.value); setError(''); }}
+-            autoFocus
+-            required
+-          />
+-          {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+-          <Button type="submit" fullWidth loading={loading}>
+-            {loading ? 'Verificando...' : 'Desbloquear'}
+-          </Button>
+-        </form>
+-      </div>
+-    </div>
+-  );
+-}
+-
+ const ROLE_LABEL: Record<string, string> = {
+   OWNER:   'Propietario',
+   CASHIER: 'Cajero',
+@@ -69,18 +17,11 @@ const ROLE_LABEL: Record<string, string> = {
+ 
+ export function CashierAccountPage() {
+   const { user } = useAuth();
+-  const [unlocked, setUnlocked] = useState(
+-    () => sessionStorage.getItem(ACCOUNT_UNLOCK_KEY) === '1',
+-  );
+   const [pw, setPw]           = useState(EMPTY);
+   const [loading, setLoading] = useState(false);
+   const userInitial            = (user?.name ?? '?')[0].toUpperCase();
+   const roleLabel              = ROLE_LABEL[user?.role ?? ''] ?? user?.role ?? '';
+ 
+-  if (!unlocked) {
+-    return <AccountLock onUnlock={() => setUnlocked(true)} />;
+-  }
+-
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (pw.newPassword !== pw.confirmPassword) {
+diff --git a/frontend/src/pages/RaffleDetailPage.tsx b/frontend/src/pages/RaffleDetailPage.tsx
+index 8109487..7d061b6 100644
+--- a/frontend/src/pages/RaffleDetailPage.tsx
++++ b/frontend/src/pages/RaffleDetailPage.tsx
+@@ -128,12 +128,11 @@ function RaffleDetailContent({ id }: { id: string }) {
+   } = useRaffleDetail(id, goBack, () => {});
+ 
+   const { user } = useAuth();
+-  const { businessAddress, businessPhone, receiptSlogan, tenantLogo } = useSettingsStore();
++  const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();
+   const business = {
+     name:    user?.tenantName ?? '',
+     address: businessAddress || undefined,
+     phone:   businessPhone   || undefined,
+-    logoUrl: tenantLogo,
+   };
+   const ticketPrintSettings = {
+     businessName:    user?.tenantName ?? '',
+diff --git a/frontend/src/pages/SettingsPage.tsx b/frontend/src/pages/SettingsPage.tsx
+index 03043b0..60ffe09 100644
+--- a/frontend/src/pages/SettingsPage.tsx
++++ b/frontend/src/pages/SettingsPage.tsx
+@@ -1,13 +1,11 @@
+-import { useRef, useState } from 'react';
++import { useState } from 'react';
+ import toast from 'react-hot-toast';
+ import { OrderNumberResetPeriod } from '@pos/shared';
+ import { useSettingsStore } from '../store/settings.store';
+ import { useAuth } from '../context/auth.context';
+-import { usersApi } from '../api/users.api';
+ import { adminApi } from '../api/admin.api';
+ import { tenantsApi } from '../api/tenants.api';
+ import { ordersApi } from '../api/orders.api';
+-import { uploadsApi } from '../api/uploads.api';
+ import { Card } from '../components/ui/Card';
+ import { Button } from '../components/ui/Button';
+ import { Input } from '../components/ui/Input';
+@@ -78,7 +76,7 @@ function SettingRow({ label, description, value, onChange, icon }: SettingRowPro
+   return (
+     <div className={[
+       'flex items-center justify-between py-4 px-1 rounded-xl transition-colors',
+-      value ? 'bg-primary-50/40' : '',
++      value ? 'bg-primary-500/8' : '',
+     ].join(' ')}>
+       <div className="flex items-start gap-3 flex-1 pr-4">
+         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+@@ -97,7 +95,6 @@ function SettingRow({ label, description, value, onChange, icon }: SettingRowPro
+ }
+ 
+ const RECEIPT_MAX = 120;
+-const EMPTY_PW = { currentPassword: '', newPassword: '', confirmPassword: '' };
+ 
+ export function SettingsPage() {
+   const { user } = useAuth();
+@@ -107,7 +104,6 @@ export function SettingsPage() {
+     businessPhone, setBusinessPhone,
+     receiptSlogan, setReceiptSlogan,
+     orderNumberResetPeriod, setOrderNumberResetPeriod,
+-    tenantLogo, setTenantLogo,
+   } = useSettingsStore();
+ 
+   const saveReceiptField = async (field: 'businessAddress' | 'businessPhone' | 'receiptSlogan', value: string) => {
+@@ -121,68 +117,13 @@ export function SettingsPage() {
+   const [resetPeriodLoading, setResetPeriodLoading] = useState(false);
+   const [resetNowConfirm, setResetNowConfirm] = useState(false);
+   const [resetNowLoading, setResetNowLoading] = useState(false);
+-  const [logoLoading, setLogoLoading] = useState(false);
+-  const logoInputRef = useRef<HTMLInputElement>(null);
+ 
+   const [unlocked, setUnlocked] = useState(() =>
+     sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1',
+   );
+-  const [pw, setPw] = useState(EMPTY_PW);
+-  const [pwLoading, setPwLoading] = useState(false);
+ 
+   if (!unlocked) return <SettingsLock onUnlock={() => setUnlocked(true)} />;
+ 
+-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+-    const file = e.target.files?.[0];
+-    if (!file) return;
+-    setLogoLoading(true);
+-    try {
+-      const url = await uploadsApi.image(file);
+-      await tenantsApi.updateSettings({ logoUrl: url });
+-      setTenantLogo(url);
+-      toast.success('Logo actualizado');
+-    } catch (err) {
+-      handleApiError(err, 'Error al subir logo');
+-    } finally {
+-      setLogoLoading(false);
+-      if (logoInputRef.current) logoInputRef.current.value = '';
+-    }
+-  };
+-
+-  const handleLogoRemove = async () => {
+-    setLogoLoading(true);
+-    try {
+-      await tenantsApi.updateSettings({ logoUrl: null });
+-      setTenantLogo(null);
+-      toast.success('Logo eliminado');
+-    } catch (err) {
+-      handleApiError(err, 'Error al eliminar logo');
+-    } finally {
+-      setLogoLoading(false);
+-    }
+-  };
+-
+-  const handleChangePassword = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    if (pw.newPassword !== pw.confirmPassword) {
+-      toast.error('Las contrase├▒as nuevas no coinciden');
+-      return;
+-    }
+-    setPwLoading(true);
+-    try {
+-      await usersApi.changePassword({
+-        currentPassword: pw.currentPassword,
+-        newPassword: pw.newPassword,
+-      });
+-      toast.success('Contrase├▒a actualizada');
+-      setPw(EMPTY_PW);
+-    } catch (err) {
+-      handleApiError(err, 'Error al cambiar contrase├▒a');
+-    } finally {
+-      setPwLoading(false);
+-    }
+-  };
+-
+   return (
+     <PageShell className="space-y-4">
+       <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5" style={{ background: 'var(--color-surface-card)' }}>
+@@ -206,49 +147,6 @@ export function SettingsPage() {
+             </div>
+             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
+           </div>
+-          <div className="py-4">
+-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Logo del negocio</label>
+-            <p className="text-xs text-gray-400 mb-3">Se muestra en el recibo del cliente. PNG o WEBP, fondo blanco o transparente recomendado.</p>
+-            <div className="flex items-center gap-4">
+-              {tenantLogo ? (
+-                <div className="w-20 h-20 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center overflow-hidden shrink-0">
+-                  <img src={tenantLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+-                </div>
+-              ) : (
+-                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-[var(--border-subtle)] bg-[var(--color-surface-2)] flex items-center justify-center shrink-0">
+-                  <Icon name="photo" size={28} strokeWidth={1.5} className="text-gray-300" />
+-                </div>
+-              )}
+-              <div className="flex flex-col gap-2">
+-                <input
+-                  ref={logoInputRef}
+-                  type="file"
+-                  accept="image/png,image/jpeg,image/webp"
+-                  className="hidden"
+-                  onChange={handleLogoUpload}
+-                />
+-                <Button
+-                  type="button"
+-                  variant="secondary"
+-                  loading={logoLoading}
+-                  onClick={() => logoInputRef.current?.click()}
+-                >
+-                  {tenantLogo ? 'Cambiar logo' : 'Subir logo'}
+-                </Button>
+-                {tenantLogo && (
+-                  <Button
+-                    type="button"
+-                    variant="ghost"
+-                    loading={logoLoading}
+-                    onClick={handleLogoRemove}
+-                    className="text-red-500 hover:text-red-600 text-xs"
+-                  >
+-                    Eliminar logo
+-                  </Button>
+-                )}
+-              </div>
+-            </div>
+-          </div>
+           <div className="py-4">
+             <Input
+               label="Direcci├│n"
+@@ -324,7 +222,7 @@ export function SettingsPage() {
+                 className={[
+                   'flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all',
+                   active
+-                    ? 'border-primary-400 bg-primary-50 text-primary-800'
++                    ? 'border-primary-500/50 bg-primary-500/10 text-primary-700'
+                     : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-[var(--border-strong)]',
+                   resetPeriodLoading ? 'opacity-50 cursor-not-allowed' : '',
+                 ].join(' ')}
+@@ -404,45 +302,6 @@ export function SettingsPage() {
+         </div>
+       </Card>
+ 
+-      {/* Password change */}
+-      <Card variant="panel">
+-        <div className="flex items-center gap-2 mb-1">
+-          <Icon name="lock" size={16} className="text-gray-400 shrink-0" />
+-          <h3 className="text-sm font-bold text-gray-700">Seguridad</h3>
+-        </div>
+-        <p className="text-xs text-gray-400 mb-4 ml-6">Cambia tu contrase├▒a de acceso</p>
+-        <form onSubmit={handleChangePassword} className="space-y-3">
+-          <Input
+-            label="Contrase├▒a actual"
+-            type="password"
+-            autoComplete="current-password"
+-            value={pw.currentPassword}
+-            onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })}
+-            required
+-          />
+-          <Input
+-            label="Nueva contrase├▒a"
+-            type="password"
+-            autoComplete="new-password"
+-            value={pw.newPassword}
+-            onChange={(e) => setPw({ ...pw, newPassword: e.target.value })}
+-            minLength={6}
+-            required
+-          />
+-          <Input
+-            label="Confirmar nueva contrase├▒a"
+-            type="password"
+-            autoComplete="new-password"
+-            value={pw.confirmPassword}
+-            onChange={(e) => setPw({ ...pw, confirmPassword: e.target.value })}
+-            minLength={6}
+-            required
+-          />
+-          <Button type="submit" loading={pwLoading}>
+-            Cambiar contrase├▒a
+-          </Button>
+-        </form>
+-      </Card>
+     </PageShell>
+   );
+ }
+diff --git a/frontend/src/pages/TeamPage.tsx b/frontend/src/pages/TeamPage.tsx
+index bc58f26..90d42a1 100644
+--- a/frontend/src/pages/TeamPage.tsx
++++ b/frontend/src/pages/TeamPage.tsx
+@@ -2,7 +2,7 @@ import { useState } from 'react';
+ import toast from 'react-hot-toast';
+ import { useQueryClient } from '@tanstack/react-query';
+ import { handleApiError } from '../utils/api-error';
+-import { usersApi, type UserDto, type CreateCashierRequest } from '../api/users.api';
++import { usersApi, type UserDto, type CreateCashierRequest, type UpdateCashierRequest } from '../api/users.api';
+ import type { BranchDto } from '@pos/shared';
+ import { UserRole } from '@pos/shared';
+ import { Badge } from '../components/ui/Badge';
+@@ -36,6 +36,8 @@ export function TeamPage() {
+   const activeBranches = branches.filter((b) => b.isActive);
+ 
+   const [showModal, setShowModal] = useState(false);
++  const [editUser, setEditUser] = useState<UserDto | null>(null);
++  const [resetPwUser, setResetPwUser] = useState<UserDto | null>(null);
+ 
+   const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: queryKeys.users });
+ 
+@@ -66,6 +68,29 @@ export function TeamPage() {
+     invalidateUsers();
+   };
+ 
++  const handleEdit = async (data: UpdateCashierRequest) => {
++    if (!editUser) return;
++    try {
++      await usersApi.update(editUser.id, data);
++      setEditUser(null);
++      toast.success('Cajero actualizado');
++      invalidateUsers();
++    } catch (err) {
++      handleApiError(err, 'Error al actualizar cajero');
++    }
++  };
++
++  const handleResetPassword = async (newPassword: string) => {
++    if (!resetPwUser) return;
++    try {
++      await usersApi.resetPassword(resetPwUser.id, newPassword);
++      setResetPwUser(null);
++      toast.success('Contrase├▒a reseteada');
++    } catch (err) {
++      handleApiError(err, 'Error al resetear contrase├▒a');
++    }
++  };
++
+   return (
+     <PageShell>
+       <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
+@@ -124,7 +149,27 @@ export function TeamPage() {
+                   </select>
+                 )}
+                 {user.role !== 'OWNER' && (
+-                  <Toggle checked={user.isActive} onChange={() => handleToggle(user)} />
++                  <>
++                    <button
++                      onClick={() => setEditUser(user)}
++                      title="Editar cajero"
++                      className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-colors"
++                    >
++                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
++                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
++                      </svg>
++                    </button>
++                    <button
++                      onClick={() => setResetPwUser(user)}
++                      title="Resetear contrase├▒a"
++                      className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
++                    >
++                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
++                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
++                      </svg>
++                    </button>
++                    <Toggle checked={user.isActive} onChange={() => handleToggle(user)} />
++                  </>
+                 )}
+               </div>
+             </div>
+@@ -138,10 +183,132 @@ export function TeamPage() {
+         onClose={() => setShowModal(false)}
+         onSubmit={handleCreate}
+       />
++
++      {editUser && (
++        <EditCashierModal
++          user={editUser}
++          onClose={() => setEditUser(null)}
++          onSubmit={handleEdit}
++        />
++      )}
++
++      {resetPwUser && (
++        <ResetPasswordModal
++          userName={resetPwUser.name}
++          onClose={() => setResetPwUser(null)}
++          onSubmit={handleResetPassword}
++        />
++      )}
+     </PageShell>
+   );
+ }
+ 
++function EditCashierModal({
++  user, onClose, onSubmit,
++}: {
++  user: UserDto;
++  onClose: () => void;
++  onSubmit: (data: UpdateCashierRequest) => Promise<void>;
++}) {
++  const [form, setForm] = useState({ name: user.name, email: user.email });
++  const [loading, setLoading] = useState(false);
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++    setLoading(true);
++    try {
++      await onSubmit({ name: form.name.trim(), email: form.email.trim() });
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <Modal isOpen onClose={onClose} title="Editar cajero">
++      <form onSubmit={handleSubmit} className="space-y-4">
++        <Input
++          label="Nombre completo"
++          value={form.name}
++          onChange={(e) => setForm({ ...form, name: e.target.value })}
++          required
++          minLength={2}
++        />
++        <Input
++          label="Email"
++          type="email"
++          value={form.email}
++          onChange={(e) => setForm({ ...form, email: e.target.value })}
++          required
++        />
++        <div className="flex gap-3 pt-1">
++          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
++          <Button type="submit" fullWidth loading={loading}>Guardar cambios</Button>
++        </div>
++      </form>
++    </Modal>
++  );
++}
++
++function ResetPasswordModal({
++  userName, onClose, onSubmit,
++}: {
++  userName: string;
++  onClose: () => void;
++  onSubmit: (newPassword: string) => Promise<void>;
++}) {
++  const [newPassword, setNewPassword] = useState('');
++  const [confirm, setConfirm] = useState('');
++  const [loading, setLoading] = useState(false);
++  const [error, setError] = useState('');
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++    setError('');
++    if (newPassword !== confirm) {
++      setError('Las contrase├▒as no coinciden');
++      return;
++    }
++    setLoading(true);
++    try {
++      await onSubmit(newPassword);
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  return (
++    <Modal isOpen onClose={onClose} title={`Resetear contrase├▒a ÔÇö ${userName}`}>
++      <p className="text-sm text-gray-500 mb-4">
++        Asigna una nueva contrase├▒a temporal. Comun├¡cala al cajero por el canal que prefieras.
++      </p>
++      <form onSubmit={handleSubmit} className="space-y-4">
++        <Input
++          label="Nueva contrase├▒a"
++          type="password"
++          value={newPassword}
++          onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
++          minLength={6}
++          required
++          autoFocus
++        />
++        <Input
++          label="Confirmar contrase├▒a"
++          type="password"
++          value={confirm}
++          onChange={(e) => { setConfirm(e.target.value); setError(''); }}
++          minLength={6}
++          required
++        />
++        {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
++        <div className="flex gap-3 pt-1">
++          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
++          <Button type="submit" fullWidth loading={loading}>Resetear contrase├▒a</Button>
++        </div>
++      </form>
++    </Modal>
++  );
++}
++
+ function CreateCashierModal({
+   isOpen, branches, onClose, onSubmit,
+ }: {
+diff --git a/frontend/src/store/settings.store.ts b/frontend/src/store/settings.store.ts
+index d0f8908..27e050f 100644
+--- a/frontend/src/store/settings.store.ts
++++ b/frontend/src/store/settings.store.ts
+@@ -11,7 +11,6 @@ export interface ServerConfig {
+   kitchenEnabled?:         boolean;
+   rafflesEnabled?:         boolean;
+   orderNumberResetPeriod?: OrderNumberResetPeriod;
+-  tenantLogo?:             string | null;
+   businessAddress?:        string;
+   businessPhone?:          string;
+   receiptSlogan?:          string;
+@@ -52,10 +51,6 @@ interface SettingsState {
+   setBusinessPhone: (value: string) => void;
+   setReceiptSlogan: (value: string) => void;
+ 
+-  // Logo del negocio (server-controlled ÔÇö set by auth context on login/getMe)
+-  tenantLogo: string | null;
+-  setTenantLogo: (value: string | null) => void;
+-
+   // Plan SaaS (server-controlled ÔÇö set by auth context on login/getMe)
+   plan: SaasPlan;
+   setPlan: (value: SaasPlan) => void;
+@@ -98,9 +93,6 @@ export const useSettingsStore = create<SettingsState>()(
+       setBusinessPhone:   (value) => set({ businessPhone: value }),
+       setReceiptSlogan:   (value) => set({ receiptSlogan: value }),
+ 
+-      tenantLogo: null,
+-      setTenantLogo: (value) => set({ tenantLogo: value }),
+-
+       plan: 'BASICO' as SaasPlan,
+       setPlan: (value) => set({ plan: value }),
+       planLimits: { maxBranches: 1, maxCashiers: 2, maxProducts: 80, kitchenEnabled: false } as PlanLimits,
+@@ -114,8 +106,6 @@ export const useSettingsStore = create<SettingsState>()(
+         kitchenEnabled:         config.kitchenEnabled         ?? state.kitchenEnabled,
+         rafflesEnabled:         config.rafflesEnabled         ?? state.rafflesEnabled,
+         orderNumberResetPeriod: config.orderNumberResetPeriod ?? state.orderNumberResetPeriod,
+-        // tenantLogo can be null (valid) vs undefined (not provided)
+-        tenantLogo:             config.tenantLogo !== undefined ? config.tenantLogo : state.tenantLogo,
+         businessAddress:        config.businessAddress        ?? state.businessAddress,
+         businessPhone:          config.businessPhone          ?? state.businessPhone,
+         receiptSlogan:          config.receiptSlogan          ?? state.receiptSlogan,
+diff --git a/frontend/src/utils/print.ts b/frontend/src/utils/print.ts
+index ae9bcb5..b11f313 100644
+--- a/frontend/src/utils/print.ts
++++ b/frontend/src/utils/print.ts
+@@ -176,7 +176,6 @@ export interface ReceiptSettings {
+   businessAddress?: string;
+   businessPhone?:   string;
+   receiptSlogan?:   string;
+-  logoUrl?:         string | null;
+ }
+ 
+ /**
+@@ -207,13 +206,6 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
+   const customerLine = order.customer?.name
+     ? `<div class="center" style="font-size:8pt">Cliente: ${escapeHtml(order.customer.name)}</div>` : '';
+ 
+-  const logoSrc = settings.logoUrl ? resolveUploadUrl(settings.logoUrl) : null;
+-  const logoBlock = logoSrc
+-    ? `<div class="center" style="margin-bottom:4pt">
+-         <img src="${logoSrc}" alt="" style="width:40mm;height:auto;display:block;margin:0 auto"/>
+-       </div>`
+-    : '';
+-
+   // Desglose de pagos (soporta split: "Efectivo Bs 50.00 + QR Bs 30.00")
+   const pagoStr = order.payments.length > 0
+     ? order.payments
+@@ -225,7 +217,6 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
+     <div class="center" style="font-size:36pt;font-weight:900;line-height:1.1">#${order.orderNumber}</div>
+     ${customerLine}
+     <div class="divider"></div>
+-    ${logoBlock}
+     <div class="center bold" style="font-size:12pt">${escapeHtml(settings.businessName)}</div>
+     ${addressLine}
+     ${phoneLine}
+@@ -243,7 +234,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
+   `;
+ 
+   // 650ms si hay logo (imagen async), 450ms si no
+-  printViaIframe(html, logoSrc ? 650 : 450);
++  printViaIframe(html, 450);
+ }
+ 
+ /* ÔöÇÔöÇÔöÇ Tickets f├¡sicos de sorteo ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */
+diff --git a/frontend/src/utils/raffle-certificate.ts b/frontend/src/utils/raffle-certificate.ts
+index 79acb2d..5243b67 100644
+--- a/frontend/src/utils/raffle-certificate.ts
++++ b/frontend/src/utils/raffle-certificate.ts
+@@ -1,12 +1,11 @@
+ import toast from 'react-hot-toast';
+ import type { RaffleWinnerDto } from '@pos/shared';
+-import { escapeHtml as esc, resolveUploadUrl } from './print';
++import { escapeHtml as esc } from './print';
+ 
+ export interface BusinessInfo {
+   name:     string;
+   address?: string;
+   phone?:   string;
+-  logoUrl?: string | null;
+ }
+ 
+ function initials(name: string): string {
+@@ -38,11 +37,7 @@ export function printWinnerCertificate(
+   const drawnDate = new Date(winner.drawnAt);
+   const dateStr   = drawnDate.toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: 'numeric' });
+ 
+-  const logoSrc = business.logoUrl ? resolveUploadUrl(business.logoUrl) : null;
+-
+-  const logoBlock = logoSrc
+-    ? `<img src="${esc(logoSrc)}" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #DC2626">`
+-    : `<div style="width:52px;height:52px;border-radius:50%;background:#DC2626;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:900;font-family:'Montserrat',sans-serif;flex-shrink:0">${esc(initials(business.name))}</div>`;
++  const logoBlock = `<div style="width:52px;height:52px;border-radius:50%;background:#DC2626;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:900;font-family:'Montserrat',sans-serif;flex-shrink:0">${esc(initials(business.name))}</div>`;
+ 
+   const prizeBlock = winner.prizeDescription
+     ? `<div style="width:100%;margin:10px 0 14px">
+@@ -182,7 +177,7 @@ export function printWinnerCertificate(
+ 
+   <script>
+     (function () {
+-      var delay = ${logoSrc ? 700 : 400};
++      var delay = 400;
+       window.addEventListener('load', function () {
+         setTimeout(function () {
+           window.focus();

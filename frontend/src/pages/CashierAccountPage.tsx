@@ -2,65 +2,13 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
-import { adminApi } from '../api/admin.api';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { Input } from '../components/ui/Input';
 import { handleApiError } from '../utils/api-error';
 
-const ACCOUNT_UNLOCK_KEY = 'pos_account_unlocked';
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
-
-function AccountLock({ onUnlock }: { onUnlock: () => void }) {
-  const [key, setKey]         = useState('');
-  const [error, setError]     = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await adminApi.ping(key.trim());
-      sessionStorage.setItem(ACCOUNT_UNLOCK_KEY, '1');
-      onUnlock();
-    } catch {
-      setError('Clave incorrecta');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="p-4 sm:p-6 max-w-sm mx-auto mt-16 animate-in">
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-8 text-center" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="w-14 h-14 rounded-2xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center mx-auto mb-5">
-          <Icon name="lock" size={28} strokeWidth={2} className="text-primary-600" />
-        </div>
-        <h2 className="font-heading font-black text-xl text-gray-900 mb-1">Acción protegida</h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Ingresa la clave del administrador para cambiar la contraseña.
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-3 text-left">
-          <Input
-            label="Clave de administrador"
-            type="password"
-            placeholder="••••••••"
-            value={key}
-            onChange={(e) => { setKey(e.target.value); setError(''); }}
-            autoFocus
-            required
-          />
-          {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-          <Button type="submit" fullWidth loading={loading}>
-            {loading ? 'Verificando...' : 'Desbloquear'}
-          </Button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER:   'Propietario',
@@ -69,17 +17,10 @@ const ROLE_LABEL: Record<string, string> = {
 
 export function CashierAccountPage() {
   const { user } = useAuth();
-  const [unlocked, setUnlocked] = useState(
-    () => sessionStorage.getItem(ACCOUNT_UNLOCK_KEY) === '1',
-  );
   const [pw, setPw]           = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const userInitial            = (user?.name ?? '?')[0].toUpperCase();
   const roleLabel              = ROLE_LABEL[user?.role ?? ''] ?? user?.role ?? '';
-
-  if (!unlocked) {
-    return <AccountLock onUnlock={() => setUnlocked(true)} />;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
