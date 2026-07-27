@@ -57,11 +57,15 @@ export class CustomerRepository implements CustomerRepositoryPort {
     return row ? this.toDomain(row) : null;
   }
 
-  async findAll(tenantId: string, q?: string, page = 1, limit = 50, sortBy?: 'name' | 'totalSpent' | 'purchaseCount', sortDir?: 'asc' | 'desc'): Promise<{ data: CustomerStatsDto[]; total: number }> {
+  async findAll(tenantId: string, q?: string, page = 1, limit = 50, sortBy?: 'name' | 'totalSpent' | 'purchaseCount', sortDir?: 'asc' | 'desc', dateFrom?: string, dateTo?: string): Promise<{ data: CustomerStatsDto[]; total: number }> {
     const offset = (page - 1) * limit;
 
     const searchFilter = q
       ? Prisma.sql`AND (c.name ILIKE ${'%' + q + '%'} OR c.phone ILIKE ${'%' + q + '%'})`
+      : Prisma.empty;
+
+    const dateFilter = (dateFrom && dateTo)
+      ? Prisma.sql`AND o.created_at >= ${new Date(dateFrom)} AND o.created_at <= ${new Date(dateTo)}`
       : Prisma.empty;
 
     const orderByMap: Record<string, Record<string, Prisma.Sql>> = {
@@ -76,9 +80,9 @@ export class CustomerRepository implements CustomerRepositoryPort {
         SELECT
           c.id, c.tenant_id AS "tenantId", c.name, c.phone, c.email,
           c.notes, c.created_at AS "createdAt", c.updated_at AS "updatedAt",
-          COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA')) AS "purchaseCount",
-          COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA')), 0) AS "totalSpent",
-          MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA')) AS "lastOrderAt"
+          COUNT(o.id) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA') ${dateFilter}) AS "purchaseCount",
+          COALESCE(SUM(o.total) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA') ${dateFilter}), 0) AS "totalSpent",
+          MAX(o.created_at) FILTER (WHERE o.status != 'CANCELLED' AND EXISTS (SELECT 1 FROM order_payments op WHERE op.order_id = o.id AND op.method != 'CORTESIA') ${dateFilter}) AS "lastOrderAt"
         FROM customers c
         LEFT JOIN orders o ON o.customer_id = c.id
         WHERE c.tenant_id = ${tenantId}

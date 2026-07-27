@@ -55,6 +55,8 @@ export class CustomerController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortDir') sortDir?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
     const validSortBy = ['name', 'totalSpent', 'purchaseCount'].includes(sortBy ?? '')
       ? (sortBy as 'name' | 'totalSpent' | 'purchaseCount')
@@ -67,6 +69,8 @@ export class CustomerController {
       limit ? Number(limit) : undefined,
       validSortBy,
       validSortDir,
+      dateFrom,
+      dateTo,
     );
     res.setHeader('X-Total-Count', result.total);
     return result.data;

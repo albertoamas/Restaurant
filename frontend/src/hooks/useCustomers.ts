@@ -11,7 +11,7 @@ const PAGE_SIZE = 50;
 type SortBy  = 'name' | 'totalSpent' | 'purchaseCount';
 type SortDir = 'asc' | 'desc';
 
-export function useCustomers(initialQ = '') {
+export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) {
   const queryClient = useQueryClient();
 
   const [q, setQState]           = useState(initialQ);
@@ -19,12 +19,12 @@ export function useCustomers(initialQ = '') {
   const [sortBy, setSortByState] = useState<SortBy>('name');
   const [sortDir, setSortDirState] = useState<SortDir>('asc');
 
-  const params = { q, page, sortBy, sortDir };
+  const params = { q, page, sortBy, sortDir, dateFrom, dateTo };
 
   const { data, isPending: loading, refetch } = useQuery({
     queryKey: queryKeys.customers(params),
     queryFn:  () =>
-      customersApi.getAll({ q: q || undefined, page, limit: PAGE_SIZE, sortBy, sortDir })
+      customersApi.getAll({ q: q || undefined, page, limit: PAGE_SIZE, sortBy, sortDir, dateFrom, dateTo })
         .then((r): { data: CustomerStatsDto[]; total: number } => r),
   });
 

@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
 import { useCustomers } from '../hooks/useCustomers';
+import { useReportFilters } from '../hooks/useReportFilters';
 import { customersApi } from '../api/customers.api';
 import { ordersApi } from '../api/orders.api';
 import { handleApiError } from '../utils/api-error';
@@ -261,8 +262,30 @@ function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCr
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+const PERIODS: { key: any; label: string }[] = [
+  { key: 'all',    label: 'Histórico'    },
+  { key: 'today',  label: 'Hoy'          },
+  { key: 'week',   label: 'Esta semana'  },
+  { key: 'month',  label: 'Este mes'     },
+  { key: 'custom', label: 'Rango'        },
+];
+
 export function CustomersPage() {
-  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort } = useCustomers();
+  const filters = useReportFilters();
+  
+  // Set default period to 'all' if it's currently 'today' (which is the hook's default)
+  useEffect(() => {
+    if (filters.period === 'today') {
+      filters.setPeriod('all');
+    }
+  }, []);
+
+  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort } = useCustomers(
+    '',
+    filters.period === 'all' ? undefined : filters.utcFrom,
+    filters.period === 'all' ? undefined : filters.utcTo
+  );
+  
   const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -283,16 +306,40 @@ export function CustomersPage() {
         : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] text-gray-600'
     }`;
 
+  const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
+  const pInactive = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+  const dateInputCls = [
+    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
+    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
+  ].join(' ');
+
   return (
     <div className="p-4 lg:p-6 animate-slide">
       {/* Header */}
       <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
             <p className="text-xs text-gray-500 mt-0.5">Historial de compras, tickets y fidelización.</p>
           </div>
           <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo cliente</Button>
+        </div>
+        
+        {/* Period selector */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          {PERIODS.map((p) => (
+            <button key={p.key} onClick={() => filters.setPeriod(p.key)}
+              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${filters.period === p.key ? pActive : pInactive}`}>
+              {p.label}
+            </button>
+          ))}
+          {filters.period === 'custom' && (
+            <div className="flex items-center gap-1.5 ml-2">
+              <input type="date" value={filters.customFrom} onChange={(e) => filters.setCustomFrom(e.target.value)} className={dateInputCls} />
+              <span className="text-gray-400 text-sm shrink-0">→</span>
+              <input type="date" value={filters.customTo} onChange={(e) => filters.setCustomTo(e.target.value)} className={dateInputCls} />
+            </div>
+          )}
         </div>
       </div>
 

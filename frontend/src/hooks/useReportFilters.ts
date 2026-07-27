@@ -4,9 +4,11 @@ import { useAuth } from '../context/auth.context';
 import { today } from '../utils/date';
 import { getBoliviaDayBounds } from '../utils/timezone';
 
-export type Period = 'today' | 'week' | 'month' | 'custom';
+export type Period = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 function buildRange(period: Period, customFrom: string, customTo: string) {
+  if (period === 'all') return { from: '', to: '' };
+
   const d   = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const fmt = (date: Date) =>
@@ -50,15 +52,15 @@ export function useReportFilters() {
   const [selectedCategory, setSelectedCategory]  = useState('');
 
   const { from, to } = buildRange(period, customFrom, customTo);
-  const rangeLabel   = from === to ? from : `${from} → ${to}`;
+  const rangeLabel   = from === to ? (from || 'Histórico') : `${from} → ${to}`;
   const isMultiDay   = from !== to;
 
-  const { start: utcFrom } = getBoliviaDayBounds(from);
-  const { end:   utcTo   } = getBoliviaDayBounds(to);
+  const utcFrom = from ? getBoliviaDayBounds(from).start : undefined;
+  const utcTo   = to ? getBoliviaDayBounds(to).end : undefined;
 
-  const { prevFrom, prevTo } = buildPrevRange(from, to);
-  const { start: prevUtcFrom } = getBoliviaDayBounds(prevFrom);
-  const { end:   prevUtcTo   } = getBoliviaDayBounds(prevTo);
+  const { prevFrom, prevTo } = from && to ? buildPrevRange(from, to) : { prevFrom: '', prevTo: '' };
+  const prevUtcFrom = prevFrom ? getBoliviaDayBounds(prevFrom).start : undefined;
+  const prevUtcTo   = prevTo ? getBoliviaDayBounds(prevTo).end : undefined;
 
   const branchParam =
     user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;

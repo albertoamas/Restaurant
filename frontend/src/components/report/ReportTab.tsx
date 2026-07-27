@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { CategoryDto, DailyReportDto, ExpenseSummaryDto, TopCustomerDto, TopProductDto } from '@pos/shared';
 import { ExpenseCategory } from '@pos/shared';
 import { Card } from '../ui/Card';
@@ -39,6 +40,9 @@ export function ReportTab({
   selectedCategory,
   onCategoryChange,
 }: Props) {
+  const [showAllProducts, setShowAllProducts] = useState(false);
+  const [showAllCustomers, setShowAllCustomers] = useState(false);
+
   const hasData =
     report &&
     (report.orderCount > 0 ||
@@ -166,9 +170,24 @@ export function ReportTab({
             <p className="text-xs font-medium text-gray-500">Sin datos para este período</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {topProducts.map((p, i) => <TopProductRow key={p.productId} rank={i + 1} product={p} maxQty={topProducts[0].totalQuantity} />)}
-          </div>
+          <>
+            <div className="space-y-3">
+              {(showAllProducts ? topProducts : topProducts.slice(0, 5)).map((p, i) => (
+                <TopProductRow key={p.productId} rank={i + 1} product={p} maxQty={topProducts[0].totalQuantity} />
+              ))}
+            </div>
+            {topProducts.length > 5 && (
+              <button
+                type="button"
+                data-print-hide
+                onClick={() => setShowAllProducts((prev) => !prev)}
+                className="mt-3.5 w-full py-2 px-3 text-xs font-semibold text-primary-600 hover:text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 rounded-xl transition-all duration-150 flex items-center justify-center gap-1.5 border border-primary-500/15 cursor-pointer active:scale-[0.99]"
+              >
+                <span>{showAllProducts ? 'Mostrar menos' : `Mostrar más (${topProducts.length - 5} más)`}</span>
+                <Icon name={showAllProducts ? 'chevron-up' : 'chevron-down'} size={14} strokeWidth={2.5} />
+              </button>
+            )}
+          </>
         )}
       </Card>
 
@@ -183,9 +202,24 @@ export function ReportTab({
             <p className="text-xs font-medium text-gray-500">Sin clientes registrados en este período</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {topCustomers.map((c, i) => <TopCustomerRow key={c.customerId} rank={i + 1} customer={c} maxSpent={topCustomers[0].totalSpent} />)}
-          </div>
+          <>
+            <div className="space-y-3">
+              {(showAllCustomers ? topCustomers : topCustomers.slice(0, 5)).map((c, i) => (
+                <TopCustomerRow key={c.customerId} rank={i + 1} customer={c} maxSpent={topCustomers[0].totalSpent} />
+              ))}
+            </div>
+            {topCustomers.length > 5 && (
+              <button
+                type="button"
+                data-print-hide
+                onClick={() => setShowAllCustomers((prev) => !prev)}
+                className="mt-3.5 w-full py-2 px-3 text-xs font-semibold text-primary-600 hover:text-primary-700 bg-primary-500/5 hover:bg-primary-500/10 rounded-xl transition-all duration-150 flex items-center justify-center gap-1.5 border border-primary-500/15 cursor-pointer active:scale-[0.99]"
+              >
+                <span>{showAllCustomers ? 'Mostrar menos' : `Mostrar más (${topCustomers.length - 5} más)`}</span>
+                <Icon name={showAllCustomers ? 'chevron-up' : 'chevron-down'} size={14} strokeWidth={2.5} />
+              </button>
+            )}
+          </>
         )}
       </Card>
 
