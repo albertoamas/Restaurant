@@ -38,10 +38,10 @@ export function ReportPage() {
           selectedCategory, setSelectedCategory, from, to,
           prevUtcFrom, prevUtcTo } = filters;
 
-  const reportData   = useReportData(utcFrom, utcTo, branchParam, selectedCategory);
+  const reportData   = useReportData(utcFrom || '', utcTo || '', branchParam, selectedCategory);
   const advancedData = useAdvancedReportData(
-    utcFrom, utcTo, branchParam, isMultiDay, activeTab === 'avanzados',
-    prevUtcFrom, prevUtcTo,
+    utcFrom || '', utcTo || '', branchParam, isMultiDay, activeTab === 'avanzados',
+    prevUtcFrom || '', prevUtcTo || '',
   );
 
   const handleExportExcel = () => {
