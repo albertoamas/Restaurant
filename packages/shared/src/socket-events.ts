@@ -19,6 +19,7 @@ export const SOCKET_EVENTS = {
   // Catalog
   PRODUCT_CREATED:      'product.created',
   PRODUCT_UPDATED:      'product.updated',
+  PRODUCT_DELETED:      'product.deleted',
   CATEGORY_CREATED:     'category.created',
   CATEGORY_UPDATED:     'category.updated',
   CATEGORY_DELETED:     'category.deleted',
@@ -26,6 +27,7 @@ export const SOCKET_EVENTS = {
   // Customers
   CUSTOMER_CREATED:     'customer.created',
   CUSTOMER_UPDATED:     'customer.updated',
+  CUSTOMER_DELETED:     'customer.deleted',
 
   // Expenses
   EXPENSE_CREATED:      'expense.created',

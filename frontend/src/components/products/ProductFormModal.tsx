@@ -12,17 +12,20 @@ interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted?: () => void;
   product: ProductDto | null;
   categories: CategoryDto[];
 }
 
 const EMPTY_FORM = { name: '', price: '', categoryId: '', imageUrl: '' };
 
-export function ProductFormModal({ isOpen, onClose, onSaved, product, categories }: ProductFormModalProps) {
+export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product, categories }: ProductFormModalProps) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,6 +85,20 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
       handleApiError(err);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!product) return;
+    setDeleting(true);
+    try {
+      await productsApi.delete(product.id);
+      onDeleted?.();
+      onClose();
+    } catch (err) {
+      handleApiError(err, 'Error al eliminar');
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -162,11 +179,52 @@ export function ProductFormModal({ isOpen, onClose, onSaved, product, categories
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={uploading}>
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={deleting}>Cancelar</Button>
+          <Button type="submit" fullWidth loading={uploading} disabled={deleting}>
             {product ? 'Guardar Cambios' : 'Crear Producto'}
           </Button>
         </div>
+
+        {/* Delete zone — only shown when editing */}
+        {product && (
+          <div className="pt-2 border-t border-[var(--border-subtle)] mt-1">
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                disabled={uploading || deleting}
+                className="w-full text-[13px] font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl py-2 transition-colors disabled:opacity-40"
+              >
+                Eliminar producto
+              </button>
+            ) : (
+              <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3">
+                <p className="text-[13px] font-semibold text-red-700 dark:text-red-400 mb-2 text-center">
+                  ¿Eliminar <span className="font-black">{product.name}</span>?
+                </p>
+                <p className="text-[11px] text-red-500/80 text-center mb-3">Esta acción no se puede deshacer.</p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-[var(--border-subtle)] rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl py-2 transition-colors disabled:opacity-60"
+                  >
+                    {deleting ? 'Eliminando…' : 'Sí, eliminar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </form>
     </Modal>
   );

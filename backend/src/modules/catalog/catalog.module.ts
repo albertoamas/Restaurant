@@ -22,6 +22,7 @@ import { CreateProductUseCase } from './application/use-cases/create-product.use
 import { UpdateProductUseCase } from './application/use-cases/update-product.use-case';
 import { ListProductsUseCase } from './application/use-cases/list-products.use-case';
 import { ToggleProductUseCase } from './application/use-cases/toggle-product.use-case';
+import { DeleteProductUseCase } from './application/use-cases/delete-product.use-case';
 
 // Controllers
 import { CategoryController } from './infrastructure/controllers/category.controller';
@@ -39,6 +40,7 @@ const productUseCases = [
   UpdateProductUseCase,
   ListProductsUseCase,
   ToggleProductUseCase,
+  DeleteProductUseCase,
 ];
 
 @Module({

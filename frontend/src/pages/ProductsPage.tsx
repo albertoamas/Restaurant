@@ -307,6 +307,7 @@ export function ProductsPage() {
         isOpen={showProductModal}
         onClose={() => { setShowProductModal(false); setEditingProduct(null); }}
         onSaved={fetchData}
+        onDeleted={() => { fetchData(); setShowProductModal(false); setEditingProduct(null); }}
         product={editingProduct}
         categories={categories}
       />

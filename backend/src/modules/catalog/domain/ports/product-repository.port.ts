@@ -13,4 +13,5 @@ export interface ProductRepositoryPort {
   findByIds(ids: string[], tenantId: string): Promise<Product[]>;
   countByTenant(tenantId: string): Promise<number>;
   save(product: Product): Promise<Product>;
+  delete(id: string, tenantId: string): Promise<void>;
 }

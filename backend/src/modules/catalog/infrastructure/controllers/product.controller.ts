@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -23,6 +24,7 @@ import { CreateProductUseCase } from '../../application/use-cases/create-product
 import { UpdateProductUseCase } from '../../application/use-cases/update-product.use-case';
 import { ListProductsUseCase } from '../../application/use-cases/list-products.use-case';
 import { ToggleProductUseCase } from '../../application/use-cases/toggle-product.use-case';
+import { DeleteProductUseCase } from '../../application/use-cases/delete-product.use-case';
 import { CreateProductDto } from '../../application/dto/create-product.dto';
 import { UpdateProductDto } from '../../application/dto/update-product.dto';
 import { ProductRepositoryPort, PRODUCT_REPOSITORY_PORT } from '../../domain/ports/product-repository.port';
@@ -35,6 +37,7 @@ export class ProductController {
     private readonly createProduct: CreateProductUseCase,
     private readonly updateProduct: UpdateProductUseCase,
     private readonly toggleProduct: ToggleProductUseCase,
+    private readonly deleteProduct: DeleteProductUseCase,
     @Inject(PRODUCT_REPOSITORY_PORT)
     private readonly productRepository: ProductRepositoryPort,
   ) {}
@@ -96,5 +99,16 @@ export class ProductController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.toggleProduct.execute(id, tenantId);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.OWNER)
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.deleteProduct.execute(id, tenantId);
   }
 }

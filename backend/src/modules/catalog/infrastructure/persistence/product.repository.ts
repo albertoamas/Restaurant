@@ -79,4 +79,8 @@ export class ProductRepository implements ProductRepositoryPort {
     });
     return toDomain(row);
   }
+
+  async delete(id: string, tenantId: string): Promise<void> {
+    await this.prisma.product.delete({ where: { id, tenantId } });
+  }
 }

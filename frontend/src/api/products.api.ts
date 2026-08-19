@@ -29,4 +29,7 @@ export const productsApi = {
 
   toggle: (id: string) =>
     client.patch<ProductDto>(`/api/v1/products/${id}/toggle`).then((r) => r.data),
+
+  delete: (id: string): Promise<void> =>
+    client.delete(`/api/v1/products/${id}`).then(() => undefined),
 };
