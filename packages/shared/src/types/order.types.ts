@@ -30,6 +30,12 @@ export interface RegisterOrderPaymentsRequest {
   payments: CreateOrderPaymentRequest[];
 }
 
+export interface AddOrderItemsRequest {
+  items: CreateOrderItemRequest[];
+  /** Present only when the order is already paid — covers the price difference */
+  payment?: CreateOrderPaymentRequest;
+}
+
 export interface OrderItemDto {
   id: string;
   productId: string;

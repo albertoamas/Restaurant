@@ -100,9 +100,10 @@ interface OrderCardProps {
   onStatusChange: (id: string, s: OrderStatus) => void;
   onPayOrder: (order: OrderDto) => void;
   onEdit: (order: OrderDto) => void;
+  onAddItems: (order: OrderDto) => void;
 }
 
-export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCardProps) {
+export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItems }: OrderCardProps) {
   const action       = actionConfig[order.status];
   const currentStep  = stepIndex(order.status);
   const isCancelled  = order.status === OrderStatus.CANCELLED;
@@ -267,6 +268,16 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit }: OrderCa
         </div>
 
         <div className="flex gap-2 w-full sm:flex-1">
+          {isActive && (
+            <button
+              onClick={() => onAddItems(order)}
+              className="px-4 py-2.5 rounded-xl text-sm font-bold border-2 border-primary-500/60 text-primary-600 bg-primary-500/10 hover:bg-primary-500/20 hover:border-primary-500/80 transition-all active:scale-[0.97] flex items-center gap-1.5 shrink-0"
+              title="Añadir más productos a este pedido"
+            >
+              <Icon name="plus" size={14} strokeWidth={2.5} />
+              Añadir
+            </button>
+          )}
           {!order.isPaid && !isCancelled && (
             <button
               onClick={() => onPayOrder(order)}

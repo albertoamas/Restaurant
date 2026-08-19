@@ -52,6 +52,18 @@ export interface OrderRepositoryPort {
     payments: { id: string; method: PaymentMethod; amount: number }[],
     dominantMethod: PaymentMethod,
   ): Promise<Order>;
+  /**
+   * Persists new / merged items and recalculates the order total.
+   * Optionally creates an additional payment record (for already-paid orders).
+   */
+  addItems(
+    orderId: string,
+    tenantId: string,
+    mergedItems: import('../entities/order-item.entity').OrderItem[],
+    newTotal: number,
+    payment?: { id: string; method: PaymentMethod; amount: number },
+    newDominantMethod?: PaymentMethod,
+  ): Promise<Order>;
   getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult>;
   getReportByRange(tenantId: string, branchId: string | null, from: string, to: string): Promise<DailyReportResult>;
   getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string, limit?: number): Promise<TopProductDto[]>;

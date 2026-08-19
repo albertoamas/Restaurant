@@ -143,4 +143,45 @@ export class Order {
     this.status    = newStatus;
     this.updatedAt = new Date();
   }
+
+  /**
+   * Merges additional items into the order.
+   * - If a productId already exists, its quantity is incremented and subtotal recalculated.
+   * - New products are appended.
+   * - Order subtotal and total are recalculated.
+   * Returns the final merged list of items.
+   */
+  addItems(newItems: OrderItem[]): OrderItem[] {
+    const merged = [...this.items];
+
+    for (const incoming of newItems) {
+      const existing = merged.find((i) => i.productId === incoming.productId);
+      if (existing) {
+        const newQty      = existing.quantity + incoming.quantity;
+        const newSubtotal = Math.round(newQty * existing.unitPrice * 100) / 100;
+        // Reconstitute with updated quantity/subtotal
+        const updated = OrderItem.reconstitute({
+          id:          existing.id,
+          orderId:     existing.orderId,
+          productId:   existing.productId,
+          productName: existing.productName,
+          quantity:    newQty,
+          unitPrice:   existing.unitPrice,
+          subtotal:    newSubtotal,
+        });
+        merged.splice(merged.indexOf(existing), 1, updated);
+      } else {
+        merged.push(incoming);
+      }
+    }
+
+    const newSubtotal = Math.round(merged.reduce((s, i) => s + i.subtotal, 0) * 100) / 100;
+    // Mutate — these fields are mutable via Object.defineProperty trick-free approach:
+    (this as { items: OrderItem[] }).items       = merged;
+    (this as { subtotal: number }).subtotal      = newSubtotal;
+    (this as { total: number }).total            = newSubtotal;
+    this.updatedAt = new Date();
+
+    return merged;
+  }
 }

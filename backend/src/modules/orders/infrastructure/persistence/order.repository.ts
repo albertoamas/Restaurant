@@ -179,6 +179,70 @@ export class OrderRepository implements OrderRepositoryPort {
     return toDomain(row);
   }
 
+  async addItems(
+    orderId: string,
+    tenantId: string,
+    mergedItems: OrderItem[],
+    newTotal: number,
+    payment?: { id: string; method: PaymentMethod; amount: number },
+    newDominantMethod?: PaymentMethod,
+  ): Promise<Order> {
+    const row = await this.prisma.$transaction(async (tx) => {
+      // Upsert each item: update quantity+subtotal if exists, create if new
+      for (const item of mergedItems) {
+        const existing = await tx.orderItem.findUnique({ where: { id: item.id } });
+        if (existing) {
+          await tx.orderItem.update({
+            where: { id: item.id },
+            data:  { quantity: item.quantity, subtotal: item.subtotal },
+          });
+        } else {
+          await tx.orderItem.create({
+            data: {
+              id:          item.id,
+              orderId,
+              productId:   item.productId,
+              productName: item.productName,
+              quantity:    item.quantity,
+              unitPrice:   item.unitPrice,
+              subtotal:    item.subtotal,
+            },
+          });
+        }
+      }
+
+      // Add extra payment if provided (order was already paid)
+      if (payment) {
+        await tx.orderPayment.create({
+          data: {
+            id:       payment.id,
+            orderId,
+            tenantId,
+            method:   payment.method,
+            amount:   payment.amount,
+          },
+        });
+      }
+
+      // Update order total, subtotal, updatedAt, and dominant method if changed
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          subtotal:      newTotal,
+          total:         newTotal,
+          updatedAt:     new Date(),
+          ...(newDominantMethod ? { paymentMethod: newDominantMethod } : {}),
+        },
+      });
+
+      return tx.order.findFirstOrThrow({
+        where:   { id: orderId, tenantId },
+        include: INCLUDE_ALL,
+      });
+    });
+    return toDomain(row);
+  }
+
   async findById(id: string, tenantId: string): Promise<Order | null> {
     const row = await this.prisma.order.findFirst({
       where:   { id, tenantId },
@@ -186,6 +250,7 @@ export class OrderRepository implements OrderRepositoryPort {
     });
     return row ? toDomain(row) : null;
   }
+
 
   async findAll(tenantId: string, filters: OrderFilters = {}): Promise<{ data: Order[]; total: number }> {
     const { date, status, branchId } = filters;

@@ -18,6 +18,7 @@ import { PayOrderModal } from '../components/orders/PayOrderModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { EditOrderModal } from '../components/orders/EditOrderModal';
 import { useAuth } from '../context/auth.context';
+import { AddItemsToOrderModal } from '../components/orders/AddItemsToOrderModal';
 
 type ActiveTab = 'operation' | 'history';
 
@@ -50,9 +51,10 @@ export function OrdersPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('operation');
 
   // ── Shared modal state ────────────────────────────────────────────────────
-  const [payingOrder,  setPayingOrder]  = useState<OrderDto | null>(null);
-  const [paidOrder,    setPaidOrder]    = useState<OrderDto | null>(null);
-  const [editingOrder, setEditingOrder] = useState<OrderDto | null>(null);
+  const [payingOrder,       setPayingOrder]       = useState<OrderDto | null>(null);
+  const [paidOrder,         setPaidOrder]         = useState<OrderDto | null>(null);
+  const [editingOrder,      setEditingOrder]      = useState<OrderDto | null>(null);
+  const [addingItemsOrder,  setAddingItemsOrder]  = useState<OrderDto | null>(null);
 
   // ── Operation tab state ───────────────────────────────────────────────────
   const [date,         setDate]         = useState(today());
@@ -113,6 +115,12 @@ export function OrdersPage() {
 
   const handleEditSaved = (updated: OrderDto) => {
     setEditingOrder(null);
+    setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
+    invalidateHistory();
+  };
+
+  const handleItemsAdded = (updated: OrderDto) => {
+    setAddingItemsOrder(null);
     setOrders((prev) => prev.map((o) => o.id === updated.id ? updated : o));
     invalidateHistory();
   };
@@ -264,6 +272,7 @@ export function OrdersPage() {
                     onStatusChange={handleStatusChange}
                     onPayOrder={setPayingOrder}
                     onEdit={setEditingOrder}
+                    onAddItems={setAddingItemsOrder}
                   />
                 ))}
                 {hasMore && (
@@ -342,6 +351,15 @@ export function OrdersPage() {
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
           onSaved={handleEditSaved}
+        />
+      )}
+
+      {addingItemsOrder && (
+        <AddItemsToOrderModal
+          isOpen
+          order={addingItemsOrder}
+          onClose={() => setAddingItemsOrder(null)}
+          onUpdated={handleItemsAdded}
         />
       )}
     </PageShell>

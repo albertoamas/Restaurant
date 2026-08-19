@@ -34,6 +34,8 @@ import { RegisterOrderPaymentUseCase } from '../../application/use-cases/registe
 import { EditOrderUseCase } from '../../application/use-cases/edit-order.use-case';
 import { EditOrderDto } from '../../application/dto/edit-order.dto';
 import { ResetOrderSequenceUseCase } from '../../application/use-cases/reset-order-sequence.use-case';
+import { AddOrderItemsUseCase } from '../../application/use-cases/add-order-items.use-case';
+import { AddOrderItemsDto } from '../../application/dto/add-order-items.dto';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard, ModuleGuard)
@@ -47,6 +49,7 @@ export class OrderController {
     private readonly registerOrderPaymentUseCase: RegisterOrderPaymentUseCase,
     private readonly editOrderUseCase: EditOrderUseCase,
     private readonly resetOrderSequenceUseCase: ResetOrderSequenceUseCase,
+    private readonly addOrderItemsUseCase: AddOrderItemsUseCase,
   ) {}
 
   @Post()
@@ -110,6 +113,21 @@ export class OrderController {
         throw new ForbiddenException('No tienes permisos para cobrar pedidos de otra sucursal');
       }
       return this.registerOrderPaymentUseCase.execute(tenantId, id, user.role, dto);
+    });
+  }
+
+  @Post(':id/items')
+  addItems(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddOrderItemsDto,
+  ) {
+    return this.getOrderUseCase.execute(id, tenantId).then((order) => {
+      if (user.branchId && order.branchId !== user.branchId) {
+        throw new ForbiddenException('No tienes permisos para modificar pedidos de otra sucursal');
+      }
+      return this.addOrderItemsUseCase.execute(tenantId, id, user.role, dto);
     });
   }
 

@@ -1,5 +1,5 @@
 import client from './client';
-import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest, OrderType, PaymentMethod } from '@pos/shared';
+import type { OrderDto, CreateOrderRequest, OrderStatus, CreateOrderPaymentRequest, OrderType, PaymentMethod, AddOrderItemsRequest } from '@pos/shared';
 
 export interface EditOrderRequest {
   type?: OrderType;
@@ -39,6 +39,9 @@ export const ordersApi = {
 
   update: (id: string, data: EditOrderRequest) =>
     client.patch<OrderDto>(`/api/v1/orders/${id}`, data).then((r) => r.data),
+
+  addItems: (id: string, data: AddOrderItemsRequest) =>
+    client.post<OrderDto>(`/api/v1/orders/${id}/items`, data).then((r) => r.data),
 
   resetSequence: () =>
     client.post<{ reset: boolean }>('/api/v1/orders/reset-sequence').then((r) => r.data),
