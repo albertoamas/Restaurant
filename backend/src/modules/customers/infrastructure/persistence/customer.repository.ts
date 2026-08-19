@@ -165,4 +165,8 @@ export class CustomerRepository implements CustomerRepositoryPort {
       lastOrderAt: r.lastOrderAt ? new Date(r.lastOrderAt).toISOString() : null,
     };
   }
+
+  async delete(id: string, tenantId: string): Promise<void> {
+    await this.prisma.customer.delete({ where: { id, tenantId } });
+  }
 }

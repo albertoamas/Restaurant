@@ -1,47 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
 import { useCustomers } from '../hooks/useCustomers';
 import { useReportFilters } from '../hooks/useReportFilters';
-import { customersApi } from '../api/customers.api';
-import { ordersApi } from '../api/orders.api';
-import { handleApiError } from '../utils/api-error';
-import type { CustomerStatsDto, OrderDto } from '@pos/shared';
-import { OrderStatus, OrderType, PaymentMethod } from '@pos/shared';
+import type { CustomerStatsDto } from '@pos/shared';
 
-function formatDate(iso: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+import { EditCustomerModal } from '../components/customers/EditCustomerModal';
+import { CustomerHistoryModal } from '../components/customers/CustomerHistoryModal';
+import { CreateCustomerModal } from '../components/customers/CreateCustomerModal';
 
-const ORDER_TYPE_LABEL: Record<OrderType, string> = {
-  [OrderType.DINE_IN]: 'Mesa',
-  [OrderType.TAKEOUT]: 'Para llevar',
-  [OrderType.DELIVERY]: 'Delivery',
-};
-
-const STATUS_STYLE: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: 'bg-amber-500/12 text-amber-600',
-  [OrderStatus.PREPARING]: 'bg-sky-500/12 text-sky-600',
-  [OrderStatus.DELIVERED]: 'bg-[var(--color-surface-2)] text-gray-600',
-  [OrderStatus.CANCELLED]: 'bg-red-500/12 text-red-500',
-};
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: 'Pendiente',
-  [OrderStatus.PREPARING]: 'Preparando',
-  [OrderStatus.DELIVERED]: 'Entregado',
-  [OrderStatus.CANCELLED]: 'Cancelado',
-};
-
-const PAYMENT_LABEL: Record<PaymentMethod, string> = {
-  [PaymentMethod.CASH]: 'Efectivo',
-  [PaymentMethod.QR]: 'QR',
-  [PaymentMethod.TRANSFER]: 'Transferencia',
-  [PaymentMethod.CORTESIA]: 'Cortesía',
-};
 
 // ── Sort header ───────────────────────────────────────────────────────────────
 
@@ -79,186 +47,6 @@ function SortHeader({
   );
 }
 
-// ── Order history ─────────────────────────────────────────────────────────────
-
-function CustomerOrderHistory({ customerId }: { customerId: string }) {
-  const [orders, setOrders] = useState<OrderDto[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    ordersApi.getAll({ customerId, limit: 50 }).then((r) => setOrders(r.data)).catch(() => setOrders([])).finally(() => setLoading(false));
-  }, [customerId]);
-
-  if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
-  if (orders.length === 0) return <p className="text-xs text-gray-400 text-center py-3">Sin pedidos registrados</p>;
-
-  return (
-    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-      {orders.map((o) => (
-        <div key={o.id} className="bg-[var(--color-surface-2)] rounded-xl px-3 py-2.5">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-gray-700">#{o.orderNumber}</span>
-              <span className="text-xs text-gray-400">{ORDER_TYPE_LABEL[o.type]}</span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400">{o.paymentMethod ? PAYMENT_LABEL[o.paymentMethod] : '—'}</span>
-            </div>
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_STYLE[o.status]}`}>
-              {STATUS_LABEL[o.status]}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500 truncate max-w-[180px]">
-              {o.items.map((i) => `${i.quantity}× ${i.productName}`).join(', ')}
-            </p>
-            <p className="text-xs font-semibold text-gray-900 shrink-0 ml-2">Bs {o.total.toFixed(2)}</p>
-          </div>
-          <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(o.createdAt)}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── Detail modal ──────────────────────────────────────────────────────────────
-
-function CustomerDetailModal({
-  customer,
-  onClose,
-  onUpdate,
-}: {
-  customer: CustomerStatsDto;
-  onClose: () => void;
-  onUpdate: () => void;
-}) {
-  const [editMode, setEditMode] = useState(false);
-  const [name, setName] = useState(customer.name);
-  const [phone, setPhone] = useState(customer.phone ?? '');
-  const [email, setEmail] = useState(customer.email ?? '');
-  const [notes, setNotes] = useState(customer.notes ?? '');
-  const [saving, setSaving] = useState(false);
-
-  async function handleSaveEdit() {
-    setSaving(true);
-    try {
-      await customersApi.update(customer.id, {
-        name: name.trim() || undefined,
-        phone: phone.trim() || null,
-        email: email.trim() || null,
-        notes: notes.trim() || null,
-      });
-      onUpdate();
-      setEditMode(false);
-    } catch (err) {
-      handleApiError(err, 'Error al guardar');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors';
-
-  return (
-    <Modal isOpen onClose={onClose} title="Detalle del Cliente" size="sm">
-      {/* Purchase stats */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="bg-[var(--color-surface-2)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-gray-900 font-heading">{customer.purchaseCount}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Compras</p>
-        </div>
-        <div className="bg-[var(--color-surface-2)] rounded-xl p-3 text-center">
-          <p className="text-lg font-bold text-gray-900 font-heading">Bs {customer.totalSpent.toFixed(0)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Total gastado</p>
-        </div>
-      </div>
-      <p className="text-xs text-gray-400 mb-4">Última compra: {formatDate(customer.lastOrderAt)}</p>
-
-      {/* Customer info */}
-      {editMode ? (
-        <div className="space-y-2 mb-4">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *" className={inputCls} />
-          <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputCls} />
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-            className="w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400" />
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setEditMode(false)} disabled={saving}>Cancelar</Button>
-            <Button variant="primary" fullWidth onClick={handleSaveEdit} loading={saving}>Guardar</Button>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-4 space-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-gray-900">{customer.name}</p>
-              {customer.phone && <p className="text-sm text-gray-500">{customer.phone}</p>}
-              {customer.email && <p className="text-sm text-gray-500">{customer.email}</p>}
-              {customer.notes && <p className="text-xs text-gray-400 mt-1 italic">{customer.notes}</p>}
-            </div>
-            <button onClick={() => setEditMode(true)} className="text-xs text-primary-500 hover:text-primary-700 underline">
-              Editar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Order history */}
-      <div className="border-t border-[var(--border-subtle)] pt-4 mt-2">
-        <p className="text-sm font-medium text-gray-800 mb-3">Historial de pedidos</p>
-        <CustomerOrderHistory customerId={customer.id} />
-      </div>
-    </Modal>
-  );
-}
-
-// ── Create modal ──────────────────────────────────────────────────────────────
-
-function CreateCustomerModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function handleSubmit() {
-    if (!name.trim()) return;
-    setSaving(true);
-    try {
-      await customersApi.create({
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-        email: email.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
-      onCreated();
-      onClose();
-    } catch (err) {
-      handleApiError(err, 'Error al crear cliente');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 transition-colors';
-
-  return (
-    <Modal isOpen onClose={onClose} title="Nuevo Cliente" size="sm">
-      <div className="space-y-3">
-        <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre *" className={inputCls} />
-        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputCls} />
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas (opcional)" rows={2}
-          className="w-full text-sm border border-[var(--border-subtle)] rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400" />
-        <div className="flex gap-2 pt-1">
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" fullWidth onClick={handleSubmit} loading={saving} disabled={!name.trim()}>
-            Crear Cliente
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -286,7 +74,8 @@ export function CustomersPage() {
     filters.period === 'all' ? undefined : filters.utcTo
   );
   
-  const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
+  const [editCustomer, setEditCustomer] = useState<CustomerStatsDto | null>(null);
+  const [historyCustomer, setHistoryCustomer] = useState<CustomerStatsDto | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -375,26 +164,43 @@ export function CustomersPage() {
       ) : (
         <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-lg overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
+          <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
             <SortHeader label="Nombre" col="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
             <SortHeader label="Gastado" col="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
             <SortHeader label="Compras" col="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
+            <span className="w-[88px] text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-center">Acciones</span>
           </div>
 
           {/* Rows */}
           {customers.map((c) => (
-            <button
+            <div
               key={c.id}
-              onClick={() => setSelected(c)}
-              className="w-full grid grid-cols-[2fr_1fr_1fr] gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors text-left"
+              className="w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors items-center"
             >
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                <p className="text-xs text-gray-400 truncate">{c.phone ?? c.email ?? '—'}</p>
+              <div className="min-w-0 pr-2">
+                <p className="text-sm font-semibold text-[var(--color-text-main)] truncate">{c.name}</p>
+                <p className="text-[13px] text-[var(--color-text-soft)] truncate">{c.phone ?? c.email ?? '—'}</p>
               </div>
-              <p className="text-sm text-gray-700 text-right self-center">Bs {c.totalSpent.toFixed(0)}</p>
-              <p className="text-sm font-semibold text-gray-900 text-right self-center">{c.purchaseCount}</p>
-            </button>
+              <p className="text-[14px] font-medium text-[var(--color-text-soft)] text-right">Bs {c.totalSpent.toFixed(0)}</p>
+              <p className="text-[14px] font-bold text-[var(--color-text-main)] text-right">{c.purchaseCount}</p>
+              
+              <div className="flex items-center justify-end gap-1.5 w-[88px] shrink-0">
+                <button
+                  onClick={() => setHistoryCustomer(c)}
+                  title="Historial de pedidos"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:text-primary-500 hover:bg-primary-500/10 transition-colors border border-transparent hover:border-primary-500/20 bg-[var(--color-surface-3)] hover:shadow-sm"
+                >
+                  <Icon name="document" size={16} strokeWidth={2} />
+                </button>
+                <button
+                  onClick={() => setEditCustomer(c)}
+                  title="Editar cliente"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:text-primary-500 hover:bg-primary-500/10 transition-colors border border-transparent hover:border-primary-500/20 bg-[var(--color-surface-3)] hover:shadow-sm"
+                >
+                  <Icon name="edit" size={16} strokeWidth={2} />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -433,12 +239,20 @@ export function CustomersPage() {
         </div>
       )}
 
-      {/* Detail modal */}
-      {selected && (
-        <CustomerDetailModal
-          customer={selected}
-          onClose={() => setSelected(null)}
-          onUpdate={() => { reload(); setSelected(null); }}
+      {/* Modals */}
+      {editCustomer && (
+        <EditCustomerModal
+          customer={editCustomer}
+          onClose={() => setEditCustomer(null)}
+          onUpdate={() => { reload(); setEditCustomer(null); }}
+          onDeleted={() => { reload(); }}
+        />
+      )}
+
+      {historyCustomer && (
+        <CustomerHistoryModal
+          customer={historyCustomer}
+          onClose={() => setHistoryCustomer(null)}
         />
       )}
 

@@ -10,4 +10,5 @@ export interface CustomerRepositoryPort {
   findAll(tenantId: string, q?: string, page?: number, limit?: number, sortBy?: 'name' | 'totalSpent' | 'purchaseCount', sortDir?: 'asc' | 'desc', dateFrom?: string, dateTo?: string): Promise<{ data: CustomerStatsDto[]; total: number }>;
   findOneWithStats(id: string, tenantId: string): Promise<CustomerStatsDto | null>;
   search(q: string, tenantId: string): Promise<CustomerSearchResult[]>;
+  delete(id: string, tenantId: string): Promise<void>;
 }

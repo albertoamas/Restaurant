@@ -25,4 +25,7 @@ export const customersApi = {
 
   update: (id: string, data: UpdateCustomerRequest): Promise<CustomerDto> =>
     client.patch(`/api/v1/customers/${id}`, data).then((r) => r.data),
+
+  delete: (id: string): Promise<void> =>
+    client.delete(`/api/v1/customers/${id}`).then(() => undefined),
 };

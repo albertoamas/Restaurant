@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -21,6 +24,7 @@ import { ListCustomersUseCase } from '../../application/use-cases/list-customers
 import { GetCustomerUseCase } from '../../application/use-cases/get-customer.use-case';
 import { UpdateCustomerUseCase } from '../../application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from '../../application/use-cases/search-customers.use-case';
+import { DeleteCustomerUseCase } from '../../application/use-cases/delete-customer.use-case';
 import { CreateCustomerDto } from '../../application/dto/create-customer.dto';
 import { UpdateCustomerDto } from '../../application/dto/update-customer.dto';
 
@@ -33,6 +37,7 @@ export class CustomerController {
     private readonly getCustomer: GetCustomerUseCase,
     private readonly updateCustomer: UpdateCustomerUseCase,
     private readonly searchCustomers: SearchCustomersUseCase,
+    private readonly deleteCustomer: DeleteCustomerUseCase,
   ) {}
 
   // IMPORTANT: /search must be declared before /:id to avoid route collision
@@ -105,5 +110,16 @@ export class CustomerController {
     @Body() dto: UpdateCustomerDto,
   ) {
     return this.updateCustomer.execute(id, tenantId, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.OWNER)
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.deleteCustomer.execute(id, tenantId);
   }
 }
