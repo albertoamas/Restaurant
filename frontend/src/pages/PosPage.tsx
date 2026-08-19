@@ -35,7 +35,7 @@ export function PosPage() {
 
   const { items, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
   const { currentBranchId, user } = useAuth();
-  const { autoPrintKitchen, cashEnabled } = useSettingsStore();
+  const { autoPrintKitchen, cashEnabled, showProductImages } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
 
   const invalidateOrderCaches = () => {
@@ -148,7 +148,7 @@ export function PosPage() {
           onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
         <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-[var(--border-subtle)] p-2 shadow-card-md" style={{ background: 'var(--color-surface-2)' }}>
-          <ProductGrid products={filteredProducts} onSelect={handleProductSelect} />
+          <ProductGrid products={filteredProducts} onSelect={handleProductSelect} showImages={showProductImages} />
         </div>
       </div>
 

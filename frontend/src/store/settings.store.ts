@@ -19,9 +19,13 @@ export interface ServerConfig {
 }
 
 interface SettingsState {
-  // Impresión
+  // Impresion
   autoPrintKitchen: boolean;
   setAutoPrintKitchen: (value: boolean) => void;
+
+  // Apariencia POS (local preference — persisted in localStorage)
+  showProductImages: boolean;
+  setShowProductImages: (value: boolean) => void;
 
   // Panel de cocina (server-controlled — set by auth context on login/getMe)
   kitchenEnabled: boolean;
@@ -68,6 +72,9 @@ export const useSettingsStore = create<SettingsState>()(
       // Runtime defaults — overwritten by server values on every login/getMe
       autoPrintKitchen: true,
       setAutoPrintKitchen: (value) => set({ autoPrintKitchen: value }),
+
+      showProductImages: true,
+      setShowProductImages: (value) => set({ showProductImages: value }),
 
       kitchenEnabled: false,
       setKitchenEnabled: (value) => set({ kitchenEnabled: value }),
@@ -118,7 +125,8 @@ export const useSettingsStore = create<SettingsState>()(
       // Only persist local UI preferences.
       // Module flags, businessAddress/Phone/receiptSlogan come from the server on every login/getMe — never from localStorage.
       partialize: (state) => ({
-        autoPrintKitchen: state.autoPrintKitchen,
+        autoPrintKitchen:  state.autoPrintKitchen,
+        showProductImages: state.showProductImages,
       }),
     },
   ),

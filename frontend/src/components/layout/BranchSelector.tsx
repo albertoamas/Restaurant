@@ -45,15 +45,15 @@ export function BranchSelector({
         onClick={() => canSelect && onToggle()}
         className={[
           'w-full flex items-center justify-between gap-1.5 px-3 py-2',
-          'rounded-xl bg-white/6 border border-white/10',
-          'text-xs text-white/65 transition-colors',
+          'rounded-xl bg-[var(--color-surface-3)] border border-[var(--border-subtle)]',
+          'text-xs text-[var(--color-text-soft)] transition-colors',
           canSelect
-            ? 'hover:bg-white/10 hover:text-white/90 cursor-pointer'
+            ? 'hover:bg-[var(--color-surface-card-hover)] hover:text-[var(--color-text-main)] cursor-pointer'
             : 'cursor-default',
         ].join(' ')}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <Icon name="map-pin" size={12} strokeWidth={2} className="shrink-0 text-white/40" />
+          <Icon name="map-pin" size={12} strokeWidth={2} className="shrink-0 text-[var(--color-text-muted)]" />
           <span className="truncate">{label}</span>
         </div>
         {canSelect && (
@@ -61,28 +61,27 @@ export function BranchSelector({
             name="chevron-down"
             size={12}
             strokeWidth={2}
-            className={`shrink-0 text-white/40 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+            className={`shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
           />
         )}
       </button>
 
       {isOpen && canSelect && (
         <div
-          className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-white/8 shadow-[0_8px_24px_oklch(0.08_0.010_255/0.8)]"
-          style={{ background: 'oklch(0.18 0.022 40)' }}
+          className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-[var(--border-subtle)] shadow-card-xl bg-[var(--color-surface-card)]"
         >
           {branches.map((b) => (
             <button
               key={b.id}
               onClick={() => onSelect(b.id)}
               className={[
-                'w-full text-left px-3 py-2.5 text-xs hover:bg-white/8 transition-colors',
+                'w-full text-left px-3 py-2.5 text-xs hover:bg-[var(--color-surface-2)] transition-colors',
                 'flex items-center gap-2',
-                b.id === currentBranchId ? 'text-primary-400 font-semibold' : 'text-white/65',
+                b.id === currentBranchId ? 'text-primary-500 font-semibold' : 'text-[var(--color-text-soft)]',
               ].join(' ')}
             >
               {b.id === currentBranchId && (
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
               )}
               {b.name}
             </button>

@@ -113,17 +113,17 @@ export function AppLayout() {
   if (user?.role === 'CASHIER' && !user.branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="rounded-2xl border border-[var(--border-subtle)] p-8 max-w-sm w-full text-center animate-in shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-[var(--border-subtle)] p-8 max-w-sm w-full text-center animate-in shadow-card-xl bg-[var(--color-surface-card)]">
           <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-            <Icon name="warning" size={28} className="text-amber-400" />
+            <Icon name="warning" size={28} className="text-amber-500" />
           </div>
-          <h2 className="text-base font-bold text-gray-900 mb-2 font-heading">Sin sucursal asignada</h2>
-          <p className="text-sm text-gray-500 mb-6">
+          <h2 className="text-base font-bold text-[var(--color-text-main)] mb-2 font-heading">Sin sucursal asignada</h2>
+          <p className="text-sm text-[var(--color-text-soft)] mb-6">
             Tu cuenta no tiene una sucursal asignada. Comunícate con el administrador para que te asigne una.
           </p>
           <button
             onClick={logout}
-            className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+            className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] underline transition-colors"
           >
             Cerrar sesión
           </button>
@@ -133,14 +133,14 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex">
       <Sidebar collapsed={sidebarCollapsed} />
 
       {/* Mobile drawer overlay */}
       {drawerOpen && (
         <div
           data-print-hide
-          className="lg:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
           onClick={() => setDrawerOpen(false)}
         />
       )}
@@ -148,29 +148,26 @@ export function AppLayout() {
       {/* Mobile drawer */}
       <div
         data-print-hide
-        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col bg-[var(--color-surface-sidebar)] border-r border-[var(--border-subtle)] transition-transform duration-300 ease-in-out ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{
-          background: 'linear-gradient(165deg, oklch(0.16 0.028 40) 0%, oklch(0.10 0.014 38) 100%)',
-        }}
       >
         {/* Drawer header */}
-        <div className="px-4 pt-5 pb-4 border-b border-white/8 flex items-center justify-between">
+        <div className="px-4 pt-5 pb-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
+            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 shadow-md shadow-primary-500/20">
               <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold text-white truncate font-heading">
+              <h1 className="text-sm font-bold text-[var(--color-text-main)] truncate font-heading">
                 {user?.tenantName || 'Mi Negocio'}
               </h1>
-              <p className="text-xs text-white/40 truncate">{user?.name}</p>
+              <p className="text-xs text-[var(--color-text-soft)] truncate">{user?.name}</p>
             </div>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
             aria-label="Cerrar menú"
           >
             <Icon name="x" size={20} />
@@ -179,7 +176,7 @@ export function AppLayout() {
 
         {/* Branch selector for OWNER */}
         {isOwner && (
-          <div className="px-4 pt-3 pb-3 border-b border-white/8 relative">
+          <div className="px-4 pt-3 pb-3 border-b border-[var(--border-subtle)] relative">
             <BranchSelector
               branches={branchSelector.branches}
               currentBranch={branchSelector.currentBranch}
@@ -194,10 +191,10 @@ export function AppLayout() {
 
         {/* Branch indicator for CASHIER */}
         {user?.role === 'CASHIER' && user.branchId && (
-          <div className="px-4 pt-3 pb-3 border-b border-white/8">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/12 border border-primary-500/20 text-xs text-primary-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse-dot shrink-0" />
-              <span className="truncate">Sucursal asignada</span>
+          <div className="px-4 pt-3 pb-3 border-b border-[var(--border-subtle)]">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/10 border border-primary-500/20 text-xs text-primary-600 dark:text-primary-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse-dot shrink-0" />
+              <span className="truncate font-semibold">Sucursal asignada</span>
             </div>
           </div>
         )}
@@ -213,17 +210,17 @@ export function AppLayout() {
                 [
                   'relative flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150',
                   isActive
-                    ? 'text-white bg-white/10 border border-white/8'
-                    : 'text-white/45 hover:text-white/80 hover:bg-white/5',
+                    ? 'text-[var(--color-text-main)] bg-[var(--color-surface-3)] border border-[var(--border-subtle)] shadow-sm'
+                    : 'text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)]',
                 ].join(' ')
               }
             >
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-400 rounded-full" />
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-500 rounded-full" />
                   )}
-                  <span className={isActive ? 'text-primary-400' : 'text-white/35'}>
+                  <span className={isActive ? 'text-primary-500' : 'text-[var(--color-text-muted)]'}>
                     {item.icon}
                   </span>
                   {item.label}
@@ -234,25 +231,24 @@ export function AppLayout() {
         </nav>
 
         {/* Drawer footer — user dropdown */}
-        <div className="px-3 py-3 border-t border-white/8">
+        <div className="px-3 py-3 border-t border-[var(--border-subtle)]">
           <div ref={drawerUserMenuRef} className="relative">
             {/* Dropdown (opens upward) */}
             {drawerUserMenuOpen && (
               <div
-                className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-white/8 shadow-[0_-8px_24px_oklch(0.08_0.010_255/0.8)] animate-slide-down"
-                style={{ background: 'oklch(0.18 0.022 40)' }}
+                className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl animate-slide-down"
               >
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); navigate('/account'); }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/65 hover:text-white/90 hover:bg-white/8 transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
                 >
                   <Icon name="user-circle" size={16} className="shrink-0" />
                   Mi cuenta
                 </button>
-                <div className="h-px bg-white/6 mx-3" />
+                <div className="h-px bg-[var(--border-subtle)] mx-3" />
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); logout(); }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-colors"
                 >
                   <Icon name="logout" size={16} className="shrink-0" />
                   Cerrar Sesión
@@ -263,33 +259,33 @@ export function AppLayout() {
             {/* Trigger */}
             <button
               onClick={() => setDrawerUserMenuOpen((o) => !o)}
-              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-white/6 transition-colors"
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors"
             >
-              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-white/70">{(user?.name ?? '?')[0].toUpperCase()}</span>
+              <div className="w-7 h-7 rounded-full bg-[var(--color-surface-3)] border border-[var(--border-strong)] flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-[var(--color-text-main)]">{(user?.name ?? '?')[0].toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium text-white/75 truncate leading-tight">{user?.name}</p>
-                <p className="text-[10px] text-white/40 truncate leading-tight">{user?.email}</p>
+                <p className="text-xs font-medium text-[var(--color-text-main)] truncate leading-tight">{user?.name}</p>
+                <p className="text-[10px] text-[var(--color-text-soft)] truncate leading-tight">{user?.email}</p>
               </div>
               <Icon
                 name="chevron-down"
                 size={14}
                 strokeWidth={2}
-                className={`text-white/30 shrink-0 transition-transform duration-150 ${drawerUserMenuOpen ? 'rotate-180' : ''}`}
+                className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-150 ${drawerUserMenuOpen ? 'rotate-180' : ''}`}
               />
             </button>
           </div>
         </div>
       </div>
 
-      <div data-print-main className={`${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'} flex flex-col min-h-screen transition-[margin] duration-200`}>
+      <div data-print-main className={`${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-60'} flex flex-col flex-1 min-w-0 min-h-screen transition-[margin] duration-200`}>
         <Header
           onMenuOpen={() => setDrawerOpen(true)}
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={sidebarCollapsed}
         />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-[var(--color-surface-page)]">
           <Outlet />
         </main>
       </div>

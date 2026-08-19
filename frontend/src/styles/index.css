@@ -19,7 +19,7 @@
   --surface-2:          oklch(0.95 0.006 48);
   --surface-3:          oklch(0.92 0.006 46);
   --surface-card-hover: oklch(0.97 0.004 48);
-  --surface-sidebar:    oklch(0.14 0.016 40);  /* dark sidebar in light mode — intentional */
+  --surface-sidebar:    oklch(0.98 0.003 48);
   --surface-overlay:    oklch(0.10 0.012 38);  /* modal dims stay dark */
   /* Text hierarchy */
   --text-main:          oklch(0.15 0.010 40);

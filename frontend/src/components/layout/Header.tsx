@@ -55,17 +55,13 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
   return (
     <header
       data-print-hide
-      className="h-14 backdrop-blur-xl border-b px-5 flex items-center justify-between shrink-0 relative z-10"
-      style={{
-        background: 'oklch(0.16 0.028 40 / 0.96)',
-        borderColor: 'oklch(0.28 0.020 40 / 0.70)',
-      }}
+      className="h-14 bg-[var(--color-surface-page)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)] px-5 flex items-center justify-between shrink-0 relative z-10 supports-[backdrop-filter]:bg-[var(--color-surface-page)]/60 transition-colors"
     >
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
         <button
           onClick={onMenuOpen}
-          className="lg:hidden -ml-1 p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+          className="lg:hidden -ml-1 p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
           aria-label="Abrir menú"
         >
           <Icon name="menu" size={20} />
@@ -75,7 +71,7 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="hidden lg:flex -ml-1 p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+            className="hidden lg:flex -ml-1 p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
             aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
             <Icon name={sidebarCollapsed ? 'chevron-right' : 'chevron-left'} size={18} strokeWidth={2} />
@@ -83,7 +79,7 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
         )}
 
         <span className="w-1 h-5 bg-primary-500 rounded-full" />
-        <h2 className="text-[17px] font-bold text-white/90 font-heading">{title}</h2>
+        <h2 className="text-[17px] font-bold text-[var(--color-text-main)] font-heading">{title}</h2>
       </div>
       <div className="flex items-center gap-3">
         <ConnectionStatus />
@@ -91,17 +87,17 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-          className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+          className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={1.75} />
         </button>
-        <span className="text-sm text-white/40 hidden md:block capitalize">{formatDate()}</span>
-        <span className="text-sm text-white/40 md:hidden capitalize">{formatDateShort()}</span>
-        <div className="flex items-center gap-2 pl-3 border-l border-white/10">
-          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center shadow-[0_2px_8px_oklch(0.60_0.22_42/0.40)]">
+        <span className="text-sm text-[var(--color-text-soft)] hidden md:block capitalize">{formatDate()}</span>
+        <span className="text-sm text-[var(--color-text-soft)] md:hidden capitalize">{formatDateShort()}</span>
+        <div className="flex items-center gap-2 pl-3 border-l border-[var(--border-subtle)]">
+          <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shadow-md shadow-primary-500/20">
             <span className="text-xs font-bold text-white">{userInitial}</span>
           </div>
-          <span className="text-sm font-semibold text-white/75 hidden sm:block">{user?.name}</span>
+          <span className="text-sm font-semibold text-[var(--color-text-main)] hidden sm:block">{user?.name}</span>
         </div>
       </div>
     </header>

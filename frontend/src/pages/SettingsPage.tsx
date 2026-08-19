@@ -100,6 +100,7 @@ export function SettingsPage() {
   const { user } = useAuth();
   const {
     autoPrintKitchen, setAutoPrintKitchen,
+    showProductImages, setShowProductImages,
     businessAddress, setBusinessAddress,
     businessPhone, setBusinessPhone,
     receiptSlogan, setReceiptSlogan,
@@ -284,17 +285,35 @@ export function SettingsPage() {
         </div>
       </Card>
 
+      {/* POS appearance */}
+      <Card variant="panel">
+        <div className="flex items-center gap-2 mb-1">
+          <Icon name="photo" size={16} className="text-gray-400 shrink-0" />
+          <h3 className="text-sm font-bold text-gray-700">Apariencia del POS</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4 ml-6">Configura como se muestran los productos en el punto de venta</p>
+        <div className="space-y-1">
+          <SettingRow
+            label="Mostrar imagenes de productos"
+            description="Cuando esta activo, las tarjetas muestran la foto del producto. Desactivalo para una vista compacta con nombre y precio unicamente."
+            value={showProductImages}
+            onChange={setShowProductImages}
+            icon={<Icon name="photo" size={16} />}
+          />
+        </div>
+      </Card>
+
       {/* Printing */}
       <Card variant="panel">
         <div className="flex items-center gap-2 mb-1">
           <Icon name="print" size={16} className="text-gray-400 shrink-0" />
-          <h3 className="text-sm font-bold text-gray-700">Impresión</h3>
+          <h3 className="text-sm font-bold text-gray-700">Impresion</h3>
         </div>
-        <p className="text-xs text-gray-400 mb-4 ml-6">Opciones de impresión de comandas</p>
+        <p className="text-xs text-gray-400 mb-4 ml-6">Opciones de impresion de comandas</p>
         <div className="space-y-1">
           <SettingRow
-            label="Imprimir comanda automáticamente"
-            description="Al confirmar un pedido, se envía la comanda a la impresora de cocina sin clic adicional."
+            label="Imprimir comanda automaticamente"
+            description="Al confirmar un pedido, se envia la comanda a la impresora de cocina sin clic adicional."
             value={autoPrintKitchen}
             onChange={setAutoPrintKitchen}
             icon={<Icon name="print" size={16} />}
