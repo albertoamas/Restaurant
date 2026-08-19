@@ -10,7 +10,6 @@ import { GetCustomerUseCase } from './application/use-cases/get-customer.use-cas
 import { UpdateCustomerUseCase } from './application/use-cases/update-customer.use-case';
 import { SearchCustomersUseCase } from './application/use-cases/search-customers.use-case';
 import { DeleteCustomerUseCase } from './application/use-cases/delete-customer.use-case';
-import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule, EventsModule],
