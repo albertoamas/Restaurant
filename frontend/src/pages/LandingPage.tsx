@@ -5,6 +5,7 @@ import { usePlans } from '../hooks/usePlans';
 import { Spinner } from '../components/ui/Spinner';
 import { useTheme } from '../hooks/useTheme';
 import { Icon } from '../components/ui/Icon';
+import landingPosImage from '../assets/landing-pos.jpg';
 
 /* ─── Data ──────────────────────────────────────────────── */
 const FEATURES = [
@@ -301,9 +302,9 @@ export function LandingPage() {
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-[32px] transform translate-x-4 translate-y-4 blur-sm" />
             
             <div className="relative rounded-[32px] overflow-hidden border border-[var(--border-subtle)] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-[var(--color-surface-card)]">
-              {/* Imagen de Unsplash: POS terminal at a counter */}
+              {/* Imagen local: se incluye en el build y no depende de un host externo. */}
               <img 
-                src="https://images.unsplash.com/photo-1778792049348-9687d6d6a474?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={landingPosImage}
                 alt="Terminal POS" 
                 className="w-full h-auto aspect-[4/3] object-cover"
               />
