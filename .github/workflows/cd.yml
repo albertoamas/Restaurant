@@ -14,9 +14,9 @@ env:
 jobs:
   # ── Build Docker images and push to GitHub Container Registry ────────────────
   build:
-    name: Build & push images
+    name: Validate, build & push images
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     permissions:
       contents: read
@@ -47,11 +47,20 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter backend prisma:generate
 
+      - name: Lint backend
+        run: pnpm --filter backend lint
+
       - name: Typecheck backend
         run: pnpm --filter backend typecheck
 
       - name: Typecheck frontend
         run: pnpm --filter frontend typecheck
+
+      - name: Test backend
+        run: pnpm --filter backend test:ci
+
+      - name: Test frontend
+        run: pnpm --filter frontend test:run
 
       - name: Set image tag (short SHA)
         id: tag

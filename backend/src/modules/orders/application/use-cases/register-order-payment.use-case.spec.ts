@@ -81,6 +81,20 @@ describe('RegisterOrderPaymentUseCase', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('throws BadRequestException when another request pays the order concurrently', async () => {
+    orderRepo.findById.mockResolvedValue(makeOrder({ total: 100 }));
+    orderRepo.registerPayments.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute(
+        TENANT_ID,
+        ORDER_ID,
+        UserRole.OWNER,
+        makeDto([{ method: PaymentMethod.QR, amount: 100 }]),
+      ),
+    ).rejects.toThrow('Este pedido ya fue cobrado por otra solicitud');
+  });
+
   it('throws BadRequestException when payment sum does not match total', async () => {
     orderRepo.findById.mockResolvedValue(makeOrder({ total: 100 }));
     await expect(

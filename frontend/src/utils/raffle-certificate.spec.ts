@@ -9,7 +9,7 @@ vi.mock('react-hot-toast', () => ({
   default: { error: vi.fn() },
 }));
 
-import { printWinnerCertificate } from './raffle-certificate';
+import { buildWinnerCertificateHtml, printWinnerCertificate } from './raffle-certificate';
 
 function makeWinner(overrides: Partial<RaffleWinnerDto & { customerName: string; customerPhone?: string | null }> = {}): RaffleWinnerDto {
   return {
@@ -33,67 +33,60 @@ function makeWinner(overrides: Partial<RaffleWinnerDto & { customerName: string;
 }
 
 describe('printWinnerCertificate — escape HTML (XSS prevention)', () => {
-  let capturedHtml: string;
-
   beforeEach(() => {
-    capturedHtml = '';
-    vi.spyOn(window, 'open').mockReturnValue({
-      document: {
-        write: (html: string) => { capturedHtml += html; },
-        close: vi.fn(),
-      },
-    } as unknown as Window);
+    vi.clearAllMocks();
   });
 
   it('escapa < > en el nombre del ganador', () => {
-    printWinnerCertificate(
+    const html = buildWinnerCertificateHtml(
       makeWinner({ customerName: '<script>alert("xss")</script>' }),
       'Rifa Test',
       { name: 'Negocio' },
     );
-    expect(capturedHtml).not.toContain('<script>alert(');
-    expect(capturedHtml).toContain('&lt;script&gt;alert');
+    expect(html).not.toContain('<script>alert(');
+    expect(html).toContain('&lt;script&gt;alert');
   });
 
   it('escapa & en el nombre del sorteo', () => {
-    printWinnerCertificate(
+    const html = buildWinnerCertificateHtml(
       makeWinner(),
       'Rifa & Premios <Especiales>',
       { name: 'Negocio' },
     );
-    expect(capturedHtml).toContain('&amp;');
-    expect(capturedHtml).toContain('&lt;Especiales&gt;');
-    expect(capturedHtml).not.toContain('Rifa & Premios <Especiales>');
+    expect(html).toContain('&amp;');
+    expect(html).toContain('&lt;Especiales&gt;');
+    expect(html).not.toContain('Rifa & Premios <Especiales>');
   });
 
   it('escapa < > & en el nombre del negocio', () => {
-    printWinnerCertificate(
+    const html = buildWinnerCertificateHtml(
       makeWinner(),
       'Rifa',
       { name: '<Evil Corp> & Co' },
     );
-    expect(capturedHtml).toContain('&lt;Evil Corp&gt;');
-    expect(capturedHtml).toContain('&amp; Co');
-    expect(capturedHtml).not.toContain('<Evil Corp>');
+    expect(html).toContain('&lt;Evil Corp&gt;');
+    expect(html).toContain('&amp; Co');
+    expect(html).not.toContain('<Evil Corp>');
   });
 
-  it('escapa el teléfono del ganador cuando contiene caracteres especiales', () => {
-    printWinnerCertificate(
-      makeWinner({ customerPhone: '<b>123-456</b>' }),
+  it('escapa la descripción del premio cuando contiene caracteres especiales', () => {
+    const html = buildWinnerCertificateHtml(
+      makeWinner({ prizeDescription: '<b>Premio especial</b>' }),
       'Rifa',
       { name: 'Negocio' },
     );
-    expect(capturedHtml).toContain('&lt;b&gt;123-456&lt;/b&gt;');
-    expect(capturedHtml).not.toContain('<b>123-456</b>');
+    expect(html).toContain('&lt;b&gt;Premio especial&lt;/b&gt;');
+    expect(html).not.toContain('<b>Premio especial</b>');
   });
 
-  it('no renderiza el teléfono si es null', () => {
-    printWinnerCertificate(
-      makeWinner({ customerPhone: null }),
+  it('escapa la dirección del negocio', () => {
+    const html = buildWinnerCertificateHtml(
+      makeWinner(),
       'Rifa',
-      { name: 'Negocio' },
+      { name: 'Negocio', address: '<img src=x onerror=alert(1)>' },
     );
-    expect(capturedHtml).not.toContain('<p class="winner-phone"');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).not.toContain('<img src=x onerror=alert(1)>');
   });
 
   it('muestra toast si window.open retorna null (popup bloqueado)', async () => {

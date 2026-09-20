@@ -15,18 +15,6 @@
     "test:frontend": "pnpm --filter frontend test:run",
     "test:e2e": "playwright test"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@prisma/engines",
-      "@prisma/client",
-      "esbuild",
-      "prisma"
-    ],
-    "ignoredBuiltDependencies": [
-      "unrs-resolver"
-    ]
-  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "concurrently": "^9.2.1"

@@ -166,14 +166,14 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
             >
               <Icon name="photo" size={28} strokeWidth={1.5} />
               <span className="text-sm font-semibold">Haz clic para subir imagen</span>
-              <span className="text-xs text-gray-400">JPG, PNG, WEBP · máx. 2 MB</span>
+              <span className="text-xs text-gray-400">JPG, PNG, WEBP, GIF · máx. 10 MB</span>
             </label>
           )}
 
           <input
             id="product-image-input"
             ref={fileInputRef}
-            type="file" accept="image/*" className="hidden"
+            type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
             onChange={handleFileChange}
           />
         </div>

@@ -14,6 +14,11 @@ import { PrismaService } from './modules/prisma/prisma.service';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // nginx is the only proxy hop in front of the API. Trusting exactly one hop
+  // makes req.ip (and therefore Nest throttling) resolve to the forwarded client
+  // address instead of grouping every user under the nginx container address.
+  app.set('trust proxy', 1);
+
   // Security headers
   app.use(helmet());
 

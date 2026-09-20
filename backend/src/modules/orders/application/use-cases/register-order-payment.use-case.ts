@@ -93,6 +93,10 @@ export class RegisterOrderPaymentUseCase {
       dominant.method as PaymentMethod,
     );
 
+    if (!saved) {
+      throw new BadRequestException('Este pedido ya fue cobrado por otra solicitud');
+    }
+
     // 9. Notify connected clients
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 

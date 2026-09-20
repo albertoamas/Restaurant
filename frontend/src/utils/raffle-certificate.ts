@@ -29,11 +29,11 @@ function corner(pos: 'tl' | 'tr' | 'bl' | 'br'): string {
     `border-left:${bLeft};border-right:${bRight}"></div>`;
 }
 
-export function printWinnerCertificate(
+export function buildWinnerCertificateHtml(
   winner: RaffleWinnerDto,
   raffleName: string,
   business: BusinessInfo,
-): void {
+): string {
   const drawnDate = new Date(winner.drawnAt);
   const dateStr   = drawnDate.toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -59,7 +59,7 @@ export function printWinnerCertificate(
     ? `<span style="font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#94a3b8">${esc(business.address)}</span>`
     : '';
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
@@ -189,6 +189,14 @@ export function printWinnerCertificate(
   </script>
 </body>
 </html>`;
+}
+
+export function printWinnerCertificate(
+  winner: RaffleWinnerDto,
+  raffleName: string,
+  business: BusinessInfo,
+): void {
+  const html = buildWinnerCertificateHtml(winner, raffleName, business);
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);

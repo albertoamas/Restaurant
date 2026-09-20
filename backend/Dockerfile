@@ -1,7 +1,7 @@
 # ── Stage 1: builder ──────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 WORKDIR /repo
 
@@ -30,7 +30,7 @@ RUN pnpm --filter backend build
 # ── Stage 2: production runner ────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 # Install production deps only
 WORKDIR /app

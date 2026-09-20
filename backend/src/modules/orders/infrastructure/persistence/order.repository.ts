@@ -156,8 +156,30 @@ export class OrderRepository implements OrderRepositoryPort {
     tenantId: string,
     payments: { id: string; method: PaymentMethod; amount: number }[],
     dominantMethod: PaymentMethod,
-  ): Promise<Order> {
+  ): Promise<Order | null> {
     const row = await this.prisma.$transaction(async (tx) => {
+      // Serialize payment attempts for this order. The use-case performs an early
+      // validation for a useful response, but only this row lock can make the
+      // unpaid -> paid transition safe when two requests arrive concurrently.
+      await tx.$executeRaw`
+        SELECT id
+        FROM orders
+        WHERE id = ${orderId} AND tenant_id = ${tenantId}
+        FOR UPDATE
+      `;
+
+      const current = await tx.order.findFirst({
+        where: { id: orderId, tenantId },
+        select: {
+          paymentMethod: true,
+          _count: { select: { payments: true } },
+        },
+      });
+
+      if (!current || current.paymentMethod !== null || current._count.payments > 0) {
+        return null;
+      }
+
       await tx.orderPayment.createMany({
         data: payments.map((p) => ({
           id:       p.id,
@@ -176,7 +198,7 @@ export class OrderRepository implements OrderRepositoryPort {
         include: INCLUDE_ALL,
       });
     });
-    return toDomain(row);
+    return row ? toDomain(row) : null;
   }
 
   async addItems(

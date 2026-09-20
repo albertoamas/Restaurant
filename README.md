@@ -61,13 +61,13 @@ Plataforma multi-tenant de punto de venta diseñada para restaurantes, cafeterí
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | NestJS 11, Prisma 6, PostgreSQL 15 |
-| Frontend | React 19, Vite 5, Tailwind CSS 4 |
+| Backend | NestJS 11, Prisma 6, PostgreSQL 16 |
+| Frontend | React 19, Vite 6, Tailwind CSS 4 |
 | Tiempo real | Socket.IO 4 |
 | Auth | JWT (`@nestjs/jwt` + `passport-jwt`) |
 | Tipos compartidos | `@pos/shared` (paquete interno del monorepo) |
-| Tests backend | Jest + `jest-mock-extended` (173 tests) |
-| Tests frontend | Vitest (33 tests) |
+| Tests backend | Jest + `jest-mock-extended` |
+| Tests frontend | Vitest |
 | E2E | Playwright (9 tests) |
 | Monorepo | pnpm workspaces |
 | Deploy | Docker + GitHub Actions → VPS |
@@ -259,9 +259,9 @@ Tres planes: `BASICO`, `PRO`, `NEGOCIO`. Cada plan define límites (`maxBranches
 
 ## Despliegue en producción
 
-El pipeline CI/CD (`deploy.yml`) se dispara en cada push a `main`:
+El pipeline CD (`cd.yml`) se dispara en cada push a `main`:
 
-1. **Validate**: build de `@pos/shared` → typecheck backend + frontend
+1. **Validate**: build de `@pos/shared` → lint → typecheck → tests backend + frontend
 2. **Build & push**: imágenes Docker multi-stage → GitHub Container Registry
 3. **Deploy**: SSH al VPS, `docker-compose -f docker-compose.prod.yml up -d`
 
@@ -281,4 +281,4 @@ TLS mediante Cloudflare (modo "Full"). Los uploads (`/uploads/<uuid>.<ext>`) son
 
 - **`prisma migrate dev` se cuelga**: aplica el SQL manualmente con `docker exec pos-postgres psql -U pos_user -d pos_db -c "..."` y registra con `npx prisma migrate resolve --applied <name>` desde `backend/`.
 - **`prisma generate` da EPERM**: el binario está bloqueado mientras el backend corre. Para el backend, genera y reinicia.
-- **pnpm hoisting**: después de `pnpm add`, verifica que `@prisma/engines`, `@prisma/client` y `prisma` sigan en `onlyBuiltDependencies` en `backend/package.json`.
+- **pnpm build scripts**: después de `pnpm add`, verifica en `pnpm-workspace.yaml` que las dependencias nativas necesarias sigan permitidas en `onlyBuiltDependencies`.

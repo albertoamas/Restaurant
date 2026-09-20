@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Monorepo** managed with pnpm workspaces (`pnpm-workspace.yaml`). Three packages:
 - `backend/` — NestJS 11 + Prisma 6 + PostgreSQL
-- `frontend/` — React 19 + Vite 5 + Tailwind CSS 4
+- `frontend/` — React 19 + Vite 6 + Tailwind CSS 4
 - `packages/shared/` — TypeScript types shared between front and back (`@pos/shared`)
 
-**Key versions:** TypeScript 5.6, React Router 6, Zustand 5, TanStack Query 5, Socket.IO 4, JWT via `@nestjs/jwt` + `passport-jwt`.
+**Key versions:** TypeScript 5.9, React Router 6, Zustand 5, TanStack Query 5, Socket.IO 4, JWT via `@nestjs/jwt` + `passport-jwt`.
 
 ## Prerequisites
 
@@ -45,9 +45,6 @@ pnpm dev:frontend   # Vite on :5173
 
 # Seed the database with demo data (tenant, owner, cashier, branches, products)
 pnpm --filter backend seed
-
-# Seed raffle test data (~600 tickets, SPENDING_THRESHOLD mode, dev only)
-pnpm --filter backend seed:raffle
 
 # Type-check
 pnpm --filter @pos/shared build          # MUST run first after editing shared types
@@ -94,7 +91,7 @@ The Vite dev server proxies `/api`, `/uploads`, and `/socket.io` to `localhost:3
 
 - **`prisma migrate dev` advisory lock timeout**: On Windows the migrate command can time out waiting for a DB lock. Workaround: apply the SQL manually via `docker exec pos-postgres psql -U pos_user -d pos_db -c "..."`, then register it with `npx prisma migrate resolve --applied <migration_name>` (run from `backend/`).
 - **`prisma generate` EPERM**: The Prisma binary is locked while the backend is running. Stop `pnpm dev:backend` first, generate, then restart.
-- **pnpm strict hoisting**: Installing a new package can rewrite `backend/package.json`'s `onlyBuiltDependencies` array, removing Prisma entries. After `pnpm add`, always check that `@prisma/engines`, `@prisma/client`, and `prisma` are still listed there; revert with `git checkout -- backend/package.json` if needed.
+- **pnpm build-script allowlist**: after `pnpm add`, verify `onlyBuiltDependencies` in `pnpm-workspace.yaml`. Prisma, esbuild and Sharp require their install/build scripts in this project.
 
 ## Key Conventions
 
@@ -162,7 +159,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
 | `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only |
-| `upload` | `POST /uploads/image` | multer; 2 MB; JPG/PNG/WEBP/GIF; served at `/uploads/<file>` |
+| `upload` | `POST /uploads/image` | multer; 10 MB raw; JPG/PNG/WEBP/GIF; converted to WEBP; served at `/uploads/<file>` |
 | `expenses` | `GET/POST /expenses/categories`, `DELETE /expenses/categories/:id`, `POST/GET/PATCH/DELETE /expenses`, `GET /expenses/summary` | OWNER only; `cashSessionId` nullable (expense recorded even without open session); `ExpenseCategory` is a per-tenant DB model (name, icon, isActive, trackQuantity, sortOrder); each expense has optional `items[]` (ExpenseItem) |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
 | `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |

@@ -51,7 +51,7 @@ export interface OrderRepositoryPort {
     tenantId: string,
     payments: { id: string; method: PaymentMethod; amount: number }[],
     dominantMethod: PaymentMethod,
-  ): Promise<Order>;
+  ): Promise<Order | null>;
   /**
    * Persists new / merged items and recalculates the order total.
    * Optionally creates an additional payment record (for already-paid orders).

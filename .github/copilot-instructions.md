@@ -35,7 +35,7 @@
 
 ## Reference Docs
 - Arquitectura, modulos y comandos extendidos: ver `CLAUDE.md`.
-- Pipeline de build/deploy: ver `.github/workflows/deploy.yml`.
+- Pipeline de build/deploy: ver `.github/workflows/cd.yml`.
 - Pasos operativos de despliegue inicial VPS: ver `docs/linked-cuddling-mountain.md`.
 - Plan de auditoria pre-venta multi-restaurante: ver `docs/plan-auditoria-360.md`.
 - Instrucciones específicas para agentes de IA: ver `AGENTS.md`.
