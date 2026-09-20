@@ -27,6 +27,7 @@ import { ListExpenseCategoriesUseCase } from '../../application/use-cases/list-e
 import { DeleteExpenseCategoryUseCase } from '../../application/use-cases/delete-expense-category.use-case';
 import { CreateExpenseDto } from '../../application/dto/create-expense.dto';
 import { UpdateExpenseDto } from '../../application/dto/update-expense.dto';
+import { VoidExpenseDto } from '../../application/dto/void-expense.dto';
 import { CreateExpenseCategoryDto } from '../../application/dto/create-expense-category.dto';
 import { UpdateExpenseUseCase } from '../../application/use-cases/update-expense.use-case';
 import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
@@ -142,7 +143,9 @@ export class ExpenseController {
   remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: VoidExpenseDto,
   ) {
-    return this.deleteExpense.execute(id, tenantId);
+    return this.deleteExpense.execute(id, tenantId, user.sub, dto?.reason);
   }
 }

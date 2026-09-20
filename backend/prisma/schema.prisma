@@ -264,6 +264,14 @@ model Expense {
   description   String?
   createdBy     String   @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
+  expenseDate   DateTime @default(now()) @map("expense_date")
+  status        String   @default("ACTIVE") @db.VarChar(20)
+  paymentMethod String?  @map("payment_method") @db.VarChar(30)
+  supplierName  String?  @map("supplier_name") @db.VarChar(150)
+  documentNumber String? @map("document_number") @db.VarChar(80)
+  voidedAt      DateTime? @map("voided_at")
+  voidedBy      String?   @map("voided_by")
+  voidReason    String?   @map("void_reason") @db.VarChar(255)
 
   // Vínculo formal con la sesión de caja activa al momento de crear el gasto.
   // Nullable: si no hay sesión abierta el gasto se registra igual (cash_session_id = NULL).
@@ -274,6 +282,8 @@ model Expense {
   items       ExpenseItem[]
 
   @@index([tenantId, branchId, createdAt])
+  @@index([tenantId, branchId, expenseDate])
+  @@index([tenantId, status, expenseDate])
   @@index([cashSessionId], map: "expenses_cash_session_id_idx")
   @@map("expenses")
 }
@@ -305,6 +315,7 @@ model ExpenseItem {
   expenseId  String   @map("expense_id")
   categoryId String?  @map("category_id")
   name       String   @db.VarChar(255)
+  unit       String?  @db.VarChar(20)
   quantity   Decimal  @db.Decimal(10, 3)
   unitPrice  Decimal  @map("unit_price") @db.Decimal(10, 2)
   totalPrice Decimal  @map("total_price") @db.Decimal(10, 2)

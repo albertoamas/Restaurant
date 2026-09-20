@@ -6,6 +6,7 @@ import type {
   UpdateExpenseRequest,
   ExpenseCategoryDto,
   CreateExpenseCategoryRequest,
+  VoidExpenseRequest,
 } from '@pos/shared';
 
 export const expensesApi = {
@@ -42,6 +43,6 @@ export const expensesApi = {
   update: (id: string, data: UpdateExpenseRequest) =>
     client.patch<ExpenseDto>(`/api/v1/expenses/${id}`, data).then((r) => r.data),
 
-  delete: (id: string) =>
-    client.delete(`/api/v1/expenses/${id}`).then((r) => r.data),
+  void: (id: string, data: VoidExpenseRequest = {}) =>
+    client.delete(`/api/v1/expenses/${id}`, { data }).then((r) => r.data),
 };

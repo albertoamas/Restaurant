@@ -1,3 +1,7 @@
+import type { PaymentMethod } from './enums';
+
+export type ExpenseStatus = 'ACTIVE' | 'VOIDED';
+
 export interface ExpenseCategoryDto {
   id: string;
   name: string;
@@ -16,6 +20,7 @@ export interface ExpenseItemDto {
   categoryId: string | null;
   categoryName: string | null;
   name: string;
+  unit: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -24,6 +29,7 @@ export interface ExpenseItemDto {
 export interface CreateExpenseItemRequest {
   categoryId?: string;
   name: string;
+  unit?: string;
   quantity: number;
   unitPrice: number;
 }
@@ -36,6 +42,13 @@ export interface ExpenseDto {
   /** Total amount (sum of items for new expenses, or the direct amount for legacy ones). */
   amount: number;
   description: string | null;
+  expenseDate: string;
+  status: ExpenseStatus;
+  paymentMethod: PaymentMethod | null;
+  supplierName: string | null;
+  documentNumber: string | null;
+  voidedAt: string | null;
+  voidReason: string | null;
   items: ExpenseItemDto[];
   createdBy: string;
   createdAt: string;
@@ -44,15 +57,29 @@ export interface ExpenseDto {
 export interface CreateExpenseRequest {
   items: CreateExpenseItemRequest[];
   description?: string;
+  expenseDate?: string;
+  paymentMethod?: PaymentMethod;
+  supplierName?: string;
+  documentNumber?: string;
   branchId?: string;
 }
 
 export interface UpdateExpenseRequest {
   items: CreateExpenseItemRequest[];
   description?: string;
+  expenseDate?: string;
+  paymentMethod?: PaymentMethod;
+  supplierName?: string;
+  documentNumber?: string;
+}
+
+export interface VoidExpenseRequest {
+  reason?: string;
 }
 
 export interface ExpenseSummaryDto {
   total: number;
   byCategory: Record<string, number>;
+  byDay: Record<string, number>;
+  transactionCount: number;
 }

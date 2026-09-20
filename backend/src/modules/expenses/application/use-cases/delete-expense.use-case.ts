@@ -11,8 +11,8 @@ export class DeleteExpenseUseCase {
     @Optional() private readonly eventsService?: EventsService,
   ) {}
 
-  async execute(id: string, tenantId: string): Promise<void> {
-    await this.expenseRepository.delete(id, tenantId);
+  async execute(id: string, tenantId: string, userId: string, reason?: string): Promise<void> {
+    await this.expenseRepository.void(id, tenantId, userId, reason?.trim() || null);
     // Emit to all branches of the tenant — frontend reloads on any expense.deleted
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_DELETED, { id });
   }

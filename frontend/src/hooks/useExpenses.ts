@@ -26,11 +26,12 @@ export function useExpenses(from: string, to: string, branchId?: string) {
   }, [queryClient]);
 
   useSocketEvent(SOCKET_EVENTS.EXPENSE_CREATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_UPDATED, invalidate);
   useSocketEvent(SOCKET_EVENTS.EXPENSE_DELETED, invalidate);
 
   return {
     expenses: data?.expenses ?? [],
-    summary:  data?.summary  ?? { total: 0, byCategory: {} },
+    summary:  data?.summary  ?? { total: 0, byCategory: {}, byDay: {}, transactionCount: 0 },
     loading,
     error,
     reload: refetch,

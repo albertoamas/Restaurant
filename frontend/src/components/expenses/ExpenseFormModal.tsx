@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { PaymentMethod } from '@pos/shared';
 import type { ExpenseCategoryDto, ExpenseDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
 import { useExpenseCategories } from '../../hooks/useExpenses';
@@ -8,6 +9,8 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { handleApiError } from '../../utils/api-error';
 import { useAuth } from '../../context/auth.context';
+import { today } from '../../utils/date';
+import { toBoliviaDateString } from '../../utils/timezone';
 
 type ItemMode = 'simple' | 'detailed';
 
@@ -15,6 +18,7 @@ interface ItemRow {
   key: number;
   categoryId: string;
   name: string;
+  unit: string;
   mode: ItemMode;
   amount: string;
   quantity: string;
@@ -31,7 +35,7 @@ interface ExpenseFormModalProps {
 let rowKey = 0;
 
 function newRow(categoryId = ''): ItemRow {
-  return { key: ++rowKey, categoryId, name: '', mode: 'simple', amount: '', quantity: '', unitPrice: '' };
+  return { key: ++rowKey, categoryId, name: '', unit: '', mode: 'simple', amount: '', quantity: '', unitPrice: '' };
 }
 
 function rowFromItem(item: ExpenseDto['items'][number], categories: ExpenseCategoryDto[]): ItemRow {
@@ -41,6 +45,7 @@ function rowFromItem(item: ExpenseDto['items'][number], categories: ExpenseCateg
     key:        ++rowKey,
     categoryId: item.categoryId ?? '',
     name:       item.name,
+    unit:       item.unit ?? '',
     mode:       isSimple ? 'simple' : 'detailed',
     amount:     isSimple ? String(item.unitPrice) : String(item.totalPrice),
     quantity:   String(item.quantity),
@@ -61,6 +66,10 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
 
   const [items, setItems]             = useState<ItemRow[]>([newRow()]);
   const [description, setDescription] = useState('');
+  const [expenseDate, setExpenseDate] = useState(today());
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
+  const [supplierName, setSupplierName] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
   const [loading, setLoading]         = useState(false);
 
   const isEditing = !!expense;
@@ -70,15 +79,27 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
     if (expense) {
       setItems(expense.items.length > 0 ? expense.items.map((i) => rowFromItem(i, categories)) : [newRow()]);
       setDescription(expense.description ?? '');
+      setExpenseDate(toBoliviaDateString(new Date(expense.expenseDate)));
+      setPaymentMethod(expense.paymentMethod ?? PaymentMethod.CASH);
+      setSupplierName(expense.supplierName ?? '');
+      setDocumentNumber(expense.documentNumber ?? '');
     } else {
       setItems([newRow()]);
       setDescription('');
+      setExpenseDate(today());
+      setPaymentMethod(PaymentMethod.CASH);
+      setSupplierName('');
+      setDocumentNumber('');
     }
   }, [isOpen, expense]);
 
   const handleClose = () => {
     setItems([newRow()]);
     setDescription('');
+    setExpenseDate(today());
+    setPaymentMethod(PaymentMethod.CASH);
+    setSupplierName('');
+    setDocumentNumber('');
     onClose();
   };
 
@@ -112,10 +133,15 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
       items: items.map((r) => ({
         categoryId: r.categoryId || undefined,
         name:       r.name.trim(),
+        unit:       r.unit.trim() || undefined,
         quantity:   r.mode === 'simple' ? 1 : parseFloat(r.quantity),
         unitPrice:  r.mode === 'simple' ? parseFloat(r.amount) : parseFloat(r.unitPrice),
       })),
       description: description.trim() || undefined,
+      expenseDate,
+      paymentMethod,
+      supplierName: supplierName.trim() || undefined,
+      documentNumber: documentNumber.trim() || undefined,
     };
 
     setLoading(true);
@@ -145,6 +171,45 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
     >
       <form onSubmit={handleSubmit} className="space-y-4">
 
+        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500 text-white">
+              <Icon name="receipt" size={14} strokeWidth={2.2} />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Datos del gasto</p>
+              <p className="text-[11px] text-gray-500">La fecha puede ser distinta al momento de registro.</p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Fecha del gasto">
+              <input type="date" required value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} className={FIELD_CLASS} />
+            </Field>
+            <Field label="Forma de pago">
+              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className={FIELD_CLASS}>
+                <option value={PaymentMethod.CASH}>Efectivo</option>
+                <option value={PaymentMethod.QR}>QR</option>
+                <option value={PaymentMethod.TRANSFER}>Transferencia</option>
+                <option value={PaymentMethod.CORTESIA}>Cortesía / ajuste</option>
+              </select>
+            </Field>
+            <Field label="Proveedor" optional>
+              <input value={supplierName} onChange={(e) => setSupplierName(e.target.value)} placeholder="Ej. Mercado central" className={FIELD_CLASS} maxLength={150} />
+            </Field>
+            <Field label="Comprobante" optional>
+              <input value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="Nº factura o recibo" className={FIELD_CLASS} maxLength={80} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-gray-900">Detalle</p>
+            <p className="text-xs text-gray-400">Agrupa en un solo registro todo lo comprado en el mismo comprobante.</p>
+          </div>
+          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-500">{items.length} {items.length === 1 ? 'ítem' : 'ítems'}</span>
+        </div>
+
         <div className="space-y-2">
           {items.map((row, idx) => (
             <ItemRowForm
@@ -169,9 +234,9 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
           Agregar ítem
         </button>
 
-        <div className="border-t border-[var(--border-subtle)] pt-4 flex items-center justify-between">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-500">Total del gasto</span>
-          <span className="font-heading font-black text-xl text-gray-900">
+          <span className="font-heading font-black text-xl text-emerald-800">
             Bs {totalAmount.toFixed(2)}
           </span>
         </div>
@@ -203,6 +268,19 @@ export function ExpenseFormModal({ isOpen, onClose, onSaved, expense }: ExpenseF
   );
 }
 
+const FIELD_CLASS = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-amber-400 focus:ring-[3px] focus:ring-amber-400/15 placeholder:text-gray-300';
+
+function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">
+        {label}{optional && <span className="ml-1 font-medium normal-case tracking-normal text-gray-300">opcional</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 function ItemRowForm({
   row,
   index,
@@ -228,7 +306,7 @@ function ItemRowForm({
     'transition-[border-color,box-shadow]';
 
   return (
-    <div className="flex items-center gap-2 bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-3 py-2.5">
+    <div className="grid grid-cols-1 items-end gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] p-3 md:grid-cols-[150px_minmax(150px,1fr)_minmax(230px,auto)_32px]">
 
       {/* Category */}
       <select
@@ -239,7 +317,7 @@ function ItemRowForm({
           onChange({ categoryId: e.target.value, mode });
         }}
         disabled={catLoading}
-        className={`${inputBase} w-[140px] shrink-0 disabled:opacity-50`}
+        className={`${inputBase} w-full disabled:opacity-50`}
       >
         <option value="">Sin categoría</option>
         {categories.map((c) => (
@@ -253,13 +331,13 @@ function ItemRowForm({
         placeholder="Nombre del ítem"
         value={row.name}
         onChange={(e) => onChange({ name: e.target.value })}
-        className={`${inputBase} flex-1 min-w-0 placeholder:text-gray-300`}
+        className={`${inputBase} w-full min-w-0 placeholder:text-gray-300`}
         required
       />
 
       {/* Amount section */}
       {row.mode === 'simple' ? (
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 md:justify-end">
           <span className="text-xs font-medium text-gray-400">Bs</span>
           <input
             type="number"
@@ -268,12 +346,12 @@ function ItemRowForm({
             placeholder="0.00"
             value={row.amount}
             onChange={(e) => onChange({ amount: e.target.value })}
-            className={`${inputBase} w-28 text-right`}
+            className={`${inputBase} w-full md:w-32 text-right`}
             required
           />
         </div>
       ) : (
-        <div className="flex items-center gap-1 shrink-0 text-sm">
+        <div className="grid grid-cols-[72px_58px_92px_auto] items-center gap-1 text-sm md:justify-end">
           <input
             type="number"
             min="0.001"
@@ -284,7 +362,13 @@ function ItemRowForm({
             className={`${inputBase} w-20 text-left`}
             required
           />
-          <span className="text-gray-300 text-xs font-medium">×</span>
+          <input
+            placeholder="Unidad"
+            value={row.unit}
+            onChange={(e) => onChange({ unit: e.target.value })}
+            className={`${inputBase} w-full px-2 text-left`}
+            maxLength={20}
+          />
           <input
             type="number"
             min="0.01"
@@ -295,7 +379,6 @@ function ItemRowForm({
             className={`${inputBase} w-28 text-left`}
             required
           />
-          <span className="text-gray-300 text-xs">=</span>
           <div className="w-[88px] rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-2.5 py-2 text-sm text-right font-semibold text-gray-700 tabular-nums">
             {total > 0
               ? `Bs ${total.toFixed(2)}`

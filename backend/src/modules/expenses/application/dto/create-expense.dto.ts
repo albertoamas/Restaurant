@@ -2,6 +2,8 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -10,6 +12,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
+import { PaymentMethod } from '@pos/shared';
 
 export class CreateExpenseItemDto {
   @IsOptional()
@@ -19,6 +22,11 @@ export class CreateExpenseItemDto {
   @IsString()
   @MaxLength(255)
   name: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  unit?: string;
 
   @IsNumber()
   @IsPositive()
@@ -39,6 +47,24 @@ export class CreateExpenseDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expenseDate?: string;
+
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  supplierName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  documentNumber?: string;
 
   @IsOptional()
   @IsUUID()

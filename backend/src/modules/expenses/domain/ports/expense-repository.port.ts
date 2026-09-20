@@ -1,4 +1,4 @@
-import { ExpenseSummaryDto } from '@pos/shared';
+import { ExpenseSummaryDto, PaymentMethod } from '@pos/shared';
 import { Expense } from '../entities/expense.entity';
 
 export const EXPENSE_REPOSITORY_PORT = 'ExpenseRepositoryPort';
@@ -7,6 +7,7 @@ export interface NewExpenseItemInput {
   categoryId: string | null;
   categoryName: string | null;
   name: string;
+  unit: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -16,6 +17,10 @@ export interface ExpensePatch {
   category: string;
   amount: number;
   description: string | null;
+  expenseDate: Date;
+  paymentMethod: PaymentMethod | null;
+  supplierName: string | null;
+  documentNumber: string | null;
 }
 
 export interface ExpenseRepositoryPort {
@@ -34,5 +39,5 @@ export interface ExpenseRepositoryPort {
     from: Date,
     to: Date,
   ): Promise<ExpenseSummaryDto>;
-  delete(id: string, tenantId: string): Promise<void>;
+  void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void>;
 }
