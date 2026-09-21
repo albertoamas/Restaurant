@@ -1,27 +1,20 @@
 import type { DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
-import { ExpenseCategory } from '@pos/shared';
 import { Card } from '../../ui/Card';
 import { Spinner } from '../../ui/Spinner';
 import { Icon } from '../../ui/Icon';
-
-/** Gastos viejos guardaban la clave del enum; los nuevos, el nombre de la categoría. */
-const LEGACY_LABELS: Partial<Record<ExpenseCategory, string>> = {
-  [ExpenseCategory.SUPPLIES]:    'Insumos',
-  [ExpenseCategory.WAGES]:       'Personal',
-  [ExpenseCategory.UTILITIES]:   'Servicios',
-  [ExpenseCategory.TRANSPORT]:   'Transporte',
-  [ExpenseCategory.MAINTENANCE]: 'Mantenimiento',
-  [ExpenseCategory.OTHER]:       'Otro',
-};
+import { ExpenseTrendChart } from '../charts/ExpenseTrendChart';
+import { StatCard } from '../index';
+import { legacyExpenseLabel } from '../../../utils/expense-labels';
 
 interface Props {
   report: DailyReportDto | null;
   expenseSummary: ExpenseSummaryDto | null;
   loading: boolean;
+  isMultiDay: boolean;
 }
 
-/** En qué se fue la plata: total del período y desglose por categoría. */
-export function ExpensesTab({ report, expenseSummary, loading }: Props) {
+/** En qué se fue la plata: total del período, tendencia diaria y desglose por categoría. */
+export function ExpensesTab({ report, expenseSummary, loading, isMultiDay }: Props) {
   if (loading) {
     return <div className="flex justify-center py-12"><Spinner /></div>;
   }
@@ -43,21 +36,39 @@ export function ExpensesTab({ report, expenseSummary, loading }: Props) {
   const entries   = (Object.entries(expenseSummary!.byCategory) as [string, number][])
     .filter(([, amount]) => amount > 0)
     .sort(([, a], [, b]) => b - a);
+  const byDayEntries = Object.keys(expenseSummary!.byDay).length;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <MetricCard label="Total gastado" value={`Bs ${total.toFixed(2)}`} tone="negative" />
-        <MetricCard
+        <StatCard
+          label="Total gastado"
+          value={`Bs ${total.toFixed(2)}`}
+          icon={<Icon name="minus" size={20} />}
+          accent="text-red-400" bg="bg-red-500/10"
+          valueClassName="text-red-600"
+        />
+        <StatCard
           label="Movimientos"
           value={String(expenseSummary!.transactionCount)}
+          icon={<Icon name="receipt" size={20} />}
+          accent="text-violet-400" bg="bg-violet-500/10"
         />
-        <MetricCard
+        <StatCard
           label="Peso sobre ventas"
           value={ratio !== null ? `${ratio.toFixed(1)}%` : '—'}
-          hint={ratio !== null ? `de Bs ${sales.toFixed(2)} vendidos` : 'Sin ventas en el período'}
+          icon={<Icon name="chart" size={20} />}
+          accent="text-sky-400" bg="bg-sky-500/10"
         />
       </div>
+
+      {isMultiDay && byDayEntries >= 2 && (
+        <Card variant="panel">
+          <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Evolución de Gastos</h3>
+          <p className="mb-4 text-[11px] text-gray-400">Gasto (Bs) día a día en el período</p>
+          <ExpenseTrendChart byDay={expenseSummary!.byDay} />
+        </Card>
+      )}
 
       <Card variant="panel">
         <div className="mb-4 flex items-center justify-between">
@@ -68,9 +79,7 @@ export function ExpensesTab({ report, expenseSummary, loading }: Props) {
           {entries.map(([cat, amount]) => (
             <div key={cat}>
               <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-gray-600">
-                  {LEGACY_LABELS[cat as ExpenseCategory] ?? cat}
-                </span>
+                <span className="font-medium text-gray-600">{legacyExpenseLabel(cat)}</span>
                 <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-[var(--color-surface-3)]">
@@ -83,30 +92,6 @@ export function ExpensesTab({ report, expenseSummary, loading }: Props) {
           ))}
         </div>
       </Card>
-    </div>
-  );
-}
-
-function MetricCard({
-  label, value, hint, tone = 'neutral',
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: 'neutral' | 'negative';
-}) {
-  return (
-    <div
-      className="rounded-2xl border border-[var(--border-subtle)] p-4 shadow-card-md"
-      style={{ background: 'var(--color-surface-card)' }}
-    >
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className={`font-heading text-xl font-black leading-tight tabular-nums ${
-        tone === 'negative' ? 'text-red-600' : 'text-gray-900'
-      }`}>
-        {value}
-      </p>
-      {hint && <p className="mt-1 text-[10px] text-gray-400">{hint}</p>}
     </div>
   );
 }

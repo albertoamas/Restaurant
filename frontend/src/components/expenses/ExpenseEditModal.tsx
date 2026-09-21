@@ -8,7 +8,7 @@ import { Icon } from '../ui/Icon';
 import { FIELD, Field } from './ExpenseField';
 import { handleApiError } from '../../utils/api-error';
 import { toBoliviaDateString } from '../../utils/timezone';
-import { expenseCategoryLabel } from './ExpenseList';
+import { expenseCategoryLabel } from '../../utils/expense-labels';
 
 /**
  * Edición de un gasto ya registrado: importes, fecha y datos de respaldo.

@@ -146,7 +146,7 @@ Four guards in `backend/src/common/guards/`:
 
 `EventsModule` exports `EventsService`. Use cases call `eventsService.emitToTenant(tenantId, event, payload)`.
 
-**Always use the `SOCKET_EVENTS` constant from `@pos/shared`** — never raw string literals — to avoid typos between emitters and subscribers. Full event list in `packages/shared/src/socket-events.ts`: orders (`order.created`, `order.updated`), cash sessions (`cash.opened`, `cash.closed`), catalog (`product.created/updated`, `category.created/updated/deleted`), customers (`customer.created/updated`), expenses (`expense.created/updated/deleted`), raffles (`raffle.created/updated/deleted`, `raffle.ticket_added`), tenant settings (`tenant.modules.updated`).
+**Always use the `SOCKET_EVENTS` constant from `@pos/shared`** — never raw string literals — to avoid typos between emitters and subscribers. Full event list in `packages/shared/src/socket-events.ts`: orders (`order.created`, `order.updated`), cash sessions (`cash.opened`, `cash.closed`), catalog (`product.created/updated`, `category.created/updated/deleted`), customers (`customer.created/updated`), expenses (`expense.created/updated/deleted`), catálogo de gastos (`expense_category.created/updated/deleted`, `expense_concept.created/updated/deleted`), raffles (`raffle.created/updated/deleted`, `raffle.ticket_added`), tenant settings (`tenant.modules.updated`).
 
 The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}` rooms.
 

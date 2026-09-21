@@ -25,10 +25,10 @@ type TabKey = 'resumen' | 'ventas' | 'productos' | 'clientes' | 'gastos' | 'caja
 const TABS: { key: TabKey; label: string; icon: IconName }[] = [
   { key: 'resumen',   label: 'Resumen',   icon: 'chart'   },
   { key: 'ventas',    label: 'Ventas',    icon: 'dollar'  },
-  { key: 'productos', label: 'Productos', icon: 'package' },
-  { key: 'clientes',  label: 'Clientes',  icon: 'users'   },
   { key: 'gastos',    label: 'Gastos',    icon: 'receipt' },
   { key: 'caja',      label: 'Caja',      icon: 'cash'    },
+  { key: 'productos', label: 'Productos', icon: 'package' },
+  { key: 'clientes',  label: 'Clientes',  icon: 'users'   },
 ];
 
 const PERIODS: { key: Period; label: string }[] = [
@@ -50,7 +50,6 @@ export function ReportPage() {
     period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo,
     rangeLabel, isMultiDay, utcFrom, utcTo, branchParam,
     selectedCategory, setSelectedCategory, from, to,
-    prevUtcFrom, prevUtcTo,
   } = useReportFilters();
 
   const fromUtc = utcFrom ?? '';
@@ -63,7 +62,7 @@ export function ReportPage() {
   const products  = useTopProductsReport(fromUtc, toUtc, branchParam, selectedCategory, activeTab === 'productos');
   const cats      = useTopCategoriesReport(fromUtc, toUtc, branchParam, activeTab === 'productos');
   const customers = useTopCustomersReport(fromUtc, toUtc, branchParam, activeTab === 'clientes');
-  const trends    = useSalesTrends(fromUtc, toUtc, branchParam, isMultiDay, prevUtcFrom ?? '', prevUtcTo ?? '', activeTab === 'ventas');
+  const trends    = useSalesTrends(fromUtc, toUtc, branchParam, isMultiDay, activeTab === 'ventas');
   const cash      = useCashReport(fromUtc, toUtc, branchParam, activeTab === 'caja');
 
   /**
@@ -194,7 +193,7 @@ export function ReportPage() {
       {/* Contenido de la pestaña */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : noSales && activeTab !== 'gastos' ? (
+      ) : noSales && !['resumen', 'gastos', 'caja'].includes(activeTab) ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <Icon name="chart" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin ventas en este período</p>
@@ -205,7 +204,6 @@ export function ReportPage() {
       ) : activeTab === 'ventas' ? (
         <SalesTab
           report={report}
-          prevReport={trends.prevReport}
           dailySeries={trends.dailySeries}
           byDayHour={trends.byDayHour}
           isMultiDay={isMultiDay}
@@ -224,7 +222,7 @@ export function ReportPage() {
       ) : activeTab === 'clientes' ? (
         <CustomersTab topCustomers={customers.topCustomers} loading={customers.loading} />
       ) : activeTab === 'gastos' ? (
-        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} />
+        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} isMultiDay={isMultiDay} />
       ) : (
         <CashTab byCashier={cash.byCashier} cashSessions={cash.cashSessions} loading={cash.loading} />
       )}

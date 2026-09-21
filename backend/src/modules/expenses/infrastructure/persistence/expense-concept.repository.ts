@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ExpenseConcept as PrismaExpenseConcept } from '@prisma/client';
 import { ExpenseConceptEntity } from '../../domain/entities/expense-concept.entity';
 import { ExpenseConceptRepositoryPort } from '../../domain/ports/expense-concept-repository.port';
@@ -64,8 +64,11 @@ export class ExpenseConceptRepository implements ExpenseConceptRepositoryPort {
   }
 
   async update(concept: ExpenseConceptEntity): Promise<ExpenseConceptEntity> {
-    const row = await this.prisma.expenseConcept.update({
-      where: { id: concept.id },
+    // `updateMany` + relectura en vez de `update`: Prisma exige un `where` único
+    // y `(id, tenantId)` no tiene índice compuesto, así que `update` obligaría a
+    // filtrar solo por id y dejaría la fila de otro tenant al alcance.
+    const { count } = await this.prisma.expenseConcept.updateMany({
+      where: { id: concept.id, tenantId: concept.tenantId },
       data: {
         categoryId:       concept.categoryId,
         name:             concept.name,
@@ -74,6 +77,13 @@ export class ExpenseConceptRepository implements ExpenseConceptRepositoryPort {
         isActive:         concept.isActive,
         sortOrder:        concept.sortOrder,
       },
+    });
+    if (count === 0) {
+      throw new NotFoundException('Gasto predefinido no encontrado');
+    }
+
+    const row = await this.prisma.expenseConcept.findFirstOrThrow({
+      where: { id: concept.id, tenantId: concept.tenantId },
     });
     return toDomain(row);
   }

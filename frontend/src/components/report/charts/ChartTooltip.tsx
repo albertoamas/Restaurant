@@ -18,10 +18,10 @@ export function ChartTooltip({ active, payload, label, formatter }: Props) {
     <div
       style={{
         background:   'var(--color-surface-card)',
-        border:       '1px solid rgba(255,255,255,0.12)',
+        border:       '1px solid var(--border-strong)',
         borderRadius: '12px',
         padding:      '10px 14px',
-        boxShadow:    '0 8px 32px rgba(0,0,0,0.4)',
+        boxShadow:    'var(--shadow-card-lg)',
       }}
     >
       {label && (
@@ -32,7 +32,7 @@ export function ChartTooltip({ active, payload, label, formatter }: Props) {
       {payload.map((item, i) => (
         <p key={i} style={{ fontSize: 12, fontWeight: 600, lineHeight: '1.6', color: item.color }}>
           {item.name}:{' '}
-          <span style={{ color: '#f9fafb' }}>
+          <span style={{ color: 'var(--color-text-main)' }}>
             {formatter ? formatter(item.value, item.name) : item.value}
           </span>
         </p>

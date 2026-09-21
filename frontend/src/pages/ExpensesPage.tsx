@@ -13,7 +13,8 @@ import { ExpenseConceptsModal } from '../components/expenses/ExpenseConceptsModa
 import { QuickExpensePanel } from '../components/expenses/QuickExpensePanel';
 import { ExpenseBrowser } from '../components/expenses/ExpenseBrowser';
 import { ExpenseCalendar } from '../components/expenses/ExpenseCalendar';
-import { ExpenseList, expenseCategoryLabel } from '../components/expenses/ExpenseList';
+import { ExpenseList } from '../components/expenses/ExpenseList';
+import { expenseCategoryLabel } from '../utils/expense-labels';
 import { handleApiError } from '../utils/api-error';
 import { today } from '../utils/date';
 import { getBoliviaDayBounds, toBoliviaDateString } from '../utils/timezone';

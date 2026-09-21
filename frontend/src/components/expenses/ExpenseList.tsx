@@ -1,17 +1,7 @@
 import type { ExpenseDto } from '@pos/shared';
 import { Icon } from '../ui/Icon';
-
-const LEGACY_LABELS: Record<string, string> = {
-  SUPPLIES: 'Insumos', WAGES: 'Personal', UTILITIES: 'Servicios',
-  TRANSPORT: 'Transporte', MAINTENANCE: 'Mantenimiento', OTHER: 'Otro',
-};
-
-/** Etiqueta visible: categoría del primer ítem, o la categoría legacy del gasto. */
-export function expenseCategoryLabel(expense: ExpenseDto): string {
-  const firstName = expense.items[0]?.categoryName;
-  if (firstName) return firstName;
-  return LEGACY_LABELS[expense.category] ?? expense.category;
-}
+import { formatBoliviaDateShort, formatBoliviaTime } from '../../utils/date';
+import { expenseCategoryLabel } from '../../utils/expense-labels';
 
 interface ExpenseListProps {
   expenses: ExpenseDto[];
@@ -77,9 +67,8 @@ function ExpenseRow({
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
-  const date     = new Date(expense.expenseDate);
-  const dateStr  = date.toLocaleDateString('es-BO', { day: '2-digit', month: 'short' });
-  const timeStr  = date.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  const dateStr  = formatBoliviaDateShort(expense.expenseDate);
+  const timeStr  = formatBoliviaTime(expense.expenseDate);
   const hasItems = expense.items.length > 0;
   const fallback = expenseCategoryLabel(expense);
 
@@ -103,7 +92,9 @@ function ExpenseRow({
                 <div key={item.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   <CategoryTag>{item.categoryName ?? fallback}</CategoryTag>
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800">{item.name}</span>
-                  {qty !== 1 && (
+                  {/* Con unidad siempre se muestra el desglose, aunque sea 1 ("1 garrafa × Bs 180");
+                      sin unidad y con cantidad 1 el desglose repetiría el total, así que se omite. */}
+                  {(qty !== 1 || item.unit) && (
                     <span className="shrink-0 text-xs tabular-nums text-gray-400">
                       {qty % 1 === 0 ? qty : qty.toFixed(3)}{item.unit ? ` ${item.unit}` : ''} × Bs {item.unitPrice.toFixed(2)}
                     </span>

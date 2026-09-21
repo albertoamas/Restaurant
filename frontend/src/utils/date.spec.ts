@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, elapsed, today, formatBoliviaTime } from './date';
+import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort } from './date';
 
 describe('date utils', () => {
   describe('formatDate', () => {
@@ -41,6 +41,17 @@ describe('date utils', () => {
       // En formato 12h: "08:00 p. m." — en formato 24h: "20:00"
       const result = formatBoliviaTime('2026-04-17T00:00:00.000Z');
       expect(result).toContain('8:00');
+    });
+  });
+
+  describe('formatBoliviaDateShort', () => {
+    it('devuelve día y mes abreviado', () => {
+      expect(formatBoliviaDateShort('2026-04-17T15:30:00.000Z')).toMatch(/17/);
+    });
+
+    it('aplica UTC-4 — 2026-04-17T00:00:00Z cae el 16 en Bolivia', () => {
+      // Sin timeZone, un navegador en UTC+ mostraría el 17: este es el bug que cubre.
+      expect(formatBoliviaDateShort('2026-04-17T00:00:00.000Z')).toMatch(/16/);
     });
   });
 

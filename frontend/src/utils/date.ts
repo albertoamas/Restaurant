@@ -29,6 +29,14 @@ export function elapsedBetween(from: string, to: string): string {
   return `${m}m ${s}s`;
 }
 
+/** Fecha compacta para listados: "21 sep". Siempre en hora de Bolivia. */
+export function formatBoliviaDateShort(iso: string): string {
+  return new Intl.DateTimeFormat('es-BO', {
+    timeZone: BOLIVIA_TZ,
+    day: '2-digit', month: 'short',
+  }).format(new Date(iso));
+}
+
 export function formatBoliviaTime(iso: string): string {
   return new Intl.DateTimeFormat('es-BO', {
     timeZone: BOLIVIA_TZ,
