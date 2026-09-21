@@ -46,7 +46,11 @@ COPY --from=builder /repo/packages/shared/dist /app/packages/shared/dist
 # Copy compiled output from builder (seeds excluidos de producción)
 WORKDIR /app/backend
 COPY --from=builder /repo/backend/dist ./dist
-RUN find ./dist -name 'seed*.js' -delete
+# Solo los scripts de seed de la raíz de dist (backend/src/seed*.ts). NO usar
+# `find -name 'seed*.js'`: barría también módulos de negocio cuyo archivo
+# empiece con "seed", dejando la imagen sin ese módulo y el backend en
+# crash-loop por MODULE_NOT_FOUND.
+RUN rm -f ./dist/seed.js ./dist/seed-*.js ./dist/seed.js.map ./dist/seed-*.js.map
 COPY --from=builder /repo/backend/prisma ./prisma
 
 # Generate Prisma client for the runner platform (linux/alpine binary)

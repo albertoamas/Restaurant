@@ -8,7 +8,7 @@ import {
   EXPENSE_CONCEPT_REPOSITORY_PORT,
   ExpenseConceptRepositoryPort,
 } from '../../domain/ports/expense-concept-repository.port';
-import { SeedDefaultExpenseConceptsUseCase } from './seed-default-expense-concepts.use-case';
+import { EnsureDefaultExpenseConceptsUseCase } from './ensure-default-expense-concepts.use-case';
 import { toExpenseConceptDto } from './expense-concept.mapper';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class ListExpenseConceptsUseCase {
     private readonly repo: ExpenseConceptRepositoryPort,
     @Inject(EXPENSE_CATEGORY_REPOSITORY_PORT)
     private readonly categoryRepo: ExpenseCategoryRepositoryPort,
-    private readonly seedDefaults: SeedDefaultExpenseConceptsUseCase,
+    private readonly seedDefaults: EnsureDefaultExpenseConceptsUseCase,
   ) {}
 
   async execute(tenantId: string): Promise<ExpenseConceptDto[]> {

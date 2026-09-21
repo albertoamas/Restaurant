@@ -68,7 +68,7 @@ const DEFAULT_CATALOG: {
  * las altas masivas ignoran duplicados en vez de reventar contra el índice único.
  */
 @Injectable()
-export class SeedDefaultExpenseConceptsUseCase {
+export class EnsureDefaultExpenseConceptsUseCase {
   constructor(
     @Inject(EXPENSE_CONCEPT_REPOSITORY_PORT)
     private readonly repo: ExpenseConceptRepositoryPort,
