@@ -10,14 +10,18 @@ import type {
 import { reportsApi } from '../api/reports.api';
 import { queryKeys } from '../lib/query-keys';
 
-export function useAdvancedReportData(
-  utcFrom:      string,
-  utcTo:        string,
-  branchParam:  string | undefined,
-  isMultiDay:   boolean,
-  enabled:      boolean,
-  prevUtcFrom:  string,
-  prevUtcTo:    string,
+/**
+ * Datos de la pestaña Ventas: comparación con el período anterior, evolución
+ * diaria y mapa de calor hora × día.
+ */
+export function useSalesTrends(
+  utcFrom: string,
+  utcTo: string,
+  branchParam: string | undefined,
+  isMultiDay: boolean,
+  prevUtcFrom: string,
+  prevUtcTo: string,
+  enabled: boolean,
 ) {
   const { data: prevReport = null } = useQuery<DailyReportDto | null>({
     queryKey: queryKeys.reportRange(prevUtcFrom, prevUtcTo, branchParam),
@@ -33,23 +37,44 @@ export function useAdvancedReportData(
     enabled:  enabled && isMultiDay,
   });
 
-  const { data: byCashier = [] as CashierReportDto[], isPending: cashierLoading } = useQuery({
-    queryKey: queryKeys.reportByCashier(utcFrom, utcTo, branchParam),
-    queryFn:  () => reportsApi.getByCashier(utcFrom, utcTo, branchParam),
+  const { data: byDayHour = [] as DayHourDataDto[], isPending: dayHourLoading } = useQuery({
+    queryKey: queryKeys.reportByDayHour(utcFrom, utcTo, branchParam),
+    queryFn:  () => reportsApi.getByDayHour(utcFrom, utcTo, branchParam),
     staleTime: 0,
     enabled,
   });
 
-  const { data: topCategories = [] as TopCategoryDto[], isPending: catLoading } = useQuery({
+  const loading = enabled && (dayHourLoading || (isMultiDay && seriesLoading));
+  return { prevReport, dailySeries, byDayHour, loading };
+}
+
+/** Categorías más vendidas — vive en la pestaña Productos. */
+export function useTopCategoriesReport(
+  utcFrom: string,
+  utcTo: string,
+  branchParam: string | undefined,
+  enabled: boolean,
+) {
+  const { data: topCategories = [] as TopCategoryDto[], isPending } = useQuery({
     queryKey: queryKeys.reportTopCategories(utcFrom, utcTo, branchParam),
     queryFn:  () => reportsApi.getTopCategories(utcFrom, utcTo, branchParam),
     staleTime: 0,
     enabled,
   });
 
-  const { data: byDayHour = [] as DayHourDataDto[], isPending: dayHourLoading } = useQuery({
-    queryKey: queryKeys.reportByDayHour(utcFrom, utcTo, branchParam),
-    queryFn:  () => reportsApi.getByDayHour(utcFrom, utcTo, branchParam),
+  return { topCategories, loading: enabled && isPending };
+}
+
+/** Datos de la pestaña Caja: rendimiento por cajero y arqueos. */
+export function useCashReport(
+  utcFrom: string,
+  utcTo: string,
+  branchParam: string | undefined,
+  enabled: boolean,
+) {
+  const { data: byCashier = [] as CashierReportDto[], isPending: cashierLoading } = useQuery({
+    queryKey: queryKeys.reportByCashier(utcFrom, utcTo, branchParam),
+    queryFn:  () => reportsApi.getByCashier(utcFrom, utcTo, branchParam),
     staleTime: 0,
     enabled,
   });
@@ -61,10 +86,6 @@ export function useAdvancedReportData(
     enabled,
   });
 
-  const isLoading =
-    enabled &&
-    (cashierLoading || catLoading || dayHourLoading || sessionsLoading ||
-      (isMultiDay && seriesLoading));
-
-  return { prevReport, dailySeries, byCashier, topCategories, byDayHour, cashSessions, isLoading };
+  const loading = enabled && (cashierLoading || sessionsLoading);
+  return { byCashier, cashSessions, loading };
 }
