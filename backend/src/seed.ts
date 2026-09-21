@@ -10,6 +10,8 @@
 
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { BOLIVIA_OFFSET, OrderStatus, OrderType, PaymentMethod } from '@pos/shared';
+import { toBoliviaDateString } from './common/utils/timezone.util';
 
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
@@ -98,7 +100,7 @@ async function seed() {
   console.log(`Sucursal creada: ${branch.name}`);
 
   // ── Usuarios ─────────────────────────────────────────────────────────────────
-  await prisma.user.create({
+  const ownerUser = await prisma.user.create({
     data: {
       tenantId:     tenant.id,
       email:        'owner@demo.com',
@@ -108,7 +110,7 @@ async function seed() {
     },
   });
 
-  await prisma.user.create({
+  const cashierUser = await prisma.user.create({
     data: {
       tenantId:     tenant.id,
       branchId:     branch.id,
@@ -186,8 +188,9 @@ async function seed() {
     { cat: 'Extras', name: 'Pan adicional',    price:  5 },
   ];
 
+  const createdProducts: { id: string; name: string; price: number }[] = [];
   for (const p of products) {
-    await prisma.product.create({
+    const created = await prisma.product.create({
       data: {
         tenantId:   tenant.id,
         categoryId: catId[p.cat],
@@ -195,14 +198,132 @@ async function seed() {
         price:      p.price,
       },
     });
+    createdProducts.push({ id: created.id, name: created.name, price: Number(created.price) });
   }
   console.log(`Productos creados: ${products.length}`);
+
+  // ── Clientes ─────────────────────────────────────────────────────────────────
+  const customerDefs = [
+    { name: 'Ana Flores',      phone: '70011122' },
+    { name: 'Carlos Mamani',   phone: '70022233' },
+    { name: 'Lucía Vargas',    phone: '70033344' },
+    { name: 'Jorge Quispe',    phone: '70044455' },
+    { name: 'María Rojas',     phone: '70055566' },
+    { name: 'Diego Fernández', phone: '70066677' },
+    { name: 'Paola Chávez',    phone: '70077788' },
+    { name: 'Ricardo Torrez',  phone: '70088899' },
+  ];
+  const customers: { id: string; name: string }[] = [];
+  for (const c of customerDefs) {
+    const created = await prisma.customer.create({
+      data: { tenantId: tenant.id, name: c.name, phone: c.phone },
+    });
+    customers.push({ id: created.id, name: created.name });
+  }
+  console.log(`Clientes creados: ${customers.length}`);
+
+  // ── Caja abierta de hoy ────────────────────────────────────────────────────
+  const todayStr = toBoliviaDateString(new Date());
+  const openedAt = new Date(`${todayStr}T08:00:00${BOLIVIA_OFFSET}`);
+  await prisma.cashSession.create({
+    data: {
+      tenantId:      tenant.id,
+      branchId:      branch.id,
+      openedBy:      cashierUser.id,
+      openingAmount: 200,
+      status:        'OPEN',
+      openedAt,
+    },
+  });
+  console.log('Caja abierta hoy: Bs 200.00 (apertura)');
+
+  // ── Pedidos de hoy (para poblar reportes) ───────────────────────────────────
+  const rand      = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = <T,>(arr: T[]): T => arr[rand(0, arr.length - 1)];
+
+  const ORDER_TYPES: string[]      = [OrderType.DINE_IN, OrderType.DINE_IN, OrderType.DINE_IN, OrderType.TAKEOUT, OrderType.DELIVERY];
+  const PAYMENT_METHODS: string[]  = [PaymentMethod.CASH, PaymentMethod.CASH, PaymentMethod.CASH, PaymentMethod.QR, PaymentMethod.TRANSFER];
+  const ORDER_COUNT = 34;
+
+  let totalSalesCreated = 0;
+  for (let i = 0; i < ORDER_COUNT; i++) {
+    // Hora aleatoria dentro del horario de atención (08:00–22:30 hora Bolivia).
+    const hh = String(rand(8, 22)).padStart(2, '0');
+    const mm = String(rand(0, 59)).padStart(2, '0');
+    const ss = String(rand(0, 59)).padStart(2, '0');
+    const createdAt = new Date(`${todayStr}T${hh}:${mm}:${ss}${BOLIVIA_OFFSET}`);
+
+    // 1 a 4 productos distintos por pedido, cantidad 1-3.
+    const itemCount = rand(1, 4);
+    const chosenIds = new Set<string>();
+    const items: { productId: string; productName: string; quantity: number; unitPrice: number; subtotal: number }[] = [];
+    while (items.length < itemCount) {
+      const p = pick(createdProducts);
+      if (chosenIds.has(p.id)) continue;
+      chosenIds.add(p.id);
+      const quantity = rand(1, 3);
+      const subtotal = Math.round(quantity * p.price * 100) / 100;
+      items.push({ productId: p.id, productName: p.name, quantity, unitPrice: p.price, subtotal });
+    }
+    const total = Math.round(items.reduce((sum, it) => sum + it.subtotal, 0) * 100) / 100;
+
+    // El dueño también atiende alguna venta, para poblar el reporte por cajero.
+    const createdBy  = Math.random() < 0.15 ? ownerUser.id : cashierUser.id;
+    const customerId = Math.random() < 0.55 ? pick(customers).id : null;
+    const type          = pick(ORDER_TYPES);
+    const paymentMethod = pick(PAYMENT_METHODS);
+
+    // Mayoría entregados; algunos en curso; ninguno cancelado, para que las
+    // cifras de venta del demo salgan limpias.
+    const statusRoll = Math.random();
+    const status =
+      statusRoll < 0.82 ? OrderStatus.DELIVERED
+      : statusRoll < 0.94 ? OrderStatus.PREPARING
+      : OrderStatus.PENDING;
+
+    // Mismo INSERT atómico que usa el repositorio real — deja BranchOrderSequence
+    // consistente para que el próximo pedido creado desde la app no colisione.
+    const [{ last_number: orderNumber }] = await prisma.$queryRaw<[{ last_number: number }]>`
+      INSERT INTO branch_order_sequences (tenant_id, branch_id, period, last_number)
+      VALUES (${tenant.id}, ${branch.id}, ${todayStr}, 1)
+      ON CONFLICT (tenant_id, branch_id, period)
+      DO UPDATE SET last_number = branch_order_sequences.last_number + 1
+      RETURNING last_number`;
+
+    await prisma.order.create({
+      data: {
+        tenantId:      tenant.id,
+        branchId:      branch.id,
+        orderNumber,
+        type,
+        status,
+        paymentMethod,
+        subtotal:      total,
+        total,
+        createdBy,
+        customerId,
+        createdAt,
+        updatedAt:     createdAt,
+        items:    { create: items.map((it) => ({
+          productId:   it.productId,
+          productName: it.productName,
+          quantity:    it.quantity,
+          unitPrice:   it.unitPrice,
+          subtotal:    it.subtotal,
+        })) },
+        payments: { create: [{ tenantId: tenant.id, method: paymentMethod, amount: total }] },
+      },
+    });
+    totalSalesCreated += total;
+  }
+  console.log(`Pedidos de hoy creados: ${ORDER_COUNT} (Bs ${totalSalesCreated.toFixed(2)} en ventas)`);
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
   console.log('  OWNER:   owner@demo.com  / demo123');
   console.log('  CASHIER: cajero@demo.com / demo123');
   console.log('  Negocio: Restaurante Demo (plan PRO, reset DAILY)');
+  console.log(`  Hoy (${todayStr}): ${ORDER_COUNT} pedidos, Bs ${totalSalesCreated.toFixed(2)} en ventas, ${customers.length} clientes`);
   console.log('──────────────────────────────────────────────');
 }
 
