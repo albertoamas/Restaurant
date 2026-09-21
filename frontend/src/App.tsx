@@ -22,6 +22,8 @@ import { RafflesPage } from './pages/RafflesPage';
 import { RaffleDetailPage } from './pages/RaffleDetailPage';
 import { AdminPage } from './pages/AdminPage';
 import { LandingPage } from './pages/LandingPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { CashierAccountPage } from './pages/CashierAccountPage';
 import { CashierReportPage } from './pages/CashierReportPage';
 
@@ -43,6 +45,8 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
 
       <Route element={<PrivateRoute />}>
         {/* Kitchen: fullscreen, no sidebar */}
