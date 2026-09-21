@@ -43,6 +43,7 @@ export class CreateExpenseUseCase {
       const totalPrice = Math.round(i.quantity * i.unitPrice * 100) / 100;
       return {
         categoryId:   i.categoryId ?? null,
+        conceptId:    i.conceptId ?? null,
         categoryName: i.categoryId ? (categoryMap.get(i.categoryId) ?? null) : null,
         name:         i.name,
         unit:         i.unit?.trim() || null,

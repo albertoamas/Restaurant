@@ -46,4 +46,20 @@ export class ExpenseCategoryEntity {
   static reconstitute(props: ExpenseCategoryProps): ExpenseCategoryEntity {
     return new ExpenseCategoryEntity(props);
   }
+
+  /** Devuelve una copia con los campos reemplazados — la entidad es inmutable. */
+  withChanges(
+    changes: Partial<Pick<ExpenseCategoryProps, 'name' | 'icon' | 'isActive' | 'sortOrder'>>,
+  ): ExpenseCategoryEntity {
+    return new ExpenseCategoryEntity({
+      id:            this.id,
+      tenantId:      this.tenantId,
+      trackQuantity: this.trackQuantity,
+      createdAt:     this.createdAt,
+      name:          changes.name      ?? this.name,
+      icon:          changes.icon      !== undefined ? changes.icon : this.icon,
+      isActive:      changes.isActive  ?? this.isActive,
+      sortOrder:     changes.sortOrder ?? this.sortOrder,
+    });
+  }
 }

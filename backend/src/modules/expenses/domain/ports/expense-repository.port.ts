@@ -5,6 +5,7 @@ export const EXPENSE_REPOSITORY_PORT = 'ExpenseRepositoryPort';
 
 export interface NewExpenseItemInput {
   categoryId: string | null;
+  conceptId: string | null;
   categoryName: string | null;
   name: string;
   unit: string | null;

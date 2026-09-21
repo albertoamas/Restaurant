@@ -15,10 +15,43 @@ export interface CreateExpenseCategoryRequest {
   icon?: string;
 }
 
+export interface ExpenseConceptDto {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  unit: string | null;
+  defaultUnitPrice: number | null;
+  isActive: boolean;
+}
+
+export interface UpdateExpenseCategoryRequest {
+  name?: string;
+  icon?: string | null;
+}
+
+export interface CreateExpenseConceptRequest {
+  categoryId: string;
+  name: string;
+  unit?: string;
+  defaultUnitPrice?: number | null;
+  sortOrder?: number;
+}
+
+export interface UpdateExpenseConceptRequest {
+  categoryId?: string;
+  name?: string;
+  unit?: string | null;
+  defaultUnitPrice?: number | null;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
 export interface ExpenseItemDto {
   id: string;
   categoryId: string | null;
   categoryName: string | null;
+  conceptId: string | null;
   name: string;
   unit: string | null;
   quantity: number;
@@ -28,6 +61,7 @@ export interface ExpenseItemDto {
 
 export interface CreateExpenseItemRequest {
   categoryId?: string;
+  conceptId?: string;
   name: string;
   unit?: string;
   quantity: number;

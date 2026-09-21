@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import { ExpenseCategoryEntity } from '../../domain/entities/expense-category.entity';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
 import { CreateExpenseCategoryDto } from '../dto/create-expense-category.dto';
@@ -19,13 +19,22 @@ export class CreateExpenseCategoryUseCase {
   ) {}
 
   async execute(tenantId: string, dto: CreateExpenseCategoryDto): Promise<ExpenseCategoryEntity> {
-    const existing = await this.repo.findAll(tenantId);
-    const conflict = existing.find((c) => c.name.toLowerCase() === dto.name.trim().toLowerCase());
-    if (conflict) throw new ConflictException(`Ya existe una categoría con el nombre "${dto.name}"`);
+    const name = dto.name.trim();
+    if (!name) throw new BadRequestException('El nombre de la categoría es obligatorio');
+
+    const existing = await this.repo.findByName(tenantId, name);
+    if (existing) {
+      // El índice único (tenant, name) también cubre las desactivadas: se
+      // reactiva en vez de fallar, para que borrar y volver a crear funcione.
+      if (existing.isActive) {
+        throw new ConflictException(`Ya existe una categoría con el nombre "${name}"`);
+      }
+      return this.repo.update(existing.withChanges({ name, icon: dto.icon ?? null, isActive: true }));
+    }
 
     const category = ExpenseCategoryEntity.create({
       tenantId,
-      name:          dto.name.trim(),
+      name,
       icon:          dto.icon ?? null,
       trackQuantity: false,
       sortOrder:     0,

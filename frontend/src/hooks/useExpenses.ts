@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ExpenseDto, ExpenseSummaryDto, ExpenseCategoryDto } from '@pos/shared';
+import type { ExpenseDto, ExpenseSummaryDto, ExpenseCategoryDto, ExpenseConceptDto } from '@pos/shared';
 import { SOCKET_EVENTS } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
 import { useSocketEvent } from '../context/socket.context';
@@ -45,4 +45,23 @@ export function useExpenseCategories() {
     staleTime: 5 * 60_000,
   });
   return { categories, loading, reload: refetch };
+}
+
+export function useExpenseConcepts() {
+  const queryClient = useQueryClient();
+
+  const { data: concepts = [] as ExpenseConceptDto[], isPending: loading } = useQuery({
+    queryKey: queryKeys.expenseConcepts,
+    queryFn: () => expensesApi.getConcepts(),
+    staleTime: 5 * 60_000,
+  });
+
+  // El catálogo auto-siembra categorías la primera vez, así que ambas listas
+  // se invalidan juntas tras cualquier cambio.
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.expenseConcepts });
+    queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories });
+  }, [queryClient]);
+
+  return { concepts, loading, invalidate };
 }

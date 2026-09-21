@@ -29,6 +29,7 @@ export const queryKeys = {
     ['kitchenOrders', branchId] as const,
 
   expenseCategories: ['expenseCategories'] as const,
+  expenseConcepts: ['expenseConcepts'] as const,
 
   cashSession: (branchId: string) =>
     ['cashSession', branchId] as const,

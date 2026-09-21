@@ -5,7 +5,11 @@ import type {
   CreateExpenseRequest,
   UpdateExpenseRequest,
   ExpenseCategoryDto,
+  ExpenseConceptDto,
+  CreateExpenseConceptRequest,
+  UpdateExpenseConceptRequest,
   CreateExpenseCategoryRequest,
+  UpdateExpenseCategoryRequest,
   VoidExpenseRequest,
 } from '@pos/shared';
 
@@ -18,8 +22,25 @@ export const expensesApi = {
   createCategory: (data: CreateExpenseCategoryRequest) =>
     client.post<ExpenseCategoryDto>('/api/v1/expenses/categories', data).then((r) => r.data),
 
+  updateCategory: (id: string, data: UpdateExpenseCategoryRequest) =>
+    client.patch<ExpenseCategoryDto>(`/api/v1/expenses/categories/${id}`, data).then((r) => r.data),
+
   deleteCategory: (id: string) =>
     client.delete(`/api/v1/expenses/categories/${id}`).then((r) => r.data),
+
+  // ── Gastos predefinidos ────────────────────────────────────────
+
+  getConcepts: () =>
+    client.get<ExpenseConceptDto[]>('/api/v1/expenses/concepts').then((r) => r.data),
+
+  createConcept: (data: CreateExpenseConceptRequest) =>
+    client.post<ExpenseConceptDto>('/api/v1/expenses/concepts', data).then((r) => r.data),
+
+  updateConcept: (id: string, data: UpdateExpenseConceptRequest) =>
+    client.patch<ExpenseConceptDto>(`/api/v1/expenses/concepts/${id}`, data).then((r) => r.data),
+
+  deleteConcept: (id: string) =>
+    client.delete(`/api/v1/expenses/concepts/${id}`).then(() => {}),
 
   // ── Expenses ───────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ interface ExpenseItemProps {
   expenseId: string;
   categoryId: string | null;
   categoryName: string | null;
+  conceptId: string | null;
   name: string;
   unit: string | null;
   quantity: number;
@@ -76,6 +77,7 @@ export class Expense {
       id:           i.id,
       categoryId:   i.categoryId,
       categoryName: i.categoryName,
+      conceptId:    i.conceptId,
       name:         i.name,
       unit:         i.unit,
       quantity:     i.quantity,

@@ -19,6 +19,10 @@ export class UpdateExpenseItemDto {
   @IsUUID()
   categoryId?: string;
 
+  @IsOptional()
+  @IsUUID()
+  conceptId?: string;
+
   @IsString()
   @MaxLength(255)
   name: string;
