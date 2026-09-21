@@ -3,13 +3,7 @@ import { Card } from '../../ui/Card';
 import { Spinner } from '../../ui/Spinner';
 import { Icon } from '../../ui/Icon';
 import { CashierRankingTable } from '../charts/CashierRankingTable';
-import { formatBoliviaTime } from '../../../utils/date';
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-BO', {
-    timeZone: 'America/La_Paz', day: '2-digit', month: 'short',
-  });
-}
+import { formatBoliviaDateShort, formatBoliviaTime } from '../../../utils/date';
 
 interface Props {
   byCashier: CashierReportDto[];
@@ -72,11 +66,11 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
                     <tr key={s.id} className="transition-colors hover:bg-[var(--color-surface-2)]">
                       <td className="py-2.5 pl-1 pr-3 font-medium text-gray-700">{s.branchName}</td>
                       <td className="py-2.5 pr-3 text-gray-500">
-                        {fmtDate(s.openedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.openedAt)}</span>
+                        {formatBoliviaDateShort(s.openedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.openedAt)}</span>
                       </td>
                       <td className="py-2.5 pr-3 text-gray-500">
                         {s.closedAt ? (
-                          <>{fmtDate(s.closedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.closedAt)}</span></>
+                          <>{formatBoliviaDateShort(s.closedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.closedAt)}</span></>
                         ) : (
                           <span className="inline-flex items-center gap-1 font-semibold text-amber-500">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />

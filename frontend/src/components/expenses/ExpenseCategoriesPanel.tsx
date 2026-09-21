@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseCategoryDto, ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
@@ -23,8 +23,15 @@ export function ExpenseCategoriesPanel() {
   const [confirmId, setConfirm]   = useState<string | null>(null);
   const [busy, setBusy]           = useState(false);
 
-  const countFor = (categoryId: string) =>
-    concepts.filter((c: ExpenseConceptDto) => c.categoryId === categoryId).length;
+  // Un solo recorrido de `concepts` por cambio de lista, en vez de uno por
+  // categoría en cada render (incluido cada tecla tipeada en los inputs).
+  const countByCategory = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const concept of concepts as ExpenseConceptDto[]) {
+      counts.set(concept.categoryId, (counts.get(concept.categoryId) ?? 0) + 1);
+    }
+    return counts;
+  }, [concepts]);
 
   const refresh = async () => {
     await reload();
@@ -118,7 +125,7 @@ export function ExpenseCategoriesPanel() {
       ) : (
         <div className="max-h-[46vh] space-y-2 overflow-y-auto pr-1">
           {categories.map((category) => {
-            const count = countFor(category.id);
+            const count = countByCategory.get(category.id) ?? 0;
             return editingId === category.id ? (
               <div
                 key={category.id}

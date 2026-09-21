@@ -1,9 +1,11 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { SOCKET_EVENTS } from '@pos/shared';
 import { ExpenseCategoryEntity } from '../../domain/entities/expense-category.entity';
 import {
   EXPENSE_CATEGORY_REPOSITORY_PORT,
   ExpenseCategoryRepositoryPort,
 } from '../../domain/ports/expense-category-repository.port';
+import { EventsService } from '../../../events/events.service';
 import { UpdateExpenseCategoryDto } from '../dto/update-expense-category.dto';
 
 @Injectable()
@@ -11,6 +13,8 @@ export class UpdateExpenseCategoryUseCase {
   constructor(
     @Inject(EXPENSE_CATEGORY_REPOSITORY_PORT)
     private readonly repo: ExpenseCategoryRepositoryPort,
+
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(id: string, tenantId: string, dto: UpdateExpenseCategoryDto): Promise<ExpenseCategoryEntity> {
@@ -27,11 +31,13 @@ export class UpdateExpenseCategoryUseCase {
       }
     }
 
-    return this.repo.update(
+    const updated = await this.repo.update(
       category.withChanges({
         name,
         icon: dto.icon === undefined ? undefined : (dto.icon || null),
       }),
     );
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_UPDATED, updated);
+    return updated;
   }
 }

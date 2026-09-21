@@ -34,6 +34,14 @@ export const SOCKET_EVENTS = {
   EXPENSE_UPDATED:      'expense.updated',
   EXPENSE_DELETED:      'expense.deleted',
 
+  // Expense catalog (categorías y gastos predefinidos)
+  EXPENSE_CATEGORY_CREATED: 'expense_category.created',
+  EXPENSE_CATEGORY_UPDATED: 'expense_category.updated',
+  EXPENSE_CATEGORY_DELETED: 'expense_category.deleted',
+  EXPENSE_CONCEPT_CREATED:  'expense_concept.created',
+  EXPENSE_CONCEPT_UPDATED:  'expense_concept.updated',
+  EXPENSE_CONCEPT_DELETED:  'expense_concept.deleted',
+
   // Raffles
   RAFFLE_CREATED:       'raffle.created',
   RAFFLE_UPDATED:       'raffle.updated',

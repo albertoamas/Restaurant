@@ -22,7 +22,7 @@ export function useExpenses(from: string, to: string, branchId?: string) {
   });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.expensesAll });
   }, [queryClient]);
 
   useSocketEvent(SOCKET_EVENTS.EXPENSE_CREATED, invalidate);
@@ -38,7 +38,32 @@ export function useExpenses(from: string, to: string, branchId?: string) {
   };
 }
 
+/**
+ * Invalida el catálogo de gastos (categorías + conceptos) ante cualquier cambio
+ * hecho desde otro dispositivo. Las dos listas van juntas porque el catálogo
+ * auto-siembra categorías la primera vez.
+ */
+function useExpenseCatalogSync() {
+  const queryClient = useQueryClient();
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.expenseConcepts });
+    queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories });
+  }, [queryClient]);
+
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CATEGORY_UPDATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CATEGORY_DELETED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED,  invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CONCEPT_UPDATED,  invalidate);
+  useSocketEvent(SOCKET_EVENTS.EXPENSE_CONCEPT_DELETED,  invalidate);
+
+  return invalidate;
+}
+
 export function useExpenseCategories() {
+  useExpenseCatalogSync();
+
   const { data: categories = [] as ExpenseCategoryDto[], isPending: loading, refetch } = useQuery({
     queryKey: queryKeys.expenseCategories,
     queryFn:  () => expensesApi.getCategories(),
@@ -48,20 +73,13 @@ export function useExpenseCategories() {
 }
 
 export function useExpenseConcepts() {
-  const queryClient = useQueryClient();
+  const invalidate = useExpenseCatalogSync();
 
   const { data: concepts = [] as ExpenseConceptDto[], isPending: loading } = useQuery({
     queryKey: queryKeys.expenseConcepts,
     queryFn: () => expensesApi.getConcepts(),
     staleTime: 5 * 60_000,
   });
-
-  // El catálogo auto-siembra categorías la primera vez, así que ambas listas
-  // se invalidan juntas tras cualquier cambio.
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.expenseConcepts });
-    queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories });
-  }, [queryClient]);
 
   return { concepts, loading, invalidate };
 }

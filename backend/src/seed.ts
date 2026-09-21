@@ -9,6 +9,7 @@
  */
 
 import * as path from 'path';
+import { randomUUID } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { BOLIVIA_OFFSET, OrderStatus, OrderType, PaymentMethod } from '@pos/shared';
 import { toBoliviaDateString } from './common/utils/timezone.util';
@@ -153,10 +154,12 @@ async function seed() {
     { name: 'Mantenimiento',   trackQuantity: false, sortOrder: 45 },
     { name: 'Otro',            trackQuantity: false, sortOrder: 99 },
   ];
+  const expenseCatId: Record<string, string> = {};
   for (const ec of expenseCats) {
-    await prisma.expenseCategory.create({
+    const created = await prisma.expenseCategory.create({
       data: { tenantId: tenant.id, name: ec.name, trackQuantity: ec.trackQuantity, sortOrder: ec.sortOrder },
     });
+    expenseCatId[ec.name] = created.id;
   }
   console.log(`Categorías de gastos creadas: ${expenseCats.map((c) => c.name).join(', ')}`);
 
@@ -188,18 +191,23 @@ async function seed() {
     { cat: 'Extras', name: 'Pan adicional',    price:  5 },
   ];
 
-  const createdProducts: { id: string; name: string; price: number }[] = [];
-  for (const p of products) {
-    const created = await prisma.product.create({
-      data: {
-        tenantId:   tenant.id,
-        categoryId: catId[p.cat],
-        name:       p.name,
-        price:      p.price,
-      },
-    });
-    createdProducts.push({ id: created.id, name: created.name, price: Number(created.price) });
-  }
+  // Los ids se generan acá para poder usarlos abajo sin releer: `createMany` no
+  // devuelve filas en Postgres, y un insert por producto serializaba 15 viajes.
+  const createdProducts = products.map((p) => ({
+    id:    randomUUID(),
+    name:  p.name,
+    price: p.price,
+    cat:   p.cat,
+  }));
+  await prisma.product.createMany({
+    data: createdProducts.map((p) => ({
+      id:         p.id,
+      tenantId:   tenant.id,
+      categoryId: catId[p.cat],
+      name:       p.name,
+      price:      p.price,
+    })),
+  });
   console.log(`Productos creados: ${products.length}`);
 
   // ── Clientes ─────────────────────────────────────────────────────────────────
@@ -213,19 +221,16 @@ async function seed() {
     { name: 'Paola Chávez',    phone: '70077788' },
     { name: 'Ricardo Torrez',  phone: '70088899' },
   ];
-  const customers: { id: string; name: string }[] = [];
-  for (const c of customerDefs) {
-    const created = await prisma.customer.create({
-      data: { tenantId: tenant.id, name: c.name, phone: c.phone },
-    });
-    customers.push({ id: created.id, name: created.name });
-  }
+  const customers = customerDefs.map((c) => ({ id: randomUUID(), name: c.name, phone: c.phone }));
+  await prisma.customer.createMany({
+    data: customers.map((c) => ({ id: c.id, tenantId: tenant.id, name: c.name, phone: c.phone })),
+  });
   console.log(`Clientes creados: ${customers.length}`);
 
   // ── Caja abierta de hoy ────────────────────────────────────────────────────
   const todayStr = toBoliviaDateString(new Date());
   const openedAt = new Date(`${todayStr}T08:00:00${BOLIVIA_OFFSET}`);
-  await prisma.cashSession.create({
+  const cashSession = await prisma.cashSession.create({
     data: {
       tenantId:      tenant.id,
       branchId:      branch.id,
@@ -237,93 +242,218 @@ async function seed() {
   });
   console.log('Caja abierta hoy: Bs 200.00 (apertura)');
 
-  // ── Pedidos de hoy (para poblar reportes) ───────────────────────────────────
-  const rand      = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  // ── Pedidos de los últimos días (para poblar reportes y tendencias) ────────
+  const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const pick = <T,>(arr: T[]): T => arr[rand(0, arr.length - 1)];
+
+  /** Fecha (YYYY-MM-DD) que queda `d` días antes de hoy. */
+  const dayStrAgo = (d: number): string => {
+    const date = new Date(`${todayStr}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() - d);
+    return date.toISOString().slice(0, 10);
+  };
+
+  const DAYS_BACK = 14;
 
   const ORDER_TYPES: string[]      = [OrderType.DINE_IN, OrderType.DINE_IN, OrderType.DINE_IN, OrderType.TAKEOUT, OrderType.DELIVERY];
   const PAYMENT_METHODS: string[]  = [PaymentMethod.CASH, PaymentMethod.CASH, PaymentMethod.CASH, PaymentMethod.QR, PaymentMethod.TRANSFER];
-  const ORDER_COUNT = 34;
 
-  let totalSalesCreated = 0;
-  for (let i = 0; i < ORDER_COUNT; i++) {
-    // Hora aleatoria dentro del horario de atención (08:00–22:30 hora Bolivia).
-    const hh = String(rand(8, 22)).padStart(2, '0');
-    const mm = String(rand(0, 59)).padStart(2, '0');
-    const ss = String(rand(0, 59)).padStart(2, '0');
-    const createdAt = new Date(`${todayStr}T${hh}:${mm}:${ss}${BOLIVIA_OFFSET}`);
+  let totalOrdersCreated = 0;
+  let totalSalesCreated  = 0;
+  let todaySalesCreated  = 0;
+  for (let d = 0; d < DAYS_BACK; d++) {
+    const dayStr     = dayStrAgo(d);
+    const isToday    = dayStr === todayStr;
+    const orderCount = isToday ? 34 : rand(15, 30);
 
-    // 1 a 4 productos distintos por pedido, cantidad 1-3.
-    const itemCount = rand(1, 4);
-    const chosenIds = new Set<string>();
-    const items: { productId: string; productName: string; quantity: number; unitPrice: number; subtotal: number }[] = [];
-    while (items.length < itemCount) {
-      const p = pick(createdProducts);
-      if (chosenIds.has(p.id)) continue;
-      chosenIds.add(p.id);
-      const quantity = rand(1, 3);
-      const subtotal = Math.round(quantity * p.price * 100) / 100;
-      items.push({ productId: p.id, productName: p.name, quantity, unitPrice: p.price, subtotal });
+    for (let i = 0; i < orderCount; i++) {
+      // Hora aleatoria dentro del horario de atención (08:00–22:30 hora Bolivia).
+      const hh = String(rand(8, 22)).padStart(2, '0');
+      const mm = String(rand(0, 59)).padStart(2, '0');
+      const ss = String(rand(0, 59)).padStart(2, '0');
+      const createdAt = new Date(`${dayStr}T${hh}:${mm}:${ss}${BOLIVIA_OFFSET}`);
+
+      // 1 a 4 productos distintos por pedido, cantidad 1-3.
+      const itemCount = rand(1, 4);
+      const chosenIds = new Set<string>();
+      const items: { productId: string; productName: string; quantity: number; unitPrice: number; subtotal: number }[] = [];
+      while (items.length < itemCount) {
+        const p = pick(createdProducts);
+        if (chosenIds.has(p.id)) continue;
+        chosenIds.add(p.id);
+        const quantity = rand(1, 3);
+        const subtotal = Math.round(quantity * p.price * 100) / 100;
+        items.push({ productId: p.id, productName: p.name, quantity, unitPrice: p.price, subtotal });
+      }
+      const total = Math.round(items.reduce((sum, it) => sum + it.subtotal, 0) * 100) / 100;
+
+      // El dueño también atiende alguna venta, para poblar el reporte por cajero.
+      const createdBy  = Math.random() < 0.15 ? ownerUser.id : cashierUser.id;
+      const customerId = Math.random() < 0.55 ? pick(customers).id : null;
+      const type          = pick(ORDER_TYPES);
+      const paymentMethod = pick(PAYMENT_METHODS);
+
+      // Mayoría entregados; algunos en curso (solo hoy tiene sentido que sigan
+      // pendientes); ninguno cancelado, para que las cifras del demo salgan limpias.
+      const statusRoll = Math.random();
+      const status = !isToday
+        ? OrderStatus.DELIVERED
+        : statusRoll < 0.82 ? OrderStatus.DELIVERED
+        : statusRoll < 0.94 ? OrderStatus.PREPARING
+        : OrderStatus.PENDING;
+
+      // Mismo INSERT atómico que usa el repositorio real — deja BranchOrderSequence
+      // consistente para que el próximo pedido creado desde la app no colisione.
+      const [{ last_number: orderNumber }] = await prisma.$queryRaw<[{ last_number: number }]>`
+        INSERT INTO branch_order_sequences (tenant_id, branch_id, period, last_number)
+        VALUES (${tenant.id}, ${branch.id}, ${dayStr}, 1)
+        ON CONFLICT (tenant_id, branch_id, period)
+        DO UPDATE SET last_number = branch_order_sequences.last_number + 1
+        RETURNING last_number`;
+
+      await prisma.order.create({
+        data: {
+          tenantId:      tenant.id,
+          branchId:      branch.id,
+          orderNumber,
+          type,
+          status,
+          paymentMethod,
+          subtotal:      total,
+          total,
+          createdBy,
+          customerId,
+          createdAt,
+          updatedAt:     createdAt,
+          items:    { create: items.map((it) => ({
+            productId:   it.productId,
+            productName: it.productName,
+            quantity:    it.quantity,
+            unitPrice:   it.unitPrice,
+            subtotal:    it.subtotal,
+          })) },
+          payments: { create: [{ tenantId: tenant.id, method: paymentMethod, amount: total }] },
+        },
+      });
+      totalSalesCreated += total;
+      if (isToday) todaySalesCreated += total;
     }
-    const total = Math.round(items.reduce((sum, it) => sum + it.subtotal, 0) * 100) / 100;
+    totalOrdersCreated += orderCount;
+  }
+  console.log(`Pedidos creados: ${totalOrdersCreated} en ${DAYS_BACK} días (Bs ${totalSalesCreated.toFixed(2)} en total; hoy Bs ${todaySalesCreated.toFixed(2)})`);
 
-    // El dueño también atiende alguna venta, para poblar el reporte por cajero.
-    const createdBy  = Math.random() < 0.15 ? ownerUser.id : cashierUser.id;
-    const customerId = Math.random() < 0.55 ? pick(customers).id : null;
-    const type          = pick(ORDER_TYPES);
-    const paymentMethod = pick(PAYMENT_METHODS);
+  // ── Gastos de los últimos 14 días (para poblar la tendencia de Gastos) ─────
+  type ExpenseDef = {
+    cat: string; name: string; unit: string | null;
+    qtyMin: number; qtyMax: number; priceMin: number; priceMax: number;
+  };
+  const expenseDefs: ExpenseDef[] = [
+    { cat: 'Insumos',         name: 'Compra de verduras y frutas', unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 80,  priceMax: 220 },
+    { cat: 'Insumos',         name: 'Carne y pollo',               unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 150, priceMax: 400 },
+    { cat: 'Insumos',         name: 'Abarrotes',                   unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 60,  priceMax: 180 },
+    { cat: 'Personal',        name: 'Adelanto de sueldo',          unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 200, priceMax: 600 },
+    { cat: 'Servicios',       name: 'Factura de luz',              unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 80,  priceMax: 220 },
+    { cat: 'Servicios',       name: 'Factura de agua',             unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 40,  priceMax: 120 },
+    { cat: 'Servicios',       name: 'Internet',                    unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 100, priceMax: 150 },
+    { cat: 'Transporte',      name: 'Combustible',                 unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 50,  priceMax: 150 },
+    { cat: 'Transporte',      name: 'Flete de mercadería',         unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 30,  priceMax: 100 },
+    { cat: 'Mantenimiento',   name: 'Reparación de equipo',        unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 80,  priceMax: 300 },
+    { cat: 'Operativos',      name: 'Insumos de limpieza',         unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 30,  priceMax: 100 },
+    { cat: 'Administrativos', name: 'Papelería',                   unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 20,  priceMax: 80  },
+    { cat: 'Otro',            name: 'Gasto varios',                unit: null,      qtyMin: 1, qtyMax: 1,  priceMin: 20,  priceMax: 90  },
+    { cat: 'Gaseosas',        name: 'Coca Cola 2L',                unit: 'unidad',  qtyMin: 6, qtyMax: 24, priceMin: 8,   priceMax: 10  },
+    { cat: 'Refrescos',       name: 'Sprite 2L',                   unit: 'unidad',  qtyMin: 6, qtyMax: 24, priceMin: 7,   priceMax: 9   },
+  ];
 
-    // Mayoría entregados; algunos en curso; ninguno cancelado, para que las
-    // cifras de venta del demo salgan limpias.
-    const statusRoll = Math.random();
-    const status =
-      statusRoll < 0.82 ? OrderStatus.DELIVERED
-      : statusRoll < 0.94 ? OrderStatus.PREPARING
-      : OrderStatus.PENDING;
+  let expensesCreated = 0;
+  let totalExpensesCreated = 0;
+  for (let d = 0; d < DAYS_BACK; d++) {
+    const dayStr  = dayStrAgo(d);
+    const isToday = dayStr === todayStr;
 
-    // Mismo INSERT atómico que usa el repositorio real — deja BranchOrderSequence
-    // consistente para que el próximo pedido creado desde la app no colisione.
-    const [{ last_number: orderNumber }] = await prisma.$queryRaw<[{ last_number: number }]>`
-      INSERT INTO branch_order_sequences (tenant_id, branch_id, period, last_number)
-      VALUES (${tenant.id}, ${branch.id}, ${todayStr}, 1)
-      ON CONFLICT (tenant_id, branch_id, period)
-      DO UPDATE SET last_number = branch_order_sequences.last_number + 1
-      RETURNING last_number`;
+    const expensesToday = rand(1, 3);
+    for (let e = 0; e < expensesToday; e++) {
+      const def = pick(expenseDefs);
+      const hh = String(rand(8, 20)).padStart(2, '0');
+      const mm = String(rand(0, 59)).padStart(2, '0');
+      const ss = String(rand(0, 59)).padStart(2, '0');
+      const expenseDate = new Date(`${dayStr}T${hh}:${mm}:${ss}${BOLIVIA_OFFSET}`);
 
-    await prisma.order.create({
+      const quantity  = rand(def.qtyMin, def.qtyMax);
+      const unitPrice = rand(def.priceMin, def.priceMax);
+      const totalPrice = Math.round(quantity * unitPrice * 100) / 100;
+      const categoryId = expenseCatId[def.cat];
+
+      await prisma.expense.create({
+        data: {
+          tenantId:      tenant.id,
+          branchId:      branch.id,
+          category:      def.cat,
+          amount:        totalPrice,
+          createdBy:     Math.random() < 0.2 ? ownerUser.id : cashierUser.id,
+          createdAt:     expenseDate,
+          expenseDate,
+          cashSessionId: isToday ? cashSession.id : null,
+          items: {
+            create: [{
+              categoryId,
+              name:       def.name,
+              unit:       def.unit,
+              quantity,
+              unitPrice,
+              totalPrice,
+            }],
+          },
+        },
+      });
+      expensesCreated += 1;
+      totalExpensesCreated += totalPrice;
+    }
+  }
+  console.log(`Gastos creados: ${expensesCreated} en ${DAYS_BACK} días (Bs ${totalExpensesCreated.toFixed(2)} en total)`);
+
+  // ── Sesiones de caja cerradas de días anteriores (hoy ya tiene la suya, abierta) ──
+  let cashSessionsCreated = 0;
+  for (let d = 1; d < DAYS_BACK; d++) {
+    const dayStr = dayStrAgo(d);
+    const openedAt = new Date(`${dayStr}T08:00:00${BOLIVIA_OFFSET}`);
+    const closedAt = new Date(`${dayStr}T22:${String(rand(0, 59)).padStart(2, '0')}:00${BOLIVIA_OFFSET}`);
+
+    const openingAmount  = 200;
+    const expectedAmount = openingAmount + rand(300, 900);
+    // La mayoría de los arqueos cuadran (ruido de redondeo); ~40% tiene un
+    // sobrante o faltante real, para que el gráfico de diferencias muestre algo.
+    const hasDiscrepancy = Math.random() < 0.4;
+    const difference = hasDiscrepancy
+      ? (Math.random() < 0.5 ? -1 : 1) * rand(5, 80)
+      : rand(-2, 2);
+    const closingAmount = expectedAmount + difference;
+
+    await prisma.cashSession.create({
       data: {
-        tenantId:      tenant.id,
-        branchId:      branch.id,
-        orderNumber,
-        type,
-        status,
-        paymentMethod,
-        subtotal:      total,
-        total,
-        createdBy,
-        customerId,
-        createdAt,
-        updatedAt:     createdAt,
-        items:    { create: items.map((it) => ({
-          productId:   it.productId,
-          productName: it.productName,
-          quantity:    it.quantity,
-          unitPrice:   it.unitPrice,
-          subtotal:    it.subtotal,
-        })) },
-        payments: { create: [{ tenantId: tenant.id, method: paymentMethod, amount: total }] },
+        tenantId:       tenant.id,
+        branchId:       branch.id,
+        openedBy:       cashierUser.id,
+        closedBy:       cashierUser.id,
+        openingAmount,
+        expectedAmount,
+        closingAmount,
+        difference,
+        status:         'CLOSED',
+        openedAt,
+        closedAt,
       },
     });
-    totalSalesCreated += total;
+    cashSessionsCreated += 1;
   }
-  console.log(`Pedidos de hoy creados: ${ORDER_COUNT} (Bs ${totalSalesCreated.toFixed(2)} en ventas)`);
+  console.log(`Sesiones de caja cerradas creadas: ${cashSessionsCreated}`);
 
   console.log('\n✓ Seed completado');
   console.log('──────────────────────────────────────────────');
   console.log('  OWNER:   owner@demo.com  / demo123');
   console.log('  CASHIER: cajero@demo.com / demo123');
   console.log('  Negocio: Restaurante Demo (plan PRO, reset DAILY)');
-  console.log(`  Hoy (${todayStr}): ${ORDER_COUNT} pedidos, Bs ${totalSalesCreated.toFixed(2)} en ventas, ${customers.length} clientes`);
+  console.log(`  Hoy (${todayStr}): 34 pedidos, Bs ${todaySalesCreated.toFixed(2)} en ventas, ${customers.length} clientes`);
   console.log('──────────────────────────────────────────────');
 }
 

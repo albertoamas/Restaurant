@@ -15,10 +15,10 @@ function makeCategory(): ExpenseCategoryEntity {
   });
 }
 
-function makeConcept(isActive: boolean): ExpenseConceptEntity {
+function makeConcept(isActive: boolean, defaultUnitPrice: number | null = null): ExpenseConceptEntity {
   const concept = ExpenseConceptEntity.create({
     tenantId: TENANT, categoryId: CATEGORY_ID, name: 'Carne', unit: 'kg',
-    defaultUnitPrice: null, sortOrder: 0,
+    defaultUnitPrice, sortOrder: 0,
   });
   return isActive ? concept : concept.withChanges({ isActive: false });
 }
@@ -76,6 +76,26 @@ describe('CreateExpenseConceptUseCase', () => {
     expect(repo.save).not.toHaveBeenCalled();
     expect(repo.update).toHaveBeenCalledTimes(1);
     expect(result.isActive).toBe(true);
+  });
+
+  it('conserva unidad y precio al reactivar cuando el caller no los manda', async () => {
+    repo.findByName.mockResolvedValue(makeConcept(false, 35));
+
+    const result = await useCase.execute(TENANT, { categoryId: CATEGORY_ID, name: 'Carne' });
+
+    expect(result.unit).toBe('kg');
+    expect(result.defaultUnitPrice).toBe(35);
+  });
+
+  it('limpia unidad y precio al reactivar solo si los mandan explícitamente vacíos', async () => {
+    repo.findByName.mockResolvedValue(makeConcept(false, 35));
+
+    const result = await useCase.execute(TENANT, {
+      categoryId: CATEGORY_ID, name: 'Carne', unit: '  ', defaultUnitPrice: null,
+    });
+
+    expect(result.unit).toBeNull();
+    expect(result.defaultUnitPrice).toBeNull();
   });
 
   it('guarda unidad y precio como null cuando vienen vacíos', async () => {

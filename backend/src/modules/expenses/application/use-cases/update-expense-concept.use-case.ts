@@ -1,5 +1,6 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ExpenseConceptDto } from '@pos/shared';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ExpenseConceptDto, SOCKET_EVENTS } from '@pos/shared';
+import { EventsService } from '../../../events/events.service';
 import {
   EXPENSE_CATEGORY_REPOSITORY_PORT,
   ExpenseCategoryRepositoryPort,
@@ -18,6 +19,8 @@ export class UpdateExpenseConceptUseCase {
     private readonly repo: ExpenseConceptRepositoryPort,
     @Inject(EXPENSE_CATEGORY_REPOSITORY_PORT)
     private readonly categoryRepo: ExpenseCategoryRepositoryPort,
+
+    @Optional() private readonly eventsService?: EventsService,
   ) {}
 
   async execute(id: string, tenantId: string, dto: UpdateExpenseConceptDto): Promise<ExpenseConceptDto> {
@@ -47,6 +50,8 @@ export class UpdateExpenseConceptUseCase {
         sortOrder:        dto.sortOrder,
       }),
     );
-    return toExpenseConceptDto(updated, category.name);
+    const updatedDto = toExpenseConceptDto(updated, category.name);
+    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_UPDATED, updatedDto);
+    return updatedDto;
   }
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { SOCKET_EVENTS } from '@pos/shared';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
@@ -21,6 +21,11 @@ export class UpdateExpenseUseCase {
   async execute(id: string, tenantId: string, dto: UpdateExpenseDto): Promise<Expense> {
     const existing = await this.expenseRepository.findById(id, tenantId);
     if (!existing) throw new NotFoundException('Gasto no encontrado');
+    // El borrado es lógico: sin este chequeo la edición de un gasto anulado
+    // respondía 200 y escribía cambios que ningún reporte volvería a mostrar.
+    if (existing.status === 'VOIDED') {
+      throw new BadRequestException('No se puede editar un gasto anulado');
+    }
 
     const categoryIds = [...new Set(dto.items.map((i) => i.categoryId).filter(Boolean) as string[])];
     const categoryMap = new Map<string, string>();

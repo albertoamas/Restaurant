@@ -16,6 +16,9 @@ export const queryKeys = {
   customers: (p: { q: string; page: number; sortBy: string; sortDir: string }) =>
     ['customers', p] as const,
 
+  /** Prefijo de todas las queries de gastos — para invalidar cualquier rango a la vez. */
+  expensesAll: ['expenses'] as const,
+
   expenses: (from: string, to: string, branchId?: string) =>
     ['expenses', from, to, branchId] as const,
 

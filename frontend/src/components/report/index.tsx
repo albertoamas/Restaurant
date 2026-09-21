@@ -17,24 +17,28 @@ export const RANK_COLORS = [
 export interface StatCardProps {
   label:           string;
   value:           string;
-  icon:            React.ReactNode;
-  accent:          string;
-  bg:              string;
+  /** Sin ícono, la tarjeta queda en su variante compacta (sin orbe de fondo). */
+  icon?:           React.ReactNode;
+  accent?:         string;
+  bg?:             string;
   /** Clase Tailwind para el color del valor. Default: text-gray-900 */
   valueClassName?: string;
-  /** Contenido opcional debajo del valor (badge, subtítulo, etc.) */
+  /** Contenido opcional debajo del valor (badge, tendencia, subtítulo, etc.) */
   sub?:            React.ReactNode;
 }
 
 export function StatCard({ label, value, icon, accent, bg, valueClassName, sub }: StatCardProps) {
   return (
     <div className="relative rounded-2xl border border-[var(--border-subtle)] p-5 flex flex-col gap-4 overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-      {/* Accent orb de fondo */}
-      <div className={`absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-25 blur-2xl ${bg}`} />
-
-      <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm [&_svg]:w-[20px] [&_svg]:h-[20px] ${bg} ${accent}`}>
-        {icon}
-      </div>
+      {icon && (
+        <>
+          {/* Accent orb de fondo */}
+          <div className={`absolute -top-6 -right-6 w-28 h-28 rounded-full opacity-25 blur-2xl ${bg}`} />
+          <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm [&_svg]:w-[20px] [&_svg]:h-[20px] ${bg} ${accent}`}>
+            {icon}
+          </div>
+        </>
+      )}
       <div className="relative">
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
         <p className={`font-heading font-black text-2xl leading-tight ${valueClassName ?? 'text-gray-900'}`}>{value}</p>

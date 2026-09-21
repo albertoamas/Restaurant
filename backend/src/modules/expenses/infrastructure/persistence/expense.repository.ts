@@ -51,6 +51,21 @@ const ITEMS_INCLUDE = {
   },
 };
 
+/** Filas de `expense_items` listas para `createMany` — compartido por save/update. */
+function toItemRows(expenseId: string, items: NewExpenseItemInput[]) {
+  return items.map((item) => ({
+    id:         randomUUID(),
+    expenseId,
+    categoryId: item.categoryId ?? null,
+    conceptId:  item.conceptId ?? null,
+    name:       item.name,
+    unit:       item.unit,
+    quantity:   item.quantity,
+    unitPrice:  item.unitPrice,
+    totalPrice: item.totalPrice,
+  }));
+}
+
 @Injectable()
 export class ExpenseRepository implements ExpenseRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
@@ -77,19 +92,7 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       });
 
       if (items.length > 0) {
-        await tx.expenseItem.createMany({
-          data: items.map((item) => ({
-            id:         randomUUID(),
-            expenseId:  created.id,
-            categoryId: item.categoryId ?? null,
-            conceptId:  item.conceptId ?? null,
-            name:       item.name,
-            unit:       item.unit,
-            quantity:   item.quantity,
-            unitPrice:  item.unitPrice,
-            totalPrice: item.totalPrice,
-          })),
-        });
+        await tx.expenseItem.createMany({ data: toItemRows(created.id, items) });
       }
 
       return tx.expense.findFirstOrThrow({
@@ -119,23 +122,13 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       await tx.expenseItem.deleteMany({ where: { expenseId: id } });
 
       if (items.length > 0) {
-        await tx.expenseItem.createMany({
-          data: items.map((item) => ({
-            id:         randomUUID(),
-            expenseId:  id,
-            categoryId: item.categoryId ?? null,
-            conceptId:  item.conceptId ?? null,
-            name:       item.name,
-            unit:       item.unit,
-            quantity:   item.quantity,
-            unitPrice:  item.unitPrice,
-            totalPrice: item.totalPrice,
-          })),
-        });
+        await tx.expenseItem.createMany({ data: toItemRows(id, items) });
       }
 
       await tx.expense.updateMany({
-        where: { id, tenantId },
+        // `status` acá es defensa en profundidad: el use-case ya rechaza editar
+        // un gasto anulado, esto evita que otro caller futuro lo saltee.
+        where: { id, tenantId, status: 'ACTIVE' },
         data:  {
           category: patch.category,
           amount: patch.amount,

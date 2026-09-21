@@ -24,7 +24,7 @@ export function ProductsTab({
   return (
     <div className="space-y-4">
       <Card variant="default">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <h3 className="font-heading text-sm font-bold text-gray-700">Productos Más Vendidos</h3>
           {categories.length > 0 && (
             <select

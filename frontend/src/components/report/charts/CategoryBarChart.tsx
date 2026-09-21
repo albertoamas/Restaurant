@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import type { TopCategoryDto } from '@pos/shared';
 import { ChartTooltip } from './ChartTooltip';
-import { C, GRID_COLOR, TICK_COLOR, TICK_SIZE } from './chartColors';
+import { TICK_COLOR, TICK_SIZE, useBarColors, useChartColors } from './chartColors';
 
 type View = 'quantity' | 'revenue';
 
@@ -19,10 +19,10 @@ interface Props {
   data: TopCategoryDto[];
 }
 
-const BAR_COLORS = [C.primary, C.amber, C.emerald, C.violet, C.sky, C.rose, C.cyan, C.gray];
-
 export function CategoryBarChart({ data }: Props) {
   const [view, setView] = useState<View>('quantity');
+  const barColors = useBarColors();
+  const { grid }  = useChartColors();
 
   const top    = data.slice(0, 8);
   const height = Math.max(180, top.length * 50);
@@ -64,7 +64,7 @@ export function CategoryBarChart({ data }: Props) {
           barSize={20}
           barCategoryGap="28%"
         >
-          <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={grid} horizontal={false} />
           <XAxis
             type="number"
             tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
@@ -87,7 +87,7 @@ export function CategoryBarChart({ data }: Props) {
           />
           <Bar dataKey={dataKey} radius={[0, 4, 4, 0]}>
             {chartData.map((_, i) => (
-              <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} fillOpacity={0.85} />
+              <Cell key={i} fill={barColors[i % barColors.length]} fillOpacity={0.85} />
             ))}
           </Bar>
         </BarChart>

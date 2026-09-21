@@ -54,4 +54,20 @@ describe('CreateExpenseCategoryUseCase', () => {
     expect(result.isActive).toBe(true);
     expect(result.name).toBe('Insumos');
   });
+
+  it('conserva el ícono al reactivar cuando el caller no manda uno', async () => {
+    repo.findByName.mockResolvedValue(makeCategory(false));
+
+    const result = await useCase.execute(TENANT, { name: 'Insumos' });
+
+    expect(result.icon).toBe('🧂');
+  });
+
+  it('limpia el ícono al reactivar solo si mandan cadena vacía', async () => {
+    repo.findByName.mockResolvedValue(makeCategory(false));
+
+    const result = await useCase.execute(TENANT, { name: 'Insumos', icon: '' });
+
+    expect(result.icon).toBeNull();
+  });
 });

@@ -23,6 +23,7 @@ import { ListExpenseConceptsUseCase } from './application/use-cases/list-expense
 import { CreateExpenseConceptUseCase } from './application/use-cases/create-expense-concept.use-case';
 import { UpdateExpenseConceptUseCase } from './application/use-cases/update-expense-concept.use-case';
 import { DeleteExpenseConceptUseCase } from './application/use-cases/delete-expense-concept.use-case';
+import { SeedDefaultExpenseConceptsUseCase } from './application/use-cases/seed-default-expense-concepts.use-case';
 
 @Module({
   imports: [PrismaModule, EventsModule, BranchModule, CashSessionModule],
@@ -41,6 +42,7 @@ import { DeleteExpenseConceptUseCase } from './application/use-cases/delete-expe
     UpdateExpenseCategoryUseCase,
     UpdateExpenseUseCase,
     ListExpenseConceptsUseCase,
+    SeedDefaultExpenseConceptsUseCase,
     CreateExpenseConceptUseCase,
     UpdateExpenseConceptUseCase,
     DeleteExpenseConceptUseCase,
