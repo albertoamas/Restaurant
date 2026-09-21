@@ -13,3 +13,18 @@ onlyBuiltDependencies:
 
 ignoredBuiltDependencies:
   - unrs-resolver
+
+# socket.io 4.8.3 es la ultima publicada, pero arrastra transitivas con avisos de
+# agotamiento de memoria/conexiones en un gateway que esta expuesto publicamente.
+# Los rangos que socket.io declara ya admiten estas versiones parcheadas.
+overrides:
+  engine.io: ^6.6.10
+  socket.io-parser: ^4.2.7
+  # 2.5.8 ya declara ws ~8.21.0, que es la version parcheada.
+  socket.io-adapter: ^2.5.8
+  # @nestjs/platform-express pinea multer exacto y se queda atras de los avisos.
+  multer: ^2.4.0
+  # engine.io-client (browser) arrastra un ws viejo aunque el navegador no lo use.
+  ws: ^8.21.3
+  # Solo lo usa `pnpm dev` en local, pero el parche no cuesta nada.
+  shell-quote: ^1.10.0

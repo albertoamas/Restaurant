@@ -43,8 +43,10 @@ export class CreateExpenseUseCase {
       const totalPrice = Math.round(i.quantity * i.unitPrice * 100) / 100;
       return {
         categoryId:   i.categoryId ?? null,
+        conceptId:    i.conceptId ?? null,
         categoryName: i.categoryId ? (categoryMap.get(i.categoryId) ?? null) : null,
         name:         i.name,
+        unit:         i.unit?.trim() || null,
         quantity:     i.quantity,
         unitPrice:    i.unitPrice,
         totalPrice,
@@ -62,6 +64,10 @@ export class CreateExpenseUseCase {
       category:      firstCategoryName,
       amount:        Math.round(totalAmount * 100) / 100,
       description:   dto.description ?? null,
+      expenseDate:   dto.expenseDate ? new Date(`${dto.expenseDate}T12:00:00-04:00`) : new Date(),
+      paymentMethod: dto.paymentMethod ?? null,
+      supplierName:  dto.supplierName?.trim() || null,
+      documentNumber: dto.documentNumber?.trim() || null,
       createdBy:     userId,
       cashSessionId: activeSession?.id ?? null,
       items:         [],

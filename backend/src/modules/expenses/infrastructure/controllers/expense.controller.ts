@@ -27,8 +27,17 @@ import { ListExpenseCategoriesUseCase } from '../../application/use-cases/list-e
 import { DeleteExpenseCategoryUseCase } from '../../application/use-cases/delete-expense-category.use-case';
 import { CreateExpenseDto } from '../../application/dto/create-expense.dto';
 import { UpdateExpenseDto } from '../../application/dto/update-expense.dto';
+import { VoidExpenseDto } from '../../application/dto/void-expense.dto';
 import { CreateExpenseCategoryDto } from '../../application/dto/create-expense-category.dto';
+import { UpdateExpenseCategoryDto } from '../../application/dto/update-expense-category.dto';
+import { UpdateExpenseCategoryUseCase } from '../../application/use-cases/update-expense-category.use-case';
 import { UpdateExpenseUseCase } from '../../application/use-cases/update-expense.use-case';
+import { ListExpenseConceptsUseCase } from '../../application/use-cases/list-expense-concepts.use-case';
+import { CreateExpenseConceptUseCase } from '../../application/use-cases/create-expense-concept.use-case';
+import { UpdateExpenseConceptUseCase } from '../../application/use-cases/update-expense-concept.use-case';
+import { DeleteExpenseConceptUseCase } from '../../application/use-cases/delete-expense-concept.use-case';
+import { CreateExpenseConceptDto } from '../../application/dto/create-expense-concept.dto';
+import { UpdateExpenseConceptDto } from '../../application/dto/update-expense-concept.dto';
 import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
 
 function validateISODate(val: string | undefined, name: string): void {
@@ -48,7 +57,12 @@ export class ExpenseController {
     private readonly createExpenseCategory: CreateExpenseCategoryUseCase,
     private readonly listExpenseCategories: ListExpenseCategoriesUseCase,
     private readonly deleteExpenseCategory: DeleteExpenseCategoryUseCase,
+    private readonly updateExpenseCategory: UpdateExpenseCategoryUseCase,
     private readonly updateExpense: UpdateExpenseUseCase,
+    private readonly listExpenseConcepts: ListExpenseConceptsUseCase,
+    private readonly createExpenseConcept: CreateExpenseConceptUseCase,
+    private readonly updateExpenseConcept: UpdateExpenseConceptUseCase,
+    private readonly deleteExpenseConcept: DeleteExpenseConceptUseCase,
   ) {}
 
   // ── Expense categories ──────────────────────────────────────────
@@ -66,6 +80,15 @@ export class ExpenseController {
     return this.createExpenseCategory.execute(tenantId, dto);
   }
 
+  @Patch('categories/:id')
+  updateCategory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: UpdateExpenseCategoryDto,
+  ) {
+    return this.updateExpenseCategory.execute(id, tenantId, dto);
+  }
+
   @Delete('categories/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteCategory(
@@ -73,6 +96,39 @@ export class ExpenseController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.deleteExpenseCategory.execute(id, tenantId);
+  }
+
+  // ── Gastos predefinidos (conceptos) ─────────────────────────────
+
+  @Get('concepts')
+  listConcepts(@CurrentTenant() tenantId: string) {
+    return this.listExpenseConcepts.execute(tenantId);
+  }
+
+  @Post('concepts')
+  createConcept(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreateExpenseConceptDto,
+  ) {
+    return this.createExpenseConcept.execute(tenantId, dto);
+  }
+
+  @Patch('concepts/:id')
+  updateConcept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: UpdateExpenseConceptDto,
+  ) {
+    return this.updateExpenseConcept.execute(id, tenantId, dto);
+  }
+
+  @Delete('concepts/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteConcept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.deleteExpenseConcept.execute(id, tenantId);
   }
 
   // ── Expenses ────────────────────────────────────────────────────
@@ -142,7 +198,9 @@ export class ExpenseController {
   remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: VoidExpenseDto,
   ) {
-    return this.deleteExpense.execute(id, tenantId);
+    return this.deleteExpense.execute(id, tenantId, user.sub, dto?.reason);
   }
 }

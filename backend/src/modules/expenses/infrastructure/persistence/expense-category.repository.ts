@@ -37,6 +37,26 @@ export class ExpenseCategoryRepository implements ExpenseCategoryRepositoryPort 
     return toDomain(row);
   }
 
+  async update(category: ExpenseCategoryEntity): Promise<ExpenseCategoryEntity> {
+    const row = await this.prisma.expenseCategory.update({
+      where: { id: category.id },
+      data: {
+        name:      category.name,
+        icon:      category.icon,
+        isActive:  category.isActive,
+        sortOrder: category.sortOrder,
+      },
+    });
+    return toDomain(row);
+  }
+
+  async findByName(tenantId: string, name: string): Promise<ExpenseCategoryEntity | null> {
+    const row = await this.prisma.expenseCategory.findFirst({
+      where: { tenantId, name: { equals: name, mode: 'insensitive' } },
+    });
+    return row ? toDomain(row) : null;
+  }
+
   async findAll(tenantId: string): Promise<ExpenseCategoryEntity[]> {
     const rows = await this.prisma.expenseCategory.findMany({
       where:   { tenantId, isActive: true },

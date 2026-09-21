@@ -33,8 +33,10 @@ export class UpdateExpenseUseCase {
       const totalPrice = Math.round(i.quantity * i.unitPrice * 100) / 100;
       return {
         categoryId:   i.categoryId ?? null,
+        conceptId:    i.conceptId ?? null,
         categoryName: i.categoryId ? (categoryMap.get(i.categoryId) ?? null) : null,
         name:         i.name,
+        unit:         i.unit?.trim() || null,
         quantity:     i.quantity,
         unitPrice:    i.unitPrice,
         totalPrice,
@@ -48,6 +50,10 @@ export class UpdateExpenseUseCase {
       category:    firstCategoryName,
       amount:      totalAmount,
       description: dto.description ?? null,
+      expenseDate: dto.expenseDate ? new Date(`${dto.expenseDate}T12:00:00-04:00`) : existing.expenseDate,
+      paymentMethod: dto.paymentMethod ?? existing.paymentMethod,
+      supplierName: dto.supplierName === undefined ? existing.supplierName : (dto.supplierName.trim() || null),
+      documentNumber: dto.documentNumber === undefined ? existing.documentNumber : (dto.documentNumber.trim() || null),
     }, items);
 
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_UPDATED, saved);

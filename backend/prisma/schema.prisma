@@ -64,6 +64,7 @@ model Tenant {
   cashSessions         CashSession[]
   expenses             Expense[]
   expenseCategories    ExpenseCategory[]
+  expenseConcepts      ExpenseConcept[]
   customers            Customer[]
   orderPayments        OrderPayment[]
   branchOrderSequences BranchOrderSequence[]
@@ -264,6 +265,14 @@ model Expense {
   description   String?
   createdBy     String   @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
+  expenseDate   DateTime @default(now()) @map("expense_date")
+  status        String   @default("ACTIVE") @db.VarChar(20)
+  paymentMethod String?  @map("payment_method") @db.VarChar(30)
+  supplierName  String?  @map("supplier_name") @db.VarChar(150)
+  documentNumber String? @map("document_number") @db.VarChar(80)
+  voidedAt      DateTime? @map("voided_at")
+  voidedBy      String?   @map("voided_by")
+  voidReason    String?   @map("void_reason") @db.VarChar(255)
 
   // Vínculo formal con la sesión de caja activa al momento de crear el gasto.
   // Nullable: si no hay sesión abierta el gasto se registra igual (cash_session_id = NULL).
@@ -274,6 +283,8 @@ model Expense {
   items       ExpenseItem[]
 
   @@index([tenantId, branchId, createdAt])
+  @@index([tenantId, branchId, expenseDate])
+  @@index([tenantId, status, expenseDate])
   @@index([cashSessionId], map: "expenses_cash_session_id_idx")
   @@map("expenses")
 }
@@ -292,10 +303,33 @@ model ExpenseCategory {
 
   tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items  ExpenseItem[]
+  concepts ExpenseConcept[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
   @@map("expense_categories")
+}
+
+// Reusable expense definitions. Expense items keep their own snapshot so
+// historical records never change when this catalog is edited later.
+model ExpenseConcept {
+  id               String   @id @default(uuid())
+  tenantId         String   @map("tenant_id")
+  categoryId       String   @map("category_id")
+  name             String   @db.VarChar(150)
+  unit             String?  @db.VarChar(20)
+  defaultUnitPrice Decimal? @map("default_unit_price") @db.Decimal(10, 2)
+  isActive         Boolean  @default(true) @map("is_active")
+  sortOrder        Int      @default(0) @map("sort_order")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  items    ExpenseItem[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, categoryId, isActive])
+  @@map("expense_concepts")
 }
 
 // ─── ExpenseItem ──────────────────────────────────────────────
@@ -304,7 +338,9 @@ model ExpenseItem {
   id         String   @id @default(uuid())
   expenseId  String   @map("expense_id")
   categoryId String?  @map("category_id")
+  conceptId  String?  @map("concept_id")
   name       String   @db.VarChar(255)
+  unit       String?  @db.VarChar(20)
   quantity   Decimal  @db.Decimal(10, 3)
   unitPrice  Decimal  @map("unit_price") @db.Decimal(10, 2)
   totalPrice Decimal  @map("total_price") @db.Decimal(10, 2)
@@ -312,8 +348,10 @@ model ExpenseItem {
 
   expense  Expense          @relation(fields: [expenseId],  references: [id], onDelete: Cascade)
   category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  concept  ExpenseConcept?  @relation(fields: [conceptId], references: [id], onDelete: SetNull)
 
   @@index([expenseId])
+  @@index([conceptId])
   @@map("expense_items")
 }
 

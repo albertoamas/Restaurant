@@ -13,7 +13,7 @@ import { memoryStorage } from 'multer';
 import { extname, join } from 'path';
 import { mkdir } from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
-import sharp = require('sharp');
+import sharp from 'sharp';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];

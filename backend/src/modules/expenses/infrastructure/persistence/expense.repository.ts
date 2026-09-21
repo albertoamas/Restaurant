@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ExpenseSummaryDto } from '@pos/shared';
-import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory } from '@prisma/client';
+import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { Expense } from '../../domain/entities/expense.entity';
 import { ExpensePatch, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
@@ -20,13 +20,23 @@ function toDomain(row: PrismaExpenseWithItems): Expense {
     description:   row.description ?? null,
     createdBy:     row.createdBy,
     createdAt:     row.createdAt,
+    expenseDate:   row.expenseDate,
+    status:        row.status as 'ACTIVE' | 'VOIDED',
+    paymentMethod: row.paymentMethod as Expense['paymentMethod'],
+    supplierName:  row.supplierName ?? null,
+    documentNumber: row.documentNumber ?? null,
+    voidedAt:      row.voidedAt ?? null,
+    voidedBy:      row.voidedBy ?? null,
+    voidReason:    row.voidReason ?? null,
     cashSessionId: row.cashSessionId ?? null,
     items: row.items.map((item) => ({
       id:           item.id,
       expenseId:    item.expenseId,
       categoryId:   item.categoryId ?? null,
       categoryName: item.category?.name ?? null,
+      conceptId:    item.conceptId ?? null,
       name:         item.name,
+      unit:         item.unit ?? null,
       quantity:     Number(item.quantity),
       unitPrice:    Number(item.unitPrice),
       totalPrice:   Number(item.totalPrice),
@@ -57,6 +67,11 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
           description:   expense.description,
           createdBy:     expense.createdBy,
           createdAt:     expense.createdAt,
+          expenseDate:   expense.expenseDate,
+          status:        expense.status,
+          paymentMethod: expense.paymentMethod,
+          supplierName:  expense.supplierName,
+          documentNumber: expense.documentNumber,
           cashSessionId: expense.cashSessionId ?? null,
         },
       });
@@ -67,7 +82,9 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
             id:         randomUUID(),
             expenseId:  created.id,
             categoryId: item.categoryId ?? null,
+            conceptId:  item.conceptId ?? null,
             name:       item.name,
+            unit:       item.unit,
             quantity:   item.quantity,
             unitPrice:  item.unitPrice,
             totalPrice: item.totalPrice,
@@ -107,7 +124,9 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
             id:         randomUUID(),
             expenseId:  id,
             categoryId: item.categoryId ?? null,
+            conceptId:  item.conceptId ?? null,
             name:       item.name,
+            unit:       item.unit,
             quantity:   item.quantity,
             unitPrice:  item.unitPrice,
             totalPrice: item.totalPrice,
@@ -117,7 +136,15 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
 
       await tx.expense.updateMany({
         where: { id, tenantId },
-        data:  { category: patch.category, amount: patch.amount, description: patch.description },
+        data:  {
+          category: patch.category,
+          amount: patch.amount,
+          description: patch.description,
+          expenseDate: patch.expenseDate,
+          paymentMethod: patch.paymentMethod,
+          supplierName: patch.supplierName,
+          documentNumber: patch.documentNumber,
+        },
       });
 
       return tx.expense.findFirstOrThrow({
@@ -139,9 +166,10 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       where: {
         tenantId,
         ...(branchId ? { branchId } : {}),
-        createdAt: { gte: from, lte: to },
+        expenseDate: { gte: from, lte: to },
+        status: 'ACTIVE',
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
       include: ITEMS_INCLUDE,
     });
     return rows.map((r) => toDomain(r as PrismaExpenseWithItems));
@@ -154,21 +182,56 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
     to: Date,
   ): Promise<ExpenseSummaryDto> {
     type RawRow = { category: string; total: unknown };
+    type DayRow = { day: Date; total: unknown };
+    const branchFilter = branchId ? Prisma.sql`AND e.branch_id = ${branchId}` : Prisma.empty;
 
-    const rows: RawRow[] = branchId
-      ? await this.prisma.$queryRaw`
-          SELECT category, SUM(amount) AS total
-          FROM expenses
-          WHERE tenant_id = ${tenantId}
-            AND branch_id = ${branchId}
-            AND created_at BETWEEN ${from} AND ${to}
-          GROUP BY category`
-      : await this.prisma.$queryRaw`
-          SELECT category, SUM(amount) AS total
-          FROM expenses
-          WHERE tenant_id = ${tenantId}
-            AND created_at BETWEEN ${from} AND ${to}
-          GROUP BY category`;
+    const rows = await this.prisma.$queryRaw<RawRow[]>(Prisma.sql`
+      SELECT category, SUM(total) AS total
+      FROM (
+        SELECT COALESCE(ec.name, e.category) AS category, SUM(ei.total_price) AS total
+        FROM expenses e
+        JOIN expense_items ei ON ei.expense_id = e.id
+        LEFT JOIN expense_categories ec ON ec.id = ei.category_id
+        WHERE e.tenant_id = ${tenantId}
+          ${branchFilter}
+          AND e.status = 'ACTIVE'
+          AND e.expense_date BETWEEN ${from} AND ${to}
+        GROUP BY COALESCE(ec.name, e.category)
+
+        UNION ALL
+
+        SELECT e.category AS category, SUM(e.amount) AS total
+        FROM expenses e
+        WHERE e.tenant_id = ${tenantId}
+          ${branchFilter}
+          AND e.status = 'ACTIVE'
+          AND e.expense_date BETWEEN ${from} AND ${to}
+          AND NOT EXISTS (SELECT 1 FROM expense_items ei WHERE ei.expense_id = e.id)
+        GROUP BY e.category
+      ) categorized
+      GROUP BY category
+    `);
+
+    const dayRows = await this.prisma.$queryRaw<DayRow[]>(Prisma.sql`
+      SELECT DATE_TRUNC('day', e.expense_date AT TIME ZONE 'America/La_Paz') AS day,
+             SUM(e.amount) AS total
+      FROM expenses e
+      WHERE e.tenant_id = ${tenantId}
+        ${branchFilter}
+        AND e.status = 'ACTIVE'
+        AND e.expense_date BETWEEN ${from} AND ${to}
+      GROUP BY DATE_TRUNC('day', e.expense_date AT TIME ZONE 'America/La_Paz')
+      ORDER BY day
+    `);
+
+    const transactionCount = await this.prisma.expense.count({
+      where: {
+        tenantId,
+        ...(branchId ? { branchId } : {}),
+        status: 'ACTIVE',
+        expenseDate: { gte: from, lte: to },
+      },
+    });
 
     const byCategory: Record<string, number> = {};
     let total = 0;
@@ -177,10 +240,17 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       byCategory[row.category] = (byCategory[row.category] ?? 0) + amount;
       total += amount;
     }
-    return { total, byCategory };
+    const byDay: Record<string, number> = {};
+    for (const row of dayRows) {
+      byDay[row.day.toISOString().slice(0, 10)] = Number(row.total);
+    }
+    return { total, byCategory, byDay, transactionCount };
   }
 
-  async delete(id: string, tenantId: string): Promise<void> {
-    await this.prisma.expense.deleteMany({ where: { id, tenantId } });
+  async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void> {
+    await this.prisma.expense.updateMany({
+      where: { id, tenantId, status: 'ACTIVE' },
+      data: { status: 'VOIDED', voidedAt: new Date(), voidedBy: userId, voidReason: reason },
+    });
   }
 }
