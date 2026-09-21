@@ -5,6 +5,7 @@ import { usePlans } from '../hooks/usePlans';
 import { Spinner } from '../components/ui/Spinner';
 import { useTheme } from '../hooks/useTheme';
 import { Icon } from '../components/ui/Icon';
+import type { IconName } from '../components/ui/Icon';
 import landingPosImage from '../assets/landing-pos.jpg';
 
 /* ─── Data ──────────────────────────────────────────────── */
@@ -13,42 +14,51 @@ const FEATURES = [
     icon: <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />,
     title: 'POS Fluido',
     desc: 'Toma pedidos y cobra en segundos. Pagos mixtos, múltiples métodos, sin fricciones.',
+    featured: true,
   },
   {
     icon: <path d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5" />,
     title: 'Cocina en Tiempo Real',
     desc: 'Los pedidos llegan al display de cocina al instante vía WebSocket. Sin tickets de papel.',
+    featured: false,
   },
   {
     icon: <path d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />,
     title: 'Caja Controlada',
     desc: 'Apertura y cierre con arqueos automáticos. Registra gastos y detecta diferencias.',
+    featured: false,
   },
   {
     icon: <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />,
     title: 'Reportes Detallados',
     desc: 'Ventas por período, productos más vendidos, métodos de pago. Todo en un panel limpio.',
+    featured: true,
   },
   {
     icon: <path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />,
     title: 'Multi-sucursal',
     desc: 'Gestiona varias sucursales desde una sola cuenta. Equipos independientes, visión unificada.',
+    featured: false,
   },
   {
     icon: <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />,
     title: 'Clientes y Fidelización',
     desc: 'Historial de pedidos, registro de clientes y sorteos. Relaciones duraderas, no solo ventas.',
+    featured: false,
   },
 ];
 
-const STATS = [
-  { value: '< 3s',       label: 'para crear un pedido' },
-  { value: '100%',       label: 'en la nube, sin instalación' },
-  { value: '24/7',       label: 'disponibilidad garantizada' },
-  { value: 'Tiempo real',label: 'actualizaciones en vivo' },
+const STATS: { value: string; label: string; icon: IconName }[] = [
+  { value: '< 3s',        label: 'para crear un pedido',        icon: 'flame'   },
+  { value: '100%',        label: 'en la nube, sin instalación', icon: 'refresh' },
+  { value: '24/7',        label: 'disponibilidad garantizada',  icon: 'check'   },
+  { value: 'Tiempo real', label: 'actualizaciones en vivo',     icon: 'ticket'  },
 ];
 
 const USD_RATE = 9;
+
+/** Clases completas para que el scanner de Tailwind las detecte (no admite interpolación dinámica). */
+const STAGGER_CLASS = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4'];
 
 type PlanMeta = { description: string; highlight: boolean; badge?: string; cta: string };
 
@@ -213,6 +223,14 @@ function PricingSection() {
   );
 }
 
+function FooterHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-4 text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+      {children}
+    </p>
+  );
+}
+
 /* ─── Landing principal ─────────────────────────────────── */
 export function LandingPage() {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -300,18 +318,27 @@ export function LandingPage() {
           <div className="relative animate-slide lg:block w-full max-w-[600px] mx-auto z-10">
             {/* Decoración detrás de la imagen */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-[32px] transform translate-x-4 translate-y-4 blur-sm" />
-            
+
             <div className="relative rounded-[32px] overflow-hidden border border-[var(--border-subtle)] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-[var(--color-surface-card)]">
               {/* Imagen local: se incluye en el build y no depende de un host externo. */}
-              <img 
+              <img
                 src={landingPosImage}
-                alt="Terminal POS" 
+                alt="Terminal POS"
                 className="w-full h-auto aspect-[4/3] object-cover"
               />
               {/* Capa de brillo superior (Glassmorphism sutil) */}
               <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-[32px] pointer-events-none" />
-              
-              {/* Etiqueta flotante decorativa */}
+
+              {/* Etiqueta flotante: cocina conectada */}
+              <div className="hidden sm:flex absolute top-6 right-6 items-center gap-2.5 bg-[var(--color-surface-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] px-3.5 py-2.5 rounded-2xl shadow-lg animate-fade stagger-2">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 animate-pulse-dot" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <p className="text-xs font-bold text-[var(--color-text-main)]">Cocina conectada</p>
+              </div>
+
+              {/* Etiqueta flotante: pedido completado */}
               <div className="absolute bottom-6 left-6 right-6 sm:left-8 sm:right-auto bg-[var(--color-surface-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] p-4 rounded-2xl shadow-xl flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
                   <Icon name="check" size={20} className="text-emerald-500" />
@@ -323,18 +350,26 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-          
+
         </div>
       </section>
 
       {/* ── Banda de stats ───────────────────────────────── */}
       <div className="border-y border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
-        <div className="max-w-[1200px] mx-auto px-5 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {STATS.map((s) => (
-              <div key={s.label} className="text-center group">
-                <p className="font-heading font-black text-3xl sm:text-4xl text-primary-500 mb-1 group-hover:scale-105 transition-transform">{s.value}</p>
-                <p className="text-[13px] font-semibold text-[var(--color-text-muted)]">{s.label}</p>
+        <div className="max-w-[1200px] mx-auto px-5 py-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            {STATS.map((s, i) => (
+              <div
+                key={s.label}
+                className={`flex items-center gap-3.5 py-3 ${i > 0 ? 'lg:border-l lg:border-[var(--border-subtle)] lg:pl-6' : ''}`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-500">
+                  <Icon name={s.icon} size={18} strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="font-heading font-black text-2xl leading-none text-[var(--color-text-main)]">{s.value}</p>
+                  <p className="mt-1 text-[12px] font-semibold text-[var(--color-text-muted)]">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -359,22 +394,30 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Grid de features */}
+          {/* Grid de features: dos tarjetas destacadas rompen la retícula pareja */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {FEATURES.map((f, i) => (
               <div
                 key={i}
-                className="group p-8 rounded-3xl bg-[var(--color-surface-card)] border border-[var(--border-subtle)] shadow-card-md hover:shadow-card-xl hover:-translate-y-1 transition-all duration-300"
+                className={`group relative overflow-hidden p-8 rounded-3xl border shadow-card-md hover:shadow-card-xl hover:-translate-y-1 transition-all duration-300 animate-slide ${STAGGER_CLASS[i % 4]} ${
+                  f.featured
+                    ? 'lg:col-span-2 bg-primary-500/[0.04] border-primary-500/20'
+                    : 'bg-[var(--color-surface-card)] border-[var(--border-subtle)]'
+                }`}
               >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-primary-500/10 border border-primary-500/20 mb-6 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300 text-primary-500">
+                <span className="pointer-events-none absolute -right-3 -top-6 font-heading font-black text-[7rem] leading-none text-[var(--color-text-main)]/[0.035] select-none">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+
+                <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-primary-500/10 border border-primary-500/20 mb-6 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300 text-primary-500">
                   <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                     {f.icon}
                   </svg>
                 </div>
-                <h3 className="font-heading font-bold text-xl text-[var(--color-text-main)] mb-3 tracking-tight">
+                <h3 className="relative font-heading font-bold text-xl text-[var(--color-text-main)] mb-3 tracking-tight">
                   {f.title}
                 </h3>
-                <p className="text-[14.5px] text-[var(--color-text-soft)] leading-relaxed">
+                <p className="relative text-[14.5px] text-[var(--color-text-soft)] leading-relaxed max-w-[380px]">
                   {f.desc}
                 </p>
               </div>
@@ -408,12 +451,15 @@ export function LandingPage() {
 
       {/* ── CTA final ────────────────────────────────────── */}
       <section className="relative px-5 py-24 sm:py-32 overflow-hidden bg-primary-600">
-        {/* Grain effect overlay */}
-        <div className="absolute inset-0 mix-blend-overlay opacity-30 pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")` }} />
-        
-        {/* Abstract shapes */}
+        {/* Textura de grilla de puntos: guiño a la pantalla de una terminal, no un degradado genérico */}
+        <div
+          className="absolute inset-0 opacity-[0.12] pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+          }}
+        />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-black/10 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2" />
 
         <div className="max-w-[800px] mx-auto text-center relative z-10">
           <h2 className="font-heading font-black text-4xl sm:text-6xl text-white tracking-tight mb-6 drop-shadow-sm">
@@ -428,28 +474,82 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Borde perforado: remata el bloque naranja como el talón de un ticket */}
+      <div
+        aria-hidden="true"
+        className="h-5 bg-primary-600"
+        style={{
+          maskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
+          maskSize: '28px 100%',
+          maskRepeat: 'repeat-x',
+          WebkitMaskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
+          WebkitMaskSize: '28px 100%',
+          WebkitMaskRepeat: 'repeat-x',
+        }}
+      />
+
       {/* ── Footer ───────────────────────────────────────── */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--color-surface-page)] py-10 px-5">
-        <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-primary-500 flex items-center justify-center">
-              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218" />
-              </svg>
+      <footer className="relative overflow-hidden border-t border-[var(--border-subtle)] bg-[var(--color-surface-page)] px-5 pt-16 pb-8">
+        {/* Glow decorativo: eco del hero, muy sutil */}
+        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-72 w-[640px] -translate-x-1/2 rounded-full bg-primary-500/5 blur-[110px]" />
+
+        <div className="relative max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4 lg:grid-cols-12">
+
+            {/* Marca */}
+            <div className="col-span-2 sm:col-span-4 lg:col-span-5">
+              <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm">
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                  </svg>
+                </div>
+                <span className="font-heading font-black text-lg tracking-tight text-[var(--color-text-main)]">
+                  Yanko<span className="text-primary-500">POS</span>
+                </span>
+              </Link>
+              <p className="text-sm text-[var(--color-text-muted)] leading-relaxed max-w-[300px]">
+                El sistema de punto de venta hecho para restaurantes bolivianos. Pedidos, cocina, caja y reportes en un solo lugar.
+              </p>
             </div>
-            <span className="font-heading font-bold text-sm text-[var(--color-text-main)]">YankoPOS</span>
+
+            {/* Producto */}
+            <div className="lg:col-span-2">
+              <FooterHeading>Producto</FooterHeading>
+              <ul className="space-y-2.5">
+                <li><a href="#features" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Características</a></li>
+                <li><a href="#pricing" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Precios</a></li>
+                <li><Link to="/login" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Acceder al panel</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div className="lg:col-span-2">
+              <FooterHeading>Legal</FooterHeading>
+              <ul className="space-y-2.5">
+                <li><Link to="/terminos" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Términos y Condiciones</Link></li>
+                <li><Link to="/privacidad" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Política de Privacidad</Link></li>
+              </ul>
+            </div>
+
+            {/* Contacto */}
+            <div className="col-span-2 sm:col-span-4 lg:col-span-3">
+              <FooterHeading>Contacto</FooterHeading>
+              <a href="mailto:albertoamasv@gmail.com" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">
+                albertoamasv@gmail.com
+              </a>
+            </div>
           </div>
 
-          <nav className="flex flex-wrap justify-center gap-6">
-            <a href="#features" className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-primary-500 transition-colors">Características</a>
-            <a href="#pricing" className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-primary-500 transition-colors">Precios</a>
-            <Link to="/login" className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-primary-500 transition-colors">Acceder</Link>
-          </nav>
-
-          <p className="text-xs font-medium text-[var(--color-text-muted)] text-center sm:text-right">
-            © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
-          </p>
+          {/* Barra inferior */}
+          <div className="mt-12 pt-8 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs font-medium text-[var(--color-text-muted)]">
+              © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
+            </p>
+            <p className="text-xs font-medium text-[var(--color-text-muted)]">
+              Alberto Amas Villarroel
+            </p>
+          </div>
         </div>
       </footer>
     </div>
