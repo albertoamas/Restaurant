@@ -8,7 +8,7 @@ import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly tenantCache = new Map<string, { active: boolean; expiresAt: number }>();
-  private readonly userCache   = new Map<string, { active: boolean; expiresAt: number }>();
+  private readonly userCache   = new Map<string, { active: boolean; branchId: string | null; expiresAt: number }>();
   private readonly CACHE_TTL_MS = 60_000;
 
   constructor(
@@ -39,21 +39,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (!active) throw new UnauthorizedException('Cuenta suspendida');
     }
 
-    // Verificar usuario activo (cache 60s por userId)
-    const userCached = this.userCache.get(payload.sub);
-    if (userCached && userCached.expiresAt > now) {
-      if (!userCached.active) throw new UnauthorizedException('Usuario inactivo');
-    } else {
+    // Verificar usuario activo y resolver su sucursal actual (cache 60s por userId).
+    // La sucursal se lee de la BD, no del token: el JWT dura horas y reasignar un
+    // cajero a otra sucursal debe surtir efecto sin obligarlo a cerrar sesión.
+    let userCached = this.userCache.get(payload.sub);
+    if (!userCached || userCached.expiresAt <= now) {
       const user = await this.userRepo.findById(payload.sub, payload.tenantId);
-      const active = !!user?.isActive;
-      this.userCache.set(payload.sub, { active, expiresAt: now + this.CACHE_TTL_MS });
-      if (!active) throw new UnauthorizedException('Usuario inactivo');
+      userCached = {
+        active:    !!user?.isActive,
+        branchId:  user?.branchId ?? null,
+        expiresAt: now + this.CACHE_TTL_MS,
+      };
+      this.userCache.set(payload.sub, userCached);
     }
+    if (!userCached.active) throw new UnauthorizedException('Usuario inactivo');
 
     return {
       sub:      payload.sub,
       tenantId: payload.tenantId,
-      branchId: payload.branchId ?? null,
+      branchId: userCached.branchId,
       role:     payload.role,
     };
   }

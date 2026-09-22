@@ -2,6 +2,8 @@ import type { ExpenseDto } from '@pos/shared';
 import { Icon } from '../ui/Icon';
 import { formatBoliviaDateShort, formatBoliviaTime } from '../../utils/date';
 import { expenseCategoryLabel } from '../../utils/expense-labels';
+import { useAuth } from '../../context/auth.context';
+import { useBranchNames } from '../../hooks/useBranches';
 
 interface ExpenseListProps {
   expenses: ExpenseDto[];
@@ -67,6 +69,11 @@ function ExpenseRow({
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
+  const { currentBranchId } = useAuth();
+  const { branchName }      = useBranchNames();
+  // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
+  const branchLabel = currentBranchId === null ? branchName(expense.branchId) : null;
+
   const dateStr  = formatBoliviaDateShort(expense.expenseDate);
   const timeStr  = formatBoliviaTime(expense.expenseDate);
   const hasItems = expense.items.length > 0;
@@ -81,6 +88,12 @@ function ExpenseRow({
       <div className="flex flex-col pt-0.5">
         <span className="text-sm font-bold leading-tight text-gray-800">{dateStr}</span>
         <span className="mt-0.5 text-[11px] text-gray-400">{timeStr}</span>
+        {branchLabel && (
+          <span className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400">
+            <Icon name="building" size={10} strokeWidth={2} />
+            {branchLabel}
+          </span>
+        )}
       </div>
 
       <div className="min-w-0">

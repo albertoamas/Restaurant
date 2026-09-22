@@ -4,6 +4,7 @@ import type { OrderDto } from '@pos/shared';
 import { statusAccent, statusLabel } from './OrderCard';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 import { useAuth } from '../../context/auth.context';
+import { useBranchNames } from '../../hooks/useBranches';
 import { Icon } from '../ui/Icon';
 import { printReceipt, printKitchenTicket } from '../../utils/print';
 
@@ -48,6 +49,11 @@ interface RowProps {
 }
 
 function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onStatusChange }: RowProps) {
+  const { currentBranchId } = useAuth();
+  const { branchName }      = useBranchNames();
+  // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
+  const branchLabel = currentBranchId === null ? branchName(order.branchId) : null;
+
   const accent      = statusAccent[order.status] ?? { badge: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)]' };
   const { date, time } = formatDateCell(order.createdAt);
   const isCancelled = order.status === OrderStatus.CANCELLED;
@@ -72,6 +78,12 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
       <td className="px-3 py-3.5 whitespace-nowrap">
         <p className="text-xs font-semibold text-gray-700 capitalize">{date}</p>
         <p className="text-[11px] text-gray-400 tabular-nums mt-0.5">{time}</p>
+        {branchLabel && (
+          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400">
+            <Icon name="building" size={10} strokeWidth={2} />
+            {branchLabel}
+          </p>
+        )}
       </td>
 
       {/* Cliente — oculto en mobile */}

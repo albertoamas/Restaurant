@@ -14,6 +14,9 @@
 import { Icon } from '../ui/Icon';
 import type { BranchDto } from '@pos/shared';
 
+/** `currentBranchId === null` significa "ver todas las sucursales juntas". */
+export const ALL_BRANCHES_LABEL = 'Todas las sucursales';
+
 interface BranchSelectorProps {
   branches: BranchDto[];
   currentBranch: BranchDto | null;
@@ -21,7 +24,7 @@ interface BranchSelectorProps {
   isOpen: boolean;
   canSelect: boolean;
   onToggle: () => void;
-  onSelect: (branchId: string) => void;
+  onSelect: (branchId: string | null) => void;
 }
 
 export function BranchSelector({
@@ -37,7 +40,7 @@ export function BranchSelector({
     ? currentBranch.name
     : branches.length === 0
       ? 'Sin sucursales'
-      : 'Seleccionar sucursal';
+      : ALL_BRANCHES_LABEL;
 
   return (
     <>
@@ -70,6 +73,20 @@ export function BranchSelector({
         <div
           className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-[var(--border-subtle)] shadow-card-xl bg-[var(--color-surface-card)]"
         >
+          <button
+            onClick={() => onSelect(null)}
+            className={[
+              'w-full text-left px-3 py-2.5 text-xs hover:bg-[var(--color-surface-2)] transition-colors',
+              'flex items-center gap-2 border-b border-[var(--border-subtle)]',
+              currentBranchId === null ? 'text-primary-500 font-semibold' : 'text-[var(--color-text-soft)]',
+            ].join(' ')}
+          >
+            {currentBranchId === null
+              ? <span className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+              : <Icon name="building" size={12} strokeWidth={2} className="shrink-0 text-[var(--color-text-muted)]" />}
+            {ALL_BRANCHES_LABEL}
+          </button>
+
           {branches.map((b) => (
             <button
               key={b.id}

@@ -1,9 +1,9 @@
-import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { SOCKET_EVENTS } from '@pos/shared';
 import { Expense } from '../../domain/entities/expense.entity';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
-import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { CreateExpenseDto } from '../dto/create-expense.dto';
 import { EventsService } from '../../../events/events.service';
@@ -17,8 +17,7 @@ export class CreateExpenseUseCase {
     @Inject(EXPENSE_CATEGORY_REPOSITORY_PORT)
     private readonly categoryRepository: ExpenseCategoryRepositoryPort,
 
-    @Inject('BranchRepositoryPort')
-    private readonly branchRepository: BranchRepositoryPort,
+    private readonly branchAccess: BranchAccessService,
 
     @Inject('CashSessionRepositoryPort')
     private readonly cashSessionRepository: CashSessionRepositoryPort,
@@ -27,8 +26,7 @@ export class CreateExpenseUseCase {
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CreateExpenseDto): Promise<Expense> {
-    const branch = await this.branchRepository.findById(branchId, tenantId);
-    if (!branch) throw new BadRequestException(`Sucursal ${branchId} no encontrada`);
+    await this.branchAccess.assertUsable(branchId, tenantId);
 
     // Resolve category names for all items that have a categoryId.
     const categoryIds = [...new Set(dto.items.map((i) => i.categoryId).filter(Boolean) as string[])];

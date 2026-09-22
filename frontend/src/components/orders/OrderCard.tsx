@@ -6,6 +6,7 @@ import { elapsed, elapsedBetween, formatBoliviaTime } from '../../utils/date';
 import { Icon } from '../ui/Icon';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 import { useAuth } from '../../context/auth.context';
+import { useBranchNames } from '../../hooks/useBranches';
 import { printKitchenTicket, printReceipt } from '../../utils/print';
 
 /* ─── Static data ────────────────────────────────────────────────────────── */
@@ -109,8 +110,12 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
   const isCancelled  = order.status === OrderStatus.CANCELLED;
   const isActive     = ACTIVE_STATUSES.has(order.status);
 
-  const { user }     = useAuth();
+  const { user, currentBranchId } = useAuth();
+  const { branchName } = useBranchNames();
   const [confirming, setConfirming] = useState(false);
+
+  // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
+  const branchLabel = currentBranchId === null ? branchName(order.branchId) : null;
 
   const isOwner   = user?.role === UserRole.OWNER;
   // Cajero: solo puede cancelar PENDING y PREPARING.
@@ -141,6 +146,9 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
           <span className="font-heading font-black text-2xl text-gray-900 leading-none">
             #{order.orderNumber}
           </span>
+          {branchLabel && (
+            <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-semibold text-gray-500"><Icon name="building" size={10} strokeWidth={2} />{branchLabel}</span>
+          )}
           {isActive ? (
             <ElapsedChip createdAt={order.createdAt} />
           ) : order.status === OrderStatus.DELIVERED ? (

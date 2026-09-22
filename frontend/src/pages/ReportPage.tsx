@@ -3,7 +3,7 @@ import { SaasPlan } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useReportFilters, type Period } from '../hooks/useReportFilters';
 import { useReportSummary, useTopProductsReport, useTopCustomersReport } from '../hooks/useReportData';
-import { useSalesTrends, useTopCategoriesReport, useCashReport } from '../hooks/useAdvancedReportData';
+import { useSalesTrends, useTopCategoriesReport, useCashReport, useBranchComparison } from '../hooks/useAdvancedReportData';
 import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
 import { PageShell } from '../components/ui/PageShell';
@@ -64,6 +64,8 @@ export function ReportPage() {
   const customers = useTopCustomersReport(fromUtc, toUtc, branchParam, activeTab === 'clientes');
   const trends    = useSalesTrends(fromUtc, toUtc, branchParam, isMultiDay, activeTab === 'ventas');
   const cash      = useCashReport(fromUtc, toUtc, branchParam, activeTab === 'caja');
+  // Solo en la vista consolidada: con una sucursal fija no hay nada que comparar.
+  const branches  = useBranchComparison(fromUtc, toUtc, activeTab === 'resumen' && !branchParam);
 
   /**
    * El Excel incluye todas las secciones, así que pide los datos en el momento
@@ -200,7 +202,7 @@ export function ReportPage() {
           <p className="mt-1 text-xs">Selecciona otro rango de fechas</p>
         </div>
       ) : activeTab === 'resumen' ? (
-        <SummaryTab report={report} expenseSummary={expenseSummary} />
+        <SummaryTab report={report} expenseSummary={expenseSummary} byBranch={branches.byBranch} />
       ) : activeTab === 'ventas' ? (
         <SalesTab
           report={report}

@@ -27,8 +27,9 @@ export class BranchRepository implements BranchRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
+  /** Solo sucursales activas: desactivar una libera cupo del plan. */
   async countByTenant(tenantId: string): Promise<number> {
-    return this.prisma.branch.count({ where: { tenantId } });
+    return this.prisma.branch.count({ where: { tenantId, isActive: true } });
   }
 
   async findAllByTenant(tenantId: string): Promise<Branch[]> {

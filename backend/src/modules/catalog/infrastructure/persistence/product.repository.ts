@@ -56,8 +56,9 @@ export class ProductRepository implements ProductRepositoryPort {
     return rows.map(toDomain);
   }
 
+  /** Solo productos activos: desactivar uno libera cupo del plan. */
   async countByTenant(tenantId: string): Promise<number> {
-    return this.prisma.product.count({ where: { tenantId } });
+    return this.prisma.product.count({ where: { tenantId, isActive: true } });
   }
 
   async save(product: Product): Promise<Product> {

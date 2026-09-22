@@ -5,6 +5,13 @@ import { Plan } from '../domain/entities/plan.entity';
 
 type LimitedResource = 'sucursales' | 'cajeros' | 'productos';
 
+/** El singular no siempre es quitar la última letra ('sucursales' → 'sucursale'). */
+const SINGULAR: Record<LimitedResource, string> = {
+  sucursales: 'sucursal',
+  cajeros:    'cajero',
+  productos:  'producto',
+};
+
 @Injectable()
 export class PlanLimitService {
   constructor(
@@ -25,7 +32,7 @@ export class PlanLimitService {
                                   plan.maxProducts;
 
     if (max !== -1 && current >= max) {
-      const label = max === 1 ? `1 ${resource.slice(0, -1)}` : `${max} ${resource}`;
+      const label = max === 1 ? `1 ${SINGULAR[resource]}` : `${max} ${resource}`;
       throw new ForbiddenException(
         `Tu plan ${plan.displayName} permite hasta ${label}. ` +
         `Contacta al administrador para actualizar tu plan.`,

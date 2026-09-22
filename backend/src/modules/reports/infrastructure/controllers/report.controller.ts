@@ -10,6 +10,7 @@ import { GetTopProductsUseCase } from '../../application/use-cases/get-top-produ
 import { GetTopCustomersUseCase } from '../../application/use-cases/get-top-customers.use-case';
 import { GetDailySeriesUseCase } from '../../application/use-cases/get-daily-series.use-case';
 import { GetByCashierUseCase } from '../../application/use-cases/get-by-cashier.use-case';
+import { GetByBranchUseCase } from '../../application/use-cases/get-by-branch.use-case';
 import { GetTopCategoriesUseCase } from '../../application/use-cases/get-top-categories.use-case';
 import { GetByHourUseCase } from '../../application/use-cases/get-by-hour.use-case';
 import { GetCashSessionsReportUseCase } from '../../application/use-cases/get-cash-sessions-report.use-case';
@@ -31,6 +32,7 @@ export class ReportController {
     private readonly getTopCustomersUseCase: GetTopCustomersUseCase,
     private readonly getDailySeriesUseCase: GetDailySeriesUseCase,
     private readonly getByCashierUseCase: GetByCashierUseCase,
+    private readonly getByBranchUseCase: GetByBranchUseCase,
     private readonly getTopCategoriesUseCase: GetTopCategoriesUseCase,
     private readonly getByHourUseCase: GetByHourUseCase,
     private readonly getCashSessionsReportUseCase: GetCashSessionsReportUseCase,
@@ -121,6 +123,18 @@ export class ReportController {
     validateISODate(to, 'to');
     const effectiveBranchId = user.branchId ?? branchId ?? null;
     return this.getByCashierUseCase.execute(tenantId, effectiveBranchId, from, to);
+  }
+
+  /** Comparativa entre sucursales. No acepta branchId: siempre devuelve todas. */
+  @Get('by-branch')
+  getByBranch(
+    @CurrentTenant() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    return this.getByBranchUseCase.execute(tenantId, from, to);
   }
 
   @Get('top-categories')

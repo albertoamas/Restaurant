@@ -6,6 +6,7 @@ import { User } from '../../domain/entities/user.entity';
 import { CreateCashierDto } from '../dto/create-cashier.dto';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 
 @Injectable()
 export class CreateCashierUseCase {
@@ -15,9 +16,16 @@ export class CreateCashierUseCase {
     @Inject('TenantRepositoryPort')
     private readonly tenantRepository: TenantRepositoryPort,
     private readonly planLimitService: PlanLimitService,
+    private readonly branchAccess: BranchAccessService,
   ) {}
 
   async execute(tenantId: string, dto: CreateCashierDto) {
+    // Un branchId inválido dejaría al cajero facturando contra una sucursal
+    // inexistente: sus ventas no aparecerían en ningún reporte.
+    if (dto.branchId) {
+      await this.branchAccess.assertUsable(dto.branchId, tenantId);
+    }
+
     const tenant = await this.tenantRepository.findById(tenantId);
     if (tenant) {
       const plan = await this.planLimitService.getPlan(tenant.plan);

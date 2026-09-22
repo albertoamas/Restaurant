@@ -3,7 +3,7 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { OrderType, PaymentMethod, UserRole, OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
 import { CreateOrderUseCase } from './create-order.use-case';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
-import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
@@ -62,7 +62,7 @@ function makeDto(overrides: Partial<CreateOrderDto> = {}): CreateOrderDto {
 describe('CreateOrderUseCase', () => {
   let useCase: CreateOrderUseCase;
   let orderRepo: MockProxy<OrderRepositoryPort>;
-  let branchRepo: MockProxy<BranchRepositoryPort>;
+  let branchAccess: MockProxy<BranchAccessService>;
   let productRepo: MockProxy<ProductRepositoryPort>;
   let cashSessionRepo: MockProxy<CashSessionRepositoryPort>;
   let tenantRepo: MockProxy<TenantRepositoryPort>;
@@ -71,7 +71,7 @@ describe('CreateOrderUseCase', () => {
 
   beforeEach(() => {
     orderRepo       = mock<OrderRepositoryPort>();
-    branchRepo      = mock<BranchRepositoryPort>();
+    branchAccess    = mock<BranchAccessService>();
     productRepo     = mock<ProductRepositoryPort>();
     cashSessionRepo = mock<CashSessionRepositoryPort>();
     tenantRepo      = mock<TenantRepositoryPort>();
@@ -79,12 +79,12 @@ describe('CreateOrderUseCase', () => {
     eventsService   = mock<EventsService>();
 
     useCase = new CreateOrderUseCase(
-      orderRepo, branchRepo, productRepo, cashSessionRepo, tenantRepo,
+      orderRepo, branchAccess, productRepo, cashSessionRepo, tenantRepo,
       customerRepo, eventsService,
     );
 
     // Happy-path defaults
-    branchRepo.findById.mockResolvedValue(makeBranch());
+    branchAccess.assertUsable.mockResolvedValue(makeBranch());
     productRepo.findByIds.mockResolvedValue([makeProduct(50)]);
     cashSessionRepo.findByBranch.mockResolvedValue([]);
     tenantRepo.findById.mockResolvedValue(makeTenant());
@@ -112,8 +112,8 @@ describe('CreateOrderUseCase', () => {
     expect(order.payments).toHaveLength(2);
   });
 
-  it('lanza BadRequestException si la sucursal no existe', async () => {
-    branchRepo.findById.mockResolvedValue(null);
+  it('lanza BadRequestException si la sucursal no existe o está desactivada', async () => {
+    branchAccess.assertUsable.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
     await expect(useCase.execute(TENANT_ID, BRANCH_ID, USER_ID, UserRole.OWNER, makeDto()))
       .rejects.toThrow(BadRequestException);
   });
