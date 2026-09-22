@@ -16,6 +16,11 @@ This app is **live in production**. Migrations run automatically on backend cont
 - Money columns follow the existing Decimal usage — match neighbouring fields, don't introduce floats.
 - Dates: never compute day boundaries with raw `new Date()`. Use
   `toBoliviaDateString()` in `backend/src/common/utils/timezone.util.ts` (`America/La_Paz`).
+  **Every `DateTime` field must carry `@db.Timestamptz(3)`.** Prisma always stores UTC, and the
+  raw SQL in the reports relies on the column declaring its zone — without it,
+  `created_at::timestamptz AT TIME ZONE 'America/La_Paz'` is a no-op and a JS `Date` bound as a
+  parameter compares 4 hours off. `src/common/schema-timezone.spec.ts` enforces this; see
+  `docs/analisis-zona-horaria.md` for the incident it came from.
 - **Every id is `String @id @default(uuid())` — no model uses `@db.Uuid`.** That means every `id`,
   every `tenantId`/`tenant_id`, and every foreign key column is Postgres `TEXT`, not native `UUID`.
   This only bites when you hand-write `migration.sql` instead of letting `prisma migrate dev`
