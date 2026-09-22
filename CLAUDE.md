@@ -289,7 +289,22 @@ Each `Plan` also defines `kitchenEnabled` and `rafflesEnabled` as defaults; the 
 
 Branding fields on `Tenant`: `logoUrl`, `businessAddress`, `businessPhone`, `receiptSlogan` — configurable by the owner via `PATCH /tenants/settings`.
 
-Timezone is handled correctly: `toBoliviaDateString()` in `backend/src/common/utils/timezone.util.ts` uses `America/La_Paz` (UTC-4) for all date calculations including order number resets.
+### Zona horaria
+
+`toBoliviaDateString()` en `backend/src/common/utils/timezone.util.ts` usa `America/La_Paz`
+(UTC-4) para todo cálculo de fechas, incluido el reinicio del número de pedido.
+
+**Toda columna de fecha es `timestamptz`, y todo campo `DateTime` del schema lleva
+`@db.Timestamptz(3)`.** No es cosmético: Prisma guarda siempre UTC, y el SQL crudo de los
+reportes depende de que la columna declare su zona. Con columnas `timestamp` sin zona,
+`created_at::timestamptz AT TIME ZONE 'America/La_Paz'` es una operación nula y un `Date` de JS
+pasado como parámetro se compara 4 horas corrido — que fue exactamente el bug que arrastró el
+sistema de marzo a septiembre de 2026 (reportes agrupando por día UTC, mapa de horas corrido y
+arqueos de caja con faltantes fantasma).
+
+Un campo `DateTime` nuevo **debe** llevar la anotación; lo verifica
+`src/common/schema-timezone.spec.ts`. Los detalles del diagnóstico están en
+`docs/analisis-zona-horaria.md`.
 
 ## Shared Package
 
