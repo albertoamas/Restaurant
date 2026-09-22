@@ -4,6 +4,7 @@ import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { MetricsService } from '../../../../common/metrics/metrics.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { CloseCashSessionDto } from '../dto/close-cash-session.dto';
 
 @Injectable()
@@ -11,11 +12,17 @@ export class CloseCashSessionUseCase {
   constructor(
     @Inject('CashSessionRepositoryPort')
     private readonly repo: CashSessionRepositoryPort,
+    private readonly branchAccess: BranchAccessService,
     @Optional() private readonly eventsService?: EventsService,
     @Optional() private readonly metricsService?: MetricsService,
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CloseCashSessionDto): Promise<CashSession> {
+    // Solo verifica pertenencia al tenant, no assertUsable: cerrar caja debe
+    // seguir siendo posible aunque la sucursal esté (o se esté) desactivando —
+    // de hecho ToggleBranchUseCase exige la caja cerrada antes de desactivar.
+    await this.branchAccess.assertBelongsToTenant(branchId, tenantId);
+
     const session = await this.repo.findOpenByBranch(tenantId, branchId);
     if (!session) {
       throw new NotFoundException('No hay caja abierta para esta sucursal');
