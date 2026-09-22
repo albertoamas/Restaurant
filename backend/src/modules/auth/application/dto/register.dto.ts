@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -22,4 +22,13 @@ export class RegisterDto {
   @MinLength(6)
   @MaxLength(128)
   password: string;
+
+  /** Nombre de la primera sucursal. Vacío o ausente -> se crea "Principal". */
+  @IsOptional()
+  @Transform(({ value }) => value?.trim())
+  @ValidateIf((_, value) => !!value)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  branchName?: string;
 }

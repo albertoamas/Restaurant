@@ -15,10 +15,23 @@ export interface TenantWithOwner {
   cashierCount: number;
 }
 
+export interface NewOwnerProps {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+}
+
 export interface TenantRepositoryPort {
   findById(id: string): Promise<Tenant | null>;
   findBySlug(slug: string): Promise<Tenant | null>;
   save(tenant: Tenant): Promise<Tenant>;
+  /**
+   * Alta completa en una sola transacción: tenant + dueño + sucursal inicial.
+   * Si cualquiera de las tres escrituras falla, no queda nada a medio crear
+   * (sin esto, un tenant sin dueño quedaba huérfano e inutilizable).
+   */
+  createTenantWithOwner(tenant: Tenant, owner: NewOwnerProps, branchName: string): Promise<Tenant>;
   findAll(): Promise<TenantWithOwner[]>;
   toggleActive(id: string): Promise<Tenant>;
   updatePlan(id: string, plan: SaasPlan): Promise<Tenant>;

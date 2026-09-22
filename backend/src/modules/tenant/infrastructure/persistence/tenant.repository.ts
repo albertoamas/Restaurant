@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { Tenant, TenantModules, TenantSettings } from '../../domain/entities/tenant.entity';
-import { TenantRepositoryPort, TenantWithOwner } from '../../domain/ports/tenant-repository.port';
+import { TenantRepositoryPort, TenantWithOwner, NewOwnerProps } from '../../domain/ports/tenant-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Tenant as PrismaTenant } from '@prisma/client';
-import { OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
+import { OrderNumberResetPeriod, SaasPlan, UserRole } from '@pos/shared';
 
 function toDomain(row: PrismaTenant): Tenant {
   return new Tenant(
@@ -65,6 +66,57 @@ export class TenantRepository implements TenantRepositoryPort {
       create: data,
       update: data,
     });
+    return toDomain(row);
+  }
+
+  async createTenantWithOwner(tenant: Tenant, owner: NewOwnerProps, branchName: string): Promise<Tenant> {
+    const tenantData = {
+      id:                      tenant.id,
+      name:                    tenant.name,
+      slug:                    tenant.slug,
+      isActive:                tenant.isActive,
+      createdAt:               tenant.createdAt,
+      plan:                    tenant.plan,
+      ordersEnabled:           tenant.ordersEnabled,
+      cashEnabled:             tenant.cashEnabled,
+      teamEnabled:             tenant.teamEnabled,
+      branchesEnabled:         tenant.branchesEnabled,
+      kitchenEnabled:          tenant.kitchenEnabled,
+      rafflesEnabled:          tenant.rafflesEnabled,
+      orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
+      businessAddress:         tenant.businessAddress,
+      businessPhone:           tenant.businessPhone,
+      receiptSlogan:           tenant.receiptSlogan,
+    };
+
+    const row = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.tenant.create({ data: tenantData });
+
+      await tx.user.create({
+        data: {
+          id:           owner.id,
+          tenantId:     tenant.id,
+          email:        owner.email,
+          passwordHash: owner.passwordHash,
+          name:         owner.name,
+          role:         UserRole.OWNER,
+        },
+      });
+
+      // Sin esta sucursal el dueño entra a un negocio sin dónde vender: "Sin
+      // sucursales", sin caja, sin POS. La crea la propia transacción de alta,
+      // no un paso manual posterior.
+      await tx.branch.create({
+        data: {
+          id:       uuidv4(),
+          tenantId: tenant.id,
+          name:     branchName,
+        },
+      });
+
+      return created;
+    });
+
     return toDomain(row);
   }
 

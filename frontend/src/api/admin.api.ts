@@ -42,6 +42,8 @@ export interface CreateTenantPayload {
   ownerName: string;
   email: string;
   password: string;
+  /** Nombre de la primera sucursal. Vacío -> se crea "Principal". */
+  branchName?: string;
 }
 
 const KEY = 'pos_admin_key';

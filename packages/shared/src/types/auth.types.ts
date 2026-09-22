@@ -10,6 +10,8 @@ export interface RegisterRequest {
   ownerName: string;
   email: string;
   password: string;
+  /** Nombre de la primera sucursal. Vacío o ausente -> se crea "Principal". */
+  branchName?: string;
 }
 
 export interface RegisterResponse {
