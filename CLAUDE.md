@@ -301,11 +301,36 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 ### SaaS plans and module flags
 
-`Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Each plan defines capacity limits (`maxBranches`, `maxCashiers`, `maxProducts`, `kitchenEnabled`). Use cases check these limits before creating branches, cashiers, or products.
+`Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Cada plan define límites de
+capacidad (`maxBranches`, `maxCashiers`, `maxProducts`) y qué módulos incluye (`kitchenEnabled`,
+`rafflesEnabled`, `teamEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`).
+**La convención es `-1 = sin límite`** en todos los numéricos: usá `isUnlimited()` de
+`@pos/shared`, nunca compares contra 999.
 
-`Tenant` also has per-tenant module flags set exclusively by the admin (not the tenant owner): `ordersEnabled`, `cashEnabled`, `teamEnabled`, `branchesEnabled`, `kitchenEnabled`, `rafflesEnabled`. These are read by `GET /auth/me` and applied client-side via `applyModules()` in `auth.context.tsx` every login — they populate `settings.store.ts` but are **not** persisted to localStorage.
+**El plan es la fuente de verdad de los módulos.** `PlanModulesService`
+(`modules/plans/application/`) resuelve el valor efectivo:
 
-Each `Plan` also defines `kitchenEnabled` and `rafflesEnabled` as defaults; the per-tenant flags take precedence when set by the admin.
+```
+efectivo = baseModules(plan) + moduleOverrides
+```
+
+- `baseModules(plan)` — `ordersEnabled`/`cashEnabled` siempre true (núcleo del producto),
+  `branchesEnabled` derivado de `maxBranches !== 1`, y el resto del plan.
+- `Tenant.moduleOverrides` (JSONB) guarda **solo** los flags que el admin fijó a mano como
+  excepción (una cortesía, una prueba). Si el admin vuelve a poner el valor del plan, la
+  excepción se borra y ese módulo vuelve a seguir al plan.
+
+Las 6 columnas booleanas de `tenants` siguen siendo el **valor efectivo** que leen `ModuleGuard`
+y `GET /auth/me`: el camino caliente de lectura no calcula nada. Los use-cases que cambian plan
+o módulos recalculan y persisten ambas cosas juntas con `applyModules()`.
+
+Por qué importa: antes, cambiar el plan pisaba los flags con los del plan y **una cortesía
+concedida a mano se perdía en silencio**; y un tenant nuevo nacía siempre con los mismos flags
+sin importar cuánto pagaba.
+
+Bajar de plan **no destruye nada**: `PATCH /admin/tenants/:id/plan` devuelve `excess[]` con los
+recursos que quedaron por encima del límite para que `/admin` lo avise, y la creación de
+recursos nuevos ya queda bloqueada por `PlanLimitService`.
 
 ### Tenant settings
 

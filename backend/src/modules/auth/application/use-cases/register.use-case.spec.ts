@@ -6,6 +6,10 @@ import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { User } from '../../domain/entities/user.entity';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
+import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
+import { PlanModulesService } from '../../../plans/application/plan-modules.service';
+import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { SaasPlan } from '@pos/shared';
 
 const DTO = {
   email: 'owner@empresa.com',
@@ -48,12 +52,19 @@ describe('RegisterUseCase', () => {
   let useCase: RegisterUseCase;
   let userRepo: MockProxy<UserRepositoryPort>;
   let tenantRepo: MockProxy<TenantRepositoryPort>;
+  let planRepo: MockProxy<PlanRepositoryPort>;
 
   beforeEach(() => {
     userRepo   = mock<UserRepositoryPort>();
     tenantRepo = mock<TenantRepositoryPort>();
-    useCase    = new RegisterUseCase(userRepo, tenantRepo);
+    planRepo   = mock<PlanRepositoryPort>();
+    // PlanModulesService es lógica pura sin dependencias: se usa la real para
+    // que el test cubra de verdad la derivación de módulos desde el plan.
+    useCase    = new RegisterUseCase(userRepo, tenantRepo, planRepo, new PlanModulesService());
 
+    planRepo.findById.mockResolvedValue(
+      new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, 100),
+    );
     userRepo.findByEmailGlobal.mockResolvedValue(null);
     tenantRepo.findBySlug.mockResolvedValue(null); // slug libre por defecto
     tenantRepo.createTenantWithOwner.mockResolvedValue({} as Tenant);
@@ -108,6 +119,38 @@ describe('RegisterUseCase', () => {
     await useCase.execute({ ...DTO, branchName: '  Sucursal Centro  ' });
     const [, , branchName] = tenantRepo.createTenantWithOwner.mock.calls[0];
     expect(branchName).toBe('Sucursal Centro');
+  });
+
+  it('los módulos del tenant nuevo salen del plan, no de constantes fijas', async () => {
+    // BASICO: sin equipo, sin cocina, sin sorteos, y una sola sucursal.
+    await useCase.execute(DTO);
+
+    const [tenant] = tenantRepo.createTenantWithOwner.mock.calls[0];
+    expect(tenant.modules).toEqual({
+      ordersEnabled:   true,
+      cashEnabled:     true,
+      branchesEnabled: false, // maxBranches = 1
+      teamEnabled:     false,
+      kitchenEnabled:  false,
+      rafflesEnabled:  false,
+    });
+    expect(tenant.moduleOverrides).toBeNull();
+  });
+
+  it('un plan más generoso da más módulos al tenant nuevo', async () => {
+    planRepo.findById.mockResolvedValue(
+      new Plan(SaasPlan.PRO, 'Pro', 399, 3, 8, -1, true, true, true, true, 365, 1024),
+    );
+
+    await useCase.execute(DTO);
+
+    const [tenant] = tenantRepo.createTenantWithOwner.mock.calls[0];
+    expect(tenant.modules).toMatchObject({
+      branchesEnabled: true,
+      teamEnabled:     true,
+      kitchenEnabled:  true,
+      rafflesEnabled:  true,
+    });
   });
 
   it('usa el slug base cuando está libre', async () => {

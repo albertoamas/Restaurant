@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tenant, TenantModules, TenantSettings } from '../../domain/entities/tenant.entity';
 import { TenantRepositoryPort, TenantWithOwner, NewOwnerProps } from '../../domain/ports/tenant-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { Tenant as PrismaTenant } from '@prisma/client';
+import { Prisma, Tenant as PrismaTenant } from '@prisma/client';
 import { OrderNumberResetPeriod, SaasPlan, UserRole } from '@pos/shared';
 
 function toDomain(row: PrismaTenant): Tenant {
@@ -24,6 +24,7 @@ function toDomain(row: PrismaTenant): Tenant {
     row.businessAddress ?? null,
     row.businessPhone   ?? null,
     row.receiptSlogan   ?? null,
+    (row.moduleOverrides as Partial<TenantModules> | null) ?? null,
   );
 }
 
@@ -49,6 +50,8 @@ function toPrismaData(tenant: Tenant) {
     businessAddress:         tenant.businessAddress,
     businessPhone:           tenant.businessPhone,
     receiptSlogan:           tenant.receiptSlogan,
+    // `null` limpia la columna; Prisma.DbNull es el null de JSON en Postgres.
+    moduleOverrides:         tenant.moduleOverrides ?? Prisma.DbNull,
   };
 }
 
@@ -107,6 +110,11 @@ export class TenantRepository implements TenantRepositoryPort {
     });
 
     return toDomain(row);
+  }
+
+  async findByPlan(plan: SaasPlan): Promise<Tenant[]> {
+    const rows = await this.prisma.tenant.findMany({ where: { plan } });
+    return rows.map(toDomain);
   }
 
   async findAll(): Promise<TenantWithOwner[]> {
@@ -172,19 +180,24 @@ export class TenantRepository implements TenantRepositoryPort {
     return toDomain(row);
   }
 
-  async updateModules(id: string, modules: Partial<TenantModules>): Promise<Tenant> {
+  async applyModules(
+    id: string,
+    modules: TenantModules,
+    overrides: Partial<TenantModules> | null,
+  ): Promise<Tenant> {
     const current = await this.prisma.tenant.findUnique({ where: { id } });
     if (!current) throw new NotFoundException(`Tenant ${id} not found`);
 
     const row = await this.prisma.tenant.update({
       where: { id },
       data: {
-        ...(modules.ordersEnabled   !== undefined && { ordersEnabled:   modules.ordersEnabled }),
-        ...(modules.cashEnabled     !== undefined && { cashEnabled:     modules.cashEnabled }),
-        ...(modules.teamEnabled     !== undefined && { teamEnabled:     modules.teamEnabled }),
-        ...(modules.branchesEnabled !== undefined && { branchesEnabled: modules.branchesEnabled }),
-        ...(modules.kitchenEnabled  !== undefined && { kitchenEnabled:  modules.kitchenEnabled }),
-        ...(modules.rafflesEnabled  !== undefined && { rafflesEnabled:  modules.rafflesEnabled }),
+        ordersEnabled:   modules.ordersEnabled,
+        cashEnabled:     modules.cashEnabled,
+        teamEnabled:     modules.teamEnabled,
+        branchesEnabled: modules.branchesEnabled,
+        kitchenEnabled:  modules.kitchenEnabled,
+        rafflesEnabled:  modules.rafflesEnabled,
+        moduleOverrides: overrides && Object.keys(overrides).length > 0 ? overrides : Prisma.DbNull,
       },
     });
     return toDomain(row);

@@ -15,6 +15,10 @@ function toDomain(row: PrismaPlan): Plan {
     row.maxProducts,
     row.kitchenEnabled,
     row.rafflesEnabled,
+    row.teamEnabled,
+    row.advancedReports,
+    row.reportHistoryDays,
+    row.maxStorageMb,
   );
 }
 
@@ -46,6 +50,10 @@ export class PlanRepository implements PlanRepositoryPort {
         ...(updates.maxProducts    !== undefined && { maxProducts:    updates.maxProducts }),
         ...(updates.kitchenEnabled !== undefined && { kitchenEnabled: updates.kitchenEnabled }),
         ...(updates.rafflesEnabled !== undefined && { rafflesEnabled: updates.rafflesEnabled }),
+        ...(updates.teamEnabled       !== undefined && { teamEnabled:       updates.teamEnabled }),
+        ...(updates.advancedReports   !== undefined && { advancedReports:   updates.advancedReports }),
+        ...(updates.reportHistoryDays !== undefined && { reportHistoryDays: updates.reportHistoryDays }),
+        ...(updates.maxStorageMb      !== undefined && { maxStorageMb:      updates.maxStorageMb }),
       },
     });
     return toDomain(row);

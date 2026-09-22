@@ -33,8 +33,20 @@ export interface TenantRepositoryPort {
    */
   createTenantWithOwner(tenant: Tenant, owner: NewOwnerProps, branchName: string): Promise<Tenant>;
   findAll(): Promise<TenantWithOwner[]>;
+  /** Tenants suscritos a un plan. Se usa para resincronizarlos si el plan cambia. */
+  findByPlan(plan: SaasPlan): Promise<Tenant[]>;
   toggleActive(id: string): Promise<Tenant>;
   updatePlan(id: string, plan: SaasPlan): Promise<Tenant>;
-  updateModules(id: string, modules: Partial<TenantModules>): Promise<Tenant>;
+  /**
+   * Persiste el estado efectivo de los módulos junto con las excepciones del
+   * admin que lo produjeron. Van juntos a propósito: guardar uno sin el otro
+   * deja el tenant en un estado que el próximo cambio de plan no sabría
+   * recalcular. `overrides` en null borra todas las excepciones.
+   */
+  applyModules(
+    id: string,
+    modules: TenantModules,
+    overrides: Partial<TenantModules> | null,
+  ): Promise<Tenant>;
   updateSettings(id: string, settings: Partial<TenantSettings>): Promise<Tenant>;
 }

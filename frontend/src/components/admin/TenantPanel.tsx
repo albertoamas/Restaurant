@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
+import { isUnlimited } from '@pos/shared';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
+import type { PlanExcess } from '../../api/admin.api';
 import toast from 'react-hot-toast';
 
 interface ModuleDef { key: keyof TenantModules; label: string; description: string; }
@@ -48,6 +50,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
   const [modules, setModules] = useState<TenantModules>(tenant.modules);
   const [savingModule, setSavingModule] = useState<keyof TenantModules | null>(null);
   const [savingPlan, setSavingPlan] = useState(false);
+  const [planExcess, setPlanExcess] = useState<PlanExcess[]>([]);
   const [showResetPw, setShowResetPw] = useState(false);
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -70,6 +73,9 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
         kitchenEnabled:  result.kitchenEnabled,
         rafflesEnabled:  result.rafflesEnabled,
       });
+      // Nada se desactiva solo: bajar de plan conserva los datos del cliente y
+      // acá se avisa qué quedó por encima, para que el admin decida.
+      setPlanExcess(result.excess ?? []);
     } finally {
       setSavingPlan(false);
     }
@@ -152,18 +158,36 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
 
           {activePlan && (
             <div className="mt-3 flex gap-2">
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && activePlan.maxBranches !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && !isUnlimited(activePlan.maxBranches) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.branchCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxBranches)}</span>
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Sucursales</p>
               </div>
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && activePlan.maxCashiers !== -1 ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && !isUnlimited(activePlan.maxCashiers) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.cashierCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxCashiers)}</span>
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Cajeros</p>
               </div>
+            </div>
+          )}
+
+          {planExcess.length > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                Este negocio quedó por encima de su plan nuevo
+              </p>
+              <ul className="mt-1.5 space-y-0.5">
+                {planExcess.map((e) => (
+                  <li key={e.resource} className="text-xs text-amber-700 dark:text-amber-400">
+                    · Tiene {e.current} {e.resource} y el plan permite {e.max}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                No se desactivó nada: conserva sus datos y no podrá crear más hasta volver al límite.
+              </p>
             </div>
           )}
 

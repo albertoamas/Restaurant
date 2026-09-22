@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { PlanDto } from '@pos/shared';
+import { isUnlimited, type PlanDto } from '@pos/shared';
 import { SaasPlan } from '@pos/shared';
 import { usePlans } from '../hooks/usePlans';
 import { Spinner } from '../components/ui/Spinner';
@@ -70,41 +70,69 @@ const PLAN_META: Record<SaasPlan, PlanMeta> = {
 
 const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
 
+/**
+ * `-1` es "sin límite" en la BD. Antes se detectaba con `>= 999`, así que la
+ * landing mostraba literalmente "-1 sucursal" en los planes ilimitados.
+ */
+function limitLine(value: number, singular: string, plural: string, unlimited: string): string {
+  if (isUnlimited(value)) return unlimited;
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
 function getLimits(plan: PlanDto): string[] {
   return [
-    plan.maxBranches >= 999 ? 'sucursales ilimitadas' : `${plan.maxBranches} sucursal${plan.maxBranches > 1 ? 'es' : ''}`,
-    plan.maxCashiers >= 999 ? 'cajeros ilimitados'    : `${plan.maxCashiers} cajero${plan.maxCashiers > 1 ? 's' : ''}`,
-    plan.maxProducts >= 999 ? 'productos ilimitados'  : `hasta ${plan.maxProducts} productos`,
+    limitLine(plan.maxBranches, 'sucursal', 'sucursales', 'sucursales ilimitadas'),
+    limitLine(plan.maxCashiers, 'cajero',   'cajeros',    'cajeros ilimitados'),
+    isUnlimited(plan.maxProducts)
+      ? 'productos ilimitados'
+      : `hasta ${plan.maxProducts} productos`,
   ];
 }
 
+/**
+ * Las viñetas salen de los valores reales del plan, no de listas fijas por id:
+ * antes PRO decía "Hasta 3 sucursales ✓" y "Sucursales ilimitadas ✗" a la vez,
+ * y cambiar un límite desde /admin no se reflejaba acá.
+ */
 function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
-  if (plan.id === SaasPlan.BASICO) return [
+  const base = [
     { text: 'POS + pagos mixtos',                included: true },
     { text: 'Pedidos con estados y seguimiento', included: true },
     { text: 'Gestión de caja y gastos',          included: true },
     { text: 'Clientes y fidelización',           included: true },
-    { text: 'Reportes de ventas',                included: true },
-    { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
-    { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
-    { text: 'Múltiples sucursales',              included: plan.maxBranches > 1 },
   ];
-  if (plan.id === SaasPlan.PRO) return [
-    { text: 'Todo lo del plan Básico',           included: true },
-    { text: 'Display de cocina en tiempo real',  included: plan.kitchenEnabled },
-    { text: 'Sorteos para clientes',             included: plan.rafflesEnabled },
-    { text: `Hasta ${plan.maxBranches} sucursales`, included: true },
-    { text: `Hasta ${plan.maxCashiers} cajeros`, included: true },
-    { text: 'Productos ilimitados',              included: plan.maxProducts >= 999 },
-    { text: 'Sucursales ilimitadas',             included: plan.maxBranches >= 999 },
-    { text: 'Cajeros ilimitados',                included: plan.maxCashiers >= 999 },
+
+  const limits = [
+    {
+      text: isUnlimited(plan.maxBranches)
+        ? 'Sucursales ilimitadas'
+        : `Hasta ${limitLine(plan.maxBranches, 'sucursal', 'sucursales', '')}`,
+      included: true,
+    },
+    {
+      text: isUnlimited(plan.maxCashiers)
+        ? 'Cajeros ilimitados'
+        : `Hasta ${limitLine(plan.maxCashiers, 'cajero', 'cajeros', '')}`,
+      included: true,
+    },
+    {
+      text: isUnlimited(plan.maxProducts)
+        ? 'Productos ilimitados'
+        : `Hasta ${plan.maxProducts} productos`,
+      included: true,
+    },
   ];
-  return [
-    { text: 'Todo lo del plan Pro',  included: true },
-    { text: 'Sucursales ilimitadas', included: plan.maxBranches >= 999 },
-    { text: 'Cajeros ilimitados',    included: plan.maxCashiers >= 999 },
-    { text: 'Sin límite de escala',  included: true },
+
+  // Solo se anuncia lo que hoy se hace cumplir de verdad. `advancedReports`,
+  // `reportHistoryDays` y `maxStorageMb` ya existen en el plan pero todavía no
+  // los aplica ningún guard: entran acá recién cuando se implementen.
+  const gated = [
+    { text: 'Display de cocina en tiempo real', included: plan.kitchenEnabled },
+    { text: 'Sorteos para clientes',            included: plan.rafflesEnabled },
+    { text: 'Gestión de equipo y roles',        included: plan.teamEnabled },
   ];
+
+  return [...base, ...limits, ...gated];
 }
 
 /* ─── PlanCard ──────────────────────────────────────────── */

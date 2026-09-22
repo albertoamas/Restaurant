@@ -23,6 +23,13 @@ export interface TenantRow {
   cashierCount: number;
 }
 
+/** Un recurso que quedó por encima de lo que permite el plan nuevo (downgrade). */
+export interface PlanExcess {
+  resource: 'sucursales' | 'cajeros' | 'productos';
+  current: number;
+  max: number;
+}
+
 // Shape returned by PATCH /admin/tenants/:id/plan (Tenant domain entity serialized flat)
 export interface TenantPlanUpdateResponse {
   id: string;
@@ -33,6 +40,8 @@ export interface TenantPlanUpdateResponse {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  /** Vacío si el cambio de plan no dejó nada fuera de límite. */
+  excess: PlanExcess[];
 }
 
 export type { PlanDto };

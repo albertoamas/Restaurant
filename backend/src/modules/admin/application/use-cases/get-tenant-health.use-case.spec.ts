@@ -7,6 +7,7 @@ import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.p
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+import { PlanModulesService } from '../../../plans/application/plan-modules.service';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
 import { User } from '../../../auth/domain/entities/user.entity';
@@ -63,7 +64,9 @@ describe('GetTenantHealthUseCase', () => {
     tenantRepo       = mock<TenantRepositoryPort>();
     productRepo      = mock<ProductRepositoryPort>();
     planLimitService = mock<PlanLimitService>();
-    useCase = new GetTenantHealthUseCase(branchRepo, userRepo, tenantRepo, productRepo, planLimitService);
+    useCase = new GetTenantHealthUseCase(
+      branchRepo, userRepo, tenantRepo, productRepo, planLimitService, new PlanModulesService(),
+    );
 
     tenantRepo.findById.mockResolvedValue(makeTenant());
     planLimitService.getPlan.mockResolvedValue(makePlan());

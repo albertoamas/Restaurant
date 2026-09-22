@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { adminApi, type PlanDto } from '../../api/admin.api';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
+import { handleApiError } from '../../utils/api-error';
 
 const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
 
@@ -25,6 +26,10 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
       maxProducts: p.maxProducts,
       kitchenEnabled: p.kitchenEnabled,
       rafflesEnabled: p.rafflesEnabled,
+      teamEnabled: p.teamEnabled,
+      advancedReports: p.advancedReports,
+      reportHistoryDays: p.reportHistoryDays,
+      maxStorageMb: p.maxStorageMb,
     });
   };
 
@@ -34,6 +39,10 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
       const updated = await adminApi.updatePlan(id, form);
       onUpdate(updated);
       setEditing(null);
+    } catch (err) {
+      // El backend rechaza límites en 0 o incoherentes entre planes: sin esto
+      // el error se perdía y el formulario parecía no hacer nada.
+      handleApiError(err, 'No se pudo guardar el plan');
     } finally {
       setSaving(false);
     }
@@ -82,6 +91,16 @@ const PLAN_FIELDS: [keyof PlanDto, string, string][] = [
   ['maxBranches',  'Máx sucursales (-1=∞)',    'number'],
   ['maxCashiers',  'Máx cajeros (-1=∞)',       'number'],
   ['maxProducts',  'Máx productos (-1=∞)',     'number'],
+  ['reportHistoryDays', 'Historial reportes en días (-1=∞)', 'number'],
+  ['maxStorageMb',      'Almacenamiento MB (-1=∞)',          'number'],
+];
+
+/** Los flags de módulo del plan, para no repetir el mismo toggle cuatro veces. */
+const PLAN_TOGGLES: [keyof PlanDto, string][] = [
+  ['kitchenEnabled',  'Cocina'],
+  ['rafflesEnabled',  'Sorteos'],
+  ['teamEnabled',     'Equipo'],
+  ['advancedReports', 'Reportes avanzados'],
 ];
 
 function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
@@ -113,24 +132,23 @@ function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
             />
           </div>
         ))}
-        <div className="flex items-center justify-between py-1.5">
-          <label className="text-sm font-medium text-gray-600">Cocina</label>
-          <button
-            onClick={() => onFormChange((prev) => ({ ...prev, kitchenEnabled: !prev.kitchenEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.kitchenEnabled ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.kitchenEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
-          </button>
-        </div>
-        <div className="flex items-center justify-between py-1.5">
-          <label className="text-sm font-medium text-gray-600">Sorteos</label>
-          <button
-            onClick={() => onFormChange((prev) => ({ ...prev, rafflesEnabled: !prev.rafflesEnabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${form.rafflesEnabled ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.rafflesEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
-          </button>
-        </div>
+        {PLAN_TOGGLES.map(([field, label]) => {
+          const on = !!form[field];
+          return (
+            <div key={field} className="flex items-center justify-between py-1.5">
+              <label className="text-sm font-medium text-gray-600">{label}</label>
+              <button
+                type="button"
+                aria-label={label}
+                aria-pressed={on}
+                onClick={() => onFormChange((prev) => ({ ...prev, [field]: !prev[field] }))}
+                className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${on ? 'bg-primary-500' : 'bg-[var(--border-strong)]'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${on ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          );
+        })}
       </div>
       <div className="flex gap-2 pt-1">
         <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-700 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)] transition-colors">

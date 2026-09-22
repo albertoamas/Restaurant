@@ -1,7 +1,10 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { SaasPlan } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
+import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
+import { PlanModulesService } from '../../../plans/application/plan-modules.service';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { RegisterDto } from '../dto/register.dto';
@@ -47,6 +50,9 @@ export class RegisterUseCase {
     private readonly userRepository: UserRepositoryPort,
     @Inject('TenantRepositoryPort')
     private readonly tenantRepository: TenantRepositoryPort,
+    @Inject('PlanRepositoryPort')
+    private readonly planRepository: PlanRepositoryPort,
+    private readonly planModules: PlanModulesService,
   ) {}
 
   async execute(dto: RegisterDto, startActive = false) {
@@ -58,10 +64,16 @@ export class RegisterUseCase {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const branchName   = dto.branchName?.trim() || DEFAULT_BRANCH_NAME;
 
+    // Los módulos salen del plan, no de constantes fijas: antes todo negocio
+    // nuevo arrancaba igual sin importar cuánto pagaba.
+    const plan = await this.planRepository.findById(SaasPlan.BASICO);
+    if (!plan) throw new NotFoundException(`Plan ${SaasPlan.BASICO} no encontrado`);
+    const modules = this.planModules.baseModules(plan);
+
     for (let attempt = 1; attempt <= MAX_CREATE_RETRIES; attempt++) {
       const slug = await this.resolveUniqueSlug(dto.businessName);
 
-      const baseTenant = Tenant.create(dto.businessName, slug);
+      const baseTenant = Tenant.create(dto.businessName, slug, modules, plan.id);
       const tenant      = startActive ? baseTenant.withActive(true) : baseTenant;
       const owner       = { id: uuidv4(), email: dto.email, passwordHash, name: dto.ownerName };
 
