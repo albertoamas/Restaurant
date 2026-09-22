@@ -13,9 +13,9 @@ import { User } from '../../../auth/domain/entities/user.entity';
 
 const TENANT_ID = 'tenant-1';
 
-function makeTenant(over: Partial<{ kitchenEnabled: boolean; rafflesEnabled: boolean }> = {}): Tenant {
+function makeTenant(over: Partial<{ kitchenEnabled: boolean; rafflesEnabled: boolean; isActive: boolean }> = {}): Tenant {
   return new Tenant(
-    TENANT_ID, 'HamBurgos', 'hamburgos', true, new Date(),
+    TENANT_ID, 'HamBurgos', 'hamburgos', over.isActive ?? true, new Date(),
     SaasPlan.PRO,
     true, true, true, true,
     over.kitchenEnabled ?? true,
@@ -80,12 +80,21 @@ describe('GetTenantHealthUseCase', () => {
   it('ok=true cuando todo está en orden', async () => {
     const result = await useCase.execute(TENANT_ID);
     expect(result.ok).toBe(true);
+    expect(result.isActive).toBe(true);
     expect(result.hasBranch).toBe(true);
     expect(result.hasActiveOwner).toBe(true);
     expect(result.hasProducts).toBe(true);
     expect(result.branchCount).toBe(1);
     expect(result.cashierCount).toBe(1);
     expect(result.productCount).toBe(10);
+  });
+
+  it('ok=false si el tenant está suspendido, aunque el resto esté perfecto', async () => {
+    // Un tenant suspendido recibe 403 en cada login: no está listo para operar.
+    tenantRepo.findById.mockResolvedValue(makeTenant({ isActive: false }));
+    const result = await useCase.execute(TENANT_ID);
+    expect(result.isActive).toBe(false);
+    expect(result.ok).toBe(false);
   });
 
   it('hasBranch=false y ok=false si no tiene ninguna sucursal', async () => {
@@ -109,11 +118,11 @@ describe('GetTenantHealthUseCase', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('moduleFlagsMatchPlan=false si los flags del tenant no coinciden con los del plan', async () => {
+  it('moduleFlagsMatchPlan=false se informa pero NO afecta ok (los overrides del admin son deliberados)', async () => {
     tenantRepo.findById.mockResolvedValue(makeTenant({ kitchenEnabled: false }));
     const result = await useCase.execute(TENANT_ID);
     expect(result.moduleFlagsMatchPlan).toBe(false);
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
   });
 
   it('withinBranchLimit=false si ya superó el máximo del plan', async () => {

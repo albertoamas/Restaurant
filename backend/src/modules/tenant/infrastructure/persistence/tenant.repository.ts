@@ -27,6 +27,31 @@ function toDomain(row: PrismaTenant): Tenant {
   );
 }
 
+/**
+ * Mapeo inverso de `toDomain`. Vive acá para que `save` y `createTenantWithOwner`
+ * no lo repitan: una columna nueva en Tenant se agrega en un solo lugar.
+ */
+function toPrismaData(tenant: Tenant) {
+  return {
+    id:                      tenant.id,
+    name:                    tenant.name,
+    slug:                    tenant.slug,
+    isActive:                tenant.isActive,
+    createdAt:               tenant.createdAt,
+    plan:                    tenant.plan,
+    ordersEnabled:           tenant.ordersEnabled,
+    cashEnabled:             tenant.cashEnabled,
+    teamEnabled:             tenant.teamEnabled,
+    branchesEnabled:         tenant.branchesEnabled,
+    kitchenEnabled:          tenant.kitchenEnabled,
+    rafflesEnabled:          tenant.rafflesEnabled,
+    orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
+    businessAddress:         tenant.businessAddress,
+    businessPhone:           tenant.businessPhone,
+    receiptSlogan:           tenant.receiptSlogan,
+  };
+}
+
 @Injectable()
 export class TenantRepository implements TenantRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
@@ -42,24 +67,7 @@ export class TenantRepository implements TenantRepositoryPort {
   }
 
   async save(tenant: Tenant): Promise<Tenant> {
-    const data = {
-      id:                      tenant.id,
-      name:                    tenant.name,
-      slug:                    tenant.slug,
-      isActive:                tenant.isActive,
-      createdAt:               tenant.createdAt,
-      plan:                    tenant.plan,
-      ordersEnabled:           tenant.ordersEnabled,
-      cashEnabled:             tenant.cashEnabled,
-      teamEnabled:             tenant.teamEnabled,
-      branchesEnabled:         tenant.branchesEnabled,
-      kitchenEnabled:          tenant.kitchenEnabled,
-      rafflesEnabled:          tenant.rafflesEnabled,
-      orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
-      businessAddress:         tenant.businessAddress,
-      businessPhone:           tenant.businessPhone,
-      receiptSlogan:           tenant.receiptSlogan,
-    };
+    const data = toPrismaData(tenant);
 
     const row = await this.prisma.tenant.upsert({
       where:  { id: tenant.id },
@@ -70,27 +78,8 @@ export class TenantRepository implements TenantRepositoryPort {
   }
 
   async createTenantWithOwner(tenant: Tenant, owner: NewOwnerProps, branchName: string): Promise<Tenant> {
-    const tenantData = {
-      id:                      tenant.id,
-      name:                    tenant.name,
-      slug:                    tenant.slug,
-      isActive:                tenant.isActive,
-      createdAt:               tenant.createdAt,
-      plan:                    tenant.plan,
-      ordersEnabled:           tenant.ordersEnabled,
-      cashEnabled:             tenant.cashEnabled,
-      teamEnabled:             tenant.teamEnabled,
-      branchesEnabled:         tenant.branchesEnabled,
-      kitchenEnabled:          tenant.kitchenEnabled,
-      rafflesEnabled:          tenant.rafflesEnabled,
-      orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
-      businessAddress:         tenant.businessAddress,
-      businessPhone:           tenant.businessPhone,
-      receiptSlogan:           tenant.receiptSlogan,
-    };
-
     const row = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.tenant.create({ data: tenantData });
+      const created = await tx.tenant.create({ data: toPrismaData(tenant) });
 
       await tx.user.create({
         data: {

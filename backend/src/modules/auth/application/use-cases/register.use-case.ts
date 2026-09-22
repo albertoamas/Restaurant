@@ -71,17 +71,21 @@ export class RegisterUseCase {
         await this.tenantRepository.createTenantWithOwner(tenant, owner, branchName);
         return { tenantId: tenant.id, message: 'Negocio creado correctamente.' };
       } catch (err) {
-        // Dos altas con nombres que normalizan igual pueden pasar el chequeo
-        // de resolveUniqueSlug casi al mismo tiempo, antes de que la primera
-        // confirme su INSERT. Se reintenta con un slug recién resuelto en vez
-        // de devolver un 500 sin mensaje útil.
-        if (isUniqueSlugViolation(err) && attempt < MAX_CREATE_RETRIES) continue;
-        throw err;
+        // Cualquier error que no sea colisión de slug se relanza tal cual.
+        if (!isUniqueSlugViolation(err)) throw err;
+        // Dos altas con nombres que normalizan igual pueden pasar el chequeo de
+        // resolveUniqueSlug casi al mismo tiempo, antes de que la primera
+        // confirme su INSERT. Se reintenta resolviendo un slug nuevo.
       }
     }
 
-    // Inalcanzable: el bucle siempre retorna o relanza antes de agotar los intentos.
-    throw new ConflictException('No se pudo crear el negocio. Intenta nuevamente.');
+    // Agotados los reintentos, y siempre por colisión de slug: cualquier otro
+    // error ya se relanzó dentro del bucle. Se traduce a un 409 en español en
+    // vez de dejar escapar el P2002 crudo, que HttpExceptionFilter no atrapa
+    // (solo cubre HttpException) y saldría como un 500 sin mensaje útil.
+    throw new ConflictException(
+      `No se pudo generar un identificador único para "${dto.businessName}". Intenta con otro nombre.`,
+    );
   }
 
   /** Devuelve un slug libre: el propio nombre normalizado, o con sufijo -2, -3... si ya existe. */

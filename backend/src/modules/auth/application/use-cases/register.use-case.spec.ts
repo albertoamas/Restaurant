@@ -172,4 +172,16 @@ describe('RegisterUseCase', () => {
     await expect(useCase.execute(DTO)).rejects.toThrow('DB caída');
     expect(tenantRepo.createTenantWithOwner).toHaveBeenCalledTimes(1);
   });
+
+  it('agotados los reintentos lanza ConflictException en español, no el P2002 crudo', async () => {
+    // HttpExceptionFilter solo atrapa HttpException: si escapara el P2002 de
+    // Prisma, el cliente vería un 500 sin mensaje útil.
+    const p2002 = new Error('Unique constraint failed on the fields: (`slug`)');
+    (p2002 as unknown as { code: string }).code = 'P2002';
+    tenantRepo.createTenantWithOwner.mockRejectedValue(p2002);
+
+    await expect(useCase.execute(DTO)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(DTO)).rejects.toThrow(/identificador único/);
+    expect(tenantRepo.createTenantWithOwner).toHaveBeenCalledTimes(6); // 3 intentos x 2 llamadas
+  });
 });

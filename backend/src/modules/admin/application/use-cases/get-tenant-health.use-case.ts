@@ -8,17 +8,24 @@ import { PlanLimitService } from '../../../plans/application/plan-limit.service'
 
 export interface TenantHealthDto {
   tenantId: string;
+  /** Un tenant suspendido no puede operar: todos sus logins reciben 403. */
+  isActive: boolean;
   hasBranch: boolean;
   hasActiveOwner: boolean;
   hasProducts: boolean;
   branchCount: number;
   cashierCount: number;
   productCount: number;
+  /**
+   * Informativo, no afecta `ok`: los flags por tenant son excepciones que el
+   * admin concede a propósito por encima del plan (ver CLAUDE.md), así que una
+   * diferencia es una decisión comercial, no una falla de alta.
+   */
   moduleFlagsMatchPlan: boolean;
   withinBranchLimit: boolean;
   withinCashierLimit: boolean;
   withinProductLimit: boolean;
-  /** Resumen de un vistazo: todo lo anterior en orden. */
+  /** Resumen de un vistazo: el negocio está listo para operar. */
   ok: boolean;
 }
 
@@ -68,6 +75,7 @@ export class GetTenantHealthUseCase {
 
     return {
       tenantId,
+      isActive: tenant.isActive,
       hasBranch,
       hasActiveOwner,
       hasProducts,
@@ -78,15 +86,17 @@ export class GetTenantHealthUseCase {
       withinBranchLimit,
       withinCashierLimit,
       withinProductLimit,
+      // Quedan fuera de `ok` a propósito:
+      //  - hasProducts: un negocio recién dado de alta todavía no cargó su
+      //    catálogo, y eso no es una falla de alta.
+      //  - moduleFlagsMatchPlan: los overrides del admin son deliberados.
       ok:
+        tenant.isActive &&
         hasBranch &&
         hasActiveOwner &&
-        moduleFlagsMatchPlan &&
         withinBranchLimit &&
         withinCashierLimit &&
         withinProductLimit,
-      // hasProducts se informa pero no se exige: un negocio recién dado de
-      // alta todavía no cargó su catálogo, y eso no es una falla de alta.
     };
   }
 }
