@@ -137,7 +137,9 @@ El OWNER tiene `branchId: null` en su JWT y manda la sucursal en el body/query, 
 **todo caso de uso que escriba datos de sucursal debe validarla primero** con
 `BranchAccessService` (`modules/branch/application/services/`):
 
-- `assertBelongsToTenant(branchId, tenantId)` — existe y es del tenant.
+- `assertBelongsToTenant(branchId, tenantId)` — existe y es del tenant. La usa cerrar caja:
+  cerrar debe seguir siendo posible en una sucursal que se está desactivando (de hecho
+  `ToggleBranchUseCase` exige la caja cerrada como condición previa para desactivar).
 - `assertUsable(branchId, tenantId)` — además está activa. Es la que usan crear pedido,
   crear gasto, abrir caja y asignar un cajero a una sucursal.
 
