@@ -23,6 +23,7 @@ import { UpdateTenantModulesUseCase } from '../../application/use-cases/update-t
 import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
 import { UpdatePlanLimitsUseCase } from '../../application/use-cases/update-plan-limits.use-case';
 import { ResetUserPasswordAdminUseCase } from '../../application/use-cases/reset-user-password-admin.use-case';
+import { GetTenantHealthUseCase } from '../../application/use-cases/get-tenant-health.use-case';
 import { UpdatePlanDto } from '../../application/dto/update-plan.dto';
 import { UpdateModulesDto } from '../../application/dto/update-modules.dto';
 import { UpdatePlanLimitsDto } from '../../application/dto/update-plan-limits.dto';
@@ -43,6 +44,7 @@ export class AdminController {
     private readonly updatePlanLimitsUseCase: UpdatePlanLimitsUseCase,
     private readonly registerUseCase: RegisterUseCase,
     private readonly resetUserPasswordAdminUseCase: ResetUserPasswordAdminUseCase,
+    private readonly getTenantHealthUseCase: GetTenantHealthUseCase,
   ) {}
 
   @Get('ping')
@@ -60,6 +62,12 @@ export class AdminController {
   @Post('tenants')
   createTenant(@Body() dto: RegisterDto) {
     return this.registerUseCase.execute(dto, true);
+  }
+
+  /** Semáforo del checklist de alta: ver docs/onboarding-cliente.md. */
+  @Get('tenants/:id/health')
+  getTenantHealth(@Param('id', ParseUUIDPipe) id: string) {
+    return this.getTenantHealthUseCase.execute(id);
   }
 
   @Patch('tenants/:id/toggle')

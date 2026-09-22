@@ -15,13 +15,28 @@ function formatTenantDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-const EMPTY_FORM: CreateTenantPayload = { businessName: '', ownerName: '', email: '', password: '' };
+const EMPTY_FORM: CreateTenantPayload = { businessName: '', ownerName: '', email: '', password: '', branchName: '' };
 
-const CREATE_FIELDS: [keyof CreateTenantPayload, string, string, string][] = [
-  ['businessName', 'Nombre del negocio',  'text',     'Ej: HamBurgos'],
-  ['ownerName',    'Nombre del dueño',    'text',     'Ej: Juan Pérez'],
-  ['email',        'Email del dueño',     'email',    'correo@ejemplo.com'],
-  ['password',     'Contraseña inicial',  'text',     'Mínimo 6 caracteres'],
+/**
+ * `required` y `minLength` replican lo que valida RegisterDto en el backend: si
+ * no coinciden, el navegador deja pasar un valor que el servidor rechaza con un
+ * mensaje de class-validator en inglés dentro de una UI en español.
+ */
+type CreateField = {
+  field: keyof CreateTenantPayload;
+  label: string;
+  type: string;
+  placeholder: string;
+  required: boolean;
+  minLength?: number;
+};
+
+const CREATE_FIELDS: CreateField[] = [
+  { field: 'businessName', label: 'Nombre del negocio', type: 'text',  placeholder: 'Ej: HamBurgos',                    required: true,  minLength: 2 },
+  { field: 'ownerName',    label: 'Nombre del dueño',   type: 'text',  placeholder: 'Ej: Juan Pérez',                   required: true,  minLength: 2 },
+  { field: 'email',        label: 'Email del dueño',    type: 'email', placeholder: 'correo@ejemplo.com',               required: true },
+  { field: 'password',     label: 'Contraseña inicial', type: 'text',  placeholder: 'Mínimo 6 caracteres',              required: true,  minLength: 6 },
+  { field: 'branchName',   label: 'Primera sucursal',   type: 'text',  placeholder: 'Principal (si lo dejas vacío)',    required: false, minLength: 2 },
 ];
 
 export function AdminPage() {
@@ -203,12 +218,14 @@ export function AdminPage() {
           <div className="rounded-2xl p-5 mb-6 border border-[var(--border-subtle)] animate-slide" style={{ background: 'var(--color-surface-card)' }}>
             <h2 className="font-heading font-bold text-sm text-gray-900 mb-4">Nuevo negocio</h2>
             <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
-              {CREATE_FIELDS.map(([field, label, type, placeholder]) => (
+              {CREATE_FIELDS.map(({ field, label, type, placeholder, required, minLength }) => (
                 <div key={field} className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    {label}{!required && <span className="text-gray-400 font-normal"> (opcional)</span>}
+                  </label>
                   <input
-                    type={type} value={form[field]} onChange={setField(field)}
-                    placeholder={placeholder} required minLength={field === 'password' ? 6 : undefined}
+                    type={type} value={form[field] ?? ''} onChange={setField(field)}
+                    placeholder={placeholder} required={required} minLength={minLength}
                     className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
                   />
                 </div>
