@@ -134,49 +134,63 @@ export function AdminPage() {
     <div className="min-h-screen bg-[var(--color-surface-page)]">
 
       {/* Top bar */}
-      <header className="bg-[oklch(0.12_0.016_40)] border-b border-white/8 sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-primary-500/20 border border-primary-400/25 flex items-center justify-center">
-              <Icon name="table" size={14} strokeWidth={2} className="text-primary-400" />
+      <header
+        data-print-hide
+        className="sticky top-0 z-20 border-b border-[var(--border-subtle)] bg-[var(--color-surface-page)]/85 backdrop-blur-xl transition-colors"
+      >
+        <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
+          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10">
+              <Icon name="lock" size={14} strokeWidth={2} className="text-primary-500" />
             </div>
-            <span className="font-heading font-bold text-sm text-white">Admin Console</span>
+            <div className="leading-tight">
+              <p className="font-heading text-sm font-bold text-[var(--color-text-main)]">Admin Console</p>
+              <p className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)] sm:block">YankoPOS</p>
+            </div>
           </div>
 
-          <div className="w-px h-4 bg-white/12 shrink-0" />
+          <div className="h-6 w-px shrink-0 bg-[var(--border-subtle)]" />
 
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-white/40 hidden sm:block">{tenants.length} negocios</span>
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-dot" />
+          <div className="flex items-center gap-2 text-xs">
+            <span className="hidden text-[var(--color-text-muted)] sm:inline">{tenants.length} negocios</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
               {activeCount} activos
             </span>
             {inactiveCount > 0 && (
-              <span className="text-red-400/80">{inactiveCount} inactivos</span>
+              <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 font-medium text-red-500">
+                {inactiveCount} inactivos
+              </span>
             )}
           </div>
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors"
+              className="rounded-lg p-2 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-main)]"
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} strokeWidth={1.75} />
             </button>
             <button
               onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${showForm ? 'bg-white/10 text-white/60 hover:bg-white/15' : 'bg-primary-600 hover:bg-primary-500 text-white shadow-sm'}`}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                showForm
+                  ? 'bg-[var(--color-surface-2)] text-[var(--color-text-soft)] hover:bg-[var(--color-surface-3)]'
+                  : 'bg-primary-600 text-white hover:bg-primary-500'
+              }`}
             >
-              {showForm ? '✕ Cancelar' : '+ Nuevo negocio'}
+              <Icon name={showForm ? 'x' : 'plus'} size={13} strokeWidth={2.5} />
+              {showForm ? 'Cancelar' : 'Nuevo negocio'}
             </button>
             <button
               onClick={handleLogout}
-              className="text-xs text-white/30 hover:text-white/60 transition-colors px-2 py-1.5 rounded-lg hover:bg-white/8"
+              title="Cerrar sesión"
+              className="rounded-lg p-2 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-soft)]"
             >
-              Salir
+              <Icon name="logout" size={15} strokeWidth={1.75} />
             </button>
           </div>
         </div>
@@ -186,7 +200,7 @@ export function AdminPage() {
 
         {/* Create tenant form */}
         {showForm && (
-          <div className="rounded-2xl p-5 mb-6 shadow-card-lg border border-[var(--border-subtle)] animate-slide" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl p-5 mb-6 border border-[var(--border-subtle)] animate-slide" style={{ background: 'var(--color-surface-card)' }}>
             <h2 className="font-heading font-bold text-sm text-gray-900 mb-4">Nuevo negocio</h2>
             <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
               {CREATE_FIELDS.map(([field, label, type, placeholder]) => (
@@ -219,7 +233,7 @@ export function AdminPage() {
             <p className="text-xs text-gray-400 mt-0.5">Gestión de tenants, planes y módulos</p>
           </div>
 
-          <div className="rounded-2xl shadow-card-lg border border-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl border border-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
             {loading ? (
               <div className="flex justify-center py-12"><Spinner /></div>
             ) : tenants.length === 0 ? (

@@ -10,62 +10,78 @@ interface AdminLoginProps {
 export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminLoginProps) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 bg-[oklch(0.10_0.012_38)]"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden p-4"
       style={{
-        backgroundImage: 'radial-gradient(circle, oklch(0.17 0.010 40) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
+        background: 'var(--color-surface-page)',
+        backgroundImage: 'radial-gradient(circle, var(--border-subtle) 1px, transparent 1px)',
+        backgroundSize: '26px 26px',
       }}
     >
+      {/* Halo de marca, centrado sobre la tarjeta */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, oklch(0.55 0.20 42 / 0.12), transparent 70%)' }}
+        className="pointer-events-none absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse 55% 45% at 50% 38%, oklch(0.55 0.20 42 / 0.10), transparent 70%)' }}
       />
 
-      <div className="relative w-full max-w-xs animate-in">
-        <div className="flex flex-col items-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-[oklch(0.18_0.018_40)] border border-white/10 flex items-center justify-center mb-3 shadow-card-xl">
-            <Icon name="lock" size={28} strokeWidth={1.5} className="text-white/80" />
+      <div className="relative w-full max-w-[23rem] animate-in">
+        <div className="flex flex-col items-center mb-7 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-primary-500/20 bg-primary-500/10">
+            <Icon name="lock" size={26} strokeWidth={1.5} className="text-primary-500" />
           </div>
-          <h1 className="font-heading font-black text-xl text-white tracking-tight">Admin Console</h1>
-          <p className="text-xs text-white/35 mt-0.5 tracking-wide">Acceso restringido</p>
+          <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-500/80">
+            Panel interno
+          </p>
+          <h1 className="font-heading font-black text-2xl text-[var(--color-text-main)] tracking-tight">Admin Console</h1>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Solo personal autorizado de YankoPOS</p>
         </div>
 
         <div
-          className="rounded-2xl border border-white/10 overflow-hidden shadow-[0_24px_48px_oklch(0_0_0/0.5)]"
-          style={{ background: 'oklch(0.14 0.016 40 / 0.90)', backdropFilter: 'blur(20px)' }}
+          className="overflow-hidden rounded-[1.5rem] border border-[var(--border-subtle)]"
+          style={{ background: 'var(--color-surface-card)' }}
         >
-          <form onSubmit={onSubmit} className="p-6 space-y-4">
+          <form onSubmit={onSubmit} className="p-7 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-white/50 mb-1.5 tracking-wide">
+              <label className="mb-1.5 block text-xs font-medium tracking-wide text-[var(--color-text-soft)]">
                 Clave de administrador
               </label>
-              <input
-                type="password"
-                value={keyInput}
-                onChange={(e) => onKeyChange(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 bg-white/8 border border-white/12 focus:outline-none focus:ring-2 focus:ring-primary-400/40 focus:border-primary-400/40 transition-all"
-                autoFocus
-              />
+              <div className="relative">
+                <Icon
+                  name="lock"
+                  size={15}
+                  strokeWidth={2}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+                />
+                <input
+                  type="password"
+                  value={keyInput}
+                  onChange={(e) => onKeyChange(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full rounded-xl border border-[var(--border-subtle)] py-[0.69rem] pl-10 pr-3.5 text-sm text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] transition-colors focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  style={{ background: 'var(--color-surface-2)' }}
+                  autoFocus
+                />
+              </div>
             </div>
 
             {keyError && (
-              <div className="flex items-center gap-1.5 text-xs text-red-400">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
+              <div className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+                <Icon name="warning" size={14} strokeWidth={2} className="shrink-0" />
                 {keyError}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-primary-600 hover:bg-primary-500 active:brightness-95 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
+              className="w-full rounded-xl bg-primary-600 py-[0.69rem] text-sm font-semibold text-white transition-colors hover:bg-primary-500 active:scale-[0.98] active:brightness-95"
             >
               Entrar al panel
             </button>
           </form>
         </div>
+
+        <p className="mt-5 text-center text-[11px] text-[var(--color-text-muted)]">
+          Este acceso queda registrado. Uso exclusivo de operaciones YankoPOS.
+        </p>
       </div>
     </div>
   );
