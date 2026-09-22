@@ -219,6 +219,12 @@ function QuickExpenseDialog({
     e.preventDefault();
     if (qty <= 0)  { toast.error('La cantidad debe ser mayor a 0'); return; }
     if (unit <= 0) { toast.error('El monto debe ser mayor a 0');    return; }
+    // Un gasto siempre pertenece a una sucursal: en la vista consolidada no hay
+    // ninguna a la que imputarlo.
+    if (!currentBranchId) {
+      toast.error('Selecciona una sucursal antes de registrar un gasto');
+      return;
+    }
 
     setSaving(true);
     try {

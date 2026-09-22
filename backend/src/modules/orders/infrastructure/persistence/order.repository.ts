@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BranchReportDto,
   CashierReportDto,
   DailySeriesItemDto,
   DayHourDataDto,
@@ -686,6 +687,76 @@ export class OrderRepository implements OrderRepositoryPort {
       totalSales:    Number(r.totalSales),
       averageTicket: Number(r.averageTicket),
     }));
+  }
+
+  async getByBranch(tenantId: string, from: string, to: string): Promise<BranchReportDto[]> {
+    const fromTs = new Date(from);
+    const toTs   = new Date(to);
+
+    type RawRow = {
+      branchId:      string;
+      branchName:    string;
+      orderCount:    bigint;
+      totalSales:    unknown;
+      totalExpenses: unknown;
+    };
+
+    // Se parte de `branches` para que una sucursal sin movimiento aparezca
+    // igual con ceros: en una comparativa, la fila ausente se lee como un bug.
+    // Se incluyen también las desactivadas que sí tuvieron movimiento en el
+    // período: sus ventas cuentan en el total consolidado, así que omitirlas
+    // haría que la suma de la tabla no cuadre con el encabezado del reporte.
+    const rows = await this.prisma.$queryRaw<RawRow[]>`
+      WITH sales AS (
+        SELECT o.branch_id,
+          COUNT(*)::bigint AS order_count,
+          COALESCE(SUM(o.total), 0) AS total_sales
+        FROM orders o
+        WHERE o.tenant_id = ${tenantId}
+          AND o.created_at BETWEEN ${fromTs} AND ${toTs}
+          AND o.status != ${OrderStatus.CANCELLED}
+          AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
+          AND EXISTS (
+            SELECT 1 FROM order_payments op
+            WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
+          )
+        GROUP BY o.branch_id
+      ),
+      spend AS (
+        SELECT e.branch_id, COALESCE(SUM(e.amount), 0) AS total_expenses
+        FROM expenses e
+        WHERE e.tenant_id = ${tenantId}
+          AND e.status = 'ACTIVE'
+          AND e.expense_date BETWEEN ${fromTs} AND ${toTs}
+        GROUP BY e.branch_id
+      )
+      SELECT
+        b.id   AS "branchId",
+        b.name AS "branchName",
+        COALESCE(s.order_count, 0)::bigint AS "orderCount",
+        COALESCE(s.total_sales, 0)         AS "totalSales",
+        COALESCE(x.total_expenses, 0)      AS "totalExpenses"
+      FROM branches b
+      LEFT JOIN sales s ON s.branch_id = b.id
+      LEFT JOIN spend x ON x.branch_id = b.id
+      WHERE b.tenant_id = ${tenantId}
+        AND (b.is_active = true OR s.branch_id IS NOT NULL OR x.branch_id IS NOT NULL)
+      ORDER BY "totalSales" DESC, b.name ASC`;
+
+    return rows.map((r) => {
+      const orderCount    = Number(r.orderCount);
+      const totalSales    = Number(r.totalSales);
+      const totalExpenses = Number(r.totalExpenses);
+      return {
+        branchId:      r.branchId,
+        branchName:    r.branchName,
+        orderCount,
+        totalSales,
+        totalExpenses,
+        netProfit:     totalSales - totalExpenses,
+        averageTicket: orderCount > 0 ? totalSales / orderCount : 0,
+      };
+    });
   }
 
   async getTopCategories(

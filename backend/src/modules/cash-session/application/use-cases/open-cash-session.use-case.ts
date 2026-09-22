@@ -3,6 +3,7 @@ import { SOCKET_EVENTS } from '@pos/shared';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { MetricsService } from '../../../../common/metrics/metrics.service';
 import { OpenCashSessionDto } from '../dto/open-cash-session.dto';
 
@@ -11,11 +12,15 @@ export class OpenCashSessionUseCase {
   constructor(
     @Inject('CashSessionRepositoryPort')
     private readonly repo: CashSessionRepositoryPort,
+    private readonly branchAccess: BranchAccessService,
     @Optional() private readonly eventsService?: EventsService,
     @Optional() private readonly metricsService?: MetricsService,
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: OpenCashSessionDto): Promise<CashSession> {
+    // El OWNER manda branchId por query: validar antes de crear nada.
+    await this.branchAccess.assertUsable(branchId, tenantId);
+
     // Rechazo rápido en la capa de aplicación (mayoría de casos, sin tocar el índice).
     const existing = await this.repo.findOpenByBranch(tenantId, branchId);
     if (existing) {

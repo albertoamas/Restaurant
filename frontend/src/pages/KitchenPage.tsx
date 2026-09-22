@@ -181,6 +181,15 @@ export function KitchenPage() {
         </div>
       </div>
 
+      {!currentBranchId && (
+        <div className="relative z-10 mx-4 sm:mx-6 mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
+          <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-amber-600" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            La cocina trabaja sobre una sola sucursal. Elegí una en el menú lateral para ver sus pedidos.
+          </p>
+        </div>
+      )}
+
       {/* Two-column board */}
       <div className="relative z-10 flex-1 grid grid-cols-1 xl:grid-cols-2 gap-4 p-4 sm:p-6 min-h-0">
         {/* PENDING column */}

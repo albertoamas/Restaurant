@@ -1,8 +1,9 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { OpenCashSessionUseCase } from './open-cash-session.use-case';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionStatus } from '@pos/shared';
 
@@ -16,11 +17,13 @@ describe('OpenCashSessionUseCase', () => {
   let useCase: OpenCashSessionUseCase;
   let repo: MockProxy<CashSessionRepositoryPort>;
   let eventsService: MockProxy<EventsService>;
+  let branchAccess: MockProxy<BranchAccessService>;
 
   beforeEach(() => {
     repo          = mock<CashSessionRepositoryPort>();
     eventsService = mock<EventsService>();
-    useCase       = new OpenCashSessionUseCase(repo, eventsService);
+    branchAccess  = mock<BranchAccessService>();
+    useCase       = new OpenCashSessionUseCase(repo, branchAccess, eventsService);
     repo.save.mockImplementation(async (s) => s);
   });
 
@@ -81,5 +84,22 @@ describe('OpenCashSessionUseCase', () => {
     await expect(useCase.execute('tenant-1', 'branch-1', 'user-1', DTO)).rejects.toThrow();
 
     expect(eventsService.emitToTenant).not.toHaveBeenCalled();
+  });
+
+  it('valida que la sucursal pertenezca al tenant antes de abrir', async () => {
+    repo.findOpenByBranch.mockResolvedValue(null);
+
+    await useCase.execute('tenant-1', 'branch-1', 'user-1', DTO);
+
+    expect(branchAccess.assertUsable).toHaveBeenCalledWith('branch-1', 'tenant-1');
+  });
+
+  it('no abre caja si la sucursal no existe o está desactivada', async () => {
+    branchAccess.assertUsable.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
+
+    await expect(useCase.execute('tenant-1', 'branch-ajena', 'user-1', DTO))
+      .rejects.toThrow(BadRequestException);
+
+    expect(repo.save).not.toHaveBeenCalled();
   });
 });

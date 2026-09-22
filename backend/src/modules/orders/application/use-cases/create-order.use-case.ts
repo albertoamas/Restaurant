@@ -6,7 +6,7 @@ import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
 import { OrderPayment } from '../../domain/entities/order-payment.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
-import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
@@ -23,8 +23,7 @@ export class CreateOrderUseCase {
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
 
-    @Inject('BranchRepositoryPort')
-    private readonly branchRepository: BranchRepositoryPort,
+    private readonly branchAccess: BranchAccessService,
 
     @Inject('ProductRepositoryPort')
     private readonly productRepository: ProductRepositoryPort,
@@ -48,12 +47,8 @@ export class CreateOrderUseCase {
   private readonly logger = new Logger(CreateOrderUseCase.name);
 
   async execute(tenantId: string, branchId: string, userId: string, role: UserRole, dto: CreateOrderDto): Promise<Order> {
-    // 1. Verificar que la sucursal existe y pertenece a este tenant.
-    //    Previene que un OWNER envíe un branchId de otro tenant en el request body.
-    const branch = await this.branchRepository.findById(branchId, tenantId);
-    if (!branch) {
-      throw new BadRequestException(`Sucursal ${branchId} no encontrada`);
-    }
+    // 1. La sucursal existe, es del tenant y está activa.
+    await this.branchAccess.assertUsable(branchId, tenantId);
 
     // 2. Collect requested product ids (deduplicated for the lookup)
     const productIds = [...new Set(dto.items.map((item) => item.productId))];

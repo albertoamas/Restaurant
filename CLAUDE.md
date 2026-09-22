@@ -131,7 +131,31 @@ Shared database / shared schema. Every table has `tenant_id`. The JWT payload ca
 
 `@CurrentUser()` returns the full `JwtPayload` (defined in `common/decorators/tenant.decorator.ts`).
 
-`CASHIER` users have `branchId` baked into their JWT; `OWNER` users have `branchId: null` and pass it in the request body/query.
+### Multi-sucursal
+
+El OWNER tiene `branchId: null` en su JWT y manda la sucursal en el body/query, así que
+**todo caso de uso que escriba datos de sucursal debe validarla primero** con
+`BranchAccessService` (`modules/branch/application/services/`):
+
+- `assertBelongsToTenant(branchId, tenantId)` — existe y es del tenant.
+- `assertUsable(branchId, tenantId)` — además está activa. Es la que usan crear pedido,
+  crear gasto, abrir caja y asignar un cajero a una sucursal.
+
+Un `branchId` sin validar archiva pedidos o gastos bajo una sucursal inexistente: los datos
+quedan huérfanos y no aparecen en ningún reporte.
+
+`JwtStrategy` resuelve el `branchId` **desde la BD**, no desde el payload del token (caché de
+60 s, la misma lectura que ya valida que el usuario esté activo). Así reasignar un cajero a otra
+sucursal surte efecto sin obligarlo a cerrar sesión.
+
+`ToggleBranchUseCase` no deja desactivar una sucursal con la caja abierta ni con cajeros activos
+asignados. Las lecturas que necesita para eso viven en `BranchUsagePort`, un puerto propio de
+`BranchModule`: inyectar `UserRepositoryPort` / `CashSessionRepositoryPort` crearía una
+dependencia circular, porque esos módulos ya importan `BranchModule`.
+
+En el frontend, `currentBranchId === null` significa **vista consolidada de todas las
+sucursales**. Solo es válida en pantallas de lectura (reportes, pedidos, gastos, clientes);
+POS, caja y cocina exigen una sucursal concreta y muestran su propio aviso.
 
 ### Authorization
 
@@ -160,13 +184,13 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
 | `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
-| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only |
+| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/by-branch`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only. `by-branch` es la comparativa consolidada: no acepta `branchId`, siempre devuelve todas las sucursales activas. |
 | `upload` | `POST /uploads/image` | multer; 10 MB raw; JPG/PNG/WEBP/GIF; converted to WEBP; served at `/uploads/<file>` |
 | `expenses` | `GET/POST /expenses/categories`, `DELETE /expenses/categories/:id`, `POST/GET/PATCH/DELETE /expenses`, `GET /expenses/summary` | OWNER only; `cashSessionId` nullable (expense recorded even without open session); `ExpenseCategory` is a per-tenant DB model (name, icon, isActive, trackQuantity, sortOrder); each expense has optional `items[]` (ExpenseItem) |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
 | `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |
 | `admin` | `GET/POST /admin/tenants`, `PATCH /admin/tenants/:id/toggle`, `PATCH /admin/tenants/:id/plan`, `PATCH /admin/tenants/:id/modules`, `GET/PATCH /admin/plans` | `AdminGuard`; no JWT. `/modules` sets per-tenant feature flags (`ordersEnabled`, `cashEnabled`, `rafflesEnabled`, etc.) |
-| `plans` | `GET /plans` | No auth; returns all `Plan` rows. `PlanLimitService` is injected by other modules to enforce `maxBranches`, `maxCashiers`, `maxProducts` limits. |
+| `plans` | `GET /plans` | No auth; returns all `Plan` rows. `PlanLimitService` is injected by other modules to enforce `maxBranches`, `maxCashiers`, `maxProducts` limits. Los tres contadores cuentan **solo filas activas**: desactivar una sucursal, un cajero o un producto libera cupo del plan. |
 | `events` | WebSocket gateway | Socket.IO rooms per tenant/branch |
 
 ### Global app configuration

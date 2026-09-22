@@ -12,6 +12,17 @@ export interface CashierReportDto {
   averageTicket: number;
 }
 
+/** Una fila por sucursal activa del tenant, para la comparativa consolidada. */
+export interface BranchReportDto {
+  branchId: string;
+  branchName: string;
+  orderCount: number;
+  totalSales: number;
+  totalExpenses: number;
+  netProfit: number;
+  averageTicket: number;
+}
+
 export interface TopCategoryDto {
   categoryId: string | null;
   categoryName: string | null;

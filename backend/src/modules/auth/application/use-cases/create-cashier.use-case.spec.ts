@@ -1,10 +1,11 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { UserRole, SaasPlan, OrderNumberResetPeriod } from '@pos/shared';
 import { CreateCashierUseCase } from './create-cashier.use-case';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { User } from '../../domain/entities/user.entity';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
@@ -55,12 +56,14 @@ describe('CreateCashierUseCase', () => {
   let userRepo: MockProxy<UserRepositoryPort>;
   let tenantRepo: MockProxy<TenantRepositoryPort>;
   let planLimitService: MockProxy<PlanLimitService>;
+  let branchAccess: MockProxy<BranchAccessService>;
 
   beforeEach(() => {
     userRepo         = mock<UserRepositoryPort>();
     tenantRepo       = mock<TenantRepositoryPort>();
     planLimitService = mock<PlanLimitService>();
-    useCase = new CreateCashierUseCase(userRepo, tenantRepo, planLimitService);
+    branchAccess     = mock<BranchAccessService>();
+    useCase = new CreateCashierUseCase(userRepo, tenantRepo, planLimitService, branchAccess);
 
     // Happy-path defaults
     tenantRepo.findById.mockResolvedValue(makeTenant());
@@ -151,5 +154,23 @@ describe('CreateCashierUseCase', () => {
     });
 
     expect(result.branchId).toBe('branch-1');
+    expect(branchAccess.assertUsable).toHaveBeenCalledWith('branch-1', TENANT_ID);
+  });
+
+  it('no valida ninguna sucursal si el DTO no trae branchId', async () => {
+    await useCase.execute(TENANT_ID, { email: 'cajero@demo.com', password: 'pass123', name: 'Cajero' });
+    expect(branchAccess.assertUsable).not.toHaveBeenCalled();
+  });
+
+  it('no crea el cajero si la sucursal no existe o está desactivada', async () => {
+    branchAccess.assertUsable.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
+
+    await expect(
+      useCase.execute(TENANT_ID, {
+        email: 'cajero@demo.com', password: 'pass123', name: 'Cajero', branchId: 'branch-ajena',
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(userRepo.save).not.toHaveBeenCalled();
   });
 });

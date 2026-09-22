@@ -1,5 +1,6 @@
 import client from './client';
 import type {
+  BranchReportDto,
   CashierReportDto,
   CashSessionReportItemDto,
   DailyReportDto,
@@ -48,6 +49,12 @@ export const reportsApi = {
       .get<DailySeriesItemDto[]>('/api/v1/reports/daily-series', {
         params: { from, to, ...(branchId ? { branchId } : {}) },
       })
+      .then((r) => r.data),
+
+  /** Comparativa entre sucursales: no recibe branchId, siempre devuelve todas. */
+  getByBranch: (from: string, to: string) =>
+    client
+      .get<BranchReportDto[]>('/api/v1/reports/by-branch', { params: { from, to } })
       .then((r) => r.data),
 
   getByCashier: (from: string, to: string, branchId?: string) =>

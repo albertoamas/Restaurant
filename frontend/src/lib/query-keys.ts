@@ -53,6 +53,9 @@ export const queryKeys = {
   reportDailySeries: (from: string, to: string, branchId?: string) =>
     ['reports', 'dailySeries', from, to, branchId] as const,
 
+  reportByBranch: (from: string, to: string) =>
+    ['reports', 'byBranch', from, to] as const,
+
   reportByCashier: (from: string, to: string, branchId?: string) =>
     ['reports', 'byCashier', from, to, branchId] as const,
 

@@ -133,6 +133,15 @@ export function ExpensesPage() {
         </div>
       </div>
 
+      {user?.role === UserRole.OWNER && !currentBranchId && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
+          <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-amber-600" />
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            Estás viendo <strong>todas las sucursales</strong>. Elegí una en el menú lateral para registrar gastos.
+          </p>
+        </div>
+      )}
+
       {/* Registro rápido */}
       <QuickExpensePanel onRegistered={reload} onManage={() => setConcepts(true)} />
 

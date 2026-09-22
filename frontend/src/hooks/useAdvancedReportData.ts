@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type {
+  BranchReportDto,
   CashierReportDto,
   CashSessionReportItemDto,
   DailySeriesItemDto,
@@ -75,4 +76,19 @@ export function useCashReport(
 
   const loading = enabled && (cashierLoading || sessionsLoading);
   return { byCashier, cashSessions, loading };
+}
+
+/**
+ * Comparativa entre sucursales para la pestaña Resumen.
+ * Solo tiene sentido en la vista consolidada (sin sucursal seleccionada).
+ */
+export function useBranchComparison(utcFrom: string, utcTo: string, enabled: boolean) {
+  const { data: byBranch = [] as BranchReportDto[], isPending } = useQuery({
+    queryKey: queryKeys.reportByBranch(utcFrom, utcTo),
+    queryFn:  () => reportsApi.getByBranch(utcFrom, utcTo),
+    staleTime: 0,
+    enabled,
+  });
+
+  return { byBranch, loading: enabled && isPending };
 }

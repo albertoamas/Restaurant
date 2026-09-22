@@ -4,6 +4,7 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { PlansModule } from '../plans/plans.module';
 import { CommonModule } from '../../common/common.module';
+import { BranchModule } from '../branch/branch.module';
 import { GetProfileUseCase } from './application/use-cases/get-profile.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
@@ -33,6 +34,7 @@ import { AuthController } from './infrastructure/controllers/auth.controller';
     }),
     PlansModule,
     CommonModule,
+    BranchModule,
   ],
   controllers: [AuthController],
   providers: [

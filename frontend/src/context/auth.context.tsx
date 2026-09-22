@@ -41,11 +41,20 @@ interface AuthContextType {
   isAuthenticated:  boolean;
   isLoading:        boolean;
   currentBranchId:  string | null;
-  setCurrentBranch: (id: string) => void;
+  /** `null` = vista consolidada de todas las sucursales (solo OWNER, solo lectura). */
+  setCurrentBranch: (id: string | null) => void;
   login:            (email: string, password: string, remember: boolean) => Promise<void>;
   logout:           () => void;
   refreshUser:      () => Promise<void>;
 }
+
+/**
+ * Marca que el dueño eligió su vista de sucursal a mano. Sin esta marca, la
+ * sucursal guardada vino de la auto-selección de cuando había una sola: al
+ * aparecer la segunda hay que pasarlo al consolidado, o seguiría viendo los
+ * números de un solo local creyendo que son los totales.
+ */
+export const BRANCH_PINNED_KEY = 'pos_branch_pinned';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -100,8 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [applyUser]);
 
-  const setCurrentBranch = useCallback((id: string) => {
-    localStorage.setItem('pos_branch', id);
+  const setCurrentBranch = useCallback((id: string | null) => {
+    if (id === null) localStorage.removeItem('pos_branch');
+    else             localStorage.setItem('pos_branch', id);
     setCurrentBranchId(id);
   }, []);
 
@@ -130,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearToken();
     localStorage.removeItem('pos_branch');
+    localStorage.removeItem(BRANCH_PINNED_KEY);
     setTokenState(null);
     setUser(null);
     setCurrentBranchId(null);
