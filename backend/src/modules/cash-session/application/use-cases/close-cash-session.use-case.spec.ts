@@ -59,6 +59,40 @@ describe('CloseCashSessionUseCase', () => {
       .rejects.toThrow(NotFoundException);
   });
 
+  it('valida que la sucursal pertenezca al tenant antes de buscar la sesión', async () => {
+    const session = makeOpenSession(500);
+    repo.findOpenByBranch.mockResolvedValue(session);
+    repo.getCashSalesDuringSession.mockResolvedValue(0);
+
+    await useCase.execute('tenant-1', 'branch-1', 'user-1', { closingAmount: 500 });
+
+    expect(branchAccess.assertBelongsToTenant).toHaveBeenCalledWith('branch-1', 'tenant-1');
+  });
+
+  it('no busca la sesión si la sucursal no existe o es de otro tenant', async () => {
+    branchAccess.assertBelongsToTenant.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
+
+    await expect(useCase.execute('tenant-1', 'branch-ajena', 'user-1', { closingAmount: 500 }))
+      .rejects.toThrow(BadRequestException);
+
+    expect(repo.findOpenByBranch).not.toHaveBeenCalled();
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('usa assertBelongsToTenant, no assertUsable: cerrar no debe exigir sucursal activa', async () => {
+    // ToggleBranchUseCase exige la caja cerrada ANTES de desactivar una sucursal,
+    // así que cerrar caja debe seguir siendo posible en ese tramo sin bloquearse
+    // a sí mismo con un chequeo de "activa".
+    const session = makeOpenSession(500);
+    repo.findOpenByBranch.mockResolvedValue(session);
+    repo.getCashSalesDuringSession.mockResolvedValue(0);
+
+    await useCase.execute('tenant-1', 'branch-1', 'user-1', { closingAmount: 500 });
+
+    expect(branchAccess.assertBelongsToTenant).toHaveBeenCalled();
+    expect(branchAccess.assertUsable).not.toHaveBeenCalled();
+  });
+
   it('la sesión queda en estado CLOSED después del cierre', async () => {
     const session = makeOpenSession(200);
     repo.findOpenByBranch.mockResolvedValue(session);
@@ -79,15 +113,4 @@ describe('CloseCashSessionUseCase', () => {
 
     expect(eventsService.emitToTenant).toHaveBeenCalledWith('tenant-1', 'cash.closed', result);
   });
-
-  // Cerrar contra una sucursal ajena o inexistente tiene que fallar por la
-  // sucursal, no por "no hay caja abierta", que despista al operador.
-  it('rechaza una sucursal que no es del tenant', async () => {
-    branchAccess.assertBelongsToTenant.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
-
-    await expect(useCase.execute('tenant-1', 'branch-ajena', 'user-1', { closingAmount: 100 }))
-      .rejects.toThrow(BadRequestException);
-    expect(repo.findOpenByBranch).not.toHaveBeenCalled();
-  });
-
 });

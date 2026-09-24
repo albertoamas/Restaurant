@@ -4,8 +4,8 @@ import { CashSession } from '../../domain/entities/cash-session.entity';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { MetricsService } from '../../../../common/metrics/metrics.service';
-import { CloseCashSessionDto } from '../dto/close-cash-session.dto';
 import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
+import { CloseCashSessionDto } from '../dto/close-cash-session.dto';
 
 @Injectable()
 export class CloseCashSessionUseCase {
@@ -18,9 +18,9 @@ export class CloseCashSessionUseCase {
   ) {}
 
   async execute(tenantId: string, branchId: string, userId: string, dto: CloseCashSessionDto): Promise<CashSession> {
-    // `assertBelongsToTenant` y no `assertUsable`: una sucursal en proceso de
-    // baja igual tiene que poder cerrar su caja — es justamente el paso previo
-    // a desactivarla.
+    // Solo verifica pertenencia al tenant, no assertUsable: cerrar caja debe
+    // seguir siendo posible aunque la sucursal esté (o se esté) desactivando —
+    // de hecho ToggleBranchUseCase exige la caja cerrada antes de desactivar.
     await this.branchAccess.assertBelongsToTenant(branchId, tenantId);
 
     const session = await this.repo.findOpenByBranch(tenantId, branchId);
