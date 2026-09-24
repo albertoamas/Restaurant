@@ -64,7 +64,8 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
       const loaded = allPages.reduce((acc, p) => acc + p.data.length, 0);
       return loaded < lastPage.total ? allPages.length + 1 : undefined;
     },
-    enabled:          !!branchId,
+    // Sin `enabled`: `branchId === null` es la vista consolidada del dueño
+    // (el backend omite el filtro), no "todavía no eligió".
     refetchInterval:  connected ? false : FALLBACK_POLL_MS,
   });
 
@@ -125,7 +126,8 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
 
   // ── Socket handlers ────────────────────────────────────────────────────────
   const handleOrderCreated = useCallback((order: OrderDto) => {
-    if (order.branchId !== branchId) return;
+    // En consolidado entran los pedidos de todas las sucursales.
+    if (branchId !== null && order.branchId !== branchId) return;
     const d = toBoliviaDateString(new Date(order.createdAt));
     if (d !== date) return;
     if (statusFilter && order.status !== statusFilter) return;
@@ -183,7 +185,7 @@ export function useOrders(date: string, statusFilter: string, branchId: string |
     orders,
     setOrders,
     total,
-    loading:     isPending && !!branchId,
+    loading:     isPending,
     loadingMore: isFetchingNextPage,
     hasMore:     hasNextPage,
     fetchOrders,

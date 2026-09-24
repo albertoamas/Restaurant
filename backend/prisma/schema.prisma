@@ -19,6 +19,12 @@ model Plan {
   maxProducts    Int      @map("max_products")
   kitchenEnabled Boolean  @default(false)  @map("kitchen_enabled")
   rafflesEnabled Boolean  @default(false)  @map("raffles_enabled")
+  teamEnabled    Boolean  @default(true)   @map("team_enabled")
+  // Habilita las pestanas de reporte mas alla de Resumen y Ventas.
+  advancedReports Boolean @default(false)  @map("advanced_reports")
+  // -1 = sin limite, misma convencion que los max_*.
+  reportHistoryDays Int   @default(-1)     @map("report_history_days")
+  maxStorageMb      Int   @default(-1)     @map("max_storage_mb")
   createdAt      DateTime @default(now())  @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime @updatedAt       @map("updated_at") @db.Timestamptz(3)
 
@@ -47,6 +53,13 @@ model Tenant {
   branchesEnabled Boolean @default(true)  @map("branches_enabled")
   kitchenEnabled  Boolean @default(false) @map("kitchen_enabled")
   rafflesEnabled  Boolean @default(false) @map("raffles_enabled")
+  advancedReportsEnabled Boolean @default(false) @map("advanced_reports_enabled")
+
+  // Solo los flags que el admin fijo a mano, como excepcion por encima del plan.
+  // Las 6 columnas de arriba siguen siendo el valor EFECTIVO (lo que leen el
+  // ModuleGuard y el login); esto registra cuales de esos valores fueron una
+  // decision explicita, para que sobrevivan a un cambio de plan.
+  moduleOverrides Json?   @map("module_overrides")
 
   // Order settings — configurable by the tenant owner
   orderNumberResetPeriod String  @default("DAILY") @map("order_number_reset_period")

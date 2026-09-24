@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TenantModule } from '../tenant/tenant.module';
 import { AuthModule } from '../auth/auth.module';
 import { PlansModule } from '../plans/plans.module';
+import { UploadModule } from '../upload/upload.module';
 import { EventsModule } from '../events/events.module';
 import { BranchModule } from '../branch/branch.module';
 import { CatalogModule } from '../catalog/catalog.module';
@@ -16,7 +17,7 @@ import { ResetUserPasswordAdminUseCase } from './application/use-cases/reset-use
 import { GetTenantHealthUseCase } from './application/use-cases/get-tenant-health.use-case';
 
 @Module({
-  imports: [TenantModule, AuthModule, PlansModule, EventsModule, BranchModule, CatalogModule],
+  imports: [TenantModule, AuthModule, PlansModule, EventsModule, BranchModule, CatalogModule, UploadModule],
   controllers: [AdminController],
   providers: [
     ListTenantsUseCase,

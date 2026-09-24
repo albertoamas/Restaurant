@@ -82,9 +82,14 @@ export class AdminController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePlanDto,
   ) {
-    const result = await this.updateTenantPlanUseCase.execute(id, dto.plan);
-    this.logger.log(`updateTenantPlan tenantId=${id} plan=${dto.plan}`);
-    return result;
+    const { tenant, excess } = await this.updateTenantPlanUseCase.execute(id, dto.plan);
+    this.logger.log(
+      `updateTenantPlan tenantId=${id} plan=${dto.plan}` +
+      (excess.length ? ` excess=${JSON.stringify(excess)}` : ''),
+    );
+    // El tenant se devuelve plano por compatibilidad con /admin; `excess` viaja
+    // al lado para que la UI avise del downgrade sin romper el shape anterior.
+    return { ...tenant, excess };
   }
 
   @Patch('tenants/:id/modules')

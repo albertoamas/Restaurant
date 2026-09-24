@@ -4,8 +4,8 @@ import { CashSessionStatus } from '@pos/shared';
 import { CloseCashSessionUseCase } from './close-cash-session.use-case';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
-import { CashSession } from '../../domain/entities/cash-session.entity';
 import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
+import { CashSession } from '../../domain/entities/cash-session.entity';
 
 function makeOpenSession(openingAmount = 500): CashSession {
   return CashSession.open({

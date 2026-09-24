@@ -161,12 +161,17 @@ POS, caja y cocina exigen una sucursal concreta y muestran su propio aviso.
 
 ### Authorization
 
-Four guards in `backend/src/common/guards/`:
+Five guards in `backend/src/common/guards/`:
 
 - `JwtAuthGuard` — verifies JWT, required on almost all endpoints
 - `RolesGuard` + `@Roles(UserRole.OWNER)` — restricts endpoints to owners
 - `ModuleGuard` + `@RequiresModule('rafflesEnabled')` — checks the tenant's module flag; returns 403 if disabled
+- `ReportHistoryGuard` — rechaza un `from`/`date` más viejo que `plan.reportHistoryDays`
 - `AdminGuard` — checks `x-admin-key` header against `ADMIN_SECRET`; no JWT; used only on `/admin/*`
+
+`CommonModule` reexporta `TenantModule` y `PlansModule` porque Nest instancia un guard
+referenciado por clase en `@UseGuards` **dentro del módulo del controlador**, no dentro de
+`CommonModule`: si sus puertos no son visibles ahí, la app no arranca.
 
 ### Real-time (WebSockets)
 
@@ -186,8 +191,8 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
 | `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
-| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/by-branch`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only. `by-branch` es la comparativa consolidada: no acepta `branchId`, siempre devuelve todas las sucursales activas. |
-| `upload` | `POST /uploads/image` | multer; 10 MB raw; JPG/PNG/WEBP/GIF; converted to WEBP; served at `/uploads/<file>` |
+| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/by-branch`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only. `by-branch` es la comparativa consolidada: no acepta `branchId`, siempre devuelve todas las sucursales activas. Seis endpoints (`top-products`, `top-customers`, `by-cashier`, `top-categories`, `by-hour`, `cash-sessions`) exigen `@RequiresModule('advancedReportsEnabled')`; los que alimentan Resumen, Ventas y la comparativa de sucursales quedan abiertos. Todo el controlador pasa por `ReportHistoryGuard`. |
+| `upload` | `POST /uploads/image` | multer en memoria; 10 MB raw; JPG/PNG/WEBP/GIF; convertido a WEBP; guardado en `uploads/<tenantId>/` y servido en `/uploads/<tenantId>/<file>`. `StorageQuotaService` cobra `plan.maxStorageMb` sobre el tamaño **ya comprimido**. Las URLs planas viejas (`/uploads/<file>`) siguen sirviéndose. |
 | `expenses` | `GET/POST /expenses/categories`, `DELETE /expenses/categories/:id`, `POST/GET/PATCH/DELETE /expenses`, `GET /expenses/summary` | OWNER only; `cashSessionId` nullable (expense recorded even without open session); `ExpenseCategory` is a per-tenant DB model (name, icon, isActive, trackQuantity, sortOrder); each expense has optional `items[]` (ExpenseItem) |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
 | `raffles` | `GET/POST /raffles`, `GET /raffles/:id`, `PATCH /raffles/:id`, `PATCH /raffles/:id/close`, `PATCH /raffles/:id/reopen`, `DELETE /raffles/:id`, `POST /raffles/:id/draw`, `PATCH /raffles/:id/winners/:winnerId/void`, `PATCH /raffles/:id/tickets/deliver`, `PATCH /raffles/:id/tickets/undeliver` | OWNER only; requires `rafflesEnabled` module flag; status lifecycle: ACTIVE→CLOSED→DRAWING→DRAWN. Two ticket modes: `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent = ticket, tracked in `CustomerRaffleSpending`). `GET /raffles/:id` returns `RaffleDetailDto` (includes `tickets[]` + `spendings[]`). `RaffleAutoTicketService` creates tickets automatically when new orders are created/completed. Ticket delivery (`deliver`/`undeliver`) marks physical tickets as handed out. |
@@ -303,11 +308,52 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 ### SaaS plans and module flags
 
-`Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Each plan defines capacity limits (`maxBranches`, `maxCashiers`, `maxProducts`, `kitchenEnabled`). Use cases check these limits before creating branches, cashiers, or products.
+`Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Cada plan define límites de
+capacidad (`maxBranches`, `maxCashiers`, `maxProducts`) y qué módulos incluye (`kitchenEnabled`,
+`rafflesEnabled`, `teamEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`).
+**La convención es `-1 = sin límite`** en todos los numéricos: usá `isUnlimited()` de
+`@pos/shared`, nunca compares contra 999. `UpdatePlanLimitsUseCase` rechaza el 0 en todos
+ellos: un plan con 0 MB o 0 días queda vendido e inservible.
 
-`Tenant` also has per-tenant module flags set exclusively by the admin (not the tenant owner): `ordersEnabled`, `cashEnabled`, `teamEnabled`, `branchesEnabled`, `kitchenEnabled`, `rafflesEnabled`. These are read by `GET /auth/me` and applied client-side via `applyModules()` in `auth.context.tsx` every login — they populate `settings.store.ts` but are **not** persisted to localStorage.
+Cada cosa que el plan vende tiene quién la haga cumplir del lado del servidor — no se anuncia
+nada que no se aplique:
 
-Each `Plan` also defines `kitchenEnabled` and `rafflesEnabled` as defaults; the per-tenant flags take precedence when set by the admin.
+| Campo del plan | Quién lo aplica |
+|---|---|
+| `maxBranches` / `maxCashiers` / `maxProducts` | `PlanLimitService` (solo cuenta filas activas) |
+| `kitchenEnabled` / `rafflesEnabled` / `teamEnabled` | `ModuleGuard` + `@RequiresModule` |
+| `advancedReports` | `ModuleGuard` sobre 6 endpoints de `reports` |
+| `reportHistoryDays` | `ReportHistoryGuard` |
+| `maxStorageMb` | `StorageQuotaService` en `POST /uploads/image` |
+
+La pestaña **Gastos** de reportes *no* es avanzada: se alimenta de `/expenses/summary`, que el
+módulo de gastos deja abierto y la pantalla `/expenses` ya muestra. Marcarla habría sido un
+candado solo de UI.
+
+**El plan es la fuente de verdad de los módulos.** `PlanModulesService`
+(`modules/plans/application/`) resuelve el valor efectivo:
+
+```
+efectivo = baseModules(plan) + moduleOverrides
+```
+
+- `baseModules(plan)` — `ordersEnabled`/`cashEnabled` siempre true (núcleo del producto),
+  `branchesEnabled` derivado de `maxBranches !== 1`, y el resto del plan.
+- `Tenant.moduleOverrides` (JSONB) guarda **solo** los flags que el admin fijó a mano como
+  excepción (una cortesía, una prueba). Si el admin vuelve a poner el valor del plan, la
+  excepción se borra y ese módulo vuelve a seguir al plan.
+
+Las 6 columnas booleanas de `tenants` siguen siendo el **valor efectivo** que leen `ModuleGuard`
+y `GET /auth/me`: el camino caliente de lectura no calcula nada. Los use-cases que cambian plan
+o módulos recalculan y persisten ambas cosas juntas con `applyModules()`.
+
+Por qué importa: antes, cambiar el plan pisaba los flags con los del plan y **una cortesía
+concedida a mano se perdía en silencio**; y un tenant nuevo nacía siempre con los mismos flags
+sin importar cuánto pagaba.
+
+Bajar de plan **no destruye nada**: `PATCH /admin/tenants/:id/plan` devuelve `excess[]` con los
+recursos que quedaron por encima del límite para que `/admin` lo avise, y la creación de
+recursos nuevos ya queda bloqueada por `PlanLimitService`.
 
 ### Tenant settings
 
@@ -381,7 +427,7 @@ Migrations run automatically on backend container start (`prisma migrate deploy`
 
 - Uploads persist via Docker volume `uploads_data`. Backup script: `scripts/backup-db.sh` (pg_dump + uploads tar). Schedule with cron: `0 3 * * * /opt/pos/scripts/backup-db.sh`.
 - nginx proxies `/api/`, `/uploads/`, `/socket.io/` to backend; stays on HTTP internally.
-- `/uploads/<uuid>.<ext>` files are **publicly accessible** — any URL is guessable if the UUID leaks. Acceptable for product/logo images; do not store sensitive files here.
+- `/uploads/<tenantId>/<uuid>.<ext>` files are **publicly accessible** — any URL is guessable if the UUID leaks. Acceptable for product/logo images; do not store sensitive files here.
 - TLS: Cloudflare orange-cloud proxy, SSL/TLS set to "Full".
 
 ## Reference Docs

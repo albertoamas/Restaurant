@@ -49,6 +49,10 @@ async function seed() {
         maxProducts:    80,
         kitchenEnabled: false,
         rafflesEnabled: false,
+        teamEnabled:       false,
+        advancedReports:   false,
+        reportHistoryDays: 90,
+        maxStorageMb:      100,
       },
       {
         id:             'PRO',
@@ -59,6 +63,10 @@ async function seed() {
         maxProducts:    -1,
         kitchenEnabled: true,
         rafflesEnabled: true,
+        teamEnabled:       true,
+        advancedReports:   true,
+        reportHistoryDays: 365,
+        maxStorageMb:      1024,
       },
       {
         id:             'NEGOCIO',
@@ -69,6 +77,10 @@ async function seed() {
         maxProducts:    -1,
         kitchenEnabled: true,
         rafflesEnabled: true,
+        teamEnabled:       true,
+        advancedReports:   true,
+        reportHistoryDays: -1,
+        maxStorageMb:      5120,
       },
     ],
   });

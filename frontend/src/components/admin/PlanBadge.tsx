@@ -1,7 +1,8 @@
-import { SaasPlan } from '@pos/shared';
+import { SaasPlan, isUnlimited } from '@pos/shared';
 
+/** La convención "-1 = sin límite" vive en @pos/shared; acá solo se le da formato. */
 export function limitLabel(n: number) {
-  return n === -1 ? '∞' : String(n);
+  return isUnlimited(n) ? '∞' : String(n);
 }
 
 export const PLAN_CONFIG: Record<SaasPlan, {

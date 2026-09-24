@@ -10,6 +10,7 @@ export interface ServerConfig {
   branchesEnabled?:        boolean;
   kitchenEnabled?:         boolean;
   rafflesEnabled?:         boolean;
+  advancedReportsEnabled?: boolean;
   orderNumberResetPeriod?: OrderNumberResetPeriod;
   businessAddress?:        string;
   businessPhone?:          string;
@@ -37,6 +38,7 @@ interface SettingsState {
   teamEnabled: boolean;
   branchesEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
   setOrdersEnabled: (value: boolean) => void;
   setCashEnabled: (value: boolean) => void;
   setTeamEnabled: (value: boolean) => void;
@@ -84,6 +86,7 @@ export const useSettingsStore = create<SettingsState>()(
       teamEnabled: true,
       branchesEnabled: true,
       rafflesEnabled: false,
+      advancedReportsEnabled: false,
       setOrdersEnabled: (value) => set({ ordersEnabled: value }),
       setCashEnabled: (value) => set({ cashEnabled: value }),
       setTeamEnabled: (value) => set({ teamEnabled: value }),
@@ -112,6 +115,7 @@ export const useSettingsStore = create<SettingsState>()(
         branchesEnabled:        config.branchesEnabled        ?? state.branchesEnabled,
         kitchenEnabled:         config.kitchenEnabled         ?? state.kitchenEnabled,
         rafflesEnabled:         config.rafflesEnabled         ?? state.rafflesEnabled,
+        advancedReportsEnabled: config.advancedReportsEnabled ?? state.advancedReportsEnabled,
         orderNumberResetPeriod: config.orderNumberResetPeriod ?? state.orderNumberResetPeriod,
         businessAddress:        config.businessAddress        ?? state.businessAddress,
         businessPhone:          config.businessPhone          ?? state.businessPhone,

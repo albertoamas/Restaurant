@@ -31,14 +31,18 @@ function makeUser(overrides: Partial<User> = {}): User {
 }
 
 function makeTenant(overrides: Partial<{ isActive: boolean }> = {}): Tenant {
-  return new Tenant(
-    'tenant-1', 'HamBurgos', 'hamburgos',
-    overrides.isActive ?? true,
-    new Date(), SaasPlan.BASICO,
-    true, true, true, true, true,
-    false,
-    OrderNumberResetPeriod.DAILY, null,
-  );
+  return Tenant.reconstitute({
+    id: 'tenant-1', name: 'HamBurgos', slug: 'hamburgos', isActive: overrides.isActive ?? true, createdAt: new Date(),
+    plan: SaasPlan.BASICO,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: true,
+      branchesEnabled: true, kitchenEnabled: true, rafflesEnabled: false,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
 }
 
 function makePlan(): Plan {
@@ -92,6 +96,19 @@ describe('LoginUseCase', () => {
     tenantRepo.findById.mockResolvedValue(makeTenant({ isActive: false }));
     await expect(useCase.execute({ email: 'admin@hamburgos.com', password: PASSWORD }))
       .rejects.toThrow(ForbiddenException);
+  });
+
+  // El frontend apaga rutas y pestañas con estos flags: si uno falta en la
+  // respuesta, `?? false` lo deja apagado y el cliente pierde un módulo que
+  // paga. Se comparan todos los módulos del tenant, no un subconjunto.
+  it('devuelve todos los módulos del tenant, sin omitir ninguno', async () => {
+    const tenant = makeTenant();
+    const result = await useCase.execute({ email: 'admin@hamburgos.com', password: PASSWORD });
+
+    expect(result.user.modules).toEqual({
+      ...tenant.modules,
+      orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    });
   });
 
   it('el payload del JWT contiene sub, tenantId, branchId y role', async () => {

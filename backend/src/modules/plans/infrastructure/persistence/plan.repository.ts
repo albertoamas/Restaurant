@@ -6,16 +6,19 @@ import { PlanRepositoryPort } from '../../domain/ports/plan-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 function toDomain(row: PrismaPlan): Plan {
-  return new Plan(
-    row.id as SaasPlan,
-    row.displayName,
-    Number(row.priceBs),
-    row.maxBranches,
-    row.maxCashiers,
-    row.maxProducts,
-    row.kitchenEnabled,
-    row.rafflesEnabled,
-  );
+  return new Plan(row.id as SaasPlan, {
+    displayName:       row.displayName,
+    priceBs:           Number(row.priceBs),
+    maxBranches:       row.maxBranches,
+    maxCashiers:       row.maxCashiers,
+    maxProducts:       row.maxProducts,
+    kitchenEnabled:    row.kitchenEnabled,
+    rafflesEnabled:    row.rafflesEnabled,
+    teamEnabled:       row.teamEnabled,
+    advancedReports:   row.advancedReports,
+    reportHistoryDays: row.reportHistoryDays,
+    maxStorageMb:      row.maxStorageMb,
+  });
 }
 
 @Injectable()
@@ -46,6 +49,10 @@ export class PlanRepository implements PlanRepositoryPort {
         ...(updates.maxProducts    !== undefined && { maxProducts:    updates.maxProducts }),
         ...(updates.kitchenEnabled !== undefined && { kitchenEnabled: updates.kitchenEnabled }),
         ...(updates.rafflesEnabled !== undefined && { rafflesEnabled: updates.rafflesEnabled }),
+        ...(updates.teamEnabled       !== undefined && { teamEnabled:       updates.teamEnabled }),
+        ...(updates.advancedReports   !== undefined && { advancedReports:   updates.advancedReports }),
+        ...(updates.reportHistoryDays !== undefined && { reportHistoryDays: updates.reportHistoryDays }),
+        ...(updates.maxStorageMb      !== undefined && { maxStorageMb:      updates.maxStorageMb }),
       },
     });
     return toDomain(row);

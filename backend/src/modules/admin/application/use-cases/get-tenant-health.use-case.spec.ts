@@ -7,32 +7,32 @@ import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.p
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
+import { PlanModulesService } from '../../../plans/application/plan-modules.service';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
-import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { Plan, PlanProps } from '../../../plans/domain/entities/plan.entity';
+import { proPlan } from '../../../plans/domain/entities/plan.fixture';
 import { User } from '../../../auth/domain/entities/user.entity';
 
 const TENANT_ID = 'tenant-1';
 
 function makeTenant(over: Partial<{ kitchenEnabled: boolean; rafflesEnabled: boolean; isActive: boolean }> = {}): Tenant {
-  return new Tenant(
-    TENANT_ID, 'HamBurgos', 'hamburgos', over.isActive ?? true, new Date(),
-    SaasPlan.PRO,
-    true, true, true, true,
-    over.kitchenEnabled ?? true,
-    over.rafflesEnabled ?? true,
-    OrderNumberResetPeriod.DAILY, null, null, null,
-  );
+  return Tenant.reconstitute({
+    id: TENANT_ID, name: 'HamBurgos', slug: 'hamburgos', isActive: over.isActive ?? true, createdAt: new Date(),
+    plan: SaasPlan.PRO,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: true,
+      branchesEnabled: true, kitchenEnabled: over.kitchenEnabled ?? true, rafflesEnabled: over.rafflesEnabled ?? true,
+      advancedReportsEnabled: true,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
 }
 
-function makePlan(over: Partial<{ maxBranches: number; maxCashiers: number; maxProducts: number; kitchenEnabled: boolean; rafflesEnabled: boolean }> = {}): Plan {
-  return new Plan(
-    SaasPlan.PRO, 'Pro', 399,
-    over.maxBranches ?? 3,
-    over.maxCashiers ?? 8,
-    over.maxProducts ?? -1,
-    over.kitchenEnabled ?? true,
-    over.rafflesEnabled ?? true,
-  );
+function makePlan(over: Partial<PlanProps> = {}): Plan {
+  return proPlan(over);
 }
 
 function makeUser(role: UserRole, isActive = true): User {
@@ -55,18 +55,25 @@ describe('GetTenantHealthUseCase', () => {
   let userRepo: MockProxy<UserRepositoryPort>;
   let tenantRepo: MockProxy<TenantRepositoryPort>;
   let productRepo: MockProxy<ProductRepositoryPort>;
-  let planLimitService: MockProxy<PlanLimitService>;
+  let planRepo: MockProxy<PlanRepositoryPort>;
+  let planLimitService: PlanLimitService;
 
   beforeEach(() => {
     branchRepo       = mock<BranchRepositoryPort>();
     userRepo         = mock<UserRepositoryPort>();
     tenantRepo       = mock<TenantRepositoryPort>();
     productRepo      = mock<ProductRepositoryPort>();
-    planLimitService = mock<PlanLimitService>();
-    useCase = new GetTenantHealthUseCase(branchRepo, userRepo, tenantRepo, productRepo, planLimitService);
+    planRepo         = mock<PlanRepositoryPort>();
+    // PlanLimitService real sobre un planRepo mockeado: así el test cubre de
+    // verdad la comparación contra los límites en vez de un stub que devuelve
+    // lo que el propio test decide.
+    planLimitService = new PlanLimitService(planRepo);
+    useCase = new GetTenantHealthUseCase(
+      branchRepo, userRepo, tenantRepo, productRepo, planLimitService, new PlanModulesService(),
+    );
 
     tenantRepo.findById.mockResolvedValue(makeTenant());
-    planLimitService.getPlan.mockResolvedValue(makePlan());
+    planRepo.findById.mockResolvedValue(makePlan());
     branchRepo.countByTenant.mockResolvedValue(1);
     productRepo.countByTenant.mockResolvedValue(10);
     userRepo.findAllByTenant.mockResolvedValue([makeUser(UserRole.OWNER), makeUser(UserRole.CASHIER)]);
@@ -118,6 +125,11 @@ describe('GetTenantHealthUseCase', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('moduleFlagsMatchPlan=true cuando los módulos del tenant son exactamente los del plan', async () => {
+    const result = await useCase.execute(TENANT_ID);
+    expect(result.moduleFlagsMatchPlan).toBe(true);
+  });
+
   it('moduleFlagsMatchPlan=false se informa pero NO afecta ok (los overrides del admin son deliberados)', async () => {
     tenantRepo.findById.mockResolvedValue(makeTenant({ kitchenEnabled: false }));
     const result = await useCase.execute(TENANT_ID);
@@ -127,7 +139,7 @@ describe('GetTenantHealthUseCase', () => {
 
   it('withinBranchLimit=false si ya superó el máximo del plan', async () => {
     branchRepo.countByTenant.mockResolvedValue(5);
-    planLimitService.getPlan.mockResolvedValue(makePlan({ maxBranches: 3 }));
+    planRepo.findById.mockResolvedValue(makePlan({ maxBranches: 3 }));
     const result = await useCase.execute(TENANT_ID);
     expect(result.withinBranchLimit).toBe(false);
     expect(result.ok).toBe(false);
@@ -135,7 +147,7 @@ describe('GetTenantHealthUseCase', () => {
 
   it('-1 en el plan significa ilimitado: nunca marca el límite como superado', async () => {
     productRepo.countByTenant.mockResolvedValue(99999);
-    planLimitService.getPlan.mockResolvedValue(makePlan({ maxProducts: -1 }));
+    planRepo.findById.mockResolvedValue(makePlan({ maxProducts: -1 }));
     const result = await useCase.execute(TENANT_ID);
     expect(result.withinProductLimit).toBe(true);
   });

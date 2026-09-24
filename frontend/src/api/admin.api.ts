@@ -8,6 +8,7 @@ export interface TenantModules {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
 }
 
 export interface TenantRow {
@@ -21,6 +22,16 @@ export interface TenantRow {
   modules: TenantModules;
   branchCount: number;
   cashierCount: number;
+  productCount: number;
+  /** MB ocupados por sus imágenes, para contrastar con `plan.maxStorageMb`. */
+  storageUsedMb: number;
+}
+
+/** Un recurso que quedó por encima de lo que permite el plan nuevo (downgrade). */
+export interface PlanExcess {
+  resource: 'sucursales' | 'cajeros' | 'productos';
+  current: number;
+  max: number;
 }
 
 // Shape returned by PATCH /admin/tenants/:id/plan (Tenant domain entity serialized flat)
@@ -33,6 +44,9 @@ export interface TenantPlanUpdateResponse {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
+  /** Vacío si el cambio de plan no dejó nada fuera de límite. */
+  excess: PlanExcess[];
 }
 
 export type { PlanDto };

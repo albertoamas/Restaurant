@@ -61,13 +61,10 @@ export class LoginUseCase {
         role:       user.role,
         plan:       tenant.plan,
         planLimits: plan.limits,
+        // `tenant.modules` está tipado con TenantModules: un flag nuevo viaja
+        // solo, sin que haya que acordarse de agregarlo aquí y en /auth/me.
         modules: {
-          ordersEnabled:          tenant.ordersEnabled,
-          cashEnabled:            tenant.cashEnabled,
-          teamEnabled:            tenant.teamEnabled,
-          branchesEnabled:        tenant.branchesEnabled,
-          kitchenEnabled:         tenant.kitchenEnabled,
-          rafflesEnabled:         tenant.rafflesEnabled,
+          ...tenant.modules,
           orderNumberResetPeriod: tenant.orderNumberResetPeriod,
         },
       },

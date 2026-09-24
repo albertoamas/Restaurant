@@ -5,6 +5,7 @@ import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.p
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { PRODUCT_REPOSITORY_PORT, ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+import { PlanModulesService } from '../../../plans/application/plan-modules.service';
 
 export interface TenantHealthDto {
   tenantId: string;
@@ -46,6 +47,7 @@ export class GetTenantHealthUseCase {
     @Inject(PRODUCT_REPOSITORY_PORT)
     private readonly productRepo: ProductRepositoryPort,
     private readonly planLimitService: PlanLimitService,
+    private readonly planModules: PlanModulesService,
   ) {}
 
   async execute(tenantId: string): Promise<TenantHealthDto> {
@@ -62,13 +64,16 @@ export class GetTenantHealthUseCase {
     const hasActiveOwner = users.some((u) => u.role === UserRole.OWNER && u.isActive);
     const cashierCount   = users.filter((u) => u.role === UserRole.CASHIER && u.isActive).length;
 
-    const moduleFlagsMatchPlan =
-      tenant.kitchenEnabled === plan.kitchenEnabled &&
-      tenant.rafflesEnabled === plan.rafflesEnabled;
+    // Se compara contra lo que el plan realmente otorga (incluye los módulos
+    // derivados, como branchesEnabled), no contra dos flags sueltos del plan.
+    const base = this.planModules.baseModules(plan);
+    const moduleFlagsMatchPlan = (Object.keys(base) as (keyof typeof base)[])
+      .every((key) => tenant.modules[key] === base[key]);
 
-    const withinBranchLimit  = plan.maxBranches === -1 || branchCount  <= plan.maxBranches;
-    const withinCashierLimit = plan.maxCashiers === -1 || cashierCount <= plan.maxCashiers;
-    const withinProductLimit = plan.maxProducts === -1 || productCount <= plan.maxProducts;
+    // Mismo criterio que usa el cambio de plan para detectar excesos.
+    const withinBranchLimit  = this.planLimitService.fitsInPlan(plan, 'sucursales', branchCount);
+    const withinCashierLimit = this.planLimitService.fitsInPlan(plan, 'cajeros',    cashierCount);
+    const withinProductLimit = this.planLimitService.fitsInPlan(plan, 'productos',  productCount);
 
     const hasBranch    = branchCount > 0;
     const hasProducts  = productCount > 0;

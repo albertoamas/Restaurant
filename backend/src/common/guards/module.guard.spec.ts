@@ -8,11 +8,18 @@ import { MODULE_FLAGS_KEY } from '../decorators/module-flags.decorator';
 import { SaasPlan, OrderNumberResetPeriod } from '@pos/shared';
 
 function makeTenant(rafflesEnabled = false, ordersEnabled = true): Tenant {
-  return new Tenant(
-    'tenant-1', 'Test', 'test', true, new Date(), SaasPlan.BASICO,
-    ordersEnabled, true, true, true, false, rafflesEnabled,
-    OrderNumberResetPeriod.DAILY, null, null, null,
-  );
+  return Tenant.reconstitute({
+    id: 'tenant-1', name: 'Test', slug: 'test', isActive: true, createdAt: new Date(),
+    plan: SaasPlan.BASICO,
+    modules: {
+      ordersEnabled: ordersEnabled, cashEnabled: true, teamEnabled: true,
+      branchesEnabled: true, kitchenEnabled: false, rafflesEnabled: rafflesEnabled,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
 }
 
 function makeCtx(flags: string[] | undefined, tenantId = 'tenant-1'): ExecutionContext {

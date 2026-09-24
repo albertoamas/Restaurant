@@ -40,12 +40,18 @@ function makeBranch(): Branch {
 }
 
 function makeTenant(): Tenant {
-  return new Tenant(
-    TENANT_ID, 'HamBurgos', 'hamburgos', true, new Date(),
-    SaasPlan.BASICO, true, true, true, true, true,
-    false,
-    OrderNumberResetPeriod.DAILY, null,
-  );
+  return Tenant.reconstitute({
+    id: TENANT_ID, name: 'HamBurgos', slug: 'hamburgos', isActive: true, createdAt: new Date(),
+    plan: SaasPlan.BASICO,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: true,
+      branchesEnabled: true, kitchenEnabled: true, rafflesEnabled: false,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
 }
 
 function makeDto(overrides: Partial<CreateOrderDto> = {}): CreateOrderDto {
