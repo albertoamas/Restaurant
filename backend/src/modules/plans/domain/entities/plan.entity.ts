@@ -15,20 +15,36 @@ export interface PlanProps {
 }
 
 export class Plan {
-  constructor(
-    public readonly id:                SaasPlan,
-    public readonly displayName:       string,
-    public readonly priceBs:           number,
-    public readonly maxBranches:       number,
-    public readonly maxCashiers:       number,
-    public readonly maxProducts:       number,
-    public readonly kitchenEnabled:    boolean,
-    public readonly rafflesEnabled:    boolean = false,
-    public readonly teamEnabled:       boolean = true,
-    public readonly advancedReports:   boolean = false,
-    public readonly reportHistoryDays: number  = -1,
-    public readonly maxStorageMb:      number  = -1,
-  ) {}
+  readonly displayName:       string;
+  readonly priceBs:           number;
+  readonly maxBranches:       number;
+  readonly maxCashiers:       number;
+  readonly maxProducts:       number;
+  readonly kitchenEnabled:    boolean;
+  readonly rafflesEnabled:    boolean;
+  readonly teamEnabled:       boolean;
+  readonly advancedReports:   boolean;
+  readonly reportHistoryDays: number;
+  readonly maxStorageMb:      number;
+
+  /**
+   * Los campos entran por nombre y no por posición: con once argumentos, cuatro
+   * de ellos booleanos seguidos, una llamada posicional no se puede leer ni
+   * revisar, y equivocarse de orden compila igual.
+   */
+  constructor(public readonly id: SaasPlan, props: PlanProps) {
+    this.displayName       = props.displayName;
+    this.priceBs           = props.priceBs;
+    this.maxBranches       = props.maxBranches;
+    this.maxCashiers       = props.maxCashiers;
+    this.maxProducts       = props.maxProducts;
+    this.kitchenEnabled    = props.kitchenEnabled;
+    this.rafflesEnabled    = props.rafflesEnabled;
+    this.teamEnabled       = props.teamEnabled;
+    this.advancedReports   = props.advancedReports;
+    this.reportHistoryDays = props.reportHistoryDays;
+    this.maxStorageMb      = props.maxStorageMb;
+  }
 
   get limits(): PlanLimits {
     return {
@@ -44,6 +60,11 @@ export class Plan {
     };
   }
 
+  /** Todos los campos editables, tal como los espera el constructor. */
+  get props(): PlanProps {
+    return { displayName: this.displayName, priceBs: this.priceBs, ...this.limits };
+  }
+
   toDto(): PlanDto {
     return {
       id:          this.id,
@@ -54,19 +75,16 @@ export class Plan {
   }
 
   withUpdates(updates: Partial<PlanProps>): Plan {
-    return new Plan(
-      this.id,
-      updates.displayName       ?? this.displayName,
-      updates.priceBs           ?? this.priceBs,
-      updates.maxBranches       ?? this.maxBranches,
-      updates.maxCashiers       ?? this.maxCashiers,
-      updates.maxProducts       ?? this.maxProducts,
-      updates.kitchenEnabled    ?? this.kitchenEnabled,
-      updates.rafflesEnabled    ?? this.rafflesEnabled,
-      updates.teamEnabled       ?? this.teamEnabled,
-      updates.advancedReports   ?? this.advancedReports,
-      updates.reportHistoryDays ?? this.reportHistoryDays,
-      updates.maxStorageMb      ?? this.maxStorageMb,
-    );
+    return new Plan(this.id, { ...this.props, ...stripUndefined(updates) });
   }
+}
+
+/**
+ * `{ ...props, ...updates }` con una clave en `undefined` la pisaría con
+ * `undefined`; un PATCH parcial llega justamente así.
+ */
+function stripUndefined(updates: Partial<PlanProps>): Partial<PlanProps> {
+  return Object.fromEntries(
+    Object.entries(updates).filter(([, value]) => value !== undefined),
+  ) as Partial<PlanProps>;
 }

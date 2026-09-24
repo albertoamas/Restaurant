@@ -33,20 +33,28 @@ interface TenantState {
 }
 
 export class Tenant {
-  constructor(
+  /** Valor efectivo de cada módulo. Lo leen `ModuleGuard` y el mapeo a Prisma. */
+  readonly ordersEnabled: boolean;
+  readonly cashEnabled: boolean;
+  readonly teamEnabled: boolean;
+  readonly branchesEnabled: boolean;
+  readonly kitchenEnabled: boolean;
+  readonly rafflesEnabled: boolean;
+  readonly advancedReportsEnabled: boolean;
+
+  /**
+   * Los módulos entran como un solo objeto y no como N booleanos sueltos: así
+   * agregar uno no obliga a tocar cada sitio que construye un Tenant, ni deja
+   * llamadas con seis booleanos seguidos donde el orden es invisible.
+   */
+  private constructor(
     public readonly id: string,
     public readonly name: string,
     public readonly slug: string,
     public readonly isActive: boolean,
     public readonly createdAt: Date,
     public readonly plan: SaasPlan,
-    public readonly ordersEnabled: boolean,
-    public readonly cashEnabled: boolean,
-    public readonly teamEnabled: boolean,
-    public readonly branchesEnabled: boolean,
-    public readonly kitchenEnabled: boolean,
-    public readonly rafflesEnabled: boolean,
-    public readonly advancedReportsEnabled: boolean,
+    modules: TenantModules,
     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
     public readonly businessAddress: string | null = null,
     public readonly businessPhone: string | null = null,
@@ -58,7 +66,15 @@ export class Tenant {
      * de plan. Ver `PlanModulesService`.
      */
     public readonly moduleOverrides: Partial<TenantModules> | null = null,
-  ) {}
+  ) {
+    this.ordersEnabled          = modules.ordersEnabled;
+    this.cashEnabled            = modules.cashEnabled;
+    this.teamEnabled            = modules.teamEnabled;
+    this.branchesEnabled        = modules.branchesEnabled;
+    this.kitchenEnabled         = modules.kitchenEnabled;
+    this.rafflesEnabled         = modules.rafflesEnabled;
+    this.advancedReportsEnabled = modules.advancedReportsEnabled;
+  }
 
   /**
    * Un tenant nuevo nace con los módulos que le da su plan, no con constantes
@@ -69,13 +85,7 @@ export class Tenant {
     return new Tenant(
       uuidv4(), name, slug, false, new Date(),
       plan,
-      modules.ordersEnabled,
-      modules.cashEnabled,
-      modules.teamEnabled,
-      modules.branchesEnabled,
-      modules.kitchenEnabled,
-      modules.rafflesEnabled,
-      modules.advancedReportsEnabled,
+      modules,
       OrderNumberResetPeriod.DAILY,
       null, null, null,
       null,
@@ -101,11 +111,9 @@ export class Tenant {
     receiptSlogan?: string | null;
     moduleOverrides?: Partial<TenantModules> | null;
   }): Tenant {
-    const m = props.modules;
     return new Tenant(
       props.id, props.name, props.slug, props.isActive, props.createdAt, props.plan,
-      m.ordersEnabled, m.cashEnabled, m.teamEnabled, m.branchesEnabled,
-      m.kitchenEnabled, m.rafflesEnabled, m.advancedReportsEnabled,
+      props.modules,
       props.orderNumberResetPeriod,
       props.businessAddress ?? null,
       props.businessPhone   ?? null,
@@ -116,7 +124,6 @@ export class Tenant {
 
   /** Un solo lugar donde se reconstruye la instancia: evita repetir 18 argumentos. */
   private copyWith(changes: Partial<TenantState>): Tenant {
-    const modules = changes.modules ?? this.modules;
     return new Tenant(
       this.id,
       changes.name     ?? this.name,
@@ -124,13 +131,7 @@ export class Tenant {
       changes.isActive ?? this.isActive,
       this.createdAt,
       changes.plan     ?? this.plan,
-      modules.ordersEnabled,
-      modules.cashEnabled,
-      modules.teamEnabled,
-      modules.branchesEnabled,
-      modules.kitchenEnabled,
-      modules.rafflesEnabled,
-      modules.advancedReportsEnabled,
+      changes.modules  ?? this.modules,
       changes.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
       changes.businessAddress !== undefined ? changes.businessAddress : this.businessAddress,
       changes.businessPhone   !== undefined ? changes.businessPhone   : this.businessPhone,

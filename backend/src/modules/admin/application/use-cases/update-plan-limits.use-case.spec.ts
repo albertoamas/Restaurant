@@ -7,11 +7,12 @@ import { PlanModulesService } from '../../../plans/application/plan-modules.serv
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { basicoPlan, negocioPlan, proPlan } from '../../../plans/domain/entities/plan.fixture';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 
-const BASICO  = new Plan(SaasPlan.BASICO,  'Básico',  220,  1,  2,  80, false, false, false, false, 90,  100);
-const PRO     = new Plan(SaasPlan.PRO,     'Pro',     399,  3,  8,  -1, true,  true,  true,  true,  365, 1024);
-const NEGOCIO = new Plan(SaasPlan.NEGOCIO, 'Negocio', 790, -1, -1,  -1, true,  true,  true,  true,  -1,  5120);
+const BASICO  = basicoPlan();
+const PRO     = proPlan();
+const NEGOCIO = negocioPlan();
 
 describe('UpdatePlanLimitsUseCase', () => {
   let useCase: UpdatePlanLimitsUseCase;

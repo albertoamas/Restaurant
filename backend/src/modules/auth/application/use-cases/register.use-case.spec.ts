@@ -9,6 +9,7 @@ import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
 import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
 import { PlanModulesService } from '../../../plans/application/plan-modules.service';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { basicoPlan, proPlan } from '../../../plans/domain/entities/plan.fixture';
 import { SaasPlan } from '@pos/shared';
 
 const DTO = {
@@ -63,7 +64,7 @@ describe('RegisterUseCase', () => {
     useCase    = new RegisterUseCase(userRepo, tenantRepo, planRepo, new PlanModulesService());
 
     planRepo.findById.mockResolvedValue(
-      new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, 100),
+      basicoPlan(),
     );
     userRepo.findByEmailGlobal.mockResolvedValue(null);
     tenantRepo.findBySlug.mockResolvedValue(null); // slug libre por defecto
@@ -140,7 +141,7 @@ describe('RegisterUseCase', () => {
 
   it('un plan más generoso da más módulos al tenant nuevo', async () => {
     planRepo.findById.mockResolvedValue(
-      new Plan(SaasPlan.PRO, 'Pro', 399, 3, 8, -1, true, true, true, true, 365, 1024),
+      proPlan(),
     );
 
     await useCase.execute(DTO);

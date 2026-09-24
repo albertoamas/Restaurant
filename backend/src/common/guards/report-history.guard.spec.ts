@@ -6,6 +6,7 @@ import { TenantRepositoryPort } from '../../modules/tenant/domain/ports/tenant-r
 import { PlanRepositoryPort } from '../../modules/plans/domain/ports/plan-repository.port';
 import { Tenant } from '../../modules/tenant/domain/entities/tenant.entity';
 import { Plan } from '../../modules/plans/domain/entities/plan.entity';
+import { basicoPlan } from '../../modules/plans/domain/entities/plan.fixture';
 
 const TENANT_ID = 'tenant-1';
 
@@ -23,7 +24,7 @@ function makeTenant(): Tenant {
 }
 
 function makePlan(reportHistoryDays: number): Plan {
-  return new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, reportHistoryDays, 100);
+  return basicoPlan({ reportHistoryDays });
 }
 
 /** ISO de hace N días, que es como llegan los `from` del frontend. */

@@ -8,9 +8,10 @@ import { PlanModulesService } from '../../../plans/application/plan-modules.serv
 import { EventsService } from '../../../events/events.service';
 import { Tenant, TenantModules } from '../../../tenant/domain/entities/tenant.entity';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { basicoPlan } from '../../../plans/domain/entities/plan.fixture';
 
 const TENANT_ID = 'tenant-1';
-const BASICO = new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, 100);
+const BASICO = basicoPlan();
 
 function makeTenant(overrides: Partial<TenantModules> | null = null): Tenant {
   return Tenant.reconstitute({

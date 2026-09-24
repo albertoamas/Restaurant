@@ -7,8 +7,11 @@ import { EventsService } from '../../../events/events.service';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
 import { UpdatePlanLimitsDto } from '../dto/update-plan-limits.dto';
 
-/** Campos numéricos donde 0 no tiene sentido comercial. */
-const POSITIVE_LIMITS = [
+/**
+ * Los límites numéricos del plan. Gobiernan dos reglas a la vez:
+ * no pueden valer 0, y no pueden decrecer al subir de plan.
+ */
+const NUMERIC_LIMITS = [
   { key: 'maxBranches'       as const, label: 'sucursales' },
   { key: 'maxCashiers'       as const, label: 'cajeros' },
   { key: 'maxProducts'       as const, label: 'productos' },
@@ -63,7 +66,7 @@ export class UpdatePlanLimitsUseCase {
   }
 
   private assertPositiveLimits(dto: UpdatePlanLimitsDto): void {
-    for (const { key, label } of POSITIVE_LIMITS) {
+    for (const { key, label } of NUMERIC_LIMITS) {
       if (dto[key] === 0) {
         throw new BadRequestException(
           `El límite de ${label} no puede ser 0. Usa -1 para "sin límite".`,
@@ -88,7 +91,7 @@ export class UpdatePlanLimitsUseCase {
   }
 
   private assertNotBelow(higher: Plan, lower: Plan): void {
-    for (const { key, label } of POSITIVE_LIMITS) {
+    for (const { key, label } of NUMERIC_LIMITS) {
       const h = higher[key];
       const l = lower[key];
       // "Sin límite" siempre es mayor o igual que cualquier número.

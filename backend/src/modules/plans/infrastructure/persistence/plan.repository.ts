@@ -6,20 +6,19 @@ import { PlanRepositoryPort } from '../../domain/ports/plan-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 function toDomain(row: PrismaPlan): Plan {
-  return new Plan(
-    row.id as SaasPlan,
-    row.displayName,
-    Number(row.priceBs),
-    row.maxBranches,
-    row.maxCashiers,
-    row.maxProducts,
-    row.kitchenEnabled,
-    row.rafflesEnabled,
-    row.teamEnabled,
-    row.advancedReports,
-    row.reportHistoryDays,
-    row.maxStorageMb,
-  );
+  return new Plan(row.id as SaasPlan, {
+    displayName:       row.displayName,
+    priceBs:           Number(row.priceBs),
+    maxBranches:       row.maxBranches,
+    maxCashiers:       row.maxCashiers,
+    maxProducts:       row.maxProducts,
+    kitchenEnabled:    row.kitchenEnabled,
+    rafflesEnabled:    row.rafflesEnabled,
+    teamEnabled:       row.teamEnabled,
+    advancedReports:   row.advancedReports,
+    reportHistoryDays: row.reportHistoryDays,
+    maxStorageMb:      row.maxStorageMb,
+  });
 }
 
 @Injectable()

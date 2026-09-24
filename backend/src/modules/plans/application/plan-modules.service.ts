@@ -8,7 +8,7 @@ import { TenantModules } from '../../tenant/domain/entities/tenant.entity';
  */
 export type ModuleOverrides = Partial<TenantModules>;
 
-const OVERRIDABLE_MODULES: readonly (keyof TenantModules)[] = [
+const OVERRIDABLE_MODULES = [
   'ordersEnabled',
   'cashEnabled',
   'teamEnabled',
@@ -16,7 +16,18 @@ const OVERRIDABLE_MODULES: readonly (keyof TenantModules)[] = [
   'kitchenEnabled',
   'rafflesEnabled',
   'advancedReportsEnabled',
-];
+] as const satisfies readonly (keyof TenantModules)[];
+
+/**
+ * Un módulo que falte en la lista de arriba se ignoraría en silencio: el admin
+ * guardaría su excepción y el sistema la descartaría al resolver. Esto rompe el
+ * build nombrando el que falte.
+ */
+type ModulosSinCubrir = Exclude<keyof TenantModules, (typeof OVERRIDABLE_MODULES)[number]>;
+const _todosLosModulosCubiertos: [ModulosSinCubrir] extends [never]
+  ? true
+  : ['Falta agregar estos módulos a OVERRIDABLE_MODULES:', ModulosSinCubrir] = true;
+void _todosLosModulosCubiertos;
 
 /**
  * El plan es la fuente de verdad de los módulos; los overrides son excepciones

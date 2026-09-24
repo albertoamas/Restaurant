@@ -1,14 +1,15 @@
 import { SaasPlan } from '@pos/shared';
 import { PlanModulesService } from './plan-modules.service';
 import { Plan } from '../domain/entities/plan.entity';
+import { basicoPlan, negocioPlan, proPlan } from '../domain/entities/plan.fixture';
 
 function basico(): Plan {
   // maxBranches 1, sin equipo, sin cocina, sin sorteos
-  return new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, 100);
+  return basicoPlan();
 }
 
 function pro(): Plan {
-  return new Plan(SaasPlan.PRO, 'Pro', 399, 3, 8, -1, true, true, true, true, 365, 1024);
+  return proPlan();
 }
 
 describe('PlanModulesService', () => {
@@ -44,7 +45,7 @@ describe('PlanModulesService', () => {
     });
 
     it('branchesEnabled se deriva del límite: ilimitado también lo habilita', () => {
-      const negocio = new Plan(SaasPlan.NEGOCIO, 'Negocio', 790, -1, -1, -1, true, true, true, true, -1, 5120);
+      const negocio = negocioPlan();
       expect(service.baseModules(negocio).branchesEnabled).toBe(true);
     });
   });

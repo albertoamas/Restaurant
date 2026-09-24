@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole, isUnlimited } from '@pos/shared';
+import { UserRole } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.port';
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
@@ -70,9 +70,10 @@ export class GetTenantHealthUseCase {
     const moduleFlagsMatchPlan = (Object.keys(base) as (keyof typeof base)[])
       .every((key) => tenant.modules[key] === base[key]);
 
-    const withinBranchLimit  = isUnlimited(plan.maxBranches) || branchCount  <= plan.maxBranches;
-    const withinCashierLimit = isUnlimited(plan.maxCashiers) || cashierCount <= plan.maxCashiers;
-    const withinProductLimit = isUnlimited(plan.maxProducts) || productCount <= plan.maxProducts;
+    // Mismo criterio que usa el cambio de plan para detectar excesos.
+    const withinBranchLimit  = this.planLimitService.fitsInPlan(plan, 'sucursales', branchCount);
+    const withinCashierLimit = this.planLimitService.fitsInPlan(plan, 'cajeros',    cashierCount);
+    const withinProductLimit = this.planLimitService.fitsInPlan(plan, 'productos',  productCount);
 
     const hasBranch    = branchCount > 0;
     const hasProducts  = productCount > 0;

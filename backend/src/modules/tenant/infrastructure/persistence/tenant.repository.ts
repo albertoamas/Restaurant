@@ -6,6 +6,25 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, Tenant as PrismaTenant } from '@prisma/client';
 import { OrderNumberResetPeriod, SaasPlan, UserRole } from '@pos/shared';
 
+/**
+ * Único lugar que traduce columnas → módulos. `toDomain` y `findAll` lo
+ * comparten: antes cada uno tenía su copia y un módulo nuevo había que
+ * acordarse de agregarlo en los dos.
+ */
+type TenantModuleColumns = Pick<PrismaTenant, keyof TenantModules>;
+
+function modulesFromRow(row: TenantModuleColumns): TenantModules {
+  return {
+    ordersEnabled:          row.ordersEnabled,
+    cashEnabled:            row.cashEnabled,
+    teamEnabled:            row.teamEnabled,
+    branchesEnabled:        row.branchesEnabled,
+    kitchenEnabled:         row.kitchenEnabled,
+    rafflesEnabled:         row.rafflesEnabled,
+    advancedReportsEnabled: row.advancedReportsEnabled,
+  };
+}
+
 function toDomain(row: PrismaTenant): Tenant {
   return Tenant.reconstitute({
     id:        row.id,
@@ -14,15 +33,7 @@ function toDomain(row: PrismaTenant): Tenant {
     isActive:  row.isActive,
     createdAt: row.createdAt,
     plan:      (row.plan as SaasPlan) ?? SaasPlan.BASICO,
-    modules: {
-      ordersEnabled:          row.ordersEnabled,
-      cashEnabled:            row.cashEnabled,
-      teamEnabled:            row.teamEnabled,
-      branchesEnabled:        row.branchesEnabled,
-      kitchenEnabled:         row.kitchenEnabled,
-      rafflesEnabled:         row.rafflesEnabled,
-      advancedReportsEnabled: row.advancedReportsEnabled,
-    },
+    modules:   modulesFromRow(row),
     orderNumberResetPeriod: (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
     businessAddress: row.businessAddress,
     businessPhone:   row.businessPhone,
@@ -44,13 +55,7 @@ function toPrismaData(tenant: Tenant) {
     isActive:                tenant.isActive,
     createdAt:               tenant.createdAt,
     plan:                    tenant.plan,
-    ordersEnabled:           tenant.ordersEnabled,
-    cashEnabled:             tenant.cashEnabled,
-    teamEnabled:             tenant.teamEnabled,
-    branchesEnabled:         tenant.branchesEnabled,
-    kitchenEnabled:          tenant.kitchenEnabled,
-    rafflesEnabled:          tenant.rafflesEnabled,
-    advancedReportsEnabled:  tenant.advancedReportsEnabled,
+    ...tenant.modules,
     orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
     businessAddress:         tenant.businessAddress,
     businessPhone:           tenant.businessPhone,
@@ -155,15 +160,7 @@ export class TenantRepository implements TenantRepositoryPort {
       branchCount:  r._count.branches,
       cashierCount: r._count.users,
       productCount: r._count.products,
-      modules: {
-        ordersEnabled:   r.ordersEnabled,
-        cashEnabled:     r.cashEnabled,
-        teamEnabled:     r.teamEnabled,
-        branchesEnabled: r.branchesEnabled,
-        kitchenEnabled:  r.kitchenEnabled,
-        rafflesEnabled:  r.rafflesEnabled,
-        advancedReportsEnabled: r.advancedReportsEnabled,
-      },
+      modules: modulesFromRow(r),
       settings: {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
         businessAddress: r.businessAddress ?? null,
@@ -171,13 +168,6 @@ export class TenantRepository implements TenantRepositoryPort {
         receiptSlogan:   r.receiptSlogan   ?? null,
       },
     }));
-  }
-
-  async updatePlan(id: string, plan: SaasPlan): Promise<Tenant> {
-    const current = await this.prisma.tenant.findUnique({ where: { id } });
-    if (!current) throw new NotFoundException(`Tenant ${id} not found`);
-    const row = await this.prisma.tenant.update({ where: { id }, data: { plan } });
-    return toDomain(row);
   }
 
   async toggleActive(id: string): Promise<Tenant> {
@@ -195,6 +185,7 @@ export class TenantRepository implements TenantRepositoryPort {
     id: string,
     modules: TenantModules,
     overrides: Partial<TenantModules> | null,
+    plan?: SaasPlan,
   ): Promise<Tenant> {
     const current = await this.prisma.tenant.findUnique({ where: { id } });
     if (!current) throw new NotFoundException(`Tenant ${id} not found`);
@@ -202,13 +193,8 @@ export class TenantRepository implements TenantRepositoryPort {
     const row = await this.prisma.tenant.update({
       where: { id },
       data: {
-        ordersEnabled:   modules.ordersEnabled,
-        cashEnabled:     modules.cashEnabled,
-        teamEnabled:     modules.teamEnabled,
-        branchesEnabled: modules.branchesEnabled,
-        kitchenEnabled:  modules.kitchenEnabled,
-        rafflesEnabled:  modules.rafflesEnabled,
-        advancedReportsEnabled: modules.advancedReportsEnabled,
+        ...(plan ? { plan } : {}),
+        ...modules,
         moduleOverrides: overrides && Object.keys(overrides).length > 0 ? overrides : Prisma.DbNull,
       },
     });

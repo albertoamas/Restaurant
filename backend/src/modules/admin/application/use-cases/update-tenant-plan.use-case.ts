@@ -1,20 +1,15 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { SaasPlan, SOCKET_EVENTS, isUnlimited } from '@pos/shared';
+import { SaasPlan, SOCKET_EVENTS } from '@pos/shared';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
 import { PlanRepositoryPort } from '../../../plans/domain/ports/plan-repository.port';
 import { PlanModulesService } from '../../../plans/application/plan-modules.service';
+import { PlanExcess, PlanLimitService } from '../../../plans/application/plan-limit.service';
 import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-repository.port';
 import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.port';
 import { PRODUCT_REPOSITORY_PORT, ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { Tenant } from '../../../tenant/domain/entities/tenant.entity';
-
-/** Un recurso que quedó por encima de lo que permite el plan nuevo. */
-export interface PlanExcess {
-  resource: 'sucursales' | 'cajeros' | 'productos';
-  current: number;
-  max: number;
-}
+import { Plan } from '../../../plans/domain/entities/plan.entity';
 
 export interface UpdateTenantPlanResult {
   tenant: Tenant;
@@ -40,6 +35,7 @@ export class UpdateTenantPlanUseCase {
     @Inject(PRODUCT_REPOSITORY_PORT)
     private readonly productRepo: ProductRepositoryPort,
     private readonly planModules: PlanModulesService,
+    private readonly planLimits: PlanLimitService,
     private readonly eventsService: EventsService,
   ) {}
 
@@ -51,8 +47,6 @@ export class UpdateTenantPlanUseCase {
     if (!tenant) throw new NotFoundException(`Tenant ${tenantId} no encontrado`);
     if (!newPlan) throw new NotFoundException(`Plan ${plan} no encontrado`);
 
-    await this.tenantRepo.updatePlan(tenantId, plan);
-
     // El plan manda sobre los módulos, pero las excepciones que el admin
     // concedió a mano sobreviven: antes, cambiar de plan pisaba una cortesía
     // (p.ej. sorteos en BASICO) sin dejar rastro.
@@ -60,30 +54,26 @@ export class UpdateTenantPlanUseCase {
     // vuelvan a imponerse en un cambio posterior.
     const overrides = this.planModules.pruneOverrides(newPlan, tenant.moduleOverrides);
     const modules   = this.planModules.resolveModules(newPlan, overrides);
-    const updated   = await this.tenantRepo.applyModules(tenantId, modules, overrides);
+    // El plan viaja en la misma escritura que los módulos que de él se derivan.
+    const updated   = await this.tenantRepo.applyModules(tenantId, modules, overrides, plan);
 
     this.eventsService.emitToTenant(tenantId, SOCKET_EVENTS.TENANT_MODULES_UPDATED, {});
 
     return { tenant: updated, excess: await this.findExcess(tenantId, newPlan) };
   }
 
-  /** Qué recursos quedaron por encima del nuevo plan (downgrade). */
-  private async findExcess(
-    tenantId: string,
-    plan: { maxBranches: number; maxCashiers: number; maxProducts: number },
-  ): Promise<PlanExcess[]> {
-    const [branches, cashiers, products] = await Promise.all([
+  /**
+   * Qué recursos quedaron por encima del nuevo plan (downgrade). La
+   * comparación vive en PlanLimitService, junto a la que bloquea la creación:
+   * dos criterios distintos de "cabe en el plan" sería peor que ninguno.
+   */
+  private async findExcess(tenantId: string, plan: Plan): Promise<PlanExcess[]> {
+    const [sucursales, cajeros, productos] = await Promise.all([
       this.branchRepo.countByTenant(tenantId),
       this.userRepo.countCashiersByTenant(tenantId),
       this.productRepo.countByTenant(tenantId),
     ]);
 
-    const checks: PlanExcess[] = [
-      { resource: 'sucursales', current: branches, max: plan.maxBranches },
-      { resource: 'cajeros',    current: cashiers, max: plan.maxCashiers },
-      { resource: 'productos',  current: products, max: plan.maxProducts },
-    ];
-
-    return checks.filter((c) => !isUnlimited(c.max) && c.current > c.max);
+    return this.planLimits.findExcess(plan, { sucursales, cajeros, productos });
   }
 }

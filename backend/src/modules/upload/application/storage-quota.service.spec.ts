@@ -9,6 +9,7 @@ import { TenantRepositoryPort } from '../../tenant/domain/ports/tenant-repositor
 import { PlanRepositoryPort } from '../../plans/domain/ports/plan-repository.port';
 import { Tenant } from '../../tenant/domain/entities/tenant.entity';
 import { Plan } from '../../plans/domain/entities/plan.entity';
+import { basicoPlan } from '../../plans/domain/entities/plan.fixture';
 
 const TENANT_ID = 'tenant-1';
 const MB = 1024 * 1024;
@@ -26,9 +27,9 @@ function makeTenant(): Tenant {
   });
 }
 
-/** BASICO con cuota de 1 MB para que el test no tenga que escribir 100 MB. */
+/** BASICO con cuota reducida para que el test no tenga que escribir 100 MB. */
 function makePlan(maxStorageMb: number): Plan {
-  return new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, maxStorageMb);
+  return basicoPlan({ maxStorageMb });
 }
 
 describe('StorageQuotaService', () => {

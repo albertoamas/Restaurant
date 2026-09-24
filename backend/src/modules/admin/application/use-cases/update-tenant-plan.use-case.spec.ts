@@ -8,14 +8,16 @@ import { BranchRepositoryPort } from '../../../branch/domain/ports/branch-reposi
 import { UserRepositoryPort } from '../../../auth/domain/ports/user-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { PlanModulesService } from '../../../plans/application/plan-modules.service';
+import { PlanLimitService } from '../../../plans/application/plan-limit.service';
 import { EventsService } from '../../../events/events.service';
 import { Tenant, TenantModules } from '../../../tenant/domain/entities/tenant.entity';
 import { Plan } from '../../../plans/domain/entities/plan.entity';
+import { basicoPlan, proPlan } from '../../../plans/domain/entities/plan.fixture';
 
 const TENANT_ID = 'tenant-1';
 
-const BASICO = new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false, false, false, 90, 100);
-const PRO    = new Plan(SaasPlan.PRO,    'Pro',    399, 3, 8, -1, true,  true,  true,  true,  365, 1024);
+const BASICO = basicoPlan();
+const PRO    = proPlan();
 
 function makeTenant(overrides: Partial<TenantModules> | null = null, plan = SaasPlan.BASICO): Tenant {
   return Tenant.reconstitute({
@@ -48,9 +50,11 @@ describe('UpdateTenantPlanUseCase', () => {
     userRepo      = mock<UserRepositoryPort>();
     productRepo   = mock<ProductRepositoryPort>();
     eventsService = mock<EventsService>();
+    // PlanModulesService y PlanLimitService son lógica pura: se usan los
+    // reales para que el test cubra de verdad la derivación y los límites.
     useCase = new UpdateTenantPlanUseCase(
       tenantRepo, planRepo, branchRepo, userRepo, productRepo,
-      new PlanModulesService(), eventsService,
+      new PlanModulesService(), new PlanLimitService(planRepo), eventsService,
     );
 
     tenantRepo.findById.mockResolvedValue(makeTenant());
@@ -69,6 +73,17 @@ describe('UpdateTenantPlanUseCase', () => {
   it('lanza NotFoundException si el plan no existe', async () => {
     planRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute(TENANT_ID, SaasPlan.PRO)).rejects.toThrow(NotFoundException);
+  });
+
+  // El plan y los módulos que de él se derivan se guardan en una sola
+  // escritura: en dos, si la segunda fallaba el tenant quedaba con el plan
+  // nuevo y los módulos del viejo.
+  it('persiste el plan en la misma llamada que los módulos', async () => {
+    await useCase.execute(TENANT_ID, SaasPlan.PRO);
+
+    expect(tenantRepo.applyModules).toHaveBeenCalledTimes(1);
+    const [, , , plan] = tenantRepo.applyModules.mock.calls[0];
+    expect(plan).toBe(SaasPlan.PRO);
   });
 
   it('subir de plan habilita los módulos del plan nuevo', async () => {

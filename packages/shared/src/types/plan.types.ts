@@ -7,11 +7,6 @@ export function isUnlimited(value: number): boolean {
   return value === UNLIMITED;
 }
 
-/** Formatea un límite para mostrarlo: "Ilimitadas" o el número. */
-export function formatLimit(value: number, unlimitedLabel = 'Ilimitado'): string {
-  return isUnlimited(value) ? unlimitedLabel : String(value);
-}
-
 export interface PlanLimits {
   maxBranches:    number;  // -1 = unlimited
   maxCashiers:    number;

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SaasPlan, isUnlimited } from '@pos/shared';
-import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
+import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse, type PlanExcess } from '../../api/admin.api';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
-import type { PlanExcess } from '../../api/admin.api';
 import toast from 'react-hot-toast';
 
 interface ModuleDef { key: keyof TenantModules; label: string; description: string; }

@@ -22,7 +22,8 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
-  // Serve uploaded images as static files: GET /uploads/<filename>
+  // Serve uploaded images as static files. Recursivo: las subidas nuevas viven
+  // en uploads/<tenantId>/<archivo> y las viejas, planas, siguen sirviéndose.
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   app.setGlobalPrefix('api/v1');
