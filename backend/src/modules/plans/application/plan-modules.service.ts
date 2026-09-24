@@ -48,10 +48,14 @@ export class PlanModulesService {
       // emergencia vía override.
       ordersEnabled:   true,
       cashEnabled:     true,
-      // Se deriva del límite en vez de duplicarlo como flag: si el plan solo
+      // Se derivan del límite en vez de duplicarlo como flag: si el plan solo
       // permite una sucursal, la pantalla de sucursales no aporta nada.
       branchesEnabled: plan.maxBranches !== 1,
-      teamEnabled:     plan.teamEnabled,
+      // Mismo criterio: la palanca comercial es CUÁNTOS cajeros (`maxCashiers`),
+      // no si existe la pantalla. Cuando esto salía de `plan.teamEnabled`, el
+      // plan BÁSICO vendía 2 cajeros y a la vez devolvía 403 al crearlos,
+      // porque `POST /auth/users` exige `teamEnabled`.
+      teamEnabled:     plan.maxCashiers !== 0,
       kitchenEnabled:  plan.kitchenEnabled,
       rafflesEnabled:  plan.rafflesEnabled,
       advancedReportsEnabled: plan.advancedReports,

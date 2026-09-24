@@ -1,11 +1,11 @@
 import { SaasPlan } from '@pos/shared';
 import { PlanModulesService } from './plan-modules.service';
-import { Plan } from '../domain/entities/plan.entity';
+import { Plan, PlanProps } from '../domain/entities/plan.entity';
 import { basicoPlan, negocioPlan, proPlan } from '../domain/entities/plan.fixture';
 
-function basico(): Plan {
-  // maxBranches 1, sin equipo, sin cocina, sin sorteos
-  return basicoPlan();
+function basico(over: Partial<PlanProps> = {}): Plan {
+  // maxBranches 1, sin cocina, sin sorteos, sin reportes avanzados
+  return basicoPlan(over);
 }
 
 function pro(): Plan {
@@ -25,11 +25,18 @@ describe('PlanModulesService', () => {
         ordersEnabled:   true,
         cashEnabled:     true,
         branchesEnabled: false, // maxBranches = 1, la pantalla no aporta nada
-        teamEnabled:     false,
+        teamEnabled:     true,  // vende 2 cajeros: tiene que poder crearlos
         kitchenEnabled:  false,
         rafflesEnabled:  false,
         advancedReportsEnabled: false,
       });
+    });
+
+    // El plan vendía cajeros y a la vez apagaba la pantalla para crearlos, así
+    // que `POST /auth/users` respondía 403 en BASICO. La palanca es el límite.
+    it('teamEnabled sigue a maxCashiers, no al flag del plan', () => {
+      expect(service.baseModules(basico({ teamEnabled: false })).teamEnabled).toBe(true);
+      expect(service.baseModules(basico({ maxCashiers: 0 })).teamEnabled).toBe(false);
     });
 
     it('PRO: habilita lo que el plan incluye', () => {

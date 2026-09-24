@@ -13,7 +13,7 @@ const BASE: Record<SaasPlan, PlanProps> = {
   [SaasPlan.BASICO]: {
     displayName: 'Básico', priceBs: 220,
     maxBranches: 1, maxCashiers: 2, maxProducts: 80,
-    kitchenEnabled: false, rafflesEnabled: false, teamEnabled: false,
+    kitchenEnabled: false, rafflesEnabled: false, teamEnabled: true,
     advancedReports: false, reportHistoryDays: 90, maxStorageMb: 100,
   },
   [SaasPlan.PRO]: {

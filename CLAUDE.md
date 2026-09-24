@@ -321,7 +321,7 @@ nada que no se aplique:
 | Campo del plan | Quién lo aplica |
 |---|---|
 | `maxBranches` / `maxCashiers` / `maxProducts` | `PlanLimitService` (solo cuenta filas activas) |
-| `kitchenEnabled` / `rafflesEnabled` / `teamEnabled` | `ModuleGuard` + `@RequiresModule` |
+| `kitchenEnabled` / `rafflesEnabled` | `ModuleGuard` + `@RequiresModule` |
 | `advancedReports` | `ModuleGuard` sobre 6 endpoints de `reports` |
 | `reportHistoryDays` | `ReportHistoryGuard` |
 | `maxStorageMb` | `StorageQuotaService` en `POST /uploads/image` |
@@ -338,7 +338,10 @@ efectivo = baseModules(plan) + moduleOverrides
 ```
 
 - `baseModules(plan)` — `ordersEnabled`/`cashEnabled` siempre true (núcleo del producto),
-  `branchesEnabled` derivado de `maxBranches !== 1`, y el resto del plan.
+  `branchesEnabled` derivado de `maxBranches !== 1`, `teamEnabled` de `maxCashiers !== 0`,
+  y el resto del plan. Los dos derivados no se duplican como flag porque la palanca
+  comercial es el número: cuando `teamEnabled` salía de `plans.team_enabled`, BÁSICO
+  vendía 2 cajeros y devolvía 403 al crearlos (`POST /auth/users` exige `teamEnabled`).
 - `Tenant.moduleOverrides` (JSONB) guarda **solo** los flags que el admin fijó a mano como
   excepción (una cortesía, una prueba). Si el admin vuelve a poner el valor del plan, la
   excepción se borra y ese módulo vuelve a seguir al plan.

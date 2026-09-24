@@ -64,7 +64,9 @@ async function seed() {
       {
         id: 'BASICO', displayName: 'Básico', priceBs: 220,
         maxBranches: 1, maxCashiers: 2, maxProducts: 80,
-        kitchenEnabled: false, rafflesEnabled: false, teamEnabled: false,
+        // teamEnabled true en los tres planes: la palanca comercial es
+        // `maxCashiers`, no si existe la pantalla de equipo.
+        kitchenEnabled: false, rafflesEnabled: false, teamEnabled: true,
         advancedReports: false, reportHistoryDays: 90, maxStorageMb: 100,
       },
       {
@@ -727,7 +729,8 @@ async function seed() {
       plan: 'BASICO',
       orderNumberResetPeriod: 'MONTHLY',
       ordersEnabled: true, cashEnabled: true,
-      teamEnabled: false, branchesEnabled: false,
+      // teamEnabled true: BASICO vende 2 cajeros, el limite lo pone maxCashiers.
+      teamEnabled: true, branchesEnabled: false,
       kitchenEnabled: false, rafflesEnabled: false, advancedReportsEnabled: false,
       businessAddress: 'Calle Bolívar #89, Cochabamba',
       businessPhone: '+591 4 4223344',
