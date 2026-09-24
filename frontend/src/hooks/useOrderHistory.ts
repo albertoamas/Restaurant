@@ -29,7 +29,8 @@ export function useOrderHistory(params: {
       limit:    HISTORY_LIMIT,
       page:     1,
     }),
-    enabled:   !!branchId,
+    // Sin `enabled`: `branchId === null` es el consolidado del dueño, no
+    // "todavía no eligió" — el backend omite el filtro de sucursal.
     staleTime: 30_000,
   });
 

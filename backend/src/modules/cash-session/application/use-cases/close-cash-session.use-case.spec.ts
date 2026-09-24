@@ -1,9 +1,10 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { CashSessionStatus } from '@pos/shared';
 import { CloseCashSessionUseCase } from './close-cash-session.use-case';
 import { CashSessionRepositoryPort } from '../../domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { CashSession } from '../../domain/entities/cash-session.entity';
 
 function makeOpenSession(openingAmount = 500): CashSession {
@@ -19,11 +20,13 @@ describe('CloseCashSessionUseCase', () => {
   let useCase: CloseCashSessionUseCase;
   let repo: MockProxy<CashSessionRepositoryPort>;
   let eventsService: MockProxy<EventsService>;
+  let branchAccess: MockProxy<BranchAccessService>;
 
   beforeEach(() => {
     repo          = mock<CashSessionRepositoryPort>();
     eventsService = mock<EventsService>();
-    useCase       = new CloseCashSessionUseCase(repo, eventsService);
+    branchAccess  = mock<BranchAccessService>();
+    useCase       = new CloseCashSessionUseCase(repo, branchAccess, eventsService);
     repo.save.mockImplementation(async (s) => s);
   });
 
@@ -76,4 +79,15 @@ describe('CloseCashSessionUseCase', () => {
 
     expect(eventsService.emitToTenant).toHaveBeenCalledWith('tenant-1', 'cash.closed', result);
   });
+
+  // Cerrar contra una sucursal ajena o inexistente tiene que fallar por la
+  // sucursal, no por "no hay caja abierta", que despista al operador.
+  it('rechaza una sucursal que no es del tenant', async () => {
+    branchAccess.assertBelongsToTenant.mockRejectedValue(new BadRequestException('Sucursal no encontrada'));
+
+    await expect(useCase.execute('tenant-1', 'branch-ajena', 'user-1', { closingAmount: 100 }))
+      .rejects.toThrow(BadRequestException);
+    expect(repo.findOpenByBranch).not.toHaveBeenCalled();
+  });
+
 });

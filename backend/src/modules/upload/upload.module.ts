@@ -8,5 +8,6 @@ import { StorageQuotaService } from './application/storage-quota.service';
   imports: [TenantModule, PlansModule],
   controllers: [UploadController],
   providers: [StorageQuotaService],
+  exports: [StorageQuotaService],
 })
 export class UploadModule {}

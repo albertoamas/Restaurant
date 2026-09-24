@@ -23,6 +23,8 @@ export interface TenantRow {
   branchCount: number;
   cashierCount: number;
   productCount: number;
+  /** MB ocupados por sus imágenes, para contrastar con `plan.maxStorageMb`. */
+  storageUsedMb: number;
 }
 
 /** Un recurso que quedó por encima de lo que permite el plan nuevo (downgrade). */

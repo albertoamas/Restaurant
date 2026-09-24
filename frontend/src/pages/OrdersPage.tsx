@@ -125,15 +125,6 @@ export function OrdersPage() {
     invalidateHistory();
   };
 
-  // ── Shared empty / no-branch UI ───────────────────────────────────────────
-  const noBranchUi = (
-    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <Icon name="building" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
-      <p className="text-sm font-semibold text-gray-500">Selecciona una sucursal</p>
-      <p className="text-xs mt-1 text-gray-400">Elige una sucursal en el menú lateral para ver sus pedidos</p>
-    </div>
-  );
-
   const emptyUi = (message: string) => (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
       <Icon name="orders" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
@@ -260,8 +251,7 @@ export function OrdersPage() {
       {/* ── Tab: Operación ───────────────────────────────────────────────────── */}
       {activeTab === 'operation' && (
         <>
-          {!currentBranchId ? noBranchUi
-            : loading ? <div className="flex justify-center py-12"><Spinner /></div>
+          {loading ? <div className="flex justify-center py-12"><Spinner /></div>
             : orders.length === 0 ? emptyUi('Cambia la fecha o filtros')
             : (
               <div className="space-y-3">
@@ -305,8 +295,7 @@ export function OrdersPage() {
       {/* ── Tab: Historial ───────────────────────────────────────────────────── */}
       {activeTab === 'history' && (
         <>
-          {!currentBranchId ? noBranchUi
-            : historyLoading ? <div className="flex justify-center py-12"><Spinner /></div>
+          {historyLoading ? <div className="flex justify-center py-12"><Spinner /></div>
             : historyOrders.length === 0 ? emptyUi(
                 debouncedQ
                   ? `Sin resultados para "${debouncedQ}"`

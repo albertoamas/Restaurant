@@ -181,7 +181,15 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
 
           {activePlan && (
             <p className="mt-2 text-center text-[11px] text-gray-500">
-              Historial de reportes: {limitLabel(activePlan.reportHistoryDays)} días · Imágenes: {limitLabel(activePlan.maxStorageMb)} MB
+              Historial de reportes: {limitLabel(activePlan.reportHistoryDays)} días
+              {' · '}
+              <span className={
+                !isUnlimited(activePlan.maxStorageMb) && tenant.storageUsedMb >= activePlan.maxStorageMb
+                  ? 'text-red-400 font-semibold'
+                  : ''
+              }>
+                Imágenes: {tenant.storageUsedMb} / {limitLabel(activePlan.maxStorageMb)} MB
+              </span>
             </p>
           )}
 
