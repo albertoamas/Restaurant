@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { SaasPlan } from '@pos/shared';
+import { SaasPlan, isUnlimited } from '@pos/shared';
 import { adminApi, type TenantRow, type TenantModules, type PlanDto, type TenantPlanUpdateResponse } from '../../api/admin.api';
-import { isUnlimited } from '@pos/shared';
 import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
 import type { PlanExcess } from '../../api/admin.api';
 import toast from 'react-hot-toast';
@@ -15,6 +14,7 @@ const MODULE_DEFS: ModuleDef[] = [
   { key: 'branchesEnabled', label: 'Sucursales', description: 'Administración de múltiples locales' },
   { key: 'kitchenEnabled',  label: 'Cocina',     description: 'Panel de visualización de pedidos en cocina' },
   { key: 'rafflesEnabled',  label: 'Sorteos',    description: 'Gestión de sorteos y tickets para clientes' },
+  { key: 'advancedReportsEnabled', label: 'Reportes avanzados', description: 'Pestañas de Caja, Productos y Clientes en reportes' },
 ];
 
 function ModuleToggleRow({ def, value, disabled, onChange }: {
@@ -72,6 +72,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
         branchesEnabled: result.branchesEnabled,
         kitchenEnabled:  result.kitchenEnabled,
         rafflesEnabled:  result.rafflesEnabled,
+        advancedReportsEnabled: result.advancedReportsEnabled,
       });
       // Nada se desactiva solo: bajar de plan conserva los datos del cliente y
       // acá se avisa qué quedó por encima, para que el admin decida.
@@ -170,7 +171,19 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Cajeros</p>
               </div>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.productCount >= activePlan.maxProducts && !isUnlimited(activePlan.maxProducts) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+                <p className="font-bold text-base leading-none">
+                  {tenant.productCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxProducts)}</span>
+                </p>
+                <p className="text-[11px] opacity-60 mt-1">Productos</p>
+              </div>
             </div>
+          )}
+
+          {activePlan && (
+            <p className="mt-2 text-center text-[11px] text-gray-500">
+              Historial de reportes: {limitLabel(activePlan.reportHistoryDays)} días · Imágenes: {limitLabel(activePlan.maxStorageMb)} MB
+            </p>
           )}
 
           {planExcess.length > 0 && (

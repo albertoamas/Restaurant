@@ -8,6 +8,7 @@ export interface TenantModules {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
 }
 
 export interface TenantRow {
@@ -21,6 +22,7 @@ export interface TenantRow {
   modules: TenantModules;
   branchCount: number;
   cashierCount: number;
+  productCount: number;
 }
 
 /** Un recurso que quedó por encima de lo que permite el plan nuevo (downgrade). */
@@ -40,6 +42,7 @@ export interface TenantPlanUpdateResponse {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
   /** Vacío si el cambio de plan no dejó nada fuera de límite. */
   excess: PlanExcess[];
 }

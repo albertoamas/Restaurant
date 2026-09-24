@@ -2,6 +2,9 @@ import { BadRequestException, Controller, Get, ParseIntPipe, ParseUUIDPipe, Quer
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
+import { ModuleGuard } from '../../../../common/guards/module.guard';
+import { ReportHistoryGuard } from '../../../../common/guards/report-history.guard';
+import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { GetDailyReportUseCase } from '../../application/use-cases/get-daily-report.use-case';
@@ -22,7 +25,7 @@ function validateISODate(val: string | undefined, name: string): void {
 }
 
 @Controller('reports')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard, ReportHistoryGuard)
 @Roles(UserRole.OWNER)
 export class ReportController {
   constructor(
@@ -67,6 +70,7 @@ export class ReportController {
   }
 
   @Get('top-products')
+  @RequiresModule('advancedReportsEnabled')
   getTopProducts(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -83,6 +87,7 @@ export class ReportController {
   }
 
   @Get('top-customers')
+  @RequiresModule('advancedReportsEnabled')
   getTopCustomers(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -112,6 +117,7 @@ export class ReportController {
   }
 
   @Get('by-cashier')
+  @RequiresModule('advancedReportsEnabled')
   getByCashier(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -125,7 +131,13 @@ export class ReportController {
     return this.getByCashierUseCase.execute(tenantId, effectiveBranchId, from, to);
   }
 
-  /** Comparativa entre sucursales. No acepta branchId: siempre devuelve todas. */
+  /**
+   * Comparativa entre sucursales. No acepta branchId: siempre devuelve todas.
+   *
+   * No lleva `advancedReportsEnabled`: la alimenta la pestaña Resumen, que es
+   * gratis. Es parte de multi-sucursal — con una sola sucursal devuelve una
+   * fila y ya.
+   */
   @Get('by-branch')
   getByBranch(
     @CurrentTenant() tenantId: string,
@@ -138,6 +150,7 @@ export class ReportController {
   }
 
   @Get('top-categories')
+  @RequiresModule('advancedReportsEnabled')
   getTopCategories(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -153,6 +166,7 @@ export class ReportController {
   }
 
   @Get('by-hour')
+  @RequiresModule('advancedReportsEnabled')
   getByHour(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
@@ -181,6 +195,7 @@ export class ReportController {
   }
 
   @Get('cash-sessions')
+  @RequiresModule('advancedReportsEnabled')
   getCashSessions(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,

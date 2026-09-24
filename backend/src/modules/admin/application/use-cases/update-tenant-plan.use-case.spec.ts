@@ -18,13 +18,18 @@ const BASICO = new Plan(SaasPlan.BASICO, 'Básico', 220, 1, 2, 80, false, false,
 const PRO    = new Plan(SaasPlan.PRO,    'Pro',    399, 3, 8, -1, true,  true,  true,  true,  365, 1024);
 
 function makeTenant(overrides: Partial<TenantModules> | null = null, plan = SaasPlan.BASICO): Tenant {
-  return new Tenant(
-    TENANT_ID, 'HamBurgos', 'hamburgos', true, new Date(),
-    plan,
-    true, true, false, false, false, false,
-    OrderNumberResetPeriod.DAILY, null, null, null,
-    overrides,
-  );
+  return Tenant.reconstitute({
+    id: TENANT_ID, name: 'HamBurgos', slug: 'hamburgos', isActive: true, createdAt: new Date(),
+    plan: plan,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: false,
+      branchesEnabled: false, kitchenEnabled: false, rafflesEnabled: false,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: overrides,
+  });
 }
 
 describe('UpdateTenantPlanUseCase', () => {

@@ -123,13 +123,25 @@ function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
     },
   ];
 
-  // Solo se anuncia lo que hoy se hace cumplir de verdad. `advancedReports`,
-  // `reportHistoryDays` y `maxStorageMb` ya existen en el plan pero todavía no
-  // los aplica ningún guard: entran acá recién cuando se implementen.
+  // Solo se anuncia lo que hoy se hace cumplir de verdad: cada línea de acá
+  // tiene su guard del lado del servidor.
   const gated = [
     { text: 'Display de cocina en tiempo real', included: plan.kitchenEnabled },
     { text: 'Sorteos para clientes',            included: plan.rafflesEnabled },
     { text: 'Gestión de equipo y roles',        included: plan.teamEnabled },
+    { text: 'Reportes avanzados',               included: plan.advancedReports },
+    {
+      text: isUnlimited(plan.reportHistoryDays)
+        ? 'Historial de reportes completo'
+        : `Historial de reportes de ${plan.reportHistoryDays} días`,
+      included: true,
+    },
+    {
+      text: isUnlimited(plan.maxStorageMb)
+        ? 'Almacenamiento de imágenes ilimitado'
+        : `${plan.maxStorageMb} MB para imágenes`,
+      included: true,
+    },
   ];
 
   return [...base, ...limits, ...gated];

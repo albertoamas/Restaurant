@@ -133,6 +133,7 @@ describe('RegisterUseCase', () => {
       teamEnabled:     false,
       kitchenEnabled:  false,
       rafflesEnabled:  false,
+      advancedReportsEnabled: false,
     });
     expect(tenant.moduleOverrides).toBeNull();
   });

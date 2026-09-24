@@ -15,14 +15,18 @@ import { User } from '../../../auth/domain/entities/user.entity';
 const TENANT_ID = 'tenant-1';
 
 function makeTenant(over: Partial<{ kitchenEnabled: boolean; rafflesEnabled: boolean; isActive: boolean }> = {}): Tenant {
-  return new Tenant(
-    TENANT_ID, 'HamBurgos', 'hamburgos', over.isActive ?? true, new Date(),
-    SaasPlan.PRO,
-    true, true, true, true,
-    over.kitchenEnabled ?? true,
-    over.rafflesEnabled ?? true,
-    OrderNumberResetPeriod.DAILY, null, null, null,
-  );
+  return Tenant.reconstitute({
+    id: TENANT_ID, name: 'HamBurgos', slug: 'hamburgos', isActive: over.isActive ?? true, createdAt: new Date(),
+    plan: SaasPlan.PRO,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: true,
+      branchesEnabled: true, kitchenEnabled: over.kitchenEnabled ?? true, rafflesEnabled: over.rafflesEnabled ?? true,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
 }
 
 function makePlan(over: Partial<{ maxBranches: number; maxCashiers: number; maxProducts: number; kitchenEnabled: boolean; rafflesEnabled: boolean }> = {}): Plan {

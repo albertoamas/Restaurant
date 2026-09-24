@@ -8,6 +8,7 @@ export interface TenantModules {
   branchesEnabled: boolean;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
+  advancedReportsEnabled: boolean;
 }
 
 export interface TenantSettings {
@@ -45,6 +46,7 @@ export class Tenant {
     public readonly branchesEnabled: boolean,
     public readonly kitchenEnabled: boolean,
     public readonly rafflesEnabled: boolean,
+    public readonly advancedReportsEnabled: boolean,
     public readonly orderNumberResetPeriod: OrderNumberResetPeriod,
     public readonly businessAddress: string | null = null,
     public readonly businessPhone: string | null = null,
@@ -73,13 +75,46 @@ export class Tenant {
       modules.branchesEnabled,
       modules.kitchenEnabled,
       modules.rafflesEnabled,
+      modules.advancedReportsEnabled,
       OrderNumberResetPeriod.DAILY,
       null, null, null,
       null,
     );
   }
 
-  /** Un solo lugar donde se reconstruye la instancia: evita repetir 17 argumentos. */
+  /**
+   * Reconstruye un tenant desde datos ya persistidos, por nombre en vez de por
+   * posición. Mismo patrón que `Branch.reconstitute`: agregar un módulo nuevo no
+   * vuelve a romper cada sitio que construye un Tenant.
+   */
+  static reconstitute(props: {
+    id: string;
+    name: string;
+    slug: string;
+    isActive: boolean;
+    createdAt: Date;
+    plan: SaasPlan;
+    modules: TenantModules;
+    orderNumberResetPeriod: OrderNumberResetPeriod;
+    businessAddress?: string | null;
+    businessPhone?: string | null;
+    receiptSlogan?: string | null;
+    moduleOverrides?: Partial<TenantModules> | null;
+  }): Tenant {
+    const m = props.modules;
+    return new Tenant(
+      props.id, props.name, props.slug, props.isActive, props.createdAt, props.plan,
+      m.ordersEnabled, m.cashEnabled, m.teamEnabled, m.branchesEnabled,
+      m.kitchenEnabled, m.rafflesEnabled, m.advancedReportsEnabled,
+      props.orderNumberResetPeriod,
+      props.businessAddress ?? null,
+      props.businessPhone   ?? null,
+      props.receiptSlogan   ?? null,
+      props.moduleOverrides ?? null,
+    );
+  }
+
+  /** Un solo lugar donde se reconstruye la instancia: evita repetir 18 argumentos. */
   private copyWith(changes: Partial<TenantState>): Tenant {
     const modules = changes.modules ?? this.modules;
     return new Tenant(
@@ -95,6 +130,7 @@ export class Tenant {
       modules.branchesEnabled,
       modules.kitchenEnabled,
       modules.rafflesEnabled,
+      modules.advancedReportsEnabled,
       changes.orderNumberResetPeriod ?? this.orderNumberResetPeriod,
       changes.businessAddress !== undefined ? changes.businessAddress : this.businessAddress,
       changes.businessPhone   !== undefined ? changes.businessPhone   : this.businessPhone,
@@ -137,6 +173,7 @@ export class Tenant {
       branchesEnabled: this.branchesEnabled,
       kitchenEnabled:  this.kitchenEnabled,
       rafflesEnabled:  this.rafflesEnabled,
+      advancedReportsEnabled: this.advancedReportsEnabled,
     };
   }
 

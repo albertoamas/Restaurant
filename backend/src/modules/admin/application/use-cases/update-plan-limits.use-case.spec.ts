@@ -51,6 +51,16 @@ describe('UpdatePlanLimitsUseCase', () => {
     expect(planRepo.update).not.toHaveBeenCalled();
   });
 
+  // 0 días de historial deja al cliente sin ver ni el reporte de hoy, y 0 MB
+  // le impide subir una sola foto: el plan quedaría vendido e inservible.
+  it.each([
+    ['reportHistoryDays' as const],
+    ['maxStorageMb'      as const],
+  ])('rechaza %s en 0', async (key) => {
+    await expect(useCase.execute(SaasPlan.PRO, { [key]: 0 })).rejects.toThrow(BadRequestException);
+    expect(planRepo.update).not.toHaveBeenCalled();
+  });
+
   it('acepta -1 como "sin límite"', async () => {
     await expect(useCase.execute(SaasPlan.PRO, { maxBranches: -1 })).resolves.toBeDefined();
   });
@@ -79,11 +89,18 @@ describe('UpdatePlanLimitsUseCase', () => {
     it('recalcula los módulos de los tenants suscritos al plan editado', async () => {
       // Sin esto, editar el plan parecía no hacer nada hasta que algo no
       // relacionado volvía a tocar ese tenant.
-      const tenant = new Tenant(
-        't1', 'HamBurgos', 'hamburgos', true, new Date(), SaasPlan.PRO,
-        true, true, false, false, false, false,
-        OrderNumberResetPeriod.DAILY, null, null, null, null,
-      );
+      const tenant = Tenant.reconstitute({
+    id: 't1', name: 'HamBurgos', slug: 'hamburgos', isActive: true, createdAt: new Date(),
+    plan: SaasPlan.PRO,
+    modules: {
+      ordersEnabled: true, cashEnabled: true, teamEnabled: false,
+      branchesEnabled: false, kitchenEnabled: false, rafflesEnabled: false,
+      advancedReportsEnabled: false,
+    },
+    orderNumberResetPeriod: OrderNumberResetPeriod.DAILY,
+    businessAddress: null, businessPhone: null, receiptSlogan: null,
+    moduleOverrides: null,
+  });
       tenantRepo.findByPlan.mockResolvedValue([tenant]);
       planRepo.update.mockResolvedValue(PRO);
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrdersModule } from '../orders/orders.module';
+import { CommonModule } from '../../common/common.module';
 import { ReportController } from './infrastructure/controllers/report.controller';
 import { GetDailyReportUseCase } from './application/use-cases/get-daily-report.use-case';
 import { GetReportByRangeUseCase } from './application/use-cases/get-report-by-range.use-case';
@@ -14,7 +15,7 @@ import { GetCashSessionsReportUseCase } from './application/use-cases/get-cash-s
 import { GetByDayHourUseCase } from './application/use-cases/get-by-day-hour.use-case';
 
 @Module({
-  imports: [OrdersModule],
+  imports: [OrdersModule, CommonModule],
   controllers: [ReportController],
   providers: [
     GetDailyReportUseCase,

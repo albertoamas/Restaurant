@@ -13,6 +13,7 @@ export interface TenantWithOwner {
   settings: TenantSettings;
   branchCount: number;
   cashierCount: number;
+  productCount: number;
 }
 
 export interface NewOwnerProps {

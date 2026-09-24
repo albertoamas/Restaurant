@@ -6,7 +6,8 @@ export type ModuleFlag =
   | 'teamEnabled'
   | 'branchesEnabled'
   | 'kitchenEnabled'
-  | 'rafflesEnabled';
+  | 'rafflesEnabled'
+  | 'advancedReportsEnabled';
 
 export const MODULE_FLAGS_KEY = 'moduleFlags';
 

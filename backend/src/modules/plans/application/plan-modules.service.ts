@@ -15,6 +15,7 @@ const OVERRIDABLE_MODULES: readonly (keyof TenantModules)[] = [
   'branchesEnabled',
   'kitchenEnabled',
   'rafflesEnabled',
+  'advancedReportsEnabled',
 ];
 
 /**
@@ -42,6 +43,7 @@ export class PlanModulesService {
       teamEnabled:     plan.teamEnabled,
       kitchenEnabled:  plan.kitchenEnabled,
       rafflesEnabled:  plan.rafflesEnabled,
+      advancedReportsEnabled: plan.advancedReports,
     };
   }
 

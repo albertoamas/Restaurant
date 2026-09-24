@@ -7,26 +7,30 @@ import { Prisma, Tenant as PrismaTenant } from '@prisma/client';
 import { OrderNumberResetPeriod, SaasPlan, UserRole } from '@pos/shared';
 
 function toDomain(row: PrismaTenant): Tenant {
-  return new Tenant(
-    row.id,
-    row.name,
-    row.slug,
-    row.isActive,
-    row.createdAt,
-    (row.plan as SaasPlan) ?? SaasPlan.BASICO,
-    row.ordersEnabled,
-    row.cashEnabled,
-    row.teamEnabled,
-    row.branchesEnabled,
-    row.kitchenEnabled,
-    row.rafflesEnabled,
-    (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
-    row.businessAddress ?? null,
-    row.businessPhone   ?? null,
-    row.receiptSlogan   ?? null,
-    (row.moduleOverrides as Partial<TenantModules> | null) ?? null,
-  );
+  return Tenant.reconstitute({
+    id:        row.id,
+    name:      row.name,
+    slug:      row.slug,
+    isActive:  row.isActive,
+    createdAt: row.createdAt,
+    plan:      (row.plan as SaasPlan) ?? SaasPlan.BASICO,
+    modules: {
+      ordersEnabled:          row.ordersEnabled,
+      cashEnabled:            row.cashEnabled,
+      teamEnabled:            row.teamEnabled,
+      branchesEnabled:        row.branchesEnabled,
+      kitchenEnabled:         row.kitchenEnabled,
+      rafflesEnabled:         row.rafflesEnabled,
+      advancedReportsEnabled: row.advancedReportsEnabled,
+    },
+    orderNumberResetPeriod: (row.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
+    businessAddress: row.businessAddress,
+    businessPhone:   row.businessPhone,
+    receiptSlogan:   row.receiptSlogan,
+    moduleOverrides: row.moduleOverrides as Partial<TenantModules> | null,
+  });
 }
+
 
 /**
  * Mapeo inverso de `toDomain`. Vive acá para que `save` y `createTenantWithOwner`
@@ -46,6 +50,7 @@ function toPrismaData(tenant: Tenant) {
     branchesEnabled:         tenant.branchesEnabled,
     kitchenEnabled:          tenant.kitchenEnabled,
     rafflesEnabled:          tenant.rafflesEnabled,
+    advancedReportsEnabled:  tenant.advancedReportsEnabled,
     orderNumberResetPeriod:  tenant.orderNumberResetPeriod,
     businessAddress:         tenant.businessAddress,
     businessPhone:           tenant.businessPhone,
@@ -125,10 +130,14 @@ export class TenantRepository implements TenantRepositoryPort {
           select: { id: true, name: true, email: true },
           take:   1,
         },
+        // Los tres contadores cuentan solo filas activas, igual que
+        // PlanLimitService al hacer cumplir el límite: si no, el panel pinta
+        // "excedido" a un tenant que en realidad tiene cupo libre.
         _count: {
           select: {
-            branches: true,
-            users:    { where: { role: 'CASHIER' } },
+            branches: { where: { isActive: true } },
+            users:    { where: { role: 'CASHIER', isActive: true } },
+            products: { where: { isActive: true } },
           },
         },
       },
@@ -145,6 +154,7 @@ export class TenantRepository implements TenantRepositoryPort {
       owner:        r.users[0] ?? null,
       branchCount:  r._count.branches,
       cashierCount: r._count.users,
+      productCount: r._count.products,
       modules: {
         ordersEnabled:   r.ordersEnabled,
         cashEnabled:     r.cashEnabled,
@@ -152,6 +162,7 @@ export class TenantRepository implements TenantRepositoryPort {
         branchesEnabled: r.branchesEnabled,
         kitchenEnabled:  r.kitchenEnabled,
         rafflesEnabled:  r.rafflesEnabled,
+        advancedReportsEnabled: r.advancedReportsEnabled,
       },
       settings: {
         orderNumberResetPeriod: (r.orderNumberResetPeriod as OrderNumberResetPeriod) ?? OrderNumberResetPeriod.DAILY,
@@ -197,6 +208,7 @@ export class TenantRepository implements TenantRepositoryPort {
         branchesEnabled: modules.branchesEnabled,
         kitchenEnabled:  modules.kitchenEnabled,
         rafflesEnabled:  modules.rafflesEnabled,
+        advancedReportsEnabled: modules.advancedReportsEnabled,
         moduleOverrides: overrides && Object.keys(overrides).length > 0 ? overrides : Prisma.DbNull,
       },
     });

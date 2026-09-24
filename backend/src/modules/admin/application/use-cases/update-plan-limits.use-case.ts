@@ -9,9 +9,13 @@ import { UpdatePlanLimitsDto } from '../dto/update-plan-limits.dto';
 
 /** Campos numéricos donde 0 no tiene sentido comercial. */
 const POSITIVE_LIMITS = [
-  { key: 'maxBranches' as const, label: 'sucursales' },
-  { key: 'maxCashiers' as const, label: 'cajeros' },
-  { key: 'maxProducts' as const, label: 'productos' },
+  { key: 'maxBranches'       as const, label: 'sucursales' },
+  { key: 'maxCashiers'       as const, label: 'cajeros' },
+  { key: 'maxProducts'       as const, label: 'productos' },
+  // Con 0 el tenant no puede subir ni una imagen ni ver el reporte de hoy:
+  // el plan queda vendido pero inservible.
+  { key: 'reportHistoryDays' as const, label: 'días de historial' },
+  { key: 'maxStorageMb'      as const, label: 'MB de imágenes' },
 ];
 
 /** Los planes van de menor a mayor: un plan más caro no puede dar menos. */

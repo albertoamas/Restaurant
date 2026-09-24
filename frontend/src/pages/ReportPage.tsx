@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useReportFilters, type Period } from '../hooks/useReportFilters';
@@ -22,13 +22,20 @@ import { useAuth } from '../context/auth.context';
 
 type TabKey = 'resumen' | 'ventas' | 'productos' | 'clientes' | 'gastos' | 'caja';
 
-const TABS: { key: TabKey; label: string; icon: IconName }[] = [
+/**
+ * `advanced` marca las pestañas que el plan vende aparte (ver
+ * plan.advancedReports). Solo se marcan las que el backend hace cumplir de
+ * verdad con `@RequiresModule('advancedReportsEnabled')`: Gastos no entra
+ * porque se alimenta de `/expenses/summary`, que el módulo de gastos deja
+ * abierto y la pantalla /expenses ya muestra.
+ */
+const TABS: { key: TabKey; label: string; icon: IconName; advanced?: boolean }[] = [
   { key: 'resumen',   label: 'Resumen',   icon: 'chart'   },
   { key: 'ventas',    label: 'Ventas',    icon: 'dollar'  },
   { key: 'gastos',    label: 'Gastos',    icon: 'receipt' },
-  { key: 'caja',      label: 'Caja',      icon: 'cash'    },
-  { key: 'productos', label: 'Productos', icon: 'package' },
-  { key: 'clientes',  label: 'Clientes',  icon: 'users'   },
+  { key: 'caja',      label: 'Caja',      icon: 'cash',    advanced: true },
+  { key: 'productos', label: 'Productos', icon: 'package', advanced: true },
+  { key: 'clientes',  label: 'Clientes',  icon: 'users',   advanced: true },
 ];
 
 const PERIODS: { key: Period; label: string }[] = [
@@ -43,8 +50,21 @@ export function ReportPage() {
   const plan      = useSettingsStore((s) => s.plan);
   const canExport = plan !== SaasPlan.BASICO;
 
+  const advancedReports = useSettingsStore((s) => s.advancedReportsEnabled);
+  const visibleTabs = useMemo(
+    () => TABS.filter((t) => !t.advanced || advancedReports),
+    [advancedReports],
+  );
+
   const [activeTab, setActiveTab] = useState<TabKey>('resumen');
   const [exporting, setExporting] = useState(false);
+
+  // Si el plan deja de incluir la pestaña abierta (downgrade o revocación en
+  // caliente vía socket), se vuelve a Resumen en vez de quedar en una vista
+  // cuyos endpoints ahora responden 403.
+  useEffect(() => {
+    if (!visibleTabs.some((t) => t.key === activeTab)) setActiveTab('resumen');
+  }, [visibleTabs, activeTab]);
 
   const {
     period, setPeriod, customFrom, setCustomFrom, customTo, setCustomTo,
@@ -69,15 +89,17 @@ export function ReportPage() {
 
   /**
    * El Excel incluye todas las secciones, así que pide los datos en el momento
-   * en vez de depender de qué pestañas se hayan abierto.
+   * en vez de depender de qué pestañas se hayan abierto. Las hojas de
+   * productos y clientes salen de endpoints que exigen `advancedReports`: sin
+   * ese módulo se exporta lo demás en vez de fallar el archivo entero.
    */
   const handleExportExcel = async () => {
     setExporting(true);
     try {
       const [fullReport, topProducts, topCustomers, expenses] = await Promise.all([
         reportsApi.getByRange(fromUtc, toUtc, branchParam),
-        reportsApi.getTopProducts(fromUtc, toUtc, branchParam),
-        reportsApi.getTopCustomers(fromUtc, toUtc, branchParam),
+        advancedReports ? reportsApi.getTopProducts(fromUtc, toUtc, branchParam)  : Promise.resolve([]),
+        advancedReports ? reportsApi.getTopCustomers(fromUtc, toUtc, branchParam) : Promise.resolve([]),
         expensesApi.getSummary(fromUtc, toUtc, branchParam).catch(() => null),
       ]);
       const filename = from === to ? `reporte_${from}.xlsx` : `reporte_${from}_${to}.xlsx`;
@@ -176,7 +198,7 @@ export function ReportPage() {
 
         {/* Sub-pestañas */}
         <div className="flex gap-1 overflow-x-auto border-t border-[var(--border-subtle)] px-4 py-2.5 sm:px-5">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}

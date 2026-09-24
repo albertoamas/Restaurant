@@ -1,8 +1,24 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { SaasPlan } from '@pos/shared';
+import { OrderNumberResetPeriod, SaasPlan } from '@pos/shared';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { TenantRepositoryPort } from '../../../tenant/domain/ports/tenant-repository.port';
+import { TenantModules } from '../../../tenant/domain/entities/tenant.entity';
 import { PlanLimitService } from '../../../plans/application/plan-limit.service';
+
+/**
+ * Solo se usa si el tenant del usuario desapareciera de la BD (no debería:
+ * `user.tenant_id` es FK). Tipado para que un módulo nuevo obligue a decidir
+ * su valor por defecto en vez de quedar `undefined`.
+ */
+const FALLBACK_MODULES: TenantModules = {
+  ordersEnabled:   true,
+  cashEnabled:     true,
+  teamEnabled:     true,
+  branchesEnabled: true,
+  kitchenEnabled:  false,
+  rafflesEnabled:  false,
+  advancedReportsEnabled: false,
+};
 
 @Injectable()
 export class GetProfileUseCase {
@@ -35,14 +51,11 @@ export class GetProfileUseCase {
       role:       user.role,
       plan:       planId,
       planLimits: plan.limits,
+      // `tenant.modules` está tipado con TenantModules: un flag nuevo viaja
+      // solo, sin que haya que acordarse de agregarlo aquí y en el login.
       modules: {
-        ordersEnabled:          tenant?.ordersEnabled          ?? true,
-        cashEnabled:            tenant?.cashEnabled            ?? true,
-        teamEnabled:            tenant?.teamEnabled            ?? true,
-        branchesEnabled:        tenant?.branchesEnabled        ?? true,
-        kitchenEnabled:         tenant?.kitchenEnabled         ?? false,
-        rafflesEnabled:         tenant?.rafflesEnabled         ?? false,
-        orderNumberResetPeriod: tenant?.orderNumberResetPeriod ?? 'DAILY',
+        ...(tenant ? tenant.modules : FALLBACK_MODULES),
+        orderNumberResetPeriod: tenant?.orderNumberResetPeriod ?? OrderNumberResetPeriod.DAILY,
       },
     };
   }

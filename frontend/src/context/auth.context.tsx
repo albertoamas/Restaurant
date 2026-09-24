@@ -13,6 +13,7 @@ interface TenantModules {
   kitchenEnabled:          boolean;
   rafflesEnabled:          boolean;
   orderNumberResetPeriod?: string;
+  advancedReportsEnabled: boolean;
 }
 
 interface AuthUser {
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       branchesEnabled:        u.modules?.branchesEnabled        ?? true,
       kitchenEnabled:         u.modules?.kitchenEnabled         ?? false,
       rafflesEnabled:         u.modules?.rafflesEnabled         ?? false,
+      advancedReportsEnabled: u.modules?.advancedReportsEnabled ?? false,
       orderNumberResetPeriod: u.modules?.orderNumberResetPeriod as OrderNumberResetPeriod | undefined,
       businessAddress:        u.tenantAddress ?? '',
       businessPhone:          u.tenantPhone   ?? '',

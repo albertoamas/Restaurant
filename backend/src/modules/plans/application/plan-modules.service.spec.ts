@@ -27,6 +27,7 @@ describe('PlanModulesService', () => {
         teamEnabled:     false,
         kitchenEnabled:  false,
         rafflesEnabled:  false,
+        advancedReportsEnabled: false,
       });
     });
 
@@ -38,6 +39,7 @@ describe('PlanModulesService', () => {
         teamEnabled:     true,
         kitchenEnabled:  true,
         rafflesEnabled:  true,
+        advancedReportsEnabled: true,
       });
     });
 
