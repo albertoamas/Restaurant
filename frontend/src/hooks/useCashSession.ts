@@ -7,11 +7,14 @@ import { useSocket, useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 
 const FALLBACK_POLL_MS = 30_000;
+/** Espera tras el último pedido antes de recalcular las ventas en efectivo: agrupa ráfagas. */
+const SALES_REFRESH_DEBOUNCE_MS = 2_000;
 
 export function useCashSession(branchId: string | null) {
   const queryClient     = useQueryClient();
   const { connected }   = useSocket();
   const wasConnectedRef = useRef<boolean | null>(null);
+  const salesTimer      = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const { data, isPending: loading, refetch } = useQuery({
     queryKey: branchId ? queryKeys.cashSession(branchId) : ['cashSession', null],
@@ -32,6 +35,15 @@ export function useCashSession(branchId: string | null) {
 
   useSocketEvent(SOCKET_EVENTS.CASH_OPENED, invalidate);
   useSocketEvent(SOCKET_EVENTS.CASH_CLOSED, invalidate);
+
+  // Cada pedido cobrado cambia las ventas en efectivo del turno abierto.
+  const invalidateSales = useCallback(() => {
+    clearTimeout(salesTimer.current);
+    salesTimer.current = setTimeout(invalidate, SALES_REFRESH_DEBOUNCE_MS);
+  }, [invalidate]);
+  useEffect(() => () => clearTimeout(salesTimer.current), []);
+  useSocketEvent(SOCKET_EVENTS.ORDER_CREATED, invalidateSales);
+  useSocketEvent(SOCKET_EVENTS.ORDER_UPDATED, invalidateSales);
 
   // Catch-up on reconnection — refetch to recover events missed while offline
   useEffect(() => {

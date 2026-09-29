@@ -103,5 +103,9 @@ describe('tiempos en minutos', () => {
   it('durationLabel', () => {
     expect(durationLabel(0)).toBe('menos de 1 min');
     expect(durationLabel(45)).toBe('45 min');
+    expect(durationLabel(65)).toBe('1 h 5 min');
+    expect(durationLabel(1440)).toBe('1 día');
+    expect(durationLabel(2100)).toBe('1 día 11 h');
+    expect(durationLabel(3000)).toBe('2 días 2 h');
   });
 });

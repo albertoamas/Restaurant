@@ -1,13 +1,6 @@
 import type { CashSessionDto } from '@pos/shared';
 import { Modal } from '../ui/Modal';
-import { formatDate } from '../../utils/date';
-
-function diffColor(diff: number | null) {
-  if (diff === null) return 'text-gray-500';
-  if (diff > 0) return 'text-emerald-600';
-  if (diff < 0) return 'text-red-500';
-  return 'text-gray-700';
-}
+import { CashSessionRow } from './CashSessionRow';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -17,45 +10,10 @@ interface HistoryModalProps {
 
 export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Historial de caja" size="lg">
-      <div className="overflow-y-auto space-y-2.5 max-h-[60vh]">
-        {sessions.map((s) => (
-          <div
-            key={s.id}
-            className="bg-surface-2 border border-line rounded-xl p-4 hover:bg-surface-3 transition-colors"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-gray-500">{formatDate(s.openedAt)}</span>
-              {s.closedAt && (
-                <span className="text-xs text-gray-400">hasta {formatDate(s.closedAt)}</span>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-xs">
-              <div className="bg-surface-2 rounded-lg p-2.5 border border-line">
-                <p className="text-gray-400 mb-1">Monto inicial</p>
-                <p className="font-heading font-bold text-sm text-gray-700">Bs {s.openingAmount.toFixed(2)}</p>
-              </div>
-              <div className="bg-surface-2 rounded-lg p-2.5 border border-line">
-                <p className="text-gray-400 mb-1">Esperado</p>
-                <p className="font-heading font-bold text-sm text-gray-700">Bs {(s.expectedAmount ?? 0).toFixed(2)}</p>
-              </div>
-              <div className="bg-surface-2 rounded-lg p-2.5 border border-line">
-                <p className="text-gray-400 mb-1">Diferencia</p>
-                <p className={`font-heading font-bold text-sm ${diffColor(s.difference)}`}>
-                  {s.difference !== null
-                    ? `${s.difference >= 0 ? '+' : ''}Bs ${s.difference.toFixed(2)}`
-                    : '-'}
-                </p>
-              </div>
-            </div>
-            {s.notes && (
-              <p className="text-xs text-gray-400 mt-2.5 bg-surface-2 border border-line rounded-lg px-3 py-2 italic">
-                {s.notes}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Cierres de caja" size="md">
+      <ul className="-my-3 divide-y divide-line">
+        {sessions.map((s) => <CashSessionRow key={s.id} session={s} />)}
+      </ul>
     </Modal>
   );
 }

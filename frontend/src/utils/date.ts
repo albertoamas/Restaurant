@@ -27,10 +27,17 @@ export function minutesBetween(from: string, to: string | number = Date.now()): 
   return Math.max(0, Math.floor((end - new Date(from).getTime()) / 60_000));
 }
 
-/** Duración legible en minutos: "menos de 1 min", "12 min", "1 h 5 min". */
+/** Duración legible en minutos: "menos de 1 min", "12 min", "1 h 5 min", "1 día 11 h". */
 export function durationLabel(minutes: number): string {
   if (minutes < 1) return 'menos de 1 min';
   if (minutes < 60) return `${minutes} min`;
+  if (minutes >= 1440) {
+    // Con días, los minutos ya no aportan: una caja abierta desde ayer.
+    const d = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    const days = d === 1 ? '1 día' : `${d} días`;
+    return hours === 0 ? days : `${days} ${hours} h`;
+  }
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
@@ -71,6 +78,14 @@ export function formatBoliviaDateShort(iso: string): string {
   return new Intl.DateTimeFormat('es-BO', {
     timeZone: BOLIVIA_TZ,
     day: '2-digit', month: 'short',
+  }).format(new Date(iso));
+}
+
+/** Día y mes para usar dentro de una frase: "28 de septiembre". En hora de Bolivia. */
+export function formatBoliviaDayMonth(iso: string): string {
+  return new Intl.DateTimeFormat('es-BO', {
+    timeZone: BOLIVIA_TZ,
+    day: 'numeric', month: 'long',
   }).format(new Date(iso));
 }
 

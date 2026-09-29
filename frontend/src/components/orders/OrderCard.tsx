@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { orderTypeLabels } from '../../utils/order';
@@ -12,20 +11,11 @@ import { OrderActionsMenu, ACTIVE_STATUSES } from './OrderActionsMenu';
 import { paymentMethodLabel } from '../pos/PaymentMethodSection';
 import { useAuth } from '../../context/auth.context';
 import { useBranchNames } from '../../hooks/useBranches';
+import { useNow } from '../../hooks/useNow';
 
 /** A partir de estos minutos el tiempo de espera pasa a ámbar y a rojo. */
 const WAIT_WARNING_MIN = 5;
 const WAIT_URGENT_MIN  = 10;
-
-/** Se recalcula cada 30 s: el tiempo se muestra en minutos, no hace falta más. */
-function useNow(intervalMs = 30_000) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-  return now;
-}
 
 function WaitTime({ createdAt }: { createdAt: string }) {
   const now = useNow();

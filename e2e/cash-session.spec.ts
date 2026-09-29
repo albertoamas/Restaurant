@@ -39,11 +39,8 @@ test.describe('Sesión de caja', () => {
 
     if (!isAlreadyOpen) {
       await openBtn.click();
-      // Actual label in CashAmountModal: "Monto inicial en efectivo"; confirmLabel: "Abrir caja"
-      const amountInput = page.getByLabel(/monto inicial en efectivo/i);
-      if (await amountInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await amountInput.fill('500');
-      }
+      // El monto empieza vacío y es obligatorio: sin él, "Abrir caja" queda deshabilitado.
+      await page.getByLabel(/efectivo con el que empieza el cajón/i).fill('500');
       await page.getByRole('button', { name: /^abrir caja$/i }).last().click();
     }
 
@@ -67,17 +64,17 @@ test.describe('Sesión de caja', () => {
 
     await closeBtn.click();
 
-    // Actual label in CashAmountModal: "Efectivo contado al cierre"
-    const closingInput = page.getByLabel(/efectivo contado al cierre/i);
-    if (await closingInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await closingInput.fill('500');
-    }
+    // El conteo empieza vacío (no se prellena con el esperado) y es obligatorio.
+    await page.getByLabel(/efectivo contado/i).fill('500');
+    // El resultado aparece en vivo antes de confirmar.
+    await expect(page.getByText('Resultado del conteo')).toBeVisible();
 
     // Confirm button text: "Cerrar caja" (inside the modal, .last() picks it over any others)
     await page.getByRole('button', { name: /^cerrar caja$/i }).last().click();
 
-    // "Diferencia" label appears in the last-closed summary StatRow
-    await expect(page.getByText('Diferencia')).toBeVisible({ timeout: 5_000 });
+    // El cierre aparece en "Últimos cierres" con su resultado en palabras.
+    await expect(page.getByText('Últimos cierres')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/^(Cuadra|Sobró Bs|Faltó Bs)/).first()).toBeVisible();
   });
 
   test('intentar crear pedido CASH con caja cerrada muestra un error', async ({ page }) => {
