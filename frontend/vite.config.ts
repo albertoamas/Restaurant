@@ -33,7 +33,7 @@ export default defineConfig({
       includeManifestIcons: false,
       manifest: {
         id: '/',
-        name: 'YankoPOS — Punto de venta',
+        name: 'YankoPOS - Punto de venta',
         short_name: 'YankoPOS',
         description: 'Punto de venta para restaurantes y negocios de comida.',
         lang: 'es',
