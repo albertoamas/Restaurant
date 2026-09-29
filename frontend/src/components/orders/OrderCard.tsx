@@ -266,7 +266,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
             <span className="text-xs font-medium text-gray-500 bg-surface-2 px-2 py-0.5 rounded-md">
               {order.payments.length > 1
                 ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
-                : (paymentLabel[order.payments[0]?.method] ?? '—')}
+                : (paymentLabel[order.payments[0]?.method] ?? '-')}
             </span>
           ) : (
             <span className="text-xs font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-0.5 rounded-md">

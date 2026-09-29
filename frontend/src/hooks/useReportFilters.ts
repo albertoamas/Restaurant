@@ -37,7 +37,7 @@ export function useReportFilters() {
   const [selectedCategory, setSelectedCategory]  = useState('');
 
   const { from, to } = buildRange(period, customFrom, customTo);
-  const rangeLabel   = from === to ? (from || 'Histórico') : `${from} → ${to}`;
+  const rangeLabel   = from === to ? (from || 'Histórico') : `${from} al ${to}`;
   const isMultiDay   = from !== to;
 
   const utcFrom = from ? getBoliviaDayBounds(from).start : undefined;

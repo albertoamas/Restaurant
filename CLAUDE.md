@@ -48,6 +48,8 @@ Vite proxies `/api`, `/uploads`, `/socket.io` to `:3000`.
 - Keep changes small and scoped to the requested module — no unsolicited global refactors.
 - `any` is an ESLint error; `_` prefix silences unused params.
 - Use-case error messages are in **Spanish** — they reach the UI verbatim via `HttpExceptionFilter`.
+- User-visible text (UI, toasts, error messages, prints, Excel) never uses em/en dashes, arrows
+  (→ ← ↑ ↓) or middle dots (·) as separators: use a period, colon, comma or "de"; "-" for no data.
 - The automated suite is not comprehensive: typecheck + manual test of affected screens.
 - After `pnpm add`, check `onlyBuiltDependencies` in `pnpm-workspace.yaml` (Prisma, esbuild and
   Sharp need their build scripts).

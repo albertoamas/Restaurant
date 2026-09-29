@@ -463,7 +463,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                   : 'bg-surface-2 text-gray-500 cursor-not-allowed',
               ].join(' ')}
             >
-              {loading ? 'Procesando…' : canConfirm ? `Confirmar pedido · Bs ${total.toFixed(2)}` : 'Confirmar pedido'}
+              {loading ? 'Procesando…' : canConfirm ? `Confirmar pedido de Bs ${total.toFixed(2)}` : 'Confirmar pedido'}
             </button>
 
             {onDeferPayment && (
@@ -477,7 +477,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
                     : 'bg-surface-2 text-gray-500 cursor-not-allowed',
                 ].join(' ')}
               >
-                {loading ? 'Procesando…' : 'Cobrar después · dejar pendiente'}
+                {loading ? 'Procesando…' : 'Cobrar después (dejar pendiente)'}
               </button>
             )}
           </div>

@@ -21,7 +21,7 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
     <div className="space-y-4">
       <Card variant="panel">
         <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Rendimiento por Cajero</h3>
-        <p className="mb-4 text-[11px] text-gray-400">Ranking por ventas · ticket promedio por cajero</p>
+        <p className="mb-4 text-[11px] text-gray-400">Ranking por ventas y ticket promedio por cajero</p>
         {byCashier.length > 0 ? (
           <CashierRankingTable data={byCashier} />
         ) : (
@@ -79,10 +79,10 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
                         )}
                       </td>
                       <td className="py-2.5 pr-3 text-right font-mono text-gray-600">Bs {s.openingAmount.toFixed(2)}</td>
-                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.expectedAmount != null ? `Bs ${s.expectedAmount.toFixed(2)}` : '—'}</td>
-                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.closingAmount  != null ? `Bs ${s.closingAmount.toFixed(2)}`  : '—'}</td>
+                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.expectedAmount != null ? `Bs ${s.expectedAmount.toFixed(2)}` : '-'}</td>
+                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.closingAmount  != null ? `Bs ${s.closingAmount.toFixed(2)}`  : '-'}</td>
                       <td className={`py-2.5 pr-1 text-right font-mono font-bold ${diffColor}`}>
-                        {diff != null ? `${diff > 0 ? '+' : ''}Bs ${diff.toFixed(2)}` : '—'}
+                        {diff != null ? `${diff > 0 ? '+' : ''}Bs ${diff.toFixed(2)}` : '-'}
                       </td>
                     </tr>
                   );

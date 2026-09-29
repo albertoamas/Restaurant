@@ -125,7 +125,7 @@ export function CustomersPage() {
           {filters.period === 'custom' && (
             <div className="flex items-center gap-1.5 ml-2">
               <input type="date" value={filters.customFrom} onChange={(e) => filters.setCustomFrom(e.target.value)} className={dateInputCls} />
-              <span className="text-gray-400 text-sm shrink-0">→</span>
+              <span className="text-gray-400 text-sm shrink-0">a</span>
               <input type="date" value={filters.customTo} onChange={(e) => filters.setCustomTo(e.target.value)} className={dateInputCls} />
             </div>
           )}
@@ -179,7 +179,7 @@ export function CustomersPage() {
             >
               <div className="min-w-0 pr-2">
                 <p className="text-sm font-semibold text-main truncate">{c.name}</p>
-                <p className="text-[13px] text-soft truncate">{c.phone ?? c.email ?? '—'}</p>
+                <p className="text-[13px] text-soft truncate">{c.phone ?? c.email ?? '-'}</p>
               </div>
               <p className="text-[14px] font-medium text-soft text-right whitespace-nowrap">Bs {c.totalSpent.toFixed(0)}</p>
               <p className="text-[14px] font-bold text-main text-right">{c.purchaseCount}</p>
@@ -209,11 +209,11 @@ export function CustomersPage() {
       {totalPages > 1 && !loading && (
         <div className="flex items-center justify-between mt-4 px-1">
           <p className="text-xs text-gray-500">
-            Página {page} de {totalPages} · {total} clientes
+            Página {page} de {totalPages}, {total} clientes
           </p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className={paginationBtn}>
-              ← Anterior
+              Anterior
             </button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
               let pg: number;
@@ -233,7 +233,7 @@ export function CustomersPage() {
               );
             })}
             <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className={paginationBtn}>
-              Siguiente →
+              Siguiente
             </button>
           </div>
         </div>

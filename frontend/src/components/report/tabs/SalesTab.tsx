@@ -60,9 +60,9 @@ export function SalesTab({ report, dailySeries, byDayHour, isMultiDay, isLoading
       )}
 
       <Card variant="panel">
-        <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Mapa de Calor — Hora × Día</h3>
+        <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Mapa de calor por hora y día</h3>
         <p className="mb-4 text-[11px] text-gray-400">
-          Intensidad de ventas por franja horaria y día de semana · pasa el cursor para el detalle
+          Intensidad de ventas por franja horaria y día de semana. Pasa el cursor para ver el detalle.
         </p>
         {byDayHour.length > 0 ? (
           <HeatMapChart data={byDayHour} />

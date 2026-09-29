@@ -130,7 +130,7 @@ export function HeatMapChart({ data }: Props) {
       </div>
 
       {/* Mobile scroll hint */}
-      <p className="sm:hidden text-center text-[10px] text-gray-400 mt-1.5">← desliza para ver todos los días →</p>
+      <p className="sm:hidden text-center text-[10px] text-gray-400 mt-1.5">Desliza para ver todos los días</p>
 
       {/* Custom tooltip — flips above/below based on proximity to top */}
       {hovered && (
@@ -153,7 +153,7 @@ export function HeatMapChart({ data }: Props) {
           }}
         >
           <p style={{ color: '#9ca3af', fontSize: 10, fontWeight: 600, marginBottom: 4 }}>
-            {hovered.dayLabel} · {String(hovered.hour).padStart(2, '0')}:00
+            {hovered.dayLabel}, {String(hovered.hour).padStart(2, '0')}:00
           </p>
           {hovered.totalSales > 0 ? (
             <>

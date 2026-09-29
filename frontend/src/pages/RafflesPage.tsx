@@ -47,8 +47,8 @@ export function RafflesPage() {
             <p className="text-xs text-gray-500 mt-0.5">
               {raffles.length} sorteo{raffles.length !== 1 ? 's' : ''}
               {activeCount > 0 && (
-                <span className="ml-1.5 text-emerald-600 font-semibold">
-                  · {activeCount} activo{activeCount !== 1 ? 's' : ''}
+                <span className="text-emerald-600 font-semibold">
+                  , {activeCount} activo{activeCount !== 1 ? 's' : ''}
                 </span>
               )}
             </p>

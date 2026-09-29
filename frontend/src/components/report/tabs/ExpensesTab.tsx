@@ -56,7 +56,7 @@ export function ExpensesTab({ report, expenseSummary, loading, isMultiDay }: Pro
         />
         <StatCard
           label="Peso sobre ventas"
-          value={ratio !== null ? `${ratio.toFixed(1)}%` : '—'}
+          value={ratio !== null ? `${ratio.toFixed(1)}%` : '-'}
           icon={<Icon name="chart" size={20} />}
           accent="text-sky-600 dark:text-sky-400" bg="bg-sky-500/10"
         />

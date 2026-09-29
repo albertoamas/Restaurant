@@ -27,7 +27,7 @@ export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-gray-500">{formatDate(s.openedAt)}</span>
               {s.closedAt && (
-                <span className="text-xs text-gray-400">→ {formatDate(s.closedAt)}</span>
+                <span className="text-xs text-gray-400">hasta {formatDate(s.closedAt)}</span>
               )}
             </div>
             <div className="grid grid-cols-3 gap-3 text-xs">
@@ -44,7 +44,7 @@ export function HistoryModal({ isOpen, sessions, onClose }: HistoryModalProps) {
                 <p className={`font-heading font-bold text-sm ${diffColor(s.difference)}`}>
                   {s.difference !== null
                     ? `${s.difference >= 0 ? '+' : ''}Bs ${s.difference.toFixed(2)}`
-                    : '—'}
+                    : '-'}
                 </p>
               </div>
             </div>

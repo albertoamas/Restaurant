@@ -171,7 +171,7 @@ export function ExpenseConceptsPanel() {
                         <p className="truncate text-sm font-semibold text-gray-800">{concept.name}</p>
                         <p className="text-xs text-gray-400">
                           {concept.unit ? `Por ${concept.unit}` : 'Monto libre'}
-                          {concept.defaultUnitPrice ? ` · Bs ${concept.defaultUnitPrice.toFixed(2)} habitual` : ''}
+                          {concept.defaultUnitPrice ? `, Bs ${concept.defaultUnitPrice.toFixed(2)} habitual` : ''}
                         </p>
                       </div>
                       {confirmId === concept.id ? (

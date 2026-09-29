@@ -103,8 +103,8 @@ export function ExpensesPage() {
             <h1 className="font-heading text-xl font-black text-gray-900 sm:text-2xl">Gastos</h1>
             <p className="mt-0.5 text-xs text-gray-500">
               {summary.transactionCount} movimiento{summary.transactionCount !== 1 ? 's' : ''}
-              {' · '}
-              {from === to ? from : `${from} → ${to}`}
+              {', '}
+              {from === to ? from : `${from} al ${to}`}
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export function ExpensesPage() {
           {period === 'custom' && (
             <>
               <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={DATE_INPUT} />
-              <span className="shrink-0 text-sm text-gray-400">→</span>
+              <span className="shrink-0 text-sm text-gray-400">a</span>
               <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={DATE_INPUT} />
             </>
           )}

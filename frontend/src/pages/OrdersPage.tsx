@@ -213,7 +213,7 @@ export function OrdersPage() {
                   onChange={(e) => setHistoryFrom(e.target.value)}
                   className={dateInputCls}
                 />
-                <span className="text-gray-400 text-sm shrink-0">→</span>
+                <span className="text-gray-400 text-sm shrink-0">a</span>
                 <input
                   type="date"
                   value={historyTo}

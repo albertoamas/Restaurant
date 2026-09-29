@@ -59,7 +59,7 @@ function buildSummarySheet(
 function buildProductsSheet(products: TopProductDto[]): XLSX.WorkSheet {
   const rows: (string | number)[][] = [
     ['Posición', 'Producto', 'Categoría', 'Unidades', 'Ingresos (Bs)'],
-    ...products.map((p, i) => [i + 1, p.productName, p.categoryName ?? '—', p.totalQuantity, p.totalRevenue]),
+    ...products.map((p, i) => [i + 1, p.productName, p.categoryName ?? '-', p.totalQuantity, p.totalRevenue]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [col(8), col(30), col(18), col(10), col(14)];
@@ -69,7 +69,7 @@ function buildProductsSheet(products: TopProductDto[]): XLSX.WorkSheet {
 function buildCustomersSheet(customers: TopCustomerDto[]): XLSX.WorkSheet {
   const rows: (string | number)[][] = [
     ['Posición', 'Cliente', 'Teléfono', 'Pedidos', 'Total Gastado (Bs)'],
-    ...customers.map((c, i) => [i + 1, c.customerName, c.customerPhone ?? '—', c.orderCount, c.totalSpent]),
+    ...customers.map((c, i) => [i + 1, c.customerName, c.customerPhone ?? '-', c.orderCount, c.totalSpent]),
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [col(8), col(28), col(16), col(10), col(18)];

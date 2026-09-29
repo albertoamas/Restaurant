@@ -231,7 +231,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     ? order.payments
         .map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`)
         .join(' + ')
-    : '—';
+    : '-';
 
   const html = `
     <div class="center" style="font-size:36pt;font-weight:900;line-height:1.1">#${order.orderNumber}</div>

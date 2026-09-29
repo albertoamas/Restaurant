@@ -144,7 +144,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
                     <span className="text-xs text-gray-500 ml-2">Bs {p.priceBs}/mes</span>
                   </div>
                   <span className="text-xs text-gray-500 shrink-0 hidden sm:block">
-                    {limitLabel(p.maxBranches)} suc · {limitLabel(p.maxCashiers)} caj
+                    {limitLabel(p.maxBranches)} suc., {limitLabel(p.maxCashiers)} caj.
                   </span>
                   {isActive && (
                     <svg className="w-4 h-4 text-primary-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -182,7 +182,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
           {activePlan && (
             <p className="mt-2 text-center text-[11px] text-gray-500">
               Historial de reportes: {limitLabel(activePlan.reportHistoryDays)} días
-              {' · '}
+              {'. '}
               <span className={
                 !isUnlimited(activePlan.maxStorageMb) && tenant.storageUsedMb >= activePlan.maxStorageMb
                   ? 'text-red-600 dark:text-red-400 font-semibold'
@@ -201,7 +201,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
               <ul className="mt-1.5 space-y-0.5">
                 {planExcess.map((e) => (
                   <li key={e.resource} className="text-xs text-amber-700 dark:text-amber-400">
-                    · Tiene {e.current} {e.resource} y el plan permite {e.max}
+                    Tiene {e.current} {e.resource} y el plan permite {e.max}
                   </li>
                 ))}
               </ul>

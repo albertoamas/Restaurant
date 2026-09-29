@@ -145,7 +145,6 @@ export function KitchenPage() {
               <span className="w-2 h-2 rounded-full bg-amber-500" />
               {pending.length} pendientes
             </span>
-            <span className="text-gray-500">·</span>
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               {preparing.length} preparando
@@ -259,7 +258,7 @@ export function KitchenPage() {
                 <KitchenCard
                   key={order.id}
                   order={order}
-                  actionLabel="✓  Listo — Entregar"
+                  actionLabel="Listo, entregar"
                   actionStatus={OrderStatus.DELIVERED}
                   actionColor="bg-emerald-600 hover:bg-emerald-700 border-emerald-600 shadow-[0_3px_10px_oklch(0.62_0.18_148/0.22)]"
                   actionAriaLabel={`Marcar como lista y entregar la orden ${order.orderNumber}`}

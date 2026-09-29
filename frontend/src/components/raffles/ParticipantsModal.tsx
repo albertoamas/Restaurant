@@ -45,7 +45,7 @@ function PrintSelectModal({
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={`Imprimir ticket — ${customerName}`} size="sm">
+    <Modal isOpen onClose={onClose} title={`Imprimir ticket de ${customerName}`} size="sm">
       <div className="space-y-1.5">
         {tickets.map((t) => {
           const delivered = isDelivered(t);

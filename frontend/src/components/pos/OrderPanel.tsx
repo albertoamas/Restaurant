@@ -39,7 +39,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
       {/* Cart sub-header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1.5 shrink-0">
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-          {!onClose && (count > 0 ? `Pedido · ${count} ítem${count !== 1 ? 's' : ''}` : 'Pedido')}
+          {!onClose && (count > 0 ? `Pedido (${count} ítem${count !== 1 ? 's' : ''})` : 'Pedido')}
         </span>
         {items.length > 0 && (
           <button
@@ -109,7 +109,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
           disabled={items.length === 0}
           onClick={onCharge}
         >
-          {items.length === 0 ? 'Cobrar' : `Cobrar · Bs ${total.toFixed(2)}`}
+          {items.length === 0 ? 'Cobrar' : `Cobrar Bs ${total.toFixed(2)}`}
         </Button>
       </div>
     </div>

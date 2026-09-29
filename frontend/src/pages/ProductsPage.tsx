@@ -273,11 +273,11 @@ export function ProductsPage() {
       {totalPages > 1 && !loading && (
         <div className="flex items-center justify-between mt-4 px-1">
           <p className="text-xs text-gray-500">
-            Página {page} de {totalPages} · {total} productos
+            Página {page} de {totalPages}, {total} productos
           </p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className={paginationBtn}>
-              ← Anterior
+              Anterior
             </button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
               let pg: number;
@@ -297,7 +297,7 @@ export function ProductsPage() {
               );
             })}
             <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className={paginationBtn}>
-              Siguiente →
+              Siguiente
             </button>
           </div>
         </div>

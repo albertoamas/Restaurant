@@ -211,7 +211,7 @@ export function CashPage() {
               label="Diferencia"
               value={lastClosed.difference !== null
                 ? `${lastClosed.difference >= 0 ? '+' : ''}Bs ${lastClosed.difference.toFixed(2)}`
-                : '—'}
+                : '-'}
               bold
               valueClass={diffColor(lastClosed.difference)}
             />
@@ -226,7 +226,7 @@ export function CashPage() {
           className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
             bg-surface-2 border border-line rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-card-md"
         >
-          Ver historial de cierres ({closedSessions.length}) →
+          Ver historial de cierres ({closedSessions.length})
         </button>
       )}
 

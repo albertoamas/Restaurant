@@ -134,7 +134,7 @@ function ExpenseRow({
           <p className="mt-1.5 text-[11px] font-medium text-gray-400">
             {[expense.supplierName, expense.documentNumber ? `Comp. ${expense.documentNumber}` : null]
               .filter(Boolean)
-              .join(' · ')}
+              .join(', ')}
           </p>
         )}
       </div>

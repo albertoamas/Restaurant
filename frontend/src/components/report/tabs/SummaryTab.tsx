@@ -37,7 +37,7 @@ export function SummaryTab({ report, expenseSummary }: Props) {
                 ? 'border-emerald-500/25 bg-emerald-500/12 text-emerald-600'
                 : 'border-red-500/25 bg-red-500/12 text-red-600'
             }`}>
-              {isPositive ? '↑' : '↓'} {Math.abs(marginPct).toFixed(1)}% margen
+              {isPositive ? '+' : '-'}{Math.abs(marginPct).toFixed(1)}% margen
             </span>
           </div>
           <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">

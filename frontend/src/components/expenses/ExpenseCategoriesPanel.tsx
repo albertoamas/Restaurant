@@ -95,7 +95,7 @@ export function ExpenseCategoriesPanel() {
         <Icon name="warning" size={15} className="mt-0.5 shrink-0 text-gray-400" />
         <p className="text-xs text-gray-500">
           Las categorías agrupan tus gastos en los reportes y en los filtros.
-          Al eliminar una, sus gastos dejan de aparecer en la lista — el historial no cambia.
+          Al eliminar una, sus gastos dejan de aparecer en la lista. El historial no cambia.
         </p>
       </div>
 

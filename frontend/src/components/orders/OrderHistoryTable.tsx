@@ -34,7 +34,7 @@ function paymentSummary(order: OrderDto): string | null {
   if (!order.isPaid) return null;
   return order.payments.length > 1
     ? order.payments.map((p) => PAYMENT_LABEL[p.method] ?? p.method).join(' + ')
-    : (PAYMENT_LABEL[order.payments[0]?.method] ?? '—');
+    : (PAYMENT_LABEL[order.payments[0]?.method] ?? '-');
 }
 
 /* ─── Row ────────────────────────────────────────────────────────────────── */
@@ -90,7 +90,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
       <td className="px-3 py-3.5 hidden sm:table-cell max-w-[140px]">
         {order.customer
           ? <span className="text-sm text-gray-700 font-medium truncate block">{order.customer.name}</span>
-          : <span className="text-xs text-gray-300 select-none">—</span>
+          : <span className="text-xs text-gray-300 select-none">-</span>
         }
       </td>
 
@@ -242,7 +242,7 @@ export function OrderHistoryTable({ orders, total, onPayOrder, onEdit, onStatusC
             <span className="font-semibold text-gray-600">{orders.length}</span>
             {' '}de{' '}
             <span className="font-semibold text-gray-600">{total}</span>
-            {' '}resultados — refina la búsqueda para ver más
+            {' '}resultados. Refina la búsqueda para ver más
           </p>
         </div>
       )}

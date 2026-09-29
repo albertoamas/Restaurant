@@ -85,7 +85,7 @@ export function ExpenseCalendar({ from, to, byDay, selectedDay, onSelect }: Expe
                     {dayNumber}
                   </span>
                   <span className={`mt-3 block text-xs font-black tabular-nums ${intensity > 0.55 ? 'text-white' : 'text-gray-700'}`}>
-                    {amount > 0 ? `Bs ${amount.toFixed(0)}` : '—'}
+                    {amount > 0 ? `Bs ${amount.toFixed(0)}` : '-'}
                   </span>
                 </button>
               );

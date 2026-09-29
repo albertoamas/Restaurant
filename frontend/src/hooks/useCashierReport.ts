@@ -29,7 +29,7 @@ export function useCashierReport() {
   const [period, setPeriod] = useState<CashierPeriod>('today');
 
   const { from, to } = buildRange(period);
-  const rangeLabel   = from === to ? from : `${from} → ${to}`;
+  const rangeLabel   = from === to ? from : `${from} al ${to}`;
 
   const { start: utcFrom } = getBoliviaDayBounds(from);
   const { end:   utcTo   } = getBoliviaDayBounds(to);

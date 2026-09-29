@@ -149,12 +149,12 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
             <p className="text-sm font-bold text-gray-900">
               {ORDER_TYPE_LABEL[order.type]}
               {order.customer?.name && (
-                <span className="font-normal text-gray-500"> · {order.customer.name}</span>
+                <span className="font-normal text-gray-500">, {order.customer.name}</span>
               )}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
               {order.items.length} ítem{order.items.length !== 1 ? 's' : ''}
-              {order.notes && <span> · {order.notes}</span>}
+              {order.notes && <span>, {order.notes}</span>}
             </p>
           </div>
           <span className="font-heading font-black text-xl text-gray-900 shrink-0">
@@ -323,7 +323,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
             {loading
               ? 'Procesando…'
               : canConfirm
-                ? `Confirmar cobro · Bs ${Number(total).toFixed(2)}`
+                ? `Confirmar cobro de Bs ${Number(total).toFixed(2)}`
                 : 'Confirmar cobro'}
           </button>
         </div>

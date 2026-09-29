@@ -48,7 +48,7 @@ export function DrawingScreen({
 }) {
   // pool is intentionally frozen at mount: names won't change during a single draw.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const pool = useMemo(() => (names.length > 0 ? names : ['—']), []);
+  const pool = useMemo(() => (names.length > 0 ? names : ['-']), []);
 
   // Dynamic repeat count — caps DOM nodes at ~140-300 regardless of pool size.
   const extPool = useMemo(() => {

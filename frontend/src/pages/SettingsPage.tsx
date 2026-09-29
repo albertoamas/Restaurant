@@ -143,7 +143,7 @@ export function SettingsPage() {
           <div className="py-4">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Nombre del negocio</label>
             <div className="flex items-center gap-2 bg-surface-2 rounded-xl px-4 py-3 border border-line">
-              <span className="text-sm font-semibold text-gray-800">{user?.tenantName || '—'}</span>
+              <span className="text-sm font-semibold text-gray-800">{user?.tenantName || '-'}</span>
               <span className="ml-auto text-xs text-gray-400 bg-surface-3 rounded-md px-2 py-0.5">Solo lectura</span>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Se define al registrarse. Contacta soporte para cambiarlo.</p>
@@ -267,7 +267,7 @@ export function SettingsPage() {
                     setResetNowLoading(true);
                     try {
                       await ordersApi.resetSequence();
-                      toast.success('Contador reiniciado — el próximo pedido será #1');
+                      toast.success('Contador reiniciado. El próximo pedido será el #1');
                       setResetNowConfirm(false);
                     } catch (err) {
                       handleApiError(err, 'Error al reiniciar contador');

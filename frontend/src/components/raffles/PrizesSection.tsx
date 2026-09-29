@@ -90,13 +90,13 @@ export function PrizesSection({
                   {voidedWinner && !activeWinner && (
                     <p className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
                       <span className="line-through">{voidedWinner.customer.name}</span>
-                      {' '}· anulado
+                      {' '}(anulado)
                     </p>
                   )}
 
                   {!activeWinner && !voidedWinner && (
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      {positionLabel(p.position)} · Pendiente
+                      {positionLabel(p.position)}: pendiente
                     </p>
                   )}
                 </div>

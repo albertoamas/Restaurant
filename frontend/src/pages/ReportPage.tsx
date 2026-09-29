@@ -140,7 +140,7 @@ export function ReportPage() {
       {/* Encabezado solo para impresión */}
       <div className="mb-6 hidden border-b border-gray-200 pb-4 print:block">
         <h1 className="text-2xl font-bold text-gray-900">{user?.tenantName ?? 'Reporte de Ventas'}</h1>
-        <p className="mt-0.5 text-sm text-gray-600">{activeLabel} · {rangeLabel}</p>
+        <p className="mt-0.5 text-sm text-gray-600">{activeLabel}, {rangeLabel}</p>
         <p className="mt-0.5 text-xs text-gray-400">
           Generado el {new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
@@ -203,7 +203,7 @@ export function ReportPage() {
           {period === 'custom' && (
             <>
               <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={dateInputCls} />
-              <span className="shrink-0 text-sm text-gray-400">→</span>
+              <span className="shrink-0 text-sm text-gray-400">a</span>
               <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={dateInputCls} />
             </>
           )}

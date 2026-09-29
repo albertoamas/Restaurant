@@ -56,7 +56,7 @@ export default function KitPage() {
             <p className="text-heading font-semibold font-heading">Título de sección</p>
             <p className="text-body text-main">Texto base: el pedido se envía a cocina al cobrar.</p>
             <p className="text-label text-soft">Etiqueta o texto secundario</p>
-            <p className="text-caption text-muted">Nota o metadato · 29 de septiembre, 08:00</p>
+            <p className="text-caption text-muted">Nota o metadato, 29 de septiembre, 08:00</p>
           </Section>
 
           <Section title="Botones">

@@ -277,7 +277,7 @@ function ResetPasswordModal({
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={`Resetear contraseña — ${userName}`}>
+    <Modal isOpen onClose={onClose} title={`Resetear contraseña de ${userName}`}>
       <p className="text-sm text-gray-500 mb-4">
         Asigna una nueva contraseña temporal. Comunícala al cajero por el canal que prefieras.
       </p>

@@ -293,7 +293,7 @@ export function AdminPage() {
                             <p className="text-xs text-gray-400 truncate">{t.owner.email}</p>
                           </>
                         ) : (
-                          <span className="text-gray-300 text-xs">—</span>
+                          <span className="text-gray-300 text-xs">-</span>
                         )}
                       </div>
 

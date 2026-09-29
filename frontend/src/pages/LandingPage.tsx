@@ -330,7 +330,7 @@ export function LandingPage() {
             <div className="inline-flex items-center gap-2 mb-6 px-3.5 py-1.5 rounded-full border border-primary-500/20 bg-primary-500/10">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse-dot" />
               <span className="text-[11px] font-bold text-primary-600 tracking-wider uppercase">
-                Software POS · Bolivia
+                Software POS para Bolivia
               </span>
             </div>
 
@@ -586,7 +586,7 @@ export function LandingPage() {
           {/* Barra inferior */}
           <div className="mt-12 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs font-medium text-muted">
-              © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
+              © {new Date().getFullYear()} YankoPOS. Hecho en Bolivia 🇧🇴
             </p>
             <p className="text-xs font-medium text-muted">
               Alberto Amas Villarroel

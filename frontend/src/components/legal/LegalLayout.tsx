@@ -53,7 +53,7 @@ export function LegalLayout({
       <footer className="border-t border-line px-5 py-10">
         <div className="mx-auto flex max-w-[860px] flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-xs font-medium text-muted">
-            © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
+            © {new Date().getFullYear()} YankoPOS. Hecho en Bolivia 🇧🇴
           </p>
           <nav className="flex gap-6">
             <Link to="/terminos" className="text-xs font-semibold text-muted transition-colors hover:text-primary-500">

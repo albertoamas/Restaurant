@@ -183,7 +183,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                     {raffle.name}
                   </h1>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {raffle.ticketMode === 'PRODUCT_MATCH' ? 'Por compra de producto' : `Cada ${raffle.spendingThreshold} Bs acumulados`} · {raffle.ticketCount} ticket{raffle.ticketCount !== 1 ? 's' : ''}
+                    {raffle.ticketMode === 'PRODUCT_MATCH' ? 'Por compra de producto' : `Cada ${raffle.spendingThreshold} Bs acumulados`}, {raffle.ticketCount} ticket{raffle.ticketCount !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -329,10 +329,10 @@ function RaffleDetailContent({ id }: { id: string }) {
                           rows: activeWinners.map((w) => [
                             positionLabel(w.position),
                             w.customer.name,
-                            w.customer.phone ?? '—',
+                            w.customer.phone ?? '-',
                             String(w.ticketNumber),
                             new Date(w.drawnAt).toLocaleDateString('es-BO'),
-                            w.prizeDescription ?? '—',
+                            w.prizeDescription ?? '-',
                           ]),
                         }]);
                       }}

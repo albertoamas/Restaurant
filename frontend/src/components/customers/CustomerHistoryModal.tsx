@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon';
 import { ordersApi } from '../../api/orders.api';
 
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 

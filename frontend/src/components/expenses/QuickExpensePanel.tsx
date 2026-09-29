@@ -240,7 +240,7 @@ function QuickExpenseDialog({
         expenseDate,
         branchId: currentBranchId ?? undefined,
       });
-      toast.success(`${concept.name} · Bs ${total.toFixed(2)}`);
+      toast.success(`${concept.name}: Bs ${total.toFixed(2)}`);
       onSaved();
     } catch (err) {
       handleApiError(err, 'Error al registrar el gasto');
@@ -322,7 +322,7 @@ function QuickExpenseDialog({
             className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-gray-500 transition-colors hover:text-primary-600"
           >
             <Icon name="clock" size={13} />
-            Hoy — cambiar fecha
+            Hoy (cambiar fecha)
           </button>
         )}
 

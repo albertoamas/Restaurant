@@ -25,7 +25,7 @@ export function CashierReportPage() {
     <PageShell>
       {/* Print header */}
       <div className="hidden print:block mb-6 pb-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Rendición — {user?.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Rendición de {user?.name}</h1>
         <p className="text-sm text-gray-600 mt-0.5">{rangeLabel}</p>
         <p className="text-xs text-gray-400 mt-0.5">
           Generado el {new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -44,7 +44,7 @@ export function CashierReportPage() {
               Mi Rendición
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              {user?.name} · Resumen de ventas atendidas
+              {user?.name}: resumen de ventas atendidas
             </p>
           </div>
           <div className="flex items-center gap-2">

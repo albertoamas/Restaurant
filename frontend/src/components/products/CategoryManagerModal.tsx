@@ -233,7 +233,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
               type="number"
               value={newOrder}
               onChange={(e) => setNewOrder(e.target.value)}
-              placeholder="0 — aparece al final"
+              placeholder="0: aparece al final"
             />
             <p className="text-xs text-gray-400 -mt-1">
               Número menor aparece primero. Déjalo en 0 si no importa el orden.

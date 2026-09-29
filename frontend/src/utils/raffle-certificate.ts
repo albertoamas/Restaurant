@@ -62,7 +62,7 @@ export function buildWinnerCertificateHtml(
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Certificado de Premio — ${esc(raffleName)}</title>
+  <title>Certificado de premio: ${esc(raffleName)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
   <style>

@@ -113,8 +113,8 @@ export function CustomerPicker({ onCustomerChange }: CustomerPickerProps) {
   // Selected customer chip
   if (selected) {
     const label = selected.type === 'existing'
-      ? `${selected.name} · ${selected.purchaseCount} compra${selected.purchaseCount !== 1 ? 's' : ''}`
-      : `${selected.createCustomer.name}${selected.createCustomer.phone ? ` · ${selected.createCustomer.phone}` : ''} (nuevo)`;
+      ? `${selected.name}, ${selected.purchaseCount} compra${selected.purchaseCount !== 1 ? 's' : ''}`
+      : `${selected.createCustomer.name}${selected.createCustomer.phone ? `, ${selected.createCustomer.phone}` : ''} (nuevo)`;
 
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/12 border border-emerald-500/25">
