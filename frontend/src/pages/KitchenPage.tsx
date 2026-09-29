@@ -31,7 +31,7 @@ function KitchenClock() {
     return () => clearInterval(id);
   }, []);
   return (
-    <span className="font-heading font-bold text-sm text-gray-500 tabular-nums">
+    <span className="font-heading font-bold text-sm text-gray-500 tabular-nums whitespace-nowrap">
       {time.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
     </span>
   );
@@ -126,17 +126,19 @@ export function KitchenPage() {
 
       {/* Kitchen header */}
       <div className="relative z-10 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-[var(--border-subtle)] shrink-0 shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0/0.10)]">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0/0.10)]">
             <Icon name="flame" size={16} className="text-amber-400" />
           </div>
           <div>
-            <h1 className="font-heading font-black text-gray-900 text-lg tracking-tight">Panel de Cocina</h1>
-            <p className="text-xs text-gray-500 font-medium">Flujo en tiempo real por estado</p>
+            <h1 className="font-heading font-black text-gray-900 text-lg tracking-tight whitespace-nowrap">
+              <span className="hidden sm:inline">Panel de </span>Cocina
+            </h1>
+            <p className="hidden sm:block text-xs text-gray-500 font-medium">Flujo en tiempo real por estado</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           <KitchenClock />
           <div className="hidden sm:flex items-center gap-3 text-sm">
             <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
@@ -163,7 +165,7 @@ export function KitchenPage() {
             aria-label="Volver al panel principal"
           >
             <Icon name="arrow-left" size={14} />
-            Volver al panel
+            <span className="hidden sm:inline">Volver al panel</span>
           </Link>
         </div>
       </div>

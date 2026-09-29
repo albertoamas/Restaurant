@@ -17,6 +17,8 @@ const pageTitles: Record<string, string> = {
   '/expenses':  'Gastos',
   '/customers': 'Clientes',
   '/raffles':   'Sorteos',
+  '/account':   'Mi cuenta',
+  '/mi-reporte': 'Mi Rendición',
 };
 
 function getTitle(pathname: string): string {
@@ -55,9 +57,9 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
   return (
     <header
       data-print-hide
-      className="h-14 bg-[var(--color-surface-page)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)] px-5 flex items-center justify-between shrink-0 relative z-10 supports-[backdrop-filter]:bg-[var(--color-surface-page)]/60 transition-colors"
+      className="h-14 bg-[var(--color-surface-page)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)] px-3 sm:px-5 flex items-center justify-between gap-3 shrink-0 relative z-10 supports-[backdrop-filter]:bg-[var(--color-surface-page)]/60 transition-colors"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         {/* Hamburger — mobile only */}
         <button
           onClick={onMenuOpen}
@@ -78,10 +80,10 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
           </button>
         )}
 
-        <span className="w-1 h-5 bg-primary-500 rounded-full" />
-        <h2 className="text-[17px] font-bold text-[var(--color-text-main)] font-heading">{title}</h2>
+        <span className="w-1 h-5 bg-primary-500 rounded-full shrink-0" />
+        <h2 className="text-[17px] font-bold text-[var(--color-text-main)] font-heading truncate">{title}</h2>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <ConnectionStatus />
         {/* Theme toggle */}
         <button
@@ -92,8 +94,8 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={1.75} />
         </button>
         <span className="text-sm text-[var(--color-text-soft)] hidden md:block capitalize">{formatDate()}</span>
-        <span className="text-sm text-[var(--color-text-soft)] md:hidden capitalize">{formatDateShort()}</span>
-        <div className="flex items-center gap-2 pl-3 border-l border-[var(--border-subtle)]">
+        <span className="text-sm text-[var(--color-text-soft)] hidden sm:block md:hidden capitalize whitespace-nowrap">{formatDateShort()}</span>
+        <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[var(--border-subtle)]">
           <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shadow-md shadow-primary-500/20">
             <span className="text-xs font-bold text-white">{userInitial}</span>
           </div>

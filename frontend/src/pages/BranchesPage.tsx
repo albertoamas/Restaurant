@@ -40,16 +40,16 @@ export function BranchesPage() {
   return (
     <PageShell>
       <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Sucursales</h2>
             <p className="text-xs text-gray-500 mt-0.5">Organiza locales, estado y datos de contacto.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20 whitespace-nowrap">
               {branches.length} sucursales
             </span>
-            <Button onClick={() => { setEditing(null); setShowModal(true); }}>+ Nueva sucursal</Button>
+            <Button onClick={() => { setEditing(null); setShowModal(true); }} className="whitespace-nowrap">+ Nueva sucursal</Button>
           </div>
         </div>
       </div>
