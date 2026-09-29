@@ -1,12 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { RaffleWinnerDto } from '@pos/shared';
 
 vi.mock('./raffle-utils', () => ({
   positionLabel: (pos: number) => `${pos}° lugar`,
-}));
-
-vi.mock('react-hot-toast', () => ({
-  default: { error: vi.fn() },
 }));
 
 import { buildWinnerCertificateHtml, printWinnerCertificate } from './raffle-certificate';
@@ -89,10 +85,26 @@ describe('printWinnerCertificate — escape HTML (XSS prevention)', () => {
     expect(html).not.toContain('<img src=x onerror=alert(1)>');
   });
 
-  it('muestra toast si window.open retorna null (popup bloqueado)', async () => {
-    vi.spyOn(window, 'open').mockReturnValue(null);
-    const toast = (await import('react-hot-toast')).default;
-    printWinnerCertificate(makeWinner(), 'Rifa', { name: 'Negocio' });
-    expect(toast.error).toHaveBeenCalled();
+  it('el documento no lleva scripts: la CSP de producción los bloquea', () => {
+    const html = buildWinnerCertificateHtml(makeWinner(), 'Rifa', { name: 'Negocio' });
+    expect(html).not.toMatch(/<script/i);
+  });
+});
+
+describe('printWinnerCertificate — impresión', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('imprime desde un iframe oculto, sin abrir ventanas (falla en la app instalada)', () => {
+    const open = vi.spyOn(window, 'open');
+
+    printWinnerCertificate(makeWinner({ customerName: 'Ana Gómez' }), 'Rifa', { name: 'Negocio' });
+
+    expect(open).not.toHaveBeenCalled();
+    const iframe = document.body.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute('aria-hidden')).toBe('true');
+    expect(iframe?.srcdoc).toContain('Ana Gómez');
   });
 });

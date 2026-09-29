@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { THEME_COLORS } from '../theme-colors';
 
 export type Theme = 'dark' | 'light';
 
@@ -18,6 +19,7 @@ function applyTheme(t: Theme) {
   } else {
     document.documentElement.removeAttribute('data-theme');
   }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[t]);
 }
 
 export function useTheme() {

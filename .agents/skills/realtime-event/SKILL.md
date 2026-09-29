@@ -42,8 +42,9 @@ this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, payloa
 - Emit **after** the write succeeds, never before.
 - `@Optional()` keeps unit tests able to build the use case with only the repo mock.
 - The module must import `EventsModule`.
-- The gateway joins each socket to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`; use the
-  branch-scoped emitter only for branch-local views (kitchen, cash session).
+- The gateway joins each socket to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`.
+  `emitToTenant(tenantId, event, data)` reaches the whole tenant; `emit(tenantId, branchId, event, data)`
+  reaches one branch — use it only for branch-local views (kitchen, cash session).
 - Payload: send the same DTO the REST endpoint returns, so subscribers need no second shape.
 
 ## 3. Subscribe on the frontend

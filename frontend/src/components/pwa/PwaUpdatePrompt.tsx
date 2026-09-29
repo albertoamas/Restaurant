@@ -1,0 +1,51 @@
+import { usePwaUpdate } from '../../hooks/usePwaUpdate';
+import { useCartStore } from '../../store/cart.store';
+import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
+
+/**
+ * Aviso de versión nueva. Nunca recarga solo: actualizar recarga la página, y el carrito
+ * vive solo en memoria (`cart.store` no persiste), así que con productos cargados el botón
+ * queda bloqueado hasta que el pedido se cobre o se vacíe.
+ */
+export function PwaUpdatePrompt() {
+  const { needRefresh, update, dismiss } = usePwaUpdate();
+  const cartCount = useCartStore((s) => s.items.length);
+
+  if (!needRefresh) return null;
+
+  const blockedByCart = cartCount > 0;
+
+  return (
+    <div
+      data-print-hide
+      role="status"
+      aria-live="polite"
+      className="fixed z-[60] bottom-4 left-4 right-4 sm:left-auto sm:w-96 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl p-4 animate-slide"
+    >
+      <div className="flex gap-3">
+        <div className="w-9 h-9 rounded-lg bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
+          <Icon name="refresh" size={18} className="text-primary-500" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[var(--color-text-main)] font-heading">
+            Hay una versión nueva de YankoPOS
+          </p>
+          <p className="text-xs text-[var(--color-text-soft)] mt-0.5">
+            {blockedByCart
+              ? 'Termina o vacía el pedido en curso para actualizar: al recargar se perdería el carrito.'
+              : 'Actualizar recarga la página en un segundo.'}
+          </p>
+          <div className="flex justify-end gap-2 mt-3">
+            <Button variant="ghost" size="sm" onClick={dismiss}>
+              Más tarde
+            </Button>
+            <Button size="sm" onClick={update} disabled={blockedByCart}>
+              Actualizar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

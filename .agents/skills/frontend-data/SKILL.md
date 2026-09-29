@@ -76,7 +76,7 @@ Every `catch` uses `handleApiError(err, 'mensaje por defecto')` from `frontend/s
 
 ## 5. Stores (Zustand, `frontend/src/store/`)
 
-- `cart.store.ts` — persisted; cleared after a successful order.
+- `cart.store.ts` — **in memory only** (not persisted): a reload empties it. Cleared after a successful order and when an OWNER switches branch.
 - `settings.store.ts` — persisted with `partialize`. **Server-controlled flags
   (`kitchenEnabled`, module flags, `orderNumberResetPeriod`) must stay out of the persisted set** —
   they are re-applied by `applyModules()` in `auth.context.tsx` on every login/`/auth/me`.

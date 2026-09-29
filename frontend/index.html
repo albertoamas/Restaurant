@@ -3,13 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>POS - Sistema de Ventas</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>YankoPOS — Punto de venta</title>
+    <meta name="description" content="Punto de venta para restaurantes y negocios de comida." />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+
+    <!-- App instalada: nombre bajo el ícono y ventana sin barra del navegador.
+         Barra de estado 'default' (no translucent) para no tener que reservar el notch
+         con safe-area-inset en todo el layout. -->
+    <meta name="application-name" content="YankoPOS" />
+    <meta name="apple-mobile-web-app-title" content="YankoPOS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Color de la barra del navegador / ventana de la app. Lo ajusta el script de abajo y
+         luego useTheme al cambiar de tema. Valores = THEME_COLORS de src/theme-colors.ts (lo verifica src/index-html.spec.ts). -->
+    <meta name="theme-color" content="#060302" />
+
     <!-- FOUC prevention: apply stored theme before first paint -->
     <script>
       try {
         var t = localStorage.getItem('pos_theme') || 'dark';
         if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('meta[name="theme-color"]')
+          .setAttribute('content', t === 'dark' ? '#060302' : '#f9f4f2');
       } catch(e) {}
     </script>
   </head>
