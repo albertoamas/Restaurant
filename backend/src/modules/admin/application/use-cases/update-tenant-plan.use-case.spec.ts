@@ -139,9 +139,18 @@ describe('UpdateTenantPlanUseCase', () => {
     });
 
     it('-1 en el plan nunca cuenta como exceso', async () => {
+      planRepo.findById.mockResolvedValue(proPlan({ maxProducts: -1 }));
       productRepo.countByTenant.mockResolvedValue(99999);
-      const { excess } = await useCase.execute(TENANT_ID, SaasPlan.PRO); // maxProducts = -1
+      const { excess } = await useCase.execute(TENANT_ID, SaasPlan.PRO);
       expect(excess.some((e) => e.resource === 'productos')).toBe(false);
+    });
+
+    // PRO pasó de productos ilimitados a un tope de 500: un cliente que ya
+    // tenía más no pierde nada, pero /admin tiene que enterarse.
+    it('superar el tope de productos de PRO se informa como exceso', async () => {
+      productRepo.countByTenant.mockResolvedValue(600);
+      const { excess } = await useCase.execute(TENANT_ID, SaasPlan.PRO);
+      expect(excess).toContainEqual({ resource: 'productos', current: 600, max: 500 });
     });
   });
 });

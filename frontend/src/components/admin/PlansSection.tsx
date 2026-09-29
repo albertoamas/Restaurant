@@ -26,7 +26,6 @@ export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
       maxProducts: p.maxProducts,
       kitchenEnabled: p.kitchenEnabled,
       rafflesEnabled: p.rafflesEnabled,
-      teamEnabled: p.teamEnabled,
       advancedReports: p.advancedReports,
       reportHistoryDays: p.reportHistoryDays,
       maxStorageMb: p.maxStorageMb,
@@ -95,11 +94,13 @@ const PLAN_FIELDS: [keyof PlanDto, string, string][] = [
   ['maxStorageMb',      'Almacenamiento MB (-1=∞)',          'number'],
 ];
 
-/** Los flags de módulo del plan, para no repetir el mismo toggle cuatro veces. */
+/**
+ * Los flags de módulo que el plan vende. Equipo no está: se deriva de
+ * `maxCashiers`, así que el número de cajeros ya es su interruptor.
+ */
 const PLAN_TOGGLES: [keyof PlanDto, string][] = [
   ['kitchenEnabled',  'Cocina'],
   ['rafflesEnabled',  'Sorteos'],
-  ['teamEnabled',     'Equipo'],
   ['advancedReports', 'Reportes avanzados'],
 ];
 

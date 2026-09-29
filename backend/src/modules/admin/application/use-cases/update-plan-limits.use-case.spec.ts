@@ -62,8 +62,14 @@ describe('UpdatePlanLimitsUseCase', () => {
     expect(planRepo.update).not.toHaveBeenCalled();
   });
 
-  it('acepta -1 como "sin límite"', async () => {
-    await expect(useCase.execute(SaasPlan.PRO, { maxBranches: -1 })).resolves.toBeDefined();
+  it('acepta -1 como "sin límite" en el plan más alto', async () => {
+    await expect(useCase.execute(SaasPlan.NEGOCIO, { maxBranches: -1 })).resolves.toBeDefined();
+  });
+
+  // Con NEGOCIO en 10 sucursales, un PRO ilimitado ofrecería más que el plan
+  // que cuesta el doble.
+  it('rechaza un plan intermedio ilimitado si el superior tiene tope', async () => {
+    await expect(useCase.execute(SaasPlan.PRO, { maxBranches: -1 })).rejects.toThrow(BadRequestException);
   });
 
   it('rechaza dejar un plan caro por debajo de uno más barato', async () => {

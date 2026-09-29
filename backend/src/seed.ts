@@ -63,22 +63,23 @@ async function seed() {
     data: [
       {
         id: 'BASICO', displayName: 'Básico', priceBs: 220,
+        // Sin teamEnabled: Equipo no se vende por plan, se deriva de maxCashiers.
         maxBranches: 1, maxCashiers: 2, maxProducts: 80,
-        // teamEnabled true en los tres planes: la palanca comercial es
-        // `maxCashiers`, no si existe la pantalla de equipo.
-        kitchenEnabled: false, rafflesEnabled: false, teamEnabled: true,
+        kitchenEnabled: false, rafflesEnabled: false,
         advancedReports: false, reportHistoryDays: 90, maxStorageMb: 100,
       },
       {
         id: 'PRO', displayName: 'Pro', priceBs: 399,
-        maxBranches: 3, maxCashiers: 8, maxProducts: -1,
-        kitchenEnabled: true, rafflesEnabled: true, teamEnabled: true,
+        maxBranches: 3, maxCashiers: 8, maxProducts: 500,
+        kitchenEnabled: true, rafflesEnabled: true,
         advancedReports: true, reportHistoryDays: 365, maxStorageMb: 1024,
       },
       {
         id: 'NEGOCIO', displayName: 'Negocio', priceBs: 790,
-        maxBranches: -1, maxCashiers: -1, maxProducts: -1,
-        kitchenEnabled: true, rafflesEnabled: true, teamEnabled: true,
+        // Topes reales en lo que consume recursos; el historial queda sin límite
+        // porque son los datos del propio cliente.
+        maxBranches: 10, maxCashiers: 30, maxProducts: 2000,
+        kitchenEnabled: true, rafflesEnabled: true,
         advancedReports: true, reportHistoryDays: -1, maxStorageMb: 5120,
       },
     ],

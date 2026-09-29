@@ -100,6 +100,9 @@ function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
     { text: 'Pedidos con estados y seguimiento', included: true },
     { text: 'Gestión de caja y gastos',          included: true },
     { text: 'Clientes y fidelización',           included: true },
+    // Equipo va con lo común: todos los planes venden cajeros; lo que cambia
+    // entre planes es cuántos, y eso ya lo dice la línea de límites.
+    { text: 'Gestión de equipo',                 included: true },
   ];
 
   const limits = [
@@ -128,7 +131,6 @@ function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
   const gated = [
     { text: 'Display de cocina en tiempo real', included: plan.kitchenEnabled },
     { text: 'Sorteos para clientes',            included: plan.rafflesEnabled },
-    { text: 'Gestión de equipo y roles',        included: plan.teamEnabled },
     { text: 'Reportes avanzados',               included: plan.advancedReports },
     {
       text: isUnlimited(plan.reportHistoryDays)

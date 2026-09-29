@@ -8,7 +8,6 @@ export interface PlanProps {
   maxProducts:       number;
   kitchenEnabled:    boolean;
   rafflesEnabled:    boolean;
-  teamEnabled:       boolean;
   advancedReports:   boolean;
   reportHistoryDays: number;
   maxStorageMb:      number;
@@ -22,7 +21,6 @@ export class Plan {
   readonly maxProducts:       number;
   readonly kitchenEnabled:    boolean;
   readonly rafflesEnabled:    boolean;
-  readonly teamEnabled:       boolean;
   readonly advancedReports:   boolean;
   readonly reportHistoryDays: number;
   readonly maxStorageMb:      number;
@@ -40,7 +38,6 @@ export class Plan {
     this.maxProducts       = props.maxProducts;
     this.kitchenEnabled    = props.kitchenEnabled;
     this.rafflesEnabled    = props.rafflesEnabled;
-    this.teamEnabled       = props.teamEnabled;
     this.advancedReports   = props.advancedReports;
     this.reportHistoryDays = props.reportHistoryDays;
     this.maxStorageMb      = props.maxStorageMb;
@@ -53,7 +50,6 @@ export class Plan {
       maxProducts:       this.maxProducts,
       kitchenEnabled:    this.kitchenEnabled,
       rafflesEnabled:    this.rafflesEnabled,
-      teamEnabled:       this.teamEnabled,
       advancedReports:   this.advancedReports,
       reportHistoryDays: this.reportHistoryDays,
       maxStorageMb:      this.maxStorageMb,

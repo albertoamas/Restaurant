@@ -310,10 +310,18 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 `Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Cada plan define límites de
 capacidad (`maxBranches`, `maxCashiers`, `maxProducts`) y qué módulos incluye (`kitchenEnabled`,
-`rafflesEnabled`, `teamEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`).
+`rafflesEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`). Equipo no está en la
+lista: se deriva de `maxCashiers` (ver más abajo). La columna `plans.team_enabled` sigue en la BD
+pero ya nada la lee; se elimina en una migración posterior.
 **La convención es `-1 = sin límite`** en todos los numéricos: usá `isUnlimited()` de
 `@pos/shared`, nunca compares contra 999. `UpdatePlanLimitsUseCase` rechaza el 0 en todos
 ellos: un plan con 0 MB o 0 días queda vendido e inservible.
+
+Los planes sembrados usan topes reales en todo lo que consume recursos (PRO: 500 productos;
+NEGOCIO: 10 sucursales, 30 cajeros, 2000 productos). El único `-1` es el historial de reportes
+de NEGOCIO: son los datos del propio cliente. `-1` sigue soportado para quien lo fije desde
+`/admin`, pero la validación de coherencia rechaza dejar un plan intermedio ilimitado cuando
+el superior tiene tope — ofrecería más que el plan que cuesta el doble.
 
 Cada cosa que el plan vende tiene quién la haga cumplir del lado del servidor — no se anuncia
 nada que no se aplique:

@@ -34,8 +34,8 @@ describe('PlanModulesService', () => {
 
     // El plan vendía cajeros y a la vez apagaba la pantalla para crearlos, así
     // que `POST /auth/users` respondía 403 en BASICO. La palanca es el límite.
-    it('teamEnabled sigue a maxCashiers, no al flag del plan', () => {
-      expect(service.baseModules(basico({ teamEnabled: false })).teamEnabled).toBe(true);
+    it('teamEnabled sigue a maxCashiers', () => {
+      expect(service.baseModules(basico({ maxCashiers: 2 })).teamEnabled).toBe(true);
       expect(service.baseModules(basico({ maxCashiers: 0 })).teamEnabled).toBe(false);
     });
 
