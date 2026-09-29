@@ -75,31 +75,33 @@ const THERMAL_CSS = `
   }
 `;
 
+export interface PrintDocumentOptions {
+  /** Ancho del viewport del iframe: el del área imprimible, para que el layout sea el real. */
+  width:  string;
+  height: string;
+  /** Qué esperar tras `load` antes de imprimir (imágenes, fuentes). */
+  beforePrint: (win: Window) => Promise<unknown>;
+}
+
 /**
- * Inyecta el HTML en un iframe oculto y dispara window.print().
+ * Imprime un documento HTML completo desde un iframe oculto. Única vía de impresión de la app.
  *
  * Por qué iframe en lugar de window.open():
  *  - window.open() es bloqueado por Chrome/Edge como popup no autorizado.
- *  - El iframe evita el blocker al no abrir una ventana visible.
+ *  - En la app instalada (PWA) abre una ventana suelta o el navegador del sistema.
+ *  - La impresión la dispara la app: el documento no necesita `<script>`, que la CSP de
+ *    producción bloquearía.
  *  - afterprint limpia el iframe cuando el usuario cierra el diálogo,
  *    sin necesidad de win.close() ni timeouts arbitrarios para el cierre.
- *
- * @param html     Contenido <body> del ticket
- * @param delayMs  Tiempo de espera antes de print() — usar 600 si hay imágenes
  */
-function printViaIframe(html: string, delayMs = 450): void {
+export function printDocument(documentHtml: string, { width, height, beforePrint }: PrintDocumentOptions): void {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
-  // Viewport al ancho imprimible real (48mm) para que el layout sea correcto antes de imprimir.
   // top:-200% lo mantiene invisible fuera de pantalla.
-  iframe.style.cssText = 'position:fixed;top:-200%;left:0;width:44mm;height:1px;border:0;opacity:0;pointer-events:none;';
-
+  iframe.style.cssText =
+    `position:fixed;top:-200%;left:0;width:${width};height:${height};border:0;opacity:0;pointer-events:none;`;
   // srcdoc evita document.write() (deprecado) y carga el documento de forma estándar.
-  // El driver de la impresora posiciona el área imprimible dentro del rollo — no se añaden márgenes CSS.
-  iframe.srcdoc = `<!DOCTYPE html><html><head>
-    <meta charset="utf-8"/>
-    <style>${THERMAL_CSS}</style>
-  </head><body>${html}</body></html>`;
+  iframe.srcdoc = documentHtml;
 
   document.body.appendChild(iframe);
 
@@ -108,7 +110,6 @@ function printViaIframe(html: string, delayMs = 450): void {
   };
 
   // load se dispara cuando el documento (y recursos síncronos) está listo.
-  // delayMs adicional da margen para imágenes async (logo en el recibo).
   iframe.addEventListener('load', () => {
     const win = iframe.contentWindow;
     if (!win) { cleanup(); return; }
@@ -119,11 +120,30 @@ function printViaIframe(html: string, delayMs = 450): void {
     const fallback = setTimeout(cleanup, 120_000);
     win.addEventListener('afterprint', () => clearTimeout(fallback));
 
-    setTimeout(() => {
+    void beforePrint(win).then(() => {
       win.focus();
       win.print();
-    }, delayMs);
+    });
   });
+}
+
+export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Ticket térmico: envuelve el contenido con el CSS de 58mm y lo imprime.
+ * El driver de la impresora posiciona el área imprimible dentro del rollo — no se añaden márgenes CSS.
+ *
+ * @param html     Contenido <body> del ticket
+ * @param delayMs  Margen tras `load` para imágenes async (logo en el recibo)
+ */
+function printViaIframe(html: string, delayMs = 450): void {
+  printDocument(
+    `<!DOCTYPE html><html><head>
+    <meta charset="utf-8"/>
+    <style>${THERMAL_CSS}</style>
+  </head><body>${html}</body></html>`,
+    { width: '44mm', height: '1px', beforePrint: () => wait(delayMs) },
+  );
 }
 
 /* ─── Comanda de cocina ──────────────────────────────────────────────────── */

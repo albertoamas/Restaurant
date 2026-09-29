@@ -1,6 +1,5 @@
-import toast from 'react-hot-toast';
 import type { RaffleWinnerDto } from '@pos/shared';
-import { escapeHtml as esc } from './print';
+import { escapeHtml as esc, printDocument, wait } from './print';
 
 export interface BusinessInfo {
   name:     string;
@@ -174,37 +173,29 @@ export function buildWinnerCertificateHtml(
 
     </div>
   </div>
-
-  <script>
-    (function () {
-      var delay = 400;
-      window.addEventListener('load', function () {
-        setTimeout(function () {
-          window.focus();
-          window.print();
-          window.addEventListener('afterprint', function () { window.close(); });
-        }, delay);
-      });
-    })();
-  </script>
 </body>
 </html>`;
 }
 
+/** Tope de espera a las fuentes de Google: sin red, se imprime igual con las de respaldo. */
+const FONTS_TIMEOUT_MS = 1500;
+
+/**
+ * Imprime el certificado (A4 apaisado) con el mismo mecanismo de iframe que los recibos.
+ * Antes abría una ventana con `window.open` y se imprimía con un `<script>` inline: la CSP de
+ * producción bloqueaba el script (el certificado se abría pero no imprimía) y en la app
+ * instalada `window.open` abre una ventana suelta.
+ */
 export function printWinnerCertificate(
   winner: RaffleWinnerDto,
   raffleName: string,
   business: BusinessInfo,
 ): void {
-  const html = buildWinnerCertificateHtml(winner, raffleName, business);
-
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, '_blank', 'width=1050,height=780,scrollbars=yes');
-  if (!win) {
-    URL.revokeObjectURL(url);
-    toast.error('Permite ventanas emergentes en tu navegador para imprimir el certificado.');
-    return;
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  printDocument(buildWinnerCertificateHtml(winner, raffleName, business), {
+    width:  '297mm',
+    height: '210mm',
+    // Las fuentes de Google llegan después de `load`: imprimir antes dejaría el certificado
+    // con fuentes de sistema.
+    beforePrint: (win) => Promise.race([win.document.fonts.ready, wait(FONTS_TIMEOUT_MS)]),
+  });
 }
