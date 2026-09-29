@@ -22,6 +22,57 @@ export const optionClass = (active: boolean) => [
     : 'border-line bg-surface-card text-soft hover:border-line-strong hover:text-main',
 ].join(' ');
 
+/** Billetes con los que suele pagarse un monto: el exacto y los redondeos hacia arriba. */
+export function cashSuggestions(total: number): number[] {
+  const out = [total];
+  for (const step of [10, 20, 50, 100, 200]) {
+    const v = Math.ceil(total / step) * step;
+    if (v > total && !out.includes(v)) out.push(v);
+  }
+  return out.slice(0, 4);
+}
+
+/** Cambio a devolver en efectivo. Ayuda para el cajero: no cambia lo que se registra. */
+function CashChange({ s }: { s: PaymentSelection }) {
+  const received = parseFloat(s.cashReceived);
+  const hasValue = !isNaN(received) && received > 0;
+  const diff = Math.round((received - s.total) * 100) / 100;
+
+  return (
+    <div className="mt-3 rounded-card border border-line bg-surface-2 p-3 space-y-2.5">
+      <Input
+        label="¿Con cuánto paga?"
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="0.01"
+        leftAddon="Bs"
+        placeholder={s.total.toFixed(2)}
+        value={s.cashReceived}
+        onChange={(e) => s.setCashReceived(e.target.value)}
+      />
+      <div className="flex flex-wrap gap-2">
+        {cashSuggestions(s.total).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => s.setCashReceived(v.toFixed(2))}
+            className={`${optionClass(hasValue && received === v)} flex-row min-h-9 px-3 text-label font-semibold`}
+          >
+            {v === s.total ? 'Exacto' : `Bs ${v}`}
+          </button>
+        ))}
+      </div>
+      {hasValue && (
+        <p className={`flex items-baseline justify-between text-body font-semibold ${diff < 0 ? 'text-amber-700 dark:text-amber-300' : 'text-main'}`}>
+          <span>{diff < 0 ? 'Falta' : 'Cambio'}</span>
+          <span className="text-heading font-bold tabular-nums">Bs {Math.abs(diff).toFixed(2)}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   selection: PaymentSelection;
   /** Cortesía: solo el dueño. */
@@ -50,6 +101,7 @@ export function PaymentMethodSection({ selection: s, allowCortesia = false }: Pr
             </button>
           ))}
         </div>
+        {s.selectedMethod === PaymentMethod.CASH && <CashChange s={s} />}
         {s.selectedMethod !== PaymentMethod.CORTESIA && (
           <Button variant="ghost" fullWidth className="mt-3" onClick={s.startSplit}>
             <Icon name="plus" size={16} />

@@ -64,16 +64,27 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
       }
     >
       <div className="space-y-5">
-        <div className="rounded-card bg-surface-2 border border-line px-4 py-3">
-          <p className="text-body font-semibold text-main">
-            {orderTypeLabels[order.type]}
-            {order.customer?.name && <span className="font-normal text-soft">, {order.customer.name}</span>}
-          </p>
-          <p className="text-label text-soft mt-0.5">
-            {units} producto{units !== 1 ? 's' : ''}: {order.items.map((i) => `${i.quantity} ${i.productName}`).join(', ')}
-          </p>
-          {order.notes && <p className="text-label text-soft mt-1">Nota: {order.notes}</p>}
-        </div>
+        {/* Detalle como en el recibo: qué se cobra, línea por línea. */}
+        <section className="rounded-card bg-surface-2 border border-line px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-body font-semibold text-main truncate">
+              {orderTypeLabels[order.type]}
+              {order.customer?.name && <span className="font-normal text-soft">, {order.customer.name}</span>}
+            </p>
+            <span className="text-label text-soft shrink-0">{units} {units === 1 ? 'unidad' : 'unidades'}</span>
+          </div>
+          <ul className="mt-2 max-h-40 overflow-y-auto divide-y divide-line">
+            {order.items.map((i) => (
+              <li key={i.id} className="flex items-baseline justify-between gap-3 py-1.5 text-label">
+                <span className="text-main min-w-0">
+                  <span className="font-semibold">{i.quantity}</span> {i.productName}
+                </span>
+                <span className="text-soft tabular-nums shrink-0">Bs {Number(i.subtotal).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+          {order.notes && <p className="text-label text-soft mt-1.5">Nota: {order.notes}</p>}
+        </section>
 
         <section>
           <h3 className="text-body font-semibold text-main mb-3">Método de pago</h3>

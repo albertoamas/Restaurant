@@ -6,8 +6,9 @@ import { type ButtonHTMLAttributes } from 'react';
  * - ghost: acciones terciarias sin peso visual (en barras, listas, cabeceras).
  * - danger: acciones destructivas (eliminar, anular).
  * - success: cobrar / confirmar un pago. Verde por convención de caja.
+ * - info: avanzar un proceso a un paso intermedio (ej.: "Iniciar preparación"). Azul.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'info';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -25,6 +26,8 @@ const variants: Record<ButtonVariant, string> = {
   // oscuro para usarse como texto, y el blanco encima dejaría de leerse).
   danger:    'bg-red-700 text-white border border-red-700 hover:bg-red-800 hover:border-red-800 shadow-raised',
   success:   'bg-green-700 text-white border border-green-700 hover:bg-green-800 hover:border-green-800 shadow-raised',
+  // Azul fijo (oklch) por la misma razón: sky/blue se redefinen en oscuro.
+  info:      'bg-[oklch(0.50_0.15_240)] text-white border border-[oklch(0.50_0.15_240)] hover:bg-[oklch(0.44_0.15_240)] hover:border-[oklch(0.44_0.15_240)] shadow-raised',
 };
 
 const sizes = {

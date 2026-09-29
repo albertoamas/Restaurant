@@ -178,12 +178,13 @@ export function OrdersPage() {
         }
       >
         {activeTab === 'operation' ? (
-          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-            <div className="sm:w-48">
+          <div className="flex flex-col md:flex-row md:items-end gap-3">
+            <div className="md:w-48">
               <Input type="date" label="Fecha" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <SegmentedControl
               label="Estado del pedido"
+              wrap
               value={statusChoice}
               onChange={setStatusChoice}
               options={operationFilters}
@@ -191,13 +192,14 @@ export function OrdersPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex flex-col lg:flex-row lg:items-end gap-3">
-              <div className="grid grid-cols-2 gap-3 lg:w-96">
+            <div className="flex flex-col xl:flex-row xl:items-end gap-3">
+              <div className="grid grid-cols-2 gap-3 xl:w-96 xl:shrink-0">
                 <Input type="date" label="Desde" value={historyFrom} max={historyTo} onChange={(e) => setHistoryFrom(e.target.value)} />
                 <Input type="date" label="Hasta" value={historyTo} min={historyFrom} onChange={(e) => setHistoryTo(e.target.value)} />
               </div>
               <SegmentedControl
                 label="Estado del pedido"
+                wrap
                 value={historyChoice}
                 onChange={setHistoryChoice}
                 options={historyStatusFilters}

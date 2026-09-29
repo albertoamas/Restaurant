@@ -55,8 +55,8 @@ export function OrderHistoryTable({ orders, onPayOrder, onEdit, onStatusChange }
 
   return (
     <div className="rounded-card border border-line bg-surface-card shadow-raised overflow-hidden">
-      {/* Celular */}
-      <ul className="md:hidden divide-y divide-line">
+      {/* Celular y tablet */}
+      <ul className="lg:hidden divide-y divide-line">
         {orders.map((o) => {
           const { date, time } = formatDateCell(o.createdAt);
           const branch = branchOf(o);
@@ -83,14 +83,14 @@ export function OrderHistoryTable({ orders, onPayOrder, onEdit, onStatusChange }
       </ul>
 
       {/* Tablet y escritorio */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-surface-2 border-b border-line text-left">
               <TH className="pl-4 pr-3">Pedido</TH>
               <TH className="px-3">Fecha</TH>
               <TH className="px-3">Cliente</TH>
-              <TH className="px-3 hidden lg:table-cell">Productos</TH>
+              <TH className="px-3 hidden xl:table-cell">Productos</TH>
               <TH className="px-3 text-right">Total</TH>
               <TH className="px-3">Estado</TH>
               <TH className="px-3">Pago</TH>
@@ -108,15 +108,16 @@ export function OrderHistoryTable({ orders, onPayOrder, onEdit, onStatusChange }
                     <p className="text-label text-main">{date}</p>
                     <p className="text-caption text-muted">{time}{branch ? `, ${branch}` : ''}</p>
                   </td>
-                  <td className="px-3 py-3 max-w-40">
-                    <span className="block truncate text-label text-main">{o.customer?.name ?? '-'}</span>
+                  {/* El ancho máximo va en el texto: en una tabla automática, el de la celda se ignora. */}
+                  <td className="px-3 py-3">
+                    <span className="block max-w-36 truncate text-label text-main">{o.customer?.name ?? '-'}</span>
                   </td>
-                  <td className="px-3 py-3 hidden lg:table-cell max-w-64">
-                    <span className="block truncate text-label text-soft">{itemsSummary(o.items)}</span>
+                  <td className="px-3 py-3 hidden xl:table-cell">
+                    <span className="block max-w-56 truncate text-label text-soft">{itemsSummary(o.items)}</span>
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-right text-body font-bold text-main">Bs {o.total.toFixed(2)}</td>
                   <td className="px-3 py-3 whitespace-nowrap"><OrderStatusBadge status={o.status} /></td>
-                  <td className="px-3 py-3 whitespace-nowrap"><Payment order={o} /></td>
+                  <td className="px-3 py-3 min-w-28"><Payment order={o} /></td>
                   <td className="pl-2 pr-4 py-2 text-right">{menu(o)}</td>
                 </tr>
               );

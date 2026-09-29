@@ -13,6 +13,8 @@ export function usePaymentSelection(total: number) {
   const [splitPayments, setSplitPayments]   = useState<PaymentEntry[]>([]);
   const [splitMethod, setSplitMethod]       = useState<PaymentMethod | null>(null);
   const [splitAmount, setSplitAmount]       = useState('');
+  /** Con cuánto paga el cliente en efectivo: solo para calcular el cambio, no se envía. */
+  const [cashReceived, setCashReceived]     = useState('');
 
   const assigned      = Math.round(splitPayments.reduce((s, p) => s + p.amount, 0) * 100) / 100;
   const remaining     = Math.round((total - assigned) * 100) / 100;
@@ -25,6 +27,7 @@ export function usePaymentSelection(total: number) {
     setSplitPayments([]);
     setSplitMethod(null);
     setSplitAmount('');
+    setCashReceived('');
   }, []);
 
   const startSplit = () => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); };
@@ -49,6 +52,7 @@ export function usePaymentSelection(total: number) {
   return {
     total, selectedMethod, setSelectedMethod,
     splitMode, splitPayments, splitMethod, setSplitMethod, splitAmount, setSplitAmount,
+    cashReceived, setCashReceived,
     assigned, remaining, splitComplete, done,
     reset, startSplit, cancelSplit, addSplit, removeSplit, payments,
   };

@@ -15,6 +15,8 @@ interface SegmentedControlProps<T extends string> {
   label: string;
   size?: 'sm' | 'md';
   fullWidth?: boolean;
+  /** Hasta tablet, las opciones van en dos columnas en vez de desplazarse fuera de la pantalla. */
+  wrap?: boolean;
 }
 
 /**
@@ -22,7 +24,7 @@ interface SegmentedControlProps<T extends string> {
  * como un grupo de radios: flechas para moverse, la opción elegida es la única enfocable.
  */
 export function SegmentedControl<T extends string>({
-  options, value, onChange, label, size = 'md', fullWidth = false,
+  options, value, onChange, label, size = 'md', fullWidth = false, wrap = false,
 }: SegmentedControlProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -41,7 +43,12 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className={`${fullWidth ? 'flex w-full' : 'inline-flex'} max-w-full overflow-x-auto p-1 gap-1 rounded-control bg-surface-2 border border-line`}
+      className={[
+        wrap ? 'grid grid-cols-2 w-full md:inline-flex md:w-auto' : fullWidth ? 'flex w-full' : 'inline-flex',
+        'max-w-full overflow-x-auto p-1 gap-1 rounded-control bg-surface-2 border border-line',
+        // Con cantidad impar, la última opción ocupa la fila entera.
+        wrap && options.length % 2 === 1 ? 'max-md:[&>*:last-child]:col-span-2' : '',
+      ].join(' ')}
     >
       {options.map((o, i) => {
         const active = o.value === value;

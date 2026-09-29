@@ -48,6 +48,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
   const [cart, setCart]                         = useState<CartEntry[]>([]);
   const [selectedMethod, setSelectedMethod]     = useState<PaymentMethod | null>(null);
   const [loading, setLoading]                   = useState(false);
+  const [mobileStep, setMobileStep]             = useState<'pick' | 'review'>('pick');
 
   // Reset when modal opens
   useEffect(() => {
@@ -55,6 +56,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
       setCart([]);
       setSelectedCategory(null);
       setSearch('');
+      setMobileStep('pick');
       setSelectedMethod(null);
     }
   }, [isOpen]);
@@ -122,6 +124,8 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
     }
   };
 
+  const units = cart.reduce((n, i) => n + i.quantity, 0);
+
   const ctaLabel = loading
     ? 'Añadiendo'
     : cartEmpty
@@ -130,31 +134,68 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
         ? 'Elige cómo se cobra'
         : `Añadir al pedido: Bs ${cartTotal.toFixed(2)}`;
 
+  // En celular no caben las dos columnas: primero se elige y después se revisa.
+  const reviewing = mobileStep === 'review';
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Añadir productos al pedido #${order.orderNumber}`} size="4xl">
-      {/* -mx-6 -mb-5 anula el relleno del Modal para que las columnas lleguen al borde. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] -mx-6 -mb-5 divide-y lg:divide-y-0 lg:divide-x divide-line">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Añadir productos al pedido #${order.orderNumber}`}
+      size="4xl"
+      footer={
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-label text-soft">
+              {cartEmpty ? 'Sin productos elegidos' : `${units} ${units === 1 ? 'unidad' : 'unidades'}, nuevo total`}
+            </p>
+            <p className="text-heading font-bold text-main tabular-nums">Bs {newOrderTotal.toFixed(2)}</p>
+          </div>
+          {!reviewing && (
+            <Button className="lg:hidden" size="lg" onClick={() => setMobileStep('review')} disabled={cartEmpty}>
+              Revisar ({units})
+            </Button>
+          )}
+          <Button
+            id="add-items-confirm-btn"
+            size="lg"
+            className={reviewing ? '' : 'max-lg:hidden'}
+            onClick={handleConfirm}
+            disabled={!canConfirm}
+            loading={loading}
+          >
+            {ctaLabel}
+          </Button>
+        </div>
+      }
+    >
+      {/* -mx-6 -my-5 anula el relleno del Modal para que las columnas lleguen al borde. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] -mx-6 -my-5 lg:divide-x divide-line">
 
         {/* Catálogo */}
-        <div className="flex flex-col gap-3 px-6 py-4 min-w-0">
-          <Input
-            aria-label="Buscar producto"
-            placeholder="Buscar producto"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftAddon={<Icon name="search" size={18} />}
-            rightAddon={search ? (
-              <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda" className="p-1 text-muted hover:text-main">
-                <Icon name="x" size={16} />
-              </button>
-            ) : undefined}
-          />
-          <CategoryTabs
-            categories={categories}
-            selected={selectedCategory}
-            onSelect={(c) => { setSelectedCategory(c); setSearch(''); }}
-          />
-          <div className="h-[380px] overflow-y-auto overflow-x-hidden rounded-card border border-line bg-surface-2 p-2">
+        <div className={`flex flex-col gap-3 px-6 py-4 min-w-0 ${reviewing ? 'max-lg:hidden' : ''}`}>
+          {/* En celular la búsqueda y las categorías quedan fijas arriba mientras se recorre el catálogo. */}
+          <div className="flex flex-col gap-3 max-lg:sticky max-lg:top-0 max-lg:z-10 max-lg:-mx-6 max-lg:-mt-4 max-lg:px-6 max-lg:pt-4 max-lg:pb-2 bg-surface-card">
+            <Input
+              aria-label="Buscar producto"
+              placeholder="Buscar producto"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              leftAddon={<Icon name="search" size={18} />}
+              rightAddon={search ? (
+                <button type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda" className="p-1 text-muted hover:text-main">
+                  <Icon name="x" size={16} />
+                </button>
+              ) : undefined}
+            />
+            <CategoryTabs
+              categories={categories}
+              selected={selectedCategory}
+              onSelect={(c) => { setSelectedCategory(c); setSearch(''); }}
+            />
+          </div>
+          {/* En escritorio el catálogo se desplaza solo; en celular, con todo el modal. */}
+          <div className="lg:h-[420px] lg:overflow-y-auto overflow-x-hidden lg:rounded-card lg:border lg:border-line lg:bg-surface-2 lg:p-2">
             <ProductGrid
               products={filteredProducts}
               onSelect={addToCart}
@@ -166,13 +207,18 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
         </div>
 
         {/* Lo que se añade */}
-        <div className="flex flex-col gap-4 px-6 py-4 min-w-0">
+        <div className={`flex flex-col gap-4 px-6 py-4 min-w-0 ${reviewing ? '' : 'max-lg:hidden'}`}>
+          <Button variant="ghost" size="sm" className="lg:hidden self-start" onClick={() => setMobileStep('pick')}>
+            <Icon name="chevron-left" size={14} strokeWidth={2} />
+            Seguir eligiendo
+          </Button>
+
           <div>
             <p className="text-label font-semibold text-soft mb-1">Productos a añadir</p>
             {cartEmpty ? (
               <EmptyState compact icon="cart" title="Nada por añadir" description="Toca un producto del catálogo para sumarlo al pedido." />
             ) : (
-              <div className="max-h-[220px] overflow-y-auto overflow-x-hidden pr-1">
+              <div className="lg:max-h-[220px] lg:overflow-y-auto overflow-x-hidden pr-1">
                 {cart.map((item) => (
                   <CartItem
                     key={item.productId}
@@ -194,10 +240,6 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               <div className="flex justify-between text-label text-soft">
                 <dt>{needsPayment ? 'A cobrar ahora' : 'Se suma'}</dt>
                 <dd className="tabular-nums font-semibold text-main">Bs {cartTotal.toFixed(2)}</dd>
-              </div>
-              <div className="flex justify-between items-baseline pt-1.5 border-t border-line">
-                <dt className="text-body font-semibold text-main">Nuevo total</dt>
-                <dd className="text-heading font-bold text-main tabular-nums">Bs {newOrderTotal.toFixed(2)}</dd>
               </div>
             </dl>
           )}
@@ -230,12 +272,6 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               El pedido está sin cobrar: todo se cobra junto al final.
             </p>
           )}
-
-          <div className="flex-1" />
-
-          <Button id="add-items-confirm-btn" size="lg" fullWidth onClick={handleConfirm} disabled={!canConfirm} loading={loading}>
-            {ctaLabel}
-          </Button>
         </div>
       </div>
     </Modal>
