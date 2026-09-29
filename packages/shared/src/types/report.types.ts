@@ -13,6 +13,19 @@ export interface CashierReportDto {
 }
 
 /** Una fila por sucursal activa del tenant, para la comparativa consolidada. */
+/**
+ * Ventas de una sucursal en un día. Una fila por par (día, sucursal) con
+ * movimiento: los días sin ventas no vienen y el cliente los completa en cero.
+ * Mismo criterio que `DailySeriesItemDto` — sin cancelados ni cortesías —,
+ * así que la suma por sucursal cuadra con `BranchReportDto.totalSales`.
+ */
+export interface BranchDailySeriesItemDto {
+  date: string;
+  branchId: string;
+  totalSales: number;
+  orderCount: number;
+}
+
 export interface BranchReportDto {
   branchId: string;
   branchName: string;

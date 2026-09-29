@@ -13,7 +13,9 @@ export interface PlanLimits {
   maxProducts:    number;
   kitchenEnabled: boolean;
   rafflesEnabled: boolean;
-  teamEnabled:    boolean;
+  // Sin `teamEnabled`: Equipo no se vende por plan, se deriva de `maxCashiers`
+  // (ver PlanModulesService.baseModules). La columna `plans.team_enabled`
+  // sigue en la BD hasta la migración que la elimine, pero nada la lee.
   /** Habilita las pestañas de reporte más allá de Resumen y Ventas. */
   advancedReports: boolean;
   /** Días de historial de reportes consultables. -1 = sin límite. */

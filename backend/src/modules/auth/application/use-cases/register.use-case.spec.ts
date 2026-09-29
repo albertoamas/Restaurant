@@ -123,7 +123,7 @@ describe('RegisterUseCase', () => {
   });
 
   it('los módulos del tenant nuevo salen del plan, no de constantes fijas', async () => {
-    // BASICO: sin equipo, sin cocina, sin sorteos, y una sola sucursal.
+    // BASICO: sin cocina, sin sorteos, sin reportes avanzados y una sola sucursal.
     await useCase.execute(DTO);
 
     const [tenant] = tenantRepo.createTenantWithOwner.mock.calls[0];
@@ -131,7 +131,7 @@ describe('RegisterUseCase', () => {
       ordersEnabled:   true,
       cashEnabled:     true,
       branchesEnabled: false, // maxBranches = 1
-      teamEnabled:     false,
+      teamEnabled:     true,  // vende 2 cajeros: tiene que poder crearlos
       kitchenEnabled:  false,
       rafflesEnabled:  false,
       advancedReportsEnabled: false,

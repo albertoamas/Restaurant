@@ -13,19 +13,19 @@ const BASE: Record<SaasPlan, PlanProps> = {
   [SaasPlan.BASICO]: {
     displayName: 'Básico', priceBs: 220,
     maxBranches: 1, maxCashiers: 2, maxProducts: 80,
-    kitchenEnabled: false, rafflesEnabled: false, teamEnabled: false,
+    kitchenEnabled: false, rafflesEnabled: false,
     advancedReports: false, reportHistoryDays: 90, maxStorageMb: 100,
   },
   [SaasPlan.PRO]: {
     displayName: 'Pro', priceBs: 399,
-    maxBranches: 3, maxCashiers: 8, maxProducts: -1,
-    kitchenEnabled: true, rafflesEnabled: true, teamEnabled: true,
+    maxBranches: 3, maxCashiers: 8, maxProducts: 500,
+    kitchenEnabled: true, rafflesEnabled: true,
     advancedReports: true, reportHistoryDays: 365, maxStorageMb: 1024,
   },
   [SaasPlan.NEGOCIO]: {
     displayName: 'Negocio', priceBs: 790,
-    maxBranches: -1, maxCashiers: -1, maxProducts: -1,
-    kitchenEnabled: true, rafflesEnabled: true, teamEnabled: true,
+    maxBranches: 10, maxCashiers: 30, maxProducts: 2000,
+    kitchenEnabled: true, rafflesEnabled: true,
     advancedReports: true, reportHistoryDays: -1, maxStorageMb: 5120,
   },
 };

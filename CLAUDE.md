@@ -191,7 +191,7 @@ The gateway joins sockets to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`
 | `catalog` | `GET/POST /categories`, `GET/POST /products` | Pagination via `X-Total-Count` header |
 | `orders` | `POST /orders`, `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status`, `POST /orders/:id/payments` | Split payments; price snapshot. `:id/payments` registers deferred payment. |
 | `cash-session` | `POST /cash-sessions/open`, `POST /cash-sessions/close` | Per-branch; cash-only flow |
-| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/by-branch`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only. `by-branch` es la comparativa consolidada: no acepta `branchId`, siempre devuelve todas las sucursales activas. Seis endpoints (`top-products`, `top-customers`, `by-cashier`, `top-categories`, `by-hour`, `cash-sessions`) exigen `@RequiresModule('advancedReportsEnabled')`; los que alimentan Resumen, Ventas y la comparativa de sucursales quedan abiertos. Todo el controlador pasa por `ReportHistoryGuard`. |
+| `reports` | `GET /reports/daily`, `GET /reports/range`, `GET /reports/top-products`, `GET /reports/top-customers`, `GET /reports/daily-series`, `GET /reports/by-cashier`, `GET /reports/by-branch`, `GET /reports/by-branch-daily`, `GET /reports/top-categories`, `GET /reports/by-hour`, `GET /reports/by-day-hour`, `GET /reports/cash-sessions` | Raw SQL aggregation; all OWNER only. `by-branch` (totales) y `by-branch-daily` (ventas por día y sucursal) alimentan la pestaña **Sucursales**, que aparece cuando el negocio tiene más de una: no aceptan `branchId`, comparan siempre todas, y no dependen del plan. `by-branch-daily` usa los mismos filtros que `daily-series`, así que cada sucursal suma su total de `by-branch` y cada día suma la serie consolidada. En los gráficos de esa pestaña el color identifica a la sucursal y se asigna sobre la lista completa ordenada por nombre (`utils/branch-series.ts`), nunca por ranking: cambiar de período no repinta a nadie. Seis endpoints (`top-products`, `top-customers`, `by-cashier`, `top-categories`, `by-hour`, `cash-sessions`) exigen `@RequiresModule('advancedReportsEnabled')`; los que alimentan Resumen, Ventas y la comparativa de sucursales quedan abiertos. Todo el controlador pasa por `ReportHistoryGuard`. |
 | `upload` | `POST /uploads/image` | multer en memoria; 10 MB raw; JPG/PNG/WEBP/GIF; convertido a WEBP; guardado en `uploads/<tenantId>/` y servido en `/uploads/<tenantId>/<file>`. `StorageQuotaService` cobra `plan.maxStorageMb` sobre el tamaño **ya comprimido**. Las URLs planas viejas (`/uploads/<file>`) siguen sirviéndose. |
 | `expenses` | `GET/POST /expenses/categories`, `DELETE /expenses/categories/:id`, `POST/GET/PATCH/DELETE /expenses`, `GET /expenses/summary` | OWNER only; `cashSessionId` nullable (expense recorded even without open session); `ExpenseCategory` is a per-tenant DB model (name, icon, isActive, trackQuantity, sortOrder); each expense has optional `items[]` (ExpenseItem) |
 | `customers` | `GET/POST /customers`, `GET /customers/search` | Order history; ticket/raffle tracking |
@@ -310,10 +310,18 @@ Prisma schema: `backend/prisma/schema.prisma`. All enums stored as plain strings
 
 `Tenant.plan` references a `Plan` row (`BASICO` | `PRO` | `NEGOCIO`). Cada plan define límites de
 capacidad (`maxBranches`, `maxCashiers`, `maxProducts`) y qué módulos incluye (`kitchenEnabled`,
-`rafflesEnabled`, `teamEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`).
+`rafflesEnabled`, `advancedReports`, `reportHistoryDays`, `maxStorageMb`). Equipo no está en la
+lista: se deriva de `maxCashiers` (ver más abajo). La columna `plans.team_enabled` sigue en la BD
+pero ya nada la lee; se elimina en una migración posterior.
 **La convención es `-1 = sin límite`** en todos los numéricos: usá `isUnlimited()` de
 `@pos/shared`, nunca compares contra 999. `UpdatePlanLimitsUseCase` rechaza el 0 en todos
 ellos: un plan con 0 MB o 0 días queda vendido e inservible.
+
+Los planes sembrados usan topes reales en todo lo que consume recursos (PRO: 500 productos;
+NEGOCIO: 10 sucursales, 30 cajeros, 2000 productos). El único `-1` es el historial de reportes
+de NEGOCIO: son los datos del propio cliente. `-1` sigue soportado para quien lo fije desde
+`/admin`, pero la validación de coherencia rechaza dejar un plan intermedio ilimitado cuando
+el superior tiene tope — ofrecería más que el plan que cuesta el doble.
 
 Cada cosa que el plan vende tiene quién la haga cumplir del lado del servidor — no se anuncia
 nada que no se aplique:
@@ -321,7 +329,7 @@ nada que no se aplique:
 | Campo del plan | Quién lo aplica |
 |---|---|
 | `maxBranches` / `maxCashiers` / `maxProducts` | `PlanLimitService` (solo cuenta filas activas) |
-| `kitchenEnabled` / `rafflesEnabled` / `teamEnabled` | `ModuleGuard` + `@RequiresModule` |
+| `kitchenEnabled` / `rafflesEnabled` | `ModuleGuard` + `@RequiresModule` |
 | `advancedReports` | `ModuleGuard` sobre 6 endpoints de `reports` |
 | `reportHistoryDays` | `ReportHistoryGuard` |
 | `maxStorageMb` | `StorageQuotaService` en `POST /uploads/image` |
@@ -338,7 +346,10 @@ efectivo = baseModules(plan) + moduleOverrides
 ```
 
 - `baseModules(plan)` — `ordersEnabled`/`cashEnabled` siempre true (núcleo del producto),
-  `branchesEnabled` derivado de `maxBranches !== 1`, y el resto del plan.
+  `branchesEnabled` derivado de `maxBranches !== 1`, `teamEnabled` de `maxCashiers !== 0`,
+  y el resto del plan. Los dos derivados no se duplican como flag porque la palanca
+  comercial es el número: cuando `teamEnabled` salía de `plans.team_enabled`, BÁSICO
+  vendía 2 cajeros y devolvía 403 al crearlos (`POST /auth/users` exige `teamEnabled`).
 - `Tenant.moduleOverrides` (JSONB) guarda **solo** los flags que el admin fijó a mano como
   excepción (una cortesía, una prueba). Si el admin vuelve a poner el valor del plan, la
   excepción se borra y ese módulo vuelve a seguir al plan.

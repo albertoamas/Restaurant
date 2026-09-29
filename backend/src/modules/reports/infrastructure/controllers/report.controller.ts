@@ -14,6 +14,7 @@ import { GetTopCustomersUseCase } from '../../application/use-cases/get-top-cust
 import { GetDailySeriesUseCase } from '../../application/use-cases/get-daily-series.use-case';
 import { GetByCashierUseCase } from '../../application/use-cases/get-by-cashier.use-case';
 import { GetByBranchUseCase } from '../../application/use-cases/get-by-branch.use-case';
+import { GetDailySeriesByBranchUseCase } from '../../application/use-cases/get-daily-series-by-branch.use-case';
 import { GetTopCategoriesUseCase } from '../../application/use-cases/get-top-categories.use-case';
 import { GetByHourUseCase } from '../../application/use-cases/get-by-hour.use-case';
 import { GetCashSessionsReportUseCase } from '../../application/use-cases/get-cash-sessions-report.use-case';
@@ -36,6 +37,7 @@ export class ReportController {
     private readonly getDailySeriesUseCase: GetDailySeriesUseCase,
     private readonly getByCashierUseCase: GetByCashierUseCase,
     private readonly getByBranchUseCase: GetByBranchUseCase,
+    private readonly getDailySeriesByBranchUseCase: GetDailySeriesByBranchUseCase,
     private readonly getTopCategoriesUseCase: GetTopCategoriesUseCase,
     private readonly getByHourUseCase: GetByHourUseCase,
     private readonly getCashSessionsReportUseCase: GetCashSessionsReportUseCase,
@@ -147,6 +149,22 @@ export class ReportController {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
     return this.getByBranchUseCase.execute(tenantId, from, to);
+  }
+
+  /**
+   * Evolución diaria de cada sucursal. Mismo criterio que `by-branch`: sin
+   * `branchId` (compara todas) y sin `advancedReportsEnabled` — cualquier
+   * negocio con más de una sucursal tiene que poder compararlas.
+   */
+  @Get('by-branch-daily')
+  getDailySeriesByBranch(
+    @CurrentTenant() tenantId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    return this.getDailySeriesByBranchUseCase.execute(tenantId, from, to);
   }
 
   @Get('top-categories')

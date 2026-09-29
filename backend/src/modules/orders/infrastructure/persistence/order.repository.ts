@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BranchDailySeriesItemDto,
   BranchReportDto,
   CashierReportDto,
   DailySeriesItemDto,
@@ -757,6 +758,52 @@ export class OrderRepository implements OrderRepositoryPort {
         averageTicket: orderCount > 0 ? totalSales / orderCount : 0,
       };
     });
+  }
+
+  /**
+   * Mismos filtros que `getDailySeries` (sin cancelados, sin pedidos sin pago,
+   * sin cortesías), con la sucursal como segunda dimensión: así la suma de las
+   * filas de un día coincide con la serie consolidada de ese día, y la suma de
+   * una sucursal con su fila en `getByBranch`.
+   */
+  async getDailySeriesByBranch(
+    tenantId: string,
+    from: string,
+    to: string,
+  ): Promise<BranchDailySeriesItemDto[]> {
+    const fromTs = new Date(from);
+    const toTs   = new Date(to);
+
+    type RawRow = { date: string; branchId: string; totalSales: unknown; orderCount: bigint };
+    const rows = await this.prisma.$queryRaw<RawRow[]>`
+      WITH filtered_orders AS (
+        SELECT o.id, o.total, o.branch_id,
+          DATE(o.created_at::timestamptz AT TIME ZONE ${BOLIVIA_TZ}) AS day,
+          NOT EXISTS (
+            SELECT 1 FROM order_payments op
+            WHERE op.order_id = o.id AND op.method != ${PaymentMethod.CORTESIA}
+          ) AS is_courtesy
+        FROM orders o
+        WHERE o.tenant_id = ${tenantId}
+          AND o.created_at BETWEEN ${fromTs} AND ${toTs}
+          AND o.status != ${OrderStatus.CANCELLED}
+          AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)
+      )
+      SELECT
+        day::text AS date,
+        branch_id AS "branchId",
+        COALESCE(SUM(CASE WHEN NOT is_courtesy THEN total ELSE 0 END), 0) AS "totalSales",
+        COUNT(CASE WHEN NOT is_courtesy THEN 1 END)::bigint AS "orderCount"
+      FROM filtered_orders
+      GROUP BY day, branch_id
+      ORDER BY day ASC, branch_id ASC`;
+
+    return rows.map((r) => ({
+      date:       r.date,
+      branchId:   r.branchId,
+      totalSales: Number(r.totalSales),
+      orderCount: Number(r.orderCount),
+    }));
   }
 
   async getTopCategories(

@@ -29,6 +29,22 @@ export function elapsedBetween(from: string, to: string): string {
   return `${m}m ${s}s`;
 }
 
+/**
+ * Días calendario entre dos fechas `YYYY-MM-DD`, ambas incluidas. Las entradas
+ * ya son días de Bolivia, así que se recorren en UTC con ancla al mediodía: la
+ * aritmética de fechas nunca cruza de día por la zona del navegador.
+ */
+export function eachDay(from: string, to: string): string[] {
+  const days: string[] = [];
+  const cursor = new Date(`${from}T12:00:00Z`);
+  const end    = new Date(`${to}T12:00:00Z`);
+  while (cursor <= end) {
+    days.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
+
 /** Fecha compacta para listados: "21 sep". Siempre en hora de Bolivia. */
 export function formatBoliviaDateShort(iso: string): string {
   return new Intl.DateTimeFormat('es-BO', {

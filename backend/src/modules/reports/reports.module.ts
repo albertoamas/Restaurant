@@ -9,6 +9,7 @@ import { GetTopCustomersUseCase } from './application/use-cases/get-top-customer
 import { GetDailySeriesUseCase } from './application/use-cases/get-daily-series.use-case';
 import { GetByCashierUseCase } from './application/use-cases/get-by-cashier.use-case';
 import { GetByBranchUseCase } from './application/use-cases/get-by-branch.use-case';
+import { GetDailySeriesByBranchUseCase } from './application/use-cases/get-daily-series-by-branch.use-case';
 import { GetTopCategoriesUseCase } from './application/use-cases/get-top-categories.use-case';
 import { GetByHourUseCase } from './application/use-cases/get-by-hour.use-case';
 import { GetCashSessionsReportUseCase } from './application/use-cases/get-cash-sessions-report.use-case';
@@ -25,6 +26,7 @@ import { GetByDayHourUseCase } from './application/use-cases/get-by-day-hour.use
     GetDailySeriesUseCase,
     GetByCashierUseCase,
     GetByBranchUseCase,
+    GetDailySeriesByBranchUseCase,
     GetTopCategoriesUseCase,
     GetByHourUseCase,
     GetCashSessionsReportUseCase,

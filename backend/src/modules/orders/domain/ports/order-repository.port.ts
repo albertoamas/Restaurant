@@ -1,4 +1,5 @@
 import {
+  BranchDailySeriesItemDto,
   BranchReportDto,
   CashierReportDto,
   DailySeriesItemDto,
@@ -74,6 +75,8 @@ export interface OrderRepositoryPort {
   getByCashier(tenantId: string, branchId: string | null, from: string, to: string): Promise<CashierReportDto[]>;
   /** Comparativa entre sucursales: siempre todas las activas del tenant, sin filtro de sucursal. */
   getByBranch(tenantId: string, from: string, to: string): Promise<BranchReportDto[]>;
+  /** Ventas por día y sucursal, para comparar la evolución de cada local. */
+  getDailySeriesByBranch(tenantId: string, from: string, to: string): Promise<BranchDailySeriesItemDto[]>;
   getTopCategories(tenantId: string, branchId: string | null, from: string, to: string, limit?: number): Promise<TopCategoryDto[]>;
   getByHour(tenantId: string, branchId: string | null, from: string, to: string): Promise<HourlyDataDto[]>;
   getByDayHour(tenantId: string, branchId: string | null, from: string, to: string): Promise<DayHourDataDto[]>;

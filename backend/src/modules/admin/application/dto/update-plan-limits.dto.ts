@@ -13,7 +13,6 @@ export class UpdatePlanLimitsDto {
   @IsOptional() @IsInt() @Min(-1)    maxProducts?:    number;
   @IsOptional() @IsBoolean()         kitchenEnabled?: boolean;
   @IsOptional() @IsBoolean()         rafflesEnabled?: boolean;
-  @IsOptional() @IsBoolean()         teamEnabled?:      boolean;
   @IsOptional() @IsBoolean()         advancedReports?:  boolean;
   @IsOptional() @IsInt() @Min(-1)    reportHistoryDays?: number;
   @IsOptional() @IsInt() @Min(-1)    maxStorageMb?:      number;

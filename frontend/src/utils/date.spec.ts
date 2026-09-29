@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort } from './date';
+import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay } from './date';
 
 describe('date utils', () => {
   describe('formatDate', () => {
@@ -52,6 +52,26 @@ describe('date utils', () => {
     it('aplica UTC-4 — 2026-04-17T00:00:00Z cae el 16 en Bolivia', () => {
       // Sin timeZone, un navegador en UTC+ mostraría el 17: este es el bug que cubre.
       expect(formatBoliviaDateShort('2026-04-17T00:00:00.000Z')).toMatch(/16/);
+    });
+  });
+
+  describe('eachDay', () => {
+    it('incluye ambos extremos', () => {
+      expect(eachDay('2026-09-01', '2026-09-03')).toEqual(['2026-09-01', '2026-09-02', '2026-09-03']);
+    });
+
+    it('un rango de un solo día devuelve ese día', () => {
+      expect(eachDay('2026-09-01', '2026-09-01')).toEqual(['2026-09-01']);
+    });
+
+    it('cruza de mes y de año sin saltarse ni repetir días', () => {
+      expect(eachDay('2026-12-30', '2027-01-02')).toEqual([
+        '2026-12-30', '2026-12-31', '2027-01-01', '2027-01-02',
+      ]);
+    });
+
+    it('un rango invertido devuelve vacío, no un bucle infinito', () => {
+      expect(eachDay('2026-09-05', '2026-09-01')).toEqual([]);
     });
   });
 
