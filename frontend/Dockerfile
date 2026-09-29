@@ -28,6 +28,8 @@ FROM nginx:1.27-alpine AS runner
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY frontend/nginx.conf /etc/nginx/conf.d/app.conf
+# Fuera de conf.d/: ahí nginx lo incluiría a nivel http. Lo incluye app.conf donde hace falta.
+COPY frontend/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=builder /repo/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
