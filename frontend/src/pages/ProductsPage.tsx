@@ -185,7 +185,7 @@ export function ProductsPage() {
                     <span className="text-xs text-gray-500 bg-[var(--color-surface-2)] rounded-md px-1.5 py-0.5 truncate max-w-[120px]">
                       {getCategoryName(p.categoryId)}
                     </span>
-                    <span className="font-heading font-bold text-sm text-gray-900">Bs {p.price.toFixed(2)}</span>
+                    <span className="font-heading font-bold text-sm text-gray-900 whitespace-nowrap">Bs {p.price.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -243,7 +243,7 @@ export function ProductsPage() {
                           {getCategoryName(p.categoryId)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-heading font-bold text-gray-900">Bs {p.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-heading font-bold text-gray-900 whitespace-nowrap">Bs {p.price.toFixed(2)}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge variant={p.isActive ? 'success' : 'neutral'} dot>
                           {p.isActive ? 'Activo' : 'Inactivo'}

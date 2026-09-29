@@ -181,7 +181,7 @@ export function CustomersPage() {
                 <p className="text-sm font-semibold text-[var(--color-text-main)] truncate">{c.name}</p>
                 <p className="text-[13px] text-[var(--color-text-soft)] truncate">{c.phone ?? c.email ?? '—'}</p>
               </div>
-              <p className="text-[14px] font-medium text-[var(--color-text-soft)] text-right">Bs {c.totalSpent.toFixed(0)}</p>
+              <p className="text-[14px] font-medium text-[var(--color-text-soft)] text-right whitespace-nowrap">Bs {c.totalSpent.toFixed(0)}</p>
               <p className="text-[14px] font-bold text-[var(--color-text-main)] text-right">{c.purchaseCount}</p>
               
               <div className="flex items-center justify-end gap-1.5 w-[88px] shrink-0">

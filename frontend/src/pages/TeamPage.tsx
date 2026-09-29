@@ -94,16 +94,16 @@ export function TeamPage() {
   return (
     <PageShell>
       <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Equipo y Roles</h2>
             <p className="text-xs text-gray-500 mt-0.5">Gestiona cajeros, estado de cuenta y sucursal asignada.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 border border-primary-500/20 text-primary-600">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 border border-primary-500/20 text-primary-600 whitespace-nowrap">
               {users.length} usuarios
             </span>
-            <Button onClick={() => setShowModal(true)}>+ Agregar cajero</Button>
+            <Button onClick={() => setShowModal(true)} className="whitespace-nowrap">+ Agregar cajero</Button>
           </div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export function TeamPage() {
           {users.map((user) => (
             <div
               key={user.id}
-              className={`flex items-center justify-between px-4 py-4 gap-3 transition-colors hover:bg-[var(--color-surface-2)] ${
+              className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 py-4 gap-3 transition-colors hover:bg-[var(--color-surface-2)] ${
                 !user.isActive && user.role !== UserRole.OWNER ? 'opacity-60' : ''
               }`}
             >
@@ -130,7 +130,7 @@ export function TeamPage() {
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-3 sm:shrink-0">
                 <Badge variant={user.role === UserRole.OWNER ? 'info' : 'neutral'} dot>
                   {ROLE_LABEL[user.role]}
                 </Badge>
