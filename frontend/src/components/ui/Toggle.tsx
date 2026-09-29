@@ -20,8 +20,9 @@ export function Toggle({ checked, onChange, disabled = false, label }: TogglePro
         'focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         checked
-          ? 'bg-primary-600 shadow-[inset_0_0_0_1px_oklch(0.60_0.22_42/0.30)]'
-          : 'bg-gray-200',
+          ? 'bg-primary-600'
+          // Apagado con contraste suficiente (≥ 3:1) para distinguirse del fondo en ambos temas.
+          : 'bg-gray-400',
       ].join(' ')}
     >
       <span
@@ -29,7 +30,7 @@ export function Toggle({ checked, onChange, disabled = false, label }: TogglePro
           'inline-block h-5 w-5 rounded-full bg-white',
           'shadow-[0_1px_3px_oklch(0.13_0.012_260/0.20)]',
           'transition-all duration-200',
-          checked ? 'translate-x-5 scale-110' : 'translate-x-0 scale-100',
+          checked ? 'translate-x-5' : 'translate-x-0',
         ].join(' ')}
       />
     </button>

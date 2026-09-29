@@ -9,7 +9,7 @@ interface SkeletonProps {
 const shimmer = [
   'animate-shimmer',
   'bg-[linear-gradient(90deg,var(--shimmer-from)_25%,var(--shimmer-to)_50%,var(--shimmer-from)_75%)]',
-  'rounded-lg',
+  'rounded-control',
 ].join(' ');
 
 export function Skeleton({
@@ -52,7 +52,7 @@ export function Skeleton({
   if (variant === 'card') {
     return (
       <div
-        className={`rounded-xl border border-line p-6 ${className}`}
+        className={`rounded-card border border-line p-6 ${className}`}
         style={{ background: 'var(--color-surface-card)' }}
         aria-hidden="true"
       >

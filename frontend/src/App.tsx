@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useTheme } from './hooks/useTheme';
 import { AuthProvider } from './context/auth.context';
@@ -27,6 +28,9 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { CashierAccountPage } from './pages/CashierAccountPage';
 import { CashierReportPage } from './pages/CashierReportPage';
 
+// Galería del kit: solo en desarrollo. En producción la condición es falsa y Vite descarta el módulo.
+const KitPage = import.meta.env.DEV ? lazy(() => import('./pages/dev/KitPage')) : null;
+
 /**
  * Guards a route behind a module flag.
  * When the module is disabled by the SaaS admin, any attempt to access
@@ -47,6 +51,7 @@ function AppRoutes() {
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/terminos" element={<TermsPage />} />
       <Route path="/privacidad" element={<PrivacyPage />} />
+      {KitPage && <Route path="/dev/kit" element={<Suspense fallback={null}><KitPage /></Suspense>} />}
 
       <Route element={<PrivateRoute />}>
         {/* Kitchen: fullscreen, no sidebar */}

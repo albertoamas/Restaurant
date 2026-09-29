@@ -103,7 +103,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
           </div>
         </div>
         <Button
-          variant="emerald"
+          variant="success"
           size="xl"
           fullWidth
           disabled={items.length === 0}

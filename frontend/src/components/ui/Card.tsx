@@ -3,37 +3,28 @@ import { type ReactNode, type ElementType } from 'react';
 interface CardProps {
   children: ReactNode;
   className?: string;
-  variant?: 'default' | 'elevated' | 'inset' | 'glass' | 'glass-strong' | 'flat' | 'panel' | 'feature';
+  /**
+   * - default: tarjeta sobre la página (superficie blanca, borde y sombra leve).
+   * - panel: bloque de contenido secundario, un escalón más bajo que la tarjeta.
+   * - inset: zona hundida dentro de una tarjeta (resúmenes, totales, filtros).
+   */
+  variant?: 'default' | 'panel' | 'inset';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   as?: ElementType;
   onClick?: () => void;
 }
 
 const variants = {
-  default:  'bg-surface-card border border-line shadow-card-md',
-  elevated: [
-    'bg-surface-card border border-line',
-    'shadow-card-md',
-    'hover:-translate-y-0.5 hover:shadow-card-lg',
-    'transition-[transform,box-shadow] duration-200',
-  ].join(' '),
-  inset:        'bg-surface-2 border border-line',
-  glass:        'bg-surface-2 backdrop-blur-xl border border-line shadow-card-lg',
-  'glass-strong': 'bg-surface-2 backdrop-blur-2xl border border-line shadow-[0_10px_40px_oklch(0.06_0.010_38/0.5)]',
-  flat:         'bg-surface-2 border border-line',
-  panel:        'bg-surface-2 backdrop-blur-md border border-line',
-  feature: [
-    'bg-surface-card border border-primary-800/50',
-    'shadow-[0_12px_32px_oklch(0.60_0.22_42/0.15),0_1px_2px_oklch(0.06_0.010_38/0.4)]',
-    'relative overflow-hidden',
-  ].join(' '),
+  default: 'bg-surface-card border border-line shadow-raised',
+  panel:   'bg-surface-2 border border-line',
+  inset:   'bg-surface-2 border border-line shadow-[inset_0_1px_2px_oklch(0_0_0/0.04)]',
 };
 
 const paddings = {
   none: '',
   sm:   'p-4',
-  md:   'p-6',
-  lg:   'p-8',
+  md:   'p-5 sm:p-6',
+  lg:   'p-6 sm:p-8',
 };
 
 export function Card({
@@ -44,11 +35,13 @@ export function Card({
   as: Tag = 'div',
   onClick,
 }: CardProps) {
-  const interactive = onClick ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5' : '';
+  const interactive = onClick
+    ? 'cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-line-strong hover:shadow-floating'
+    : '';
 
   return (
     <Tag
-      className={`rounded-xl ${variants[variant]} ${paddings[padding]} ${interactive} ${className}`}
+      className={`rounded-card ${variants[variant]} ${paddings[padding]} ${interactive} ${className}`}
       onClick={onClick}
     >
       {children}
