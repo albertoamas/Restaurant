@@ -128,7 +128,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
         <div className="flex items-center justify-end gap-0.5">
           {confirming ? (
             <>
-              <span className="text-[11px] font-semibold text-red-400 mr-1 whitespace-nowrap">¿Cancelar?</span>
+              <span className="text-[11px] font-semibold text-red-600 dark:text-red-400 mr-1 whitespace-nowrap">¿Cancelar?</span>
               <button
                 onClick={() => { onStatusChange(order.id, OrderStatus.CANCELLED); setConfirming(false); }}
                 className="px-2 py-1 rounded-lg text-xs font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
@@ -146,7 +146,7 @@ function HistoryRow({ order, receiptSettings, isOwner, onPayOrder, onEdit, onSta
             <>
               {!order.isPaid && !isCancelled && (
                 <button onClick={() => onPayOrder(order)} title="Cobrar pedido"
-                  className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-colors">
+                  className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 transition-colors">
                   <Icon name="cash" size={16} strokeWidth={2} />
                 </button>
               )}

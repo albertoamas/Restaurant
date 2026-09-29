@@ -1,16 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* `dark:` sigue al tema elegido en la app, no al del sistema operativo. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ─── Theme-aware custom properties ─────────────────────── */
 /*
- * Phase 1: :root holds dark values (current default).
- * Phase 2 will flip :root to light; [data-theme="dark"] stays dark.
- * The @theme block references these via var() so Tailwind utilities
- * update automatically when the attribute changes on <html>.
- */
-/*
- * Light mode: warm whites and near-blacks with orange undertone.
- * Sidebar stays dark (intentional zone contrast, common in premium apps).
+ * :root = tema claro; [data-theme="dark"] = tema oscuro. El bloque @theme referencia estas
+ * variables con var(), así las utilidades de Tailwind cambian solas al alternar el tema.
  */
 :root {
   /* Surfaces */
@@ -24,7 +21,7 @@
   /* Text hierarchy */
   --text-main:          oklch(0.15 0.010 40);
   --text-soft:          oklch(0.38 0.008 44);
-  --text-muted:         oklch(0.60 0.006 48);
+  --text-muted:         oklch(0.53 0.006 48);  /* ≥ 4.5:1 sobre page, card y surface-2 */
   /* Border */
   --border-subtle:      oklch(0.88 0.006 46);
   --border-strong:      oklch(0.75 0.006 44);
@@ -58,7 +55,7 @@
   --surface-overlay:    oklch(0.06  0.010 38);
   --text-main:          oklch(0.93  0.010 52);
   --text-soft:          oklch(0.70  0.012 50);
-  --text-muted:         oklch(0.46  0.008 48);
+  --text-muted:         oklch(0.60  0.008 48);  /* ≥ 4.5:1 sobre page, card y surface-2 */
   --border-subtle:      oklch(0.23  0.014 40);
   --border-strong:      oklch(0.32  0.014 40);
   --scrollbar-thumb:       oklch(0.28 0.016 40);
@@ -81,49 +78,19 @@
   --color-gray-100: oklch(0.17 0.010 40);
   --color-gray-200: oklch(0.23 0.012 40);
   --color-gray-300: oklch(0.31 0.010 42);
-  --color-gray-400: oklch(0.46 0.008 46);
-  --color-gray-500: oklch(0.57 0.008 46);
-  --color-gray-600: oklch(0.68 0.010 48);
-  --color-gray-700: oklch(0.78 0.010 50);
+  --color-gray-400: oklch(0.60 0.008 46);   /* texto secundario: ≥ 4.5:1 */
+  --color-gray-500: oklch(0.66 0.008 46);
+  --color-gray-600: oklch(0.72 0.010 48);
+  --color-gray-700: oklch(0.80 0.010 50);
   --color-gray-800: oklch(0.87 0.010 52);
   --color-gray-900: oklch(0.94 0.010 52);
-}
 
-/* ─── Design Tokens ──────────────────────────────────────── */
-@theme {
-  /* Fonts */
-  --font-sans:    'Outfit', sans-serif;
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
-
-  /* Primary — orange vivid */
-  --color-primary-50:  oklch(0.15 0.04  42);
-  --color-primary-100: oklch(0.21 0.08  42);
-  --color-primary-200: oklch(0.30 0.13  42);
-  --color-primary-300: oklch(0.47 0.18  42);
-  --color-primary-400: oklch(0.62 0.21  42);
-  --color-primary-500: oklch(0.65 0.22  42);
+  /* Primary: en oscuro el 600/700 pueden ser más claros (van sobre fondo oscuro). */
   --color-primary-600: oklch(0.60 0.22  40);
   --color-primary-700: oklch(0.50 0.20  38);
-  --color-primary-800: oklch(0.36 0.15  36);
-  --color-primary-900: oklch(0.22 0.10  34);
 
-  /*
-   * Gray scale — light mode values (dark text on light bg).
-   * Dark mode overrides these via [data-theme="dark"] below.
-   * Warm hue (40-52) to match the orange accent family.
-   */
-  --color-gray-50:  oklch(0.985 0.003 48);
-  --color-gray-100: oklch(0.965 0.004 47);
-  --color-gray-200: oklch(0.928 0.006 46);
-  --color-gray-300: oklch(0.878 0.008 46);
-  --color-gray-400: oklch(0.718 0.010 46);
-  --color-gray-500: oklch(0.568 0.010 46);
-  --color-gray-600: oklch(0.455 0.010 46);
-  --color-gray-700: oklch(0.362 0.008 44);
-  --color-gray-800: oklch(0.265 0.008 42);
-  --color-gray-900: oklch(0.165 0.008 40);
-
-  /* Semantic status */
+  /* Colores de estado — afinados para fondo oscuro. En tema claro rige la paleta estándar de
+     Tailwind (texto oscuro sobre fondo claro): definirlos en @theme rompía el tema claro. */
   --color-amber-50:   oklch(0.14 0.06  80);
   --color-amber-100:  oklch(0.20 0.10  80);
   --color-amber-200:  oklch(0.28 0.14  80);
@@ -168,7 +135,7 @@
   --color-yellow-200: oklch(0.28 0.15  90);
   --color-yellow-700: oklch(0.80 0.18  90);
 
-  /* Violet — secondary accent (complete scale, single definition) */
+  /* Violet — acento secundario */
   --color-violet-50:  oklch(0.14 0.04 285);
   --color-violet-100: oklch(0.20 0.08 285);
   --color-violet-200: oklch(0.28 0.12 285);
@@ -189,6 +156,41 @@
   --color-orange-100: oklch(0.20 0.10  55);
   --color-orange-200: oklch(0.28 0.14  55);
   --color-orange-700: oklch(0.76 0.18  55);
+}
+
+/* ─── Design Tokens ──────────────────────────────────────── */
+@theme {
+  /* Fonts */
+  --font-sans:    'Outfit', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+
+  /* Primary — orange vivid */
+  --color-primary-50:  oklch(0.15 0.04  42);
+  --color-primary-100: oklch(0.21 0.08  42);
+  --color-primary-200: oklch(0.30 0.13  42);
+  --color-primary-300: oklch(0.47 0.18  42);
+  --color-primary-400: oklch(0.62 0.21  42);
+  --color-primary-500: oklch(0.65 0.22  42);
+  --color-primary-600: oklch(0.57 0.19  46);  /* #CB4400 · blanco encima y texto sobre blanco: ≥ 4.5:1 */
+  --color-primary-700: oklch(0.49 0.17  44);
+  --color-primary-800: oklch(0.36 0.15  36);
+  --color-primary-900: oklch(0.22 0.10  34);
+
+  /*
+   * Gray scale — light mode values (dark text on light bg).
+   * Dark mode overrides these via [data-theme="dark"] below.
+   * Warm hue (40-52) to match the orange accent family.
+   */
+  --color-gray-50:  oklch(0.985 0.003 48);
+  --color-gray-100: oklch(0.965 0.004 47);
+  --color-gray-200: oklch(0.928 0.006 46);
+  --color-gray-300: oklch(0.878 0.008 46);
+  --color-gray-400: oklch(0.53 0.010 46);   /* texto secundario: ≥ 4.5:1 */
+  --color-gray-500: oklch(0.47 0.010 46);
+  --color-gray-600: oklch(0.40 0.010 46);
+  --color-gray-700: oklch(0.362 0.008 44);
+  --color-gray-800: oklch(0.265 0.008 42);
+  --color-gray-900: oklch(0.165 0.008 40);
 
   /* Shadows — var() references so utilities update with theme */
   --shadow-card-xl: var(--_shadow-xl);
@@ -384,9 +386,8 @@
 
   /* Focus ring — orange */
   :focus-visible {
-    outline: 2px solid oklch(0.65 0.22 42);
+    outline: 2px solid var(--color-primary-500);
     outline-offset: 2px;
-    border-radius: 8px;
   }
 
   /* Custom scrollbar — dark with orange accent */

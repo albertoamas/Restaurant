@@ -95,7 +95,7 @@ export function CashierReportPage() {
               label="Total Cobrado"
               value={`Bs ${report!.totalSales.toFixed(2)}`}
               icon={<Icon name="dollar" size={24} />}
-              accent="text-emerald-400"
+              accent="text-emerald-600 dark:text-emerald-400"
               bg="bg-emerald-500/10"
             />
             <StatCard
@@ -109,7 +109,7 @@ export function CashierReportPage() {
               label="Ticket Promedio"
               value={`Bs ${report!.averageTicket.toFixed(2)}`}
               icon={<Icon name="receipt" size={24} />}
-              accent="text-violet-400"
+              accent="text-violet-600 dark:text-violet-400"
               bg="bg-violet-500/10"
             />
           </div>

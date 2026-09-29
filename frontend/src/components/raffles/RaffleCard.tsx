@@ -35,7 +35,7 @@ export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: ()
           <div className="space-y-1.5">
             {raffle.ticketMode === 'SPENDING_THRESHOLD' ? (
               <div className="flex items-center gap-2">
-                <IconCoins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <IconCoins className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span className="text-xs text-gray-500 truncate">
                   Cada{' '}
                   <span className="text-gray-600 font-semibold">{raffle.spendingThreshold} Bs</span>
@@ -68,9 +68,9 @@ export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: ()
                   key={w.id}
                   className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 bg-amber-500/10 border border-amber-500/20"
                 >
-                  <IconAward className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="text-[11px] font-black text-amber-400 shrink-0">{w.position}°</span>
-                  <span className="text-xs font-semibold text-amber-300 truncate">{w.customer.name}</span>
+                  <IconAward className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="text-[11px] font-black text-amber-600 dark:text-amber-400 shrink-0">{w.position}°</span>
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 truncate">{w.customer.name}</span>
                 </div>
               ))}
             </div>

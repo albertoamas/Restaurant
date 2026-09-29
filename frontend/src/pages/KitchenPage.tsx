@@ -128,7 +128,7 @@ export function KitchenPage() {
       <div className="relative z-10 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-[var(--border-subtle)] shrink-0 shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0/0.10)]">
-            <Icon name="flame" size={16} className="text-amber-400" />
+            <Icon name="flame" size={16} className="text-amber-600 dark:text-amber-400" />
           </div>
           <div>
             <h1 className="font-heading font-black text-gray-900 text-lg tracking-tight whitespace-nowrap">
@@ -141,12 +141,12 @@ export function KitchenPage() {
         <div className="flex items-center gap-2 sm:gap-6 shrink-0">
           <KitchenClock />
           <div className="hidden sm:flex items-center gap-3 text-sm">
-            <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
+            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-amber-500" />
               {pending.length} pendientes
             </span>
             <span className="text-gray-500">·</span>
-            <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               {preparing.length} preparando
             </span>
@@ -173,11 +173,11 @@ export function KitchenPage() {
       <div className="relative z-10 sm:hidden px-4 pb-3 border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-500/20">
-            <p className="text-amber-400 font-black uppercase tracking-[0.08em]">Pendientes</p>
+            <p className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.08em]">Pendientes</p>
             <p className="text-gray-900 font-heading font-black text-lg leading-tight mt-0.5">{pending.length}</p>
           </div>
           <div className="rounded-xl px-3 py-2 bg-emerald-500/10 border border-emerald-500/20">
-            <p className="text-emerald-400 font-black uppercase tracking-[0.08em]">Preparando</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.08em]">Preparando</p>
             <p className="text-gray-900 font-heading font-black text-lg leading-tight mt-0.5">{preparing.length}</p>
           </div>
         </div>
@@ -197,7 +197,7 @@ export function KitchenPage() {
         {/* PENDING column */}
         <div className="flex flex-col min-h-0 rounded-2xl border border-[var(--border-subtle)] shadow-card-xl overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           <div className="px-5 py-3 flex items-center gap-2.5 border-b border-amber-500/20 bg-amber-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
-            <span className="text-amber-400 font-black text-xs uppercase tracking-[0.12em]">Pendientes</span>
+            <span className="text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-[0.12em]">Pendientes</span>
             <span
               className={[
                 'text-xs font-black rounded-full w-5 h-5 flex items-center justify-center tabular-nums transition-colors',
@@ -235,7 +235,7 @@ export function KitchenPage() {
         {/* PREPARING column */}
         <div className="flex flex-col min-h-0 rounded-2xl border border-[var(--border-subtle)] shadow-card-xl overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           <div className="px-5 py-3 flex items-center gap-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
-            <span className="text-emerald-400 font-black text-xs uppercase tracking-[0.12em]">Preparando</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase tracking-[0.12em]">Preparando</span>
             <span
               className={[
                 'text-xs font-black rounded-full w-5 h-5 flex items-center justify-center tabular-nums transition-colors',

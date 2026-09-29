@@ -28,10 +28,10 @@ export const PLAN_CONFIG: Record<SaasPlan, {
   },
   [SaasPlan.NEGOCIO]: {
     label: 'Negocio',
-    badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
     card: 'border-violet-500/20 bg-violet-500/5',
     cardActive: 'border-violet-500/50 bg-violet-500/12 ring-1 ring-violet-500/25',
-    accent: 'text-violet-400',
+    accent: 'text-violet-600 dark:text-violet-400',
   },
 };
 

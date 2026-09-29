@@ -158,19 +158,19 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
 
           {activePlan && (
             <div className="mt-3 flex gap-2">
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && !isUnlimited(activePlan.maxBranches) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.branchCount >= activePlan.maxBranches && !isUnlimited(activePlan.maxBranches) ? 'bg-red-500/12 text-red-600 dark:text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.branchCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxBranches)}</span>
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Sucursales</p>
               </div>
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && !isUnlimited(activePlan.maxCashiers) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.cashierCount >= activePlan.maxCashiers && !isUnlimited(activePlan.maxCashiers) ? 'bg-red-500/12 text-red-600 dark:text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.cashierCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxCashiers)}</span>
                 </p>
                 <p className="text-[11px] opacity-60 mt-1">Cajeros</p>
               </div>
-              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.productCount >= activePlan.maxProducts && !isUnlimited(activePlan.maxProducts) ? 'bg-red-500/12 text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
+              <div className={`flex-1 rounded-xl px-3 py-2.5 text-center ${tenant.productCount >= activePlan.maxProducts && !isUnlimited(activePlan.maxProducts) ? 'bg-red-500/12 text-red-600 dark:text-red-400' : 'bg-[var(--color-surface-2)] text-gray-600'}`}>
                 <p className="font-bold text-base leading-none">
                   {tenant.productCount}<span className="font-normal text-xs opacity-60">/{limitLabel(activePlan.maxProducts)}</span>
                 </p>
@@ -185,7 +185,7 @@ export function TenantPanel({ tenant, plans, onPlanUpdate, onModulesUpdate }: Te
               {' · '}
               <span className={
                 !isUnlimited(activePlan.maxStorageMb) && tenant.storageUsedMb >= activePlan.maxStorageMb
-                  ? 'text-red-400 font-semibold'
+                  ? 'text-red-600 dark:text-red-400 font-semibold'
                   : ''
               }>
                 Imágenes: {tenant.storageUsedMb} / {limitLabel(activePlan.maxStorageMb)} MB

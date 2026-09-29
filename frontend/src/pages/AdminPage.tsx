@@ -306,7 +306,7 @@ export function AdminPage() {
                       </div>
 
                       <div className="shrink-0 hidden sm:block">
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${t.isActive ? 'bg-emerald-400' : 'bg-red-400'}`} />
                           {t.isActive ? 'Activo' : 'Inactivo'}
                         </span>
@@ -315,7 +315,7 @@ export function AdminPage() {
                       <button
                         onClick={() => handleToggle(t.id)}
                         disabled={toggling === t.id}
-                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${t.isActive ? 'bg-red-500/12 text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/12 text-emerald-400 hover:bg-emerald-500/20'}`}
+                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${t.isActive ? 'bg-red-500/12 text-red-600 dark:text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'}`}
                       >
                         {toggling === t.id ? '…' : t.isActive ? 'Desactivar' : 'Activar'}
                       </button>

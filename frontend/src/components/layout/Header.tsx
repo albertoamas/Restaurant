@@ -26,12 +26,14 @@ function getTitle(pathname: string): string {
   return pageTitles[pathname] ?? 'POS';
 }
 
+/** "Martes, 29 de septiembre": solo la primera letra en mayúscula, como se escribe en español. */
 function formatDate(): string {
-  return new Date().toLocaleDateString('es-BO', {
+  const s = new Date().toLocaleDateString('es-BO', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function formatDateShort(): string {
@@ -93,8 +95,8 @@ export function Header({ onMenuOpen, onToggleSidebar, sidebarCollapsed }: Header
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={1.75} />
         </button>
-        <span className="text-sm text-[var(--color-text-soft)] hidden md:block capitalize">{formatDate()}</span>
-        <span className="text-sm text-[var(--color-text-soft)] hidden sm:block md:hidden capitalize whitespace-nowrap">{formatDateShort()}</span>
+        <span className="text-sm text-[var(--color-text-soft)] hidden md:block">{formatDate()}</span>
+        <span className="text-sm text-[var(--color-text-soft)] hidden sm:block md:hidden whitespace-nowrap">{formatDateShort()}</span>
         <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[var(--border-subtle)]">
           <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center shadow-md shadow-primary-500/20">
             <span className="text-xs font-bold text-white">{userInitial}</span>

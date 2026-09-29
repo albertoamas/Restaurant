@@ -59,7 +59,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
         {/* Nombre */}
         <div>
           <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-            Nombre <span className="text-red-400">*</span>
+            Nombre <span className="text-red-600 dark:text-red-400">*</span>
           </label>
           <input
             type="text"

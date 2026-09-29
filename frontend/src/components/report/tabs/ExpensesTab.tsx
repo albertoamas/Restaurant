@@ -45,20 +45,20 @@ export function ExpensesTab({ report, expenseSummary, loading, isMultiDay }: Pro
           label="Total gastado"
           value={`Bs ${total.toFixed(2)}`}
           icon={<Icon name="minus" size={20} />}
-          accent="text-red-400" bg="bg-red-500/10"
+          accent="text-red-600 dark:text-red-400" bg="bg-red-500/10"
           valueClassName="text-red-600"
         />
         <StatCard
           label="Movimientos"
           value={String(expenseSummary!.transactionCount)}
           icon={<Icon name="receipt" size={20} />}
-          accent="text-violet-400" bg="bg-violet-500/10"
+          accent="text-violet-600 dark:text-violet-400" bg="bg-violet-500/10"
         />
         <StatCard
           label="Peso sobre ventas"
           value={ratio !== null ? `${ratio.toFixed(1)}%` : '—'}
           icon={<Icon name="chart" size={20} />}
-          accent="text-sky-400" bg="bg-sky-500/10"
+          accent="text-sky-600 dark:text-sky-400" bg="bg-sky-500/10"
         />
       </div>
 

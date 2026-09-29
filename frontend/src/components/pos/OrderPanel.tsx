@@ -44,7 +44,7 @@ export function OrderPanel({ onCharge, onClose }: Props) {
         {items.length > 0 && (
           <button
             onClick={clear}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
           >
             <Icon name="trash" size={12} strokeWidth={2} />
             Limpiar

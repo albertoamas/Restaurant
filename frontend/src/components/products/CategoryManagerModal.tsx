@@ -176,7 +176,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
                         placeholder="Ej: Bebidas, Entradas, Postres…"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveEdit(cat.id);
-                          if (e.key === 'Escape') cancelEdit();
+                          if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); }
                         }}
                       />
                       <Input

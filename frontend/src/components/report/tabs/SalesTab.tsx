@@ -28,7 +28,7 @@ export function SalesTab({ report, dailySeries, byDayHour, isMultiDay, isLoading
           label="Ventas"
           value={`Bs ${(report?.totalSales ?? 0).toFixed(0)}`}
           icon={<Icon name="dollar" size={20} />}
-          accent="text-emerald-400" bg="bg-emerald-500/10"
+          accent="text-emerald-600 dark:text-emerald-400" bg="bg-emerald-500/10"
         />
         <StatCard
           label="Pedidos"
@@ -40,7 +40,7 @@ export function SalesTab({ report, dailySeries, byDayHour, isMultiDay, isLoading
           label="Ticket Prom."
           value={`Bs ${(report?.averageTicket ?? 0).toFixed(2)}`}
           icon={<Icon name="receipt" size={20} />}
-          accent="text-violet-400" bg="bg-violet-500/10"
+          accent="text-violet-600 dark:text-violet-400" bg="bg-violet-500/10"
         />
       </div>
 
