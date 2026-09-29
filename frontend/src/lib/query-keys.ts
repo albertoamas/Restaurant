@@ -28,6 +28,10 @@ export const queryKeys = {
   orders: (p: { date: string; statusFilter: string; branchId: string | null }) =>
     ['orders', p] as const,
 
+  /** Cantidad de pedidos del día por estado (contadores de los filtros de Operación). */
+  orderCounts: (p: { date: string; branchId: string | null }) =>
+    ['orderCounts', p] as const,
+
   kitchenOrders: (branchId: string | null) =>
     ['kitchenOrders', branchId] as const,
 

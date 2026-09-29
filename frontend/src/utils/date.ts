@@ -21,6 +21,27 @@ export function elapsed(createdAt: string): string {
   return `${m}m ${s}s`;
 }
 
+/** Minutos enteros entre dos momentos (nunca negativos). */
+export function minutesBetween(from: string, to: string | number = Date.now()): number {
+  const end = typeof to === 'number' ? to : new Date(to).getTime();
+  return Math.max(0, Math.floor((end - new Date(from).getTime()) / 60_000));
+}
+
+/** Duración legible en minutos: "menos de 1 min", "12 min", "1 h 5 min". */
+export function durationLabel(minutes: number): string {
+  if (minutes < 1) return 'menos de 1 min';
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** Tiempo transcurrido para listas en vivo: "Hace un momento", "Hace 12 min", "Hace 1 h 5 min". */
+export function timeAgo(iso: string, now: number = Date.now()): string {
+  const m = minutesBetween(iso, now);
+  return m < 1 ? 'Hace un momento' : `Hace ${durationLabel(m)}`;
+}
+
 export function elapsedBetween(from: string, to: string): string {
   const diff = Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 1000);
   if (diff < 60) return `${diff}s`;

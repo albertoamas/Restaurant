@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay } from './date';
+import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
 
 describe('date utils', () => {
   describe('formatDate', () => {
@@ -81,5 +81,27 @@ describe('date utils', () => {
       // La fecha debe ser el 16, no el 17
       expect(result).toContain('16/04/2026');
     });
+  });
+});
+
+describe('tiempos en minutos', () => {
+  const base = Date.parse('2026-09-29T12:00:00Z');
+  const ago = (min: number) => new Date(base - min * 60_000).toISOString();
+
+  it('timeAgo', () => {
+    expect(timeAgo(ago(0.5), base)).toBe('Hace un momento');
+    expect(timeAgo(ago(12), base)).toBe('Hace 12 min');
+    expect(timeAgo(ago(65), base)).toBe('Hace 1 h 5 min');
+    expect(timeAgo(ago(120), base)).toBe('Hace 2 h');
+  });
+
+  it('minutesBetween nunca es negativo', () => {
+    expect(minutesBetween(ago(-5), base)).toBe(0);
+    expect(minutesBetween(ago(18), new Date(base).toISOString())).toBe(18);
+  });
+
+  it('durationLabel', () => {
+    expect(durationLabel(0)).toBe('menos de 1 min');
+    expect(durationLabel(45)).toBe('45 min');
   });
 });

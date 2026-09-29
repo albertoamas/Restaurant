@@ -3,11 +3,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { OrderStatus, UserRole } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { ordersApi } from '../api/orders.api';
-import { Spinner } from '../components/ui/Spinner';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/ui/Icon';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { PageHeader } from '../components/ui/PageHeader';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
 import { PageShell } from '../components/ui/PageShell';
 import { useOrders } from '../hooks/useOrders';
 import { useOrderHistory } from '../hooks/useOrderHistory';
+import { useOrderCounts } from '../hooks/useOrderCounts';
 import { today } from '../utils/date';
 import { toBoliviaDateString } from '../utils/timezone';
 import toast from 'react-hot-toast';
@@ -22,19 +29,16 @@ import { AddItemsToOrderModal } from '../components/orders/AddItemsToOrderModal'
 
 type ActiveTab = 'operation' | 'history';
 
-const operationStatusFilters = [
-  { value: '',                    label: 'Todos'      },
+/** 'all' en el control; '' hacia los hooks (sin filtro de estado). */
+const ALL = 'all';
+const toFilter = (v: string) => (v === ALL ? '' : v);
+
+const historyStatusFilters = [
+  { value: ALL,                   label: 'Todos'      },
   { value: OrderStatus.PENDING,   label: 'Pendientes' },
   { value: OrderStatus.PREPARING, label: 'Preparando' },
   { value: OrderStatus.DELIVERED, label: 'Entregados' },
-];
-
-const historyStatusFilters = [
-  { value: '',                    label: 'Todos'     },
-  { value: OrderStatus.PENDING,   label: 'Pendiente' },
-  { value: OrderStatus.PREPARING, label: 'Preparando'},
-  { value: OrderStatus.DELIVERED, label: 'Entregado' },
-  { value: OrderStatus.CANCELLED, label: 'Cancelado' },
+  { value: OrderStatus.CANCELLED, label: 'Cancelados' },
 ];
 
 function sevenDaysAgo(): string {
@@ -58,14 +62,20 @@ export function OrdersPage() {
 
   // ── Operation tab state ───────────────────────────────────────────────────
   const [date,         setDate]         = useState(today());
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusChoice, setStatusChoice] = useState<string>(ALL);
+  const statusFilter = toFilter(statusChoice);
   const { orders, setOrders, total, loading, loadingMore, hasMore, fetchOrders, loadMore } =
     useOrders(date, statusFilter, currentBranchId);
+  const { counts, refreshCounts } = useOrderCounts({
+    date, branchId: currentBranchId, loaded: orders, loadedIsWholeDay: statusFilter === '' && !hasMore,
+  });
+  const navigate = useNavigate();
 
   // ── History tab state ─────────────────────────────────────────────────────
   const [historyFrom,    setHistoryFrom]    = useState(sevenDaysAgo);
   const [historyTo,      setHistoryTo]      = useState(today);
-  const [historyStatus,  setHistoryStatus]  = useState('');
+  const [historyChoice,  setHistoryChoice]  = useState<string>(ALL);
+  const historyStatus = toFilter(historyChoice);
   const [searchInput,    setSearchInput]    = useState('');
   const [debouncedQ,     setDebouncedQ]     = useState('');
 
@@ -74,7 +84,10 @@ export function OrdersPage() {
     return () => clearTimeout(id);
   }, [searchInput]);
 
-  const { orders: historyOrders, total: historyTotal, loading: historyLoading } = useOrderHistory({
+  const {
+    orders: historyOrders, total: historyTotal, loading: historyLoading,
+    loadingMore: historyLoadingMore, hasMore: historyHasMore, loadMore: historyLoadMore,
+  } = useOrderHistory({
     fromDate: historyFrom,
     toDate:   historyTo,
     q:        debouncedQ,
@@ -83,8 +96,10 @@ export function OrdersPage() {
   });
 
   // ── Shared mutations ──────────────────────────────────────────────────────
-  const invalidateHistory = () =>
+  const invalidateHistory = () => {
     queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
+    refreshCounts();
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     setOrders((prev) =>
@@ -125,136 +140,92 @@ export function OrdersPage() {
     invalidateHistory();
   };
 
-  const emptyUi = (message: string) => (
-    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <Icon name="orders" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
-      <p className="text-sm font-semibold text-gray-500">Sin pedidos</p>
-      <p className="text-xs mt-1 text-gray-400">{message}</p>
+  const operationFilters = [
+    { value: ALL,                   label: 'Todos',      count: counts?.all },
+    { value: OrderStatus.PENDING,   label: 'Pendientes', count: counts?.pending },
+    { value: OrderStatus.PREPARING, label: 'Preparando', count: counts?.preparing },
+    { value: OrderStatus.DELIVERED, label: 'Entregados', count: counts?.delivered },
+  ];
+
+  const isToday = date === today();
+
+  const loadingList = (
+    <div className="grid gap-3 xl:grid-cols-2" aria-busy="true">
+      <Skeleton variant="card" />
+      <Skeleton variant="card" />
     </div>
   );
 
-  const dateInputCls = [
-    'border border-line rounded-xl px-3 py-2 text-sm bg-surface-card text-gray-700',
-    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50',
-    'transition-[border-color,box-shadow]',
-  ].join(' ');
-
-  const tabClass = (tab: ActiveTab) =>
-    `px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
-      activeTab === tab
-        ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
-        : 'text-gray-500 hover:text-gray-700 hover:bg-surface-2'
-    }`;
-
-  const pillClass = (active: boolean) =>
-    `px-3 py-1.5 text-xs font-semibold rounded-[9px] whitespace-nowrap transition-all duration-150 ${
-      active
-        ? 'bg-primary-600 text-white'
-        : 'text-gray-500 hover:text-gray-700'
-    }`;
+  const loadMoreButton = (onClick: () => void, busy: boolean, remaining: number) => (
+    <div className="flex justify-center pt-4">
+      <Button variant="secondary" onClick={onClick} loading={busy}>
+        {busy ? 'Cargando' : `Cargar más (${remaining} restantes)`}
+      </Button>
+    </div>
+  );
 
   return (
     <PageShell>
-
-      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-line shadow-card-lg p-4 mb-6" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="font-heading font-black text-xl text-gray-900">Gestión de Pedidos</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Monitorea estados en tiempo real o consulta el historial.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-600 border border-primary-500/20">
-              {activeTab === 'operation'
-                ? (total > orders.length ? `${orders.length} de ${total}` : total)
-                : (historyTotal > historyOrders.length ? `${historyOrders.length} de ${historyTotal}` : historyTotal)
-              } pedidos
-            </span>
-            <div className="flex gap-1 bg-surface-2 rounded-lg p-0.5">
-              <button className={tabClass('operation')} onClick={() => setActiveTab('operation')}>
-                Operación
-              </button>
-              <button className={tabClass('history')} onClick={() => setActiveTab('history')}>
-                Historial
-              </button>
+      <PageHeader
+        title="Pedidos"
+        actions={
+          <SegmentedControl
+            label="Vista de pedidos"
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[{ value: 'operation', label: 'Operación' }, { value: 'history', label: 'Historial' }]}
+          />
+        }
+      >
+        {activeTab === 'operation' ? (
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="sm:w-48">
+              <Input type="date" label="Fecha" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
-          </div>
-        </div>
-
-        {/* Operation filters */}
-        {activeTab === 'operation' && (
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className={dateInputCls}
+            <SegmentedControl
+              label="Estado del pedido"
+              value={statusChoice}
+              onChange={setStatusChoice}
+              options={operationFilters}
             />
-            <div className="flex gap-0.5 bg-surface-2 rounded-xl p-1 overflow-x-auto">
-              {operationStatusFilters.map((f) => (
-                <button key={f.value} onClick={() => setStatusFilter(f.value)} className={pillClass(statusFilter === f.value)}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
           </div>
-        )}
-
-        {/* History filters */}
-        {activeTab === 'history' && (
-          <div className="flex flex-col gap-3">
-            {/* Date range + status pills */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex items-center gap-2 shrink-0">
-                <input
-                  type="date"
-                  value={historyFrom}
-                  max={historyTo}
-                  onChange={(e) => setHistoryFrom(e.target.value)}
-                  className={dateInputCls}
-                />
-                <span className="text-gray-400 text-sm shrink-0">a</span>
-                <input
-                  type="date"
-                  value={historyTo}
-                  min={historyFrom}
-                  onChange={(e) => setHistoryTo(e.target.value)}
-                  className={dateInputCls}
-                />
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+              <div className="grid grid-cols-2 gap-3 lg:w-96">
+                <Input type="date" label="Desde" value={historyFrom} max={historyTo} onChange={(e) => setHistoryFrom(e.target.value)} />
+                <Input type="date" label="Hasta" value={historyTo} min={historyFrom} onChange={(e) => setHistoryTo(e.target.value)} />
               </div>
-              <div className="flex gap-0.5 bg-surface-2 rounded-xl p-1 overflow-x-auto">
-                {historyStatusFilters.map((f) => (
-                  <button key={f.value} onClick={() => setHistoryStatus(f.value)} className={pillClass(historyStatus === f.value)}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Search bar */}
-            <div className="relative">
-              <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar por #pedido o nombre de cliente..."
-                className="w-full pl-9 pr-4 py-2 border border-line rounded-xl text-sm bg-surface-2 text-gray-700 placeholder:text-gray-400
-                  focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
-                  transition-[border-color,box-shadow]"
+              <SegmentedControl
+                label="Estado del pedido"
+                value={historyChoice}
+                onChange={setHistoryChoice}
+                options={historyStatusFilters}
               />
             </div>
+            <Input
+              aria-label="Buscar pedido"
+              placeholder="Número de pedido o nombre del cliente"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              leftAddon={<Icon name="search" size={18} />}
+            />
           </div>
         )}
-      </div>
+      </PageHeader>
 
-      {/* ── Tab: Operación ───────────────────────────────────────────────────── */}
       {activeTab === 'operation' && (
-        <>
-          {loading ? <div className="flex justify-center py-12"><Spinner /></div>
-            : orders.length === 0 ? emptyUi('Cambia la fecha o filtros')
-            : (
-              <div className="space-y-3">
+        loading ? loadingList
+          : orders.length === 0 ? (
+            <EmptyState
+              icon="orders"
+              title="Sin pedidos"
+              description={statusFilter ? 'No hay pedidos con este estado en la fecha elegida.' : isToday ? 'Los pedidos cobrados en el punto de venta aparecen aquí al instante.' : 'No hubo pedidos en la fecha elegida.'}
+              action={isToday && !statusFilter ? <Button onClick={() => navigate('/pos')}>Ir al punto de venta</Button> : undefined}
+            />
+          ) : (
+            <>
+              <div className="grid gap-3 xl:grid-cols-2">
                 {orders.map((order) => (
                   <OrderCard
                     key={order.id}
@@ -265,53 +236,35 @@ export function OrdersPage() {
                     onAddItems={setAddingItemsOrder}
                   />
                 ))}
-                {hasMore && (
-                  <div className="flex justify-center pt-2 pb-4">
-                    <button
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-line bg-surface-2 text-sm font-semibold text-gray-600 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loadingMore ? (
-                        <>
-                          <Spinner size="sm" color="muted" />
-                          Cargando...
-                        </>
-                      ) : (
-                        <>
-                          Cargar más
-                          <span className="text-xs font-normal text-gray-400">({total - orders.length} restantes)</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
               </div>
-            )
-          }
-        </>
+              {hasMore && loadMoreButton(loadMore, loadingMore, total - orders.length)}
+            </>
+          )
       )}
 
-      {/* ── Tab: Historial ───────────────────────────────────────────────────── */}
       {activeTab === 'history' && (
-        <>
-          {historyLoading ? <div className="flex justify-center py-12"><Spinner /></div>
-            : historyOrders.length === 0 ? emptyUi(
-                debouncedQ
-                  ? `Sin resultados para "${debouncedQ}"`
-                  : 'Ajusta el rango de fechas o filtros'
-              )
-            : (
+        historyLoading ? loadingList
+          : historyOrders.length === 0 ? (
+            <EmptyState
+              icon="search"
+              title="Sin resultados"
+              description={debouncedQ ? `No hay pedidos que coincidan con "${debouncedQ}".` : 'Prueba con otro rango de fechas o de estado.'}
+            />
+          ) : (
+            <>
+              <p className="mb-3 text-label text-soft">
+                {historyTotal === 1 ? '1 pedido' : `${historyTotal} pedidos`}
+                {historyTotal > historyOrders.length ? `, mostrando ${historyOrders.length}` : ''}
+              </p>
               <OrderHistoryTable
                 orders={historyOrders}
-                total={historyTotal}
                 onPayOrder={setPayingOrder}
                 onEdit={setEditingOrder}
                 onStatusChange={handleStatusChange}
               />
-            )
-          }
-        </>
+              {historyHasMore && loadMoreButton(historyLoadMore, historyLoadingMore, historyTotal - historyOrders.length)}
+            </>
+          )
       )}
 
       {/* ── Shared modals ────────────────────────────────────────────────────── */}

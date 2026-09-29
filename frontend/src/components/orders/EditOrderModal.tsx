@@ -5,7 +5,11 @@ import type { CreateCustomerRequest } from '@pos/shared';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import type { IconName } from '../ui/Icon';
+import { Textarea } from '../ui/Input';
 import { CustomerPicker } from '../pos/CustomerPicker';
+import { PAYMENT_METHODS, optionClass } from '../pos/PaymentMethodSection';
+import { orderTypeLabels } from '../../utils/order';
 import { ordersApi } from '../../api/orders.api';
 import { handleApiError } from '../../utils/api-error';
 import toast from 'react-hot-toast';
@@ -19,57 +23,14 @@ interface Props {
 
 type CustomerPayload = { customerId?: string; createCustomer?: CreateCustomerRequest } | null;
 
-/* ─── Static data ───────────────────────────────────────────────────────── */
-
-const ORDER_TYPES = [
-  {
-    value: OrderType.DINE_IN,
-    label: 'Local',
-    icon: <Icon name="card" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
-    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
-  },
-  {
-    value: OrderType.TAKEOUT,
-    label: 'Para Llevar',
-    icon: <Icon name="bag" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
-    active: 'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
-  },
-  {
-    value: OrderType.DELIVERY,
-    label: 'Delivery',
-    icon: <Icon name="map" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
-    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
-  },
+const ORDER_TYPES: { value: OrderType; icon: IconName }[] = [
+  { value: OrderType.DINE_IN,  icon: 'card' },
+  { value: OrderType.TAKEOUT,  icon: 'bag' },
+  { value: OrderType.DELIVERY, icon: 'map' },
 ];
 
-const PAYMENT_METHODS = [
-  {
-    value: PaymentMethod.CASH,
-    label: 'Efectivo',
-    icon: <Icon name="cash" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
-    active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
-  },
-  {
-    value: PaymentMethod.QR,
-    label: 'QR',
-    icon: <Icon name="qr" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
-    active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
-  },
-  {
-    value: PaymentMethod.TRANSFER,
-    label: 'Transferencia',
-    icon: <Icon name="card" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
-    active: 'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
-  },
-];
-
-/* ─── Component ─────────────────────────────────────────────────────────── */
+/** Cortesía no se ofrece al editar: cambiaría el total cobrado. */
+const EDITABLE_METHODS = PAYMENT_METHODS.filter((m) => m.value !== PaymentMethod.CORTESIA);
 
 export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
   const [selectedType,    setSelectedType]    = useState<OrderType>(order.type);
@@ -114,124 +75,102 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
     }
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Editar pedido #${order.orderNumber}`} size="md">
-      <div className="space-y-5">
+  const sectionTitle = 'text-label font-semibold text-soft mb-2';
 
-        {/* Order type */}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Editar pedido #${order.orderNumber}`}
+      size="md"
+      footer={
+        <div className="flex gap-3">
+          <Button variant="secondary" fullWidth onClick={onClose} disabled={loading}>Cancelar</Button>
+          <Button fullWidth onClick={handleSave} loading={loading}>
+            {loading ? 'Guardando' : 'Guardar cambios'}
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Tipo de pedido</p>
-          <div className="grid grid-cols-3 gap-2">
+          <p className={sectionTitle}>Tipo de pedido</p>
+          <div role="radiogroup" aria-label="Tipo de pedido" className="grid grid-cols-3 gap-2">
             {ORDER_TYPES.map((t) => (
               <button
                 key={t.value}
                 type="button"
+                role="radio"
+                aria-checked={selectedType === t.value}
                 onClick={() => setSelectedType(t.value)}
-                className={[
-                  'flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-150',
-                  selectedType === t.value ? t.active : t.idle,
-                ].join(' ')}
+                className={`${optionClass(selectedType === t.value)} min-h-18 py-3 px-2`}
               >
-                {t.icon}
-                <span className="text-xs font-semibold">{t.label}</span>
+                <Icon name={t.icon} size={20} strokeWidth={1.75} />
+                <span className="text-label font-semibold">{orderTypeLabels[t.value]}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Payment method — only for single-payment paid orders */}
+        {/* Solo con un único pago: cambiar el método de un pago dividido no tiene un sentido claro. */}
         {canEditPayment && (
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Método de pago</p>
-            <div className="grid grid-cols-3 gap-2">
-              {PAYMENT_METHODS.map((m) => (
+            <p className={sectionTitle}>Método de pago</p>
+            <div role="radiogroup" aria-label="Método de pago" className="grid grid-cols-3 gap-2">
+              {EDITABLE_METHODS.map((m) => (
                 <button
                   key={m.value}
                   type="button"
+                  role="radio"
+                  aria-checked={selectedMethod === m.value}
                   onClick={() => setSelectedMethod(m.value)}
-                  className={[
-                    'flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-150',
-                    selectedMethod === m.value ? m.active : m.idle,
-                  ].join(' ')}
+                  className={`${optionClass(selectedMethod === m.value)} min-h-18 py-3 px-2`}
                 >
-                  {m.icon}
-                  <span className="text-xs font-semibold">{m.label}</span>
+                  <Icon name={m.icon} size={20} strokeWidth={1.75} />
+                  <span className="text-label font-semibold">{m.label}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Customer */}
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cliente</p>
+          <p className={sectionTitle}>Cliente</p>
 
-          {/* Current customer row */}
           {order.customer && !showPicker && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-2 border border-line">
-              <div className="w-8 h-8 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0">
-                <Icon name="user" size={15} strokeWidth={2} className="text-primary-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-400 leading-none mb-0.5">Cliente asignado</p>
-                <p className="text-sm font-semibold text-gray-900 truncate">{order.customer.name}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPicker(true)}
-                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-surface-card border border-line text-gray-600 hover:text-primary-600 hover:border-primary-500/40 transition-colors"
-              >
-                Cambiar
-              </button>
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-control bg-surface-2 border border-line">
+              <span className="w-9 h-9 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0 text-primary-700 dark:text-primary-300">
+                <Icon name="user" size={16} strokeWidth={2} />
+              </span>
+              <p className="flex-1 min-w-0 text-body font-semibold text-main truncate">{order.customer.name}</p>
+              <Button variant="secondary" size="sm" onClick={() => setShowPicker(true)}>Cambiar</Button>
             </div>
           )}
 
-          {/* Picker — visible al agregar o al cambiar */}
           {showPicker && (
             <div className="space-y-2">
               {order.customer && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => { setShowPicker(false); setCustomerValue(null); setPickerKey((k) => k + 1); }}
-                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <Icon name="chevron-left" size={12} strokeWidth={2.5} />
-                  Mantener cliente actual
-                </button>
+                  <Icon name="chevron-left" size={14} strokeWidth={2} />
+                  Mantener a {order.customer.name}
+                </Button>
               )}
               <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
             </div>
           )}
-
-          {/* No customer and picker not open */}
-          {!order.customer && !showPicker && (
-            <p className="text-xs text-gray-400 italic">Sin cliente asignado</p>
-          )}
         </div>
 
-        {/* Notes */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notas</p>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Sin especificaciones especiales..."
-            className="w-full border-2 border-line rounded-2xl px-3 py-2.5 text-sm resize-none
-              bg-surface-card text-gray-700
-              focus:outline-none focus:border-primary-400 transition-colors placeholder-gray-400"
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-1">
-          <Button variant="secondary" fullWidth onClick={onClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button fullWidth onClick={handleSave} disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar cambios'}
-          </Button>
-        </div>
+        <Textarea
+          label="Nota"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Sin especificaciones"
+        />
       </div>
     </Modal>
   );

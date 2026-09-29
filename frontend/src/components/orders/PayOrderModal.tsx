@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { PaymentMethod, OrderType } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { Modal } from '../ui/Modal';
-import { Icon } from '../ui/Icon';
+import { Button } from '../ui/Button';
+import { PaymentMethodSection } from '../pos/PaymentMethodSection';
+import { usePaymentSelection } from '../pos/usePaymentSelection';
+import { orderTypeLabels } from '../../utils/order';
 import { ordersApi } from '../../api/orders.api';
 import { handleApiError } from '../../utils/api-error';
 
@@ -14,101 +16,27 @@ interface Props {
   allowCortesia?: boolean;
 }
 
-type PaymentEntry = { method: PaymentMethod; amount: number };
-
-/* ─── Datos estáticos ────────────────────────────────────────────────────── */
-
-const ORDER_TYPE_LABEL: Record<OrderType, string> = {
-  [OrderType.DINE_IN]:  'Local',
-  [OrderType.TAKEOUT]:  'Para Llevar',
-  [OrderType.DELIVERY]: 'Delivery',
-};
-
-const ALL_PAYMENT_METHODS = [
-  {
-    value: PaymentMethod.CASH,
-    label: 'Efectivo',
-    cortesiaOnly: false,
-    icon: <Icon name="cash" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
-    active:      'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
-    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10',
-    splitActive: 'border-2 border-emerald-500/60 bg-emerald-500/18 text-emerald-600',
-  },
-  {
-    value: PaymentMethod.QR,
-    label: 'QR',
-    cortesiaOnly: false,
-    icon: <Icon name="qr" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
-    active:      'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
-    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10',
-    splitActive: 'border-2 border-primary-500/60 bg-primary-500/18 text-primary-600',
-  },
-  {
-    value: PaymentMethod.TRANSFER,
-    label: 'Transferencia',
-    cortesiaOnly: false,
-    icon: <Icon name="card" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
-    active:      'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
-    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10',
-    splitActive: 'border-2 border-violet-500/60 bg-violet-500/18 text-violet-600',
-  },
-  {
-    value: PaymentMethod.CORTESIA,
-    label: 'Cortesía',
-    cortesiaOnly: true,
-    icon: <Icon name="gift" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
-    active:      'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
-    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10',
-    splitActive: 'border-2 border-amber-500/60 bg-amber-500/18 text-amber-600',
-  },
-];
-
-/* ─── Componente ─────────────────────────────────────────────────────────── */
-
+/** Cobro de un pedido que quedó pendiente. Usa las mismas piezas de pago que el POS. */
 export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = false }: Props) {
-  const total = order.total;
+  const total = Number(order.total);
+  const payment = usePaymentSelection(total);
+  const [loading, setLoading] = useState(false);
 
-  const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter((m) => !m.cortesiaOnly || allowCortesia);
-  const SPLIT_METHODS = PAYMENT_METHODS.filter((m) => m.value !== PaymentMethod.CORTESIA);
+  const canConfirm = payment.done && !loading;
+  const missing = payment.done ? null : payment.splitMode ? 'Completa el pago dividido' : 'Elige el método de pago';
+  const units = order.items.reduce((n, i) => n + i.quantity, 0);
 
-  const methodMap = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.value, m]));
+  const handleClose = () => { payment.reset(); onClose(); };
 
-  const [loading, setLoading]               = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const [splitMode, setSplitMode]           = useState(false);
-  const [splitPayments, setSplitPayments]   = useState<PaymentEntry[]>([]);
-  const [splitMethod, setSplitMethod]       = useState<PaymentMethod | null>(null);
-  const [splitAmount, setSplitAmount]       = useState('');
-
-  const assigned      = Math.round(splitPayments.reduce((s, p) => s + p.amount, 0) * 100) / 100;
-  const remaining     = Math.round((total - assigned) * 100) / 100;
-  const splitComplete = Math.abs(remaining) <= 0.01;
-
-  const step3Done  = (!splitMode && selectedMethod !== null) || (splitMode && splitComplete);
-  const canConfirm = step3Done && !loading;
-
-  const resetState = () => {
-    setSelectedMethod(null);
-    setSplitMode(false);
-    setSplitPayments([]);
-    setSplitMethod(null);
-    setSplitAmount('');
-  };
-
-  const handleClose = () => { resetState(); onClose(); };
-
-  const submitPayments = async (payments: PaymentEntry[]) => {
+  const handleConfirm = async () => {
+    if (!canConfirm) return;
     setLoading(true);
     try {
       const updated = await ordersApi.registerPayments(
         order.id,
-        payments.map((p) => ({ method: p.method, amount: p.amount })),
+        payment.payments().map((p) => ({ method: p.method, amount: p.amount })),
       );
-      resetState();
+      payment.reset();
       onPaid(updated);
     } catch (err) {
       handleApiError(err, 'Error al registrar cobro');
@@ -117,217 +45,40 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
     }
   };
 
-  const handleConfirm = () => {
-    if (!canConfirm) return;
-    if (splitMode) {
-      submitPayments(splitPayments);
-    } else if (selectedMethod) {
-      submitPayments([{ method: selectedMethod, amount: total }]);
-    }
-  };
-
-  const handleAddSplit = () => {
-    if (!splitMethod) return;
-    const amount = parseFloat(splitAmount);
-    if (isNaN(amount) || amount <= 0) return;
-    const capped = Math.min(Math.round(amount * 100) / 100, remaining);
-    setSplitPayments((prev) => [...prev, { method: splitMethod, amount: capped }]);
-    setSplitMethod(null);
-    setSplitAmount('');
-  };
-
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Registrar cobro" size="md">
-      <div className="space-y-4">
-
-        {/* ── Resumen del pedido ─────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-2 border border-line">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-            <span className="text-sm font-black text-amber-600">#{order.orderNumber}</span>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={`Cobrar pedido #${order.orderNumber}`}
+      size="md"
+      footer={
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-label font-semibold text-soft">Total</span>
+            <span className="text-display font-bold text-main font-heading">Bs {total.toFixed(2)}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900">
-              {ORDER_TYPE_LABEL[order.type]}
-              {order.customer?.name && (
-                <span className="font-normal text-gray-500">, {order.customer.name}</span>
-              )}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {order.items.length} ítem{order.items.length !== 1 ? 's' : ''}
-              {order.notes && <span>, {order.notes}</span>}
-            </p>
-          </div>
-          <span className="font-heading font-black text-xl text-gray-900 shrink-0">
-            Bs {Number(total).toFixed(2)}
-          </span>
+          <Button variant="success" size="xl" fullWidth onClick={handleConfirm} disabled={!canConfirm} loading={loading}>
+            {loading ? 'Procesando' : missing ?? 'Confirmar cobro'}
+          </Button>
         </div>
-
-        <div className="border-t border-line" />
-
-        {/* ── Método de pago ─────────────────────────────────────────── */}
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
-            Método de pago
+      }
+    >
+      <div className="space-y-5">
+        <div className="rounded-card bg-surface-2 border border-line px-4 py-3">
+          <p className="text-body font-semibold text-main">
+            {orderTypeLabels[order.type]}
+            {order.customer?.name && <span className="font-normal text-soft">, {order.customer.name}</span>}
           </p>
-
-          {!splitMode ? (
-            <>
-              <div className={`grid gap-2.5 ${PAYMENT_METHODS.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                {PAYMENT_METHODS.map((m) => (
-                  <button
-                    key={m.value}
-                    onClick={() => setSelectedMethod(m.value)}
-                    disabled={loading}
-                    className={[
-                      'flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl transition-all duration-150 disabled:opacity-50',
-                      selectedMethod === m.value ? m.active : m.idle,
-                    ].join(' ')}
-                  >
-                    {m.icon}
-                    <span className="text-sm font-semibold">{m.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {selectedMethod !== PaymentMethod.CORTESIA && (
-                <button
-                  onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl
-                    text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-500/10
-                    border-2 border-line hover:border-primary-400/50 transition-all"
-                >
-                  <Icon name="plus" size={14} strokeWidth={2} />
-                  Dividir pago entre varios métodos
-                </button>
-              )}
-            </>
-          ) : (
-            /* ── Split mode ── */
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dividir pago</span>
-                <button
-                  onClick={() => { setSplitMode(false); setSplitPayments([]); setSplitMethod(null); setSplitAmount(''); }}
-                  className="text-xs text-gray-400 hover:text-primary-600 transition-colors flex items-center gap-1"
-                >
-                  <Icon name="chevron-left" size={12} strokeWidth={2} />
-                  Pago simple
-                </button>
-              </div>
-
-              <div>
-                <div className="h-2.5 bg-surface-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min((assigned / total) * 100, 100)}%`,
-                      background: splitComplete ? 'oklch(0.55 0.18 145)' : 'oklch(0.75 0.15 85)',
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1.5 text-xs">
-                  <span className="text-gray-400">
-                    Asignado <span className="font-semibold text-gray-700">Bs {assigned.toFixed(2)}</span>
-                  </span>
-                  <span className={splitComplete ? 'text-emerald-600 font-bold' : 'text-amber-600 font-semibold'}>
-                    {splitComplete ? '¡Completo!' : `Restante Bs ${remaining.toFixed(2)}`}
-                  </span>
-                </div>
-              </div>
-
-              {splitPayments.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {splitPayments.map((p, i) => {
-                    const m = methodMap[p.method];
-                    return (
-                      <div key={i} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-surface-2 border border-line text-sm">
-                        <span className="font-semibold text-gray-800">{m?.label ?? p.method}</span>
-                        <span className="text-gray-500">Bs {p.amount.toFixed(2)}</span>
-                        <button
-                          onClick={() => setSplitPayments((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="w-4 h-4 rounded-full bg-line hover:bg-red-400 flex items-center justify-center text-gray-500 hover:text-white transition-colors ml-0.5"
-                          aria-label="Quitar"
-                        >
-                          <Icon name="x" size={10} strokeWidth={3} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {!splitComplete && (
-                <div className="space-y-2.5">
-                  <div className="grid grid-cols-3 gap-2">
-                    {SPLIT_METHODS.map((m) => (
-                      <button
-                        key={m.value}
-                        onClick={() => setSplitMethod(m.value)}
-                        className={[
-                          'py-2.5 rounded-xl text-sm font-semibold transition-all',
-                          splitMethod === m.value ? m.splitActive : m.splitIdle,
-                        ].join(' ')}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">Bs</span>
-                      <input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={splitAmount}
-                        onChange={(e) => setSplitAmount(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddSplit()}
-                        placeholder={remaining.toFixed(2)}
-                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-line rounded-xl bg-surface-card text-gray-700
-                          focus:outline-none focus:border-primary-400 transition-[border-color]"
-                      />
-                    </div>
-                    <button
-                      onClick={handleAddSplit}
-                      disabled={!splitMethod || !splitAmount || parseFloat(splitAmount) <= 0}
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold bg-primary-600 text-white
-                        hover:bg-primary-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      + Agregar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <p className="text-label text-soft mt-0.5">
+            {units} producto{units !== 1 ? 's' : ''}: {order.items.map((i) => `${i.quantity} ${i.productName}`).join(', ')}
+          </p>
+          {order.notes && <p className="text-label text-soft mt-1">Nota: {order.notes}</p>}
         </div>
 
-        {/* ── Footer: confirmar ──────────────────────────────────────── */}
-        <div className="border-t border-line pt-4 space-y-2.5">
-          {!canConfirm && (
-            <p className="text-[11px] px-1 text-gray-400">
-              Selecciona un método de pago para continuar
-            </p>
-          )}
-
-          <button
-            onClick={handleConfirm}
-            disabled={!canConfirm}
-            className={[
-              'w-full py-4 rounded-2xl text-base font-bold transition-all duration-200',
-              canConfirm
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_oklch(0.55_0.18_145/0.30)] active:scale-[0.98]'
-                : 'bg-surface-2 text-gray-400 cursor-not-allowed',
-            ].join(' ')}
-          >
-            {loading
-              ? 'Procesando…'
-              : canConfirm
-                ? `Confirmar cobro de Bs ${Number(total).toFixed(2)}`
-                : 'Confirmar cobro'}
-          </button>
-        </div>
-
+        <section>
+          <h3 className="text-body font-semibold text-main mb-3">Método de pago</h3>
+          <PaymentMethodSection selection={payment} allowCortesia={allowCortesia} />
+        </section>
       </div>
     </Modal>
   );

@@ -1,9 +1,9 @@
 import type { OrderDto } from '@pos/shared';
-import { OrderType } from '@pos/shared';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { printReceipt } from '../../utils/print';
+import { orderTypeLabels } from '../../utils/order';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
 
 interface Props {
@@ -12,12 +12,6 @@ interface Props {
   order: OrderDto;
   title?: string;
 }
-
-const ORDER_TYPE_LABEL: Record<OrderType, string> = {
-  [OrderType.DINE_IN]: 'Local',
-  [OrderType.TAKEOUT]: 'Para llevar',
-  [OrderType.DELIVERY]: 'Delivery',
-};
 
 /** Confirmación tras cobrar (o registrar un pago). La acción principal es seguir vendiendo. */
 export function OrderSuccessModal({ isOpen, onClose, order, title = 'Pedido creado' }: Props) {
@@ -50,7 +44,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = 'Pedido crea
         </div>
 
         <p className="text-label text-soft">
-          Pedido <span className="font-semibold text-main">#{order.orderNumber}</span>, {ORDER_TYPE_LABEL[order.type]}
+          Pedido <span className="font-semibold text-main">#{order.orderNumber}</span>, {orderTypeLabels[order.type]}
         </p>
         <p className="text-display font-bold text-main font-heading mt-1">
           Bs {Number(order.total).toFixed(2)}
