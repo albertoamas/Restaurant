@@ -48,7 +48,14 @@ backend/src/modules/<name>/
 3. **Tenant isolation is not optional.** Every use case takes `tenantId` and every repository
    query filters by it. Controllers get it from `@CurrentTenant()`; the full JWT payload comes
    from `@CurrentUser()` (`common/decorators/tenant.decorator.ts`).
-   CASHIER has `branchId` in the JWT; OWNER has `branchId: null` and sends it in body/query.
+   CASHIER gets its `branchId` from the JWT user (`JwtStrategy` resolves it from the DB, not the
+   token payload); OWNER has `branchId: null` and sends it in body/query.
+
+3b. **Validate the branch before writing branch data.** Any use case that writes under a
+   `branchId` calls `BranchAccessService` (`modules/branch/application/services/`) first:
+   `assertUsable(branchId, tenantId)` (exists, same tenant, active — create order/expense, open
+   cash, assign cashier) or `assertBelongsToTenant` (closing cash must still work on a branch
+   being deactivated). An unvalidated id orphans the rows: they show up in no report.
 
 4. **Error messages in Spanish**, thrown as Nest exceptions — they reach the UI verbatim through
    `HttpExceptionFilter`:
