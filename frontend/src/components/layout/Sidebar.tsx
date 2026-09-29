@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../store/settings.store';
 import { useBranchSelector } from '../../hooks/useBranchSelector';
 import { BranchSelector } from './BranchSelector';
 import { Icon } from '../ui/Icon';
+import { InstallAppMenuItem } from '../pwa/InstallAppMenuItem';
 
 const cashNavItem        = { to: '/cash',        label: 'Caja',         icon: <Icon name="cash"     /> };
 const rafflesNavItem     = { to: '/raffles',     label: 'Sorteos',      icon: <Icon name="ticket"   /> };
@@ -213,6 +214,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
             <div
               className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl animate-slide-down"
             >
+              <InstallAppMenuItem onSelect={() => setUserMenuOpen(false)} />
               <button
                 onClick={() => { setUserMenuOpen(false); navigate('/account'); }}
                 className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"

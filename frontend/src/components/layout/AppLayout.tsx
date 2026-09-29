@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { BranchSelector } from './BranchSelector';
 import { Header } from './Header';
 import { Icon } from '../ui/Icon';
+import { InstallAppMenuItem } from '../pwa/InstallAppMenuItem';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 import { useSocketEvent } from '../../context/socket.context';
@@ -238,6 +239,7 @@ export function AppLayout() {
               <div
                 className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl animate-slide-down"
               >
+                <InstallAppMenuItem onSelect={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); }} />
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); navigate('/account'); }}
                   className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
