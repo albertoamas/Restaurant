@@ -352,6 +352,12 @@
   border: 1px solid var(--border-subtle);
 }
 
+/* Desplazamiento horizontal sin barra visible (filas de chips en táctil). */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 /* Stagger delays for list animations */
 @utility stagger-1 { animation-delay: 60ms;  }
 @utility stagger-2 { animation-delay: 120ms; }

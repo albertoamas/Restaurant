@@ -6,32 +6,23 @@ interface Props {
   onSelect: (id: string | null) => void;
 }
 
+/** Filtro de categorías del catálogo: una fila de chips que se desplaza en horizontal. */
 export function CategoryTabs({ categories, selected, onSelect }: Props) {
-  const activeClass = 'bg-primary-600 text-white border border-primary-600';
-
-  const inactiveClass = [
-    'bg-surface-2 text-gray-500 border border-line',
-    'hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8',
+  const chip = (active: boolean) => [
+    'shrink-0 min-h-10 px-4 rounded-full text-label font-semibold whitespace-nowrap border transition-colors duration-150',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
+    active
+      ? 'bg-primary-600 border-primary-600 text-white'
+      : 'bg-surface-card border-line text-soft hover:text-main hover:border-line-strong',
   ].join(' ');
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      <button
-        onClick={() => onSelect(null)}
-        className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 ${
-          selected === null ? activeClass : inactiveClass
-        }`}
-      >
+    <div role="toolbar" aria-label="Categorías" className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5">
+      <button onClick={() => onSelect(null)} aria-pressed={selected === null} className={chip(selected === null)}>
         Todos
       </button>
       {categories.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-150 ${
-            selected === cat.id ? activeClass : inactiveClass
-          }`}
-        >
+        <button key={cat.id} onClick={() => onSelect(cat.id)} aria-pressed={selected === cat.id} className={chip(selected === cat.id)}>
           {cat.name}
         </button>
       ))}

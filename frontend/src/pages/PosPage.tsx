@@ -12,20 +12,21 @@ import { useCashSessionStore } from '../store/cashSession.store';
 import { CategoryTabs } from '../components/pos/CategoryTabs';
 import { Icon } from '../components/ui/Icon';
 import { ProductGrid } from '../components/pos/ProductGrid';
-import { OrderPanel } from '../components/pos/OrderPanel';
+import { OrderPanel, OrderLines, OrderNote, OrderToolbar, OrderTotal, itemsLabel } from '../components/pos/OrderPanel';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { PaymentModal } from '../components/pos/PaymentModal';
 import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { printKitchenTicket } from '../utils/print';
 import { useSettingsStore } from '../store/settings.store';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-import { useBranches } from '../hooks/useBranches';
 
 export function PosPage() {
   const queryClient = useQueryClient();
   const { categories } = useCategories();
   const { products } = useProducts();
-  const { branches } = useBranches();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -34,6 +35,9 @@ export function PosPage() {
   const [lastOrder, setLastOrder] = useState<OrderDto | null>(null);
 
   const { items, notes, addItem, getTotal, getItemCount, clear } = useCartStore();
+  const itemCount = getItemCount();
+  // Unidades por producto, para mostrarlas en su tarjeta del catálogo.
+  const quantities = Object.fromEntries(items.map((i) => [i.productId, i.quantity]));
   const { currentBranchId, user } = useAuth();
   const { autoPrintKitchen, cashEnabled, showProductImages } = useSettingsStore();
   const { isOpen: isCashOpen } = useCashSessionStore();
@@ -42,8 +46,6 @@ export function PosPage() {
     queryClient.invalidateQueries({ queryKey: ['orders'] });
     queryClient.invalidateQueries({ queryKey: ['kitchenOrders'] });
   };
-
-  const currentBranch = branches.find((b) => b.id === currentBranchId);
 
   const filteredProducts = products.filter((p) => {
     const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
@@ -62,6 +64,7 @@ export function PosPage() {
       toast.error('Selecciona una sucursal antes de crear un pedido');
       return;
     }
+    setShowCart(false);
     setShowPayment(true);
   };
 
@@ -93,118 +96,89 @@ export function PosPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
-      {/* Left: Products */}
-      <div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
-        <div className="mb-3 rounded-2xl border border-line shadow-card-lg p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-            <div>
-              <h2 className="font-heading text-lg sm:text-xl font-black text-gray-900 leading-tight">Punto de Venta</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Selecciona productos y cobra en segundos.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-xs font-semibold text-primary-600">
-                {filteredProducts.length} productos
-              </span>
-              {currentBranch && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/12 border border-emerald-500/25 text-xs font-semibold text-emerald-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                  {currentBranch.name}
-                </span>
-              )}
-            </div>
-          </div>
-
+    <div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden">
+      {/* Catálogo */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Barra: buscador y categorías. Sin título ni tarjeta: el espacio es para productos. */}
+        <div className="shrink-0 px-3 sm:px-5 pt-3 sm:pt-4 pb-3 space-y-3 border-b border-line">
           {user?.role === 'OWNER' && !currentBranchId && (
-            <div className="mb-3 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
-              <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-amber-600" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                Estás viendo <strong>todas las sucursales</strong>. Elegí una en el menú lateral para poder cobrar.
+            <div role="alert" className="flex items-start gap-2.5 rounded-card border border-amber-500/40 bg-amber-500/12 px-4 py-3">
+              <Icon name="warning" size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
+              <p className="text-label text-amber-900 dark:text-amber-200">
+                Estás viendo <strong>todas las sucursales</strong>. Elige una en el menú para poder cobrar.
               </p>
             </div>
           )}
-
-          <div className="relative">
-            <Icon
-              name="search"
-              size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 text-sm border border-line rounded-2xl bg-surface-2 text-gray-700 placeholder:text-gray-400
-                focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
-                transition-[border-color,box-shadow] duration-150"
-            />
-            {search && (
+          <Input
+            aria-label="Buscar producto"
+            placeholder="Buscar producto"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftAddon={<Icon name="search" size={18} />}
+            rightAddon={search ? (
               <button
+                type="button"
                 onClick={() => setSearch('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 aria-label="Limpiar búsqueda"
+                className="w-8 h-8 -mr-1.5 flex items-center justify-center rounded-full text-muted hover:text-main hover:bg-surface-2 transition-colors"
               >
                 <Icon name="x" size={16} />
               </button>
-            )}
-          </div>
+            ) : undefined}
+          />
+          <CategoryTabs
+            categories={categories}
+            selected={selectedCategory}
+            onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
+          />
         </div>
 
-        <CategoryTabs
-          categories={categories}
-          selected={selectedCategory}
-          onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
-        />
-        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-line p-2 shadow-card-md" style={{ background: 'var(--color-surface-2)' }}>
-          <ProductGrid products={filteredProducts} onSelect={handleProductSelect} showImages={showProductImages} />
+        {/* Con la barra inferior del celular visible, espacio abajo para que no tape productos. */}
+        <div className={`flex-1 overflow-y-auto px-3 sm:px-5 pt-4 ${itemCount > 0 ? 'pb-28 lg:pb-5' : 'pb-5'}`}>
+          <ProductGrid
+            products={filteredProducts}
+            onSelect={handleProductSelect}
+            showImages={showProductImages}
+            categories={categories}
+            quantities={quantities}
+          />
         </div>
       </div>
 
-      {/* Right: Order panel (desktop) */}
-      <div className="hidden lg:block w-80 border-l border-line" style={{ background: 'var(--color-surface-card)' }}>
+      {/* Pedido: panel lateral en escritorio */}
+      <aside aria-label="Pedido" className="hidden lg:block w-[340px] xl:w-[380px] shrink-0 border-l border-line">
         <OrderPanel onCharge={handleCharge} />
-      </div>
+      </aside>
 
-      {/* Mobile: floating cart button */}
-      <div className="lg:hidden fixed bottom-20 right-4 z-30">
-        {getItemCount() > 0 && (
-          <button
-            onClick={() => setShowCart(true)}
-            className={[
-              'bg-primary-600 text-white border border-primary-600',
-              'rounded-2xl px-5 py-3.5 text-sm font-bold',
-              'shadow-[0_3px_12px_oklch(0.60_0.22_42/0.40)]',
-              'flex items-center gap-2.5',
-              'hover:bg-primary-500 transition-colors',
-            ].join(' ')}
-          >
-            <div className="relative">
-              <Icon name="cart" size={20} />
-              <span className="absolute -top-2 -right-2 w-4 h-4 bg-white text-primary-700 text-[10px] font-black rounded-full flex items-center justify-center">
-                {getItemCount()}
-              </span>
+      {/* Celular y tablet vertical: barra fija con el resumen del pedido */}
+      {itemCount > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-line bg-surface-card shadow-overlay px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-caption text-soft">{itemsLabel(itemCount)}</p>
+              <p className="text-heading font-bold text-main font-heading">Bs {getTotal().toFixed(2)}</p>
             </div>
-            Bs {getTotal().toFixed(2)}
-          </button>
-        )}
-      </div>
-
-      {/* Mobile: cart drawer */}
-      {showCart && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-line" style={{ background: 'var(--color-surface-card)' }}>
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1 shrink-0">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
-            </div>
-            <div className="flex-1 min-h-0">
-              <OrderPanel onCharge={handleCharge} onClose={() => setShowCart(false)} />
-            </div>
+            <Button size="lg" onClick={() => setShowCart(true)}>
+              <Icon name="cart" size={18} />
+              Ver pedido
+            </Button>
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={showCart}
+        onClose={() => setShowCart(false)}
+        title="Pedido"
+        variant="drawer"
+        footer={<OrderTotal onCharge={handleCharge} />}
+      >
+        <OrderToolbar />
+        <OrderLines />
+        <div className="pt-3 mt-1 border-t border-line">
+          <OrderNote />
+        </div>
+      </Modal>
 
       <PaymentModal
         isOpen={showPayment}

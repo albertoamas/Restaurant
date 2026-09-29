@@ -329,7 +329,7 @@ export function OrdersPage() {
         <OrderSuccessModal
           isOpen
           order={paidOrder}
-          title="¡Cobro registrado!"
+          title="Cobro registrado"
           onClose={() => setPaidOrder(null)}
         />
       )}
