@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { authApi } from '../api/auth.api';
 import { useSettingsStore, type ServerConfig } from '../store/settings.store';
 import { getToken, setToken, clearToken } from '../utils/token-storage';
@@ -57,6 +58,15 @@ interface AuthContextType {
  */
 export const BRANCH_PINNED_KEY = 'pos_branch_pinned';
 
+/** Reintento de la validación de sesión cuando falla la red o el servidor (no el token). */
+const SESSION_RETRY_MS = 5_000;
+
+/** El servidor rechazó el token (vencido, usuario inactivo): la sesión ya no sirve. */
+function isSessionRejected(err: unknown): boolean {
+  const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+  return status === 401 || status === 403;
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -98,17 +108,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     applyServerConfig(config);
   }, [applyServerConfig]);
 
+  // Validar la sesión guardada. Solo un rechazo del servidor (401/403) la cierra: sin red o con
+  // el backend caído, la sesión sigue siendo válida. Desde que la app es PWA abre sin conexión,
+  // y cerrar sesión ante cualquier error deslogueaba al cajero en cada corte de internet.
   useEffect(() => {
     const stored = getToken();
     if (!stored) { setIsLoading(false); return; }
-    authApi
-      .getMe()
-      .then(applyUser)
-      .catch(() => {
-        clearToken();
-        setTokenState(null);
-      })
-      .finally(() => setIsLoading(false));
+
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const load = () => {
+      authApi
+        .getMe()
+        .then((u) => {
+          if (cancelled) return;
+          applyUser(u);
+          setIsLoading(false);
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          if (isSessionRejected(err)) {
+            clearToken();
+            setTokenState(null);
+            setIsLoading(false);
+            return;
+          }
+          retryTimer = setTimeout(load, SESSION_RETRY_MS);
+        });
+    };
+
+    const retryNow = () => { clearTimeout(retryTimer); load(); };
+
+    load();
+    window.addEventListener('online', retryNow);
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimer);
+      window.removeEventListener('online', retryNow);
+    };
   }, [applyUser]);
 
   const setCurrentBranch = useCallback((id: string | null) => {
