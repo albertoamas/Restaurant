@@ -125,10 +125,10 @@ export function ReportPage() {
   };
 
   const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const pInactive = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
+  const pInactive = 'bg-surface-2 border border-line text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
 
   const dateInputCls = [
-    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
+    'border border-line rounded-xl px-3 py-2 text-sm bg-surface-card text-gray-700',
     'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
   ].join(' ');
 
@@ -147,7 +147,7 @@ export function ReportPage() {
       </div>
 
       {/* ── Tarjeta de cabecera ──────────────────────────────────────── */}
-      <div data-print-hide className="mb-5 rounded-2xl border border-[var(--border-subtle)] shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
+      <div data-print-hide className="mb-5 rounded-2xl border border-line shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div>
             <h2 className="font-heading text-xl font-black text-gray-900 sm:text-2xl">Reporte y Rendimiento</h2>
@@ -163,7 +163,7 @@ export function ReportPage() {
                   onClick={handleExportExcel}
                   disabled={exporting || loading}
                   title="Exportar todo el reporte a Excel"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-emerald-400 hover:bg-emerald-500/8 hover:text-emerald-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-emerald-400 hover:bg-emerald-500/8 hover:text-emerald-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {exporting ? <Spinner size="sm" /> : <Icon name="download" size={14} />}Excel
                 </button>
@@ -171,17 +171,17 @@ export function ReportPage() {
                   onClick={() => window.print()}
                   disabled={loading}
                   title={`Imprimir la sección ${activeLabel}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-primary-400 hover:bg-primary-500/8 hover:text-primary-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-primary-400 hover:bg-primary-500/8 hover:text-primary-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Icon name="print" size={14} />PDF
                 </button>
               </>
             ) : (
               <div className="group relative">
-                <button disabled className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-semibold text-gray-400">
+                <button disabled className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-400">
                   <Icon name="lock" size={14} />Exportar
                 </button>
-                <div className="absolute right-0 top-full z-10 mt-1.5 hidden w-48 rounded-xl border border-[var(--border-subtle)] px-3 py-2.5 text-xs leading-snug text-gray-500 shadow-lg group-hover:block" style={{ background: 'var(--color-surface-card)' }}>
+                <div className="absolute right-0 top-full z-10 mt-1.5 hidden w-48 rounded-xl border border-line px-3 py-2.5 text-xs leading-snug text-gray-500 shadow-lg group-hover:block" style={{ background: 'var(--color-surface-card)' }}>
                   Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
                 </div>
               </div>
@@ -190,7 +190,7 @@ export function ReportPage() {
         </div>
 
         {/* Período */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--border-subtle)] px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 sm:px-5">
           {PERIODS.map((p) => (
             <button
               key={p.key}
@@ -210,7 +210,7 @@ export function ReportPage() {
         </div>
 
         {/* Sub-pestañas */}
-        <div className="flex gap-1 overflow-x-auto border-t border-[var(--border-subtle)] px-4 py-2.5 sm:px-5">
+        <div className="flex gap-1 overflow-x-auto border-t border-line px-4 py-2.5 sm:px-5">
           {visibleTabs.map((t) => (
             <button
               key={t.key}
@@ -218,7 +218,7 @@ export function ReportPage() {
               className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
                 activeTab === t.key
                   ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
-                  : 'text-gray-500 hover:bg-[var(--color-surface-2)] hover:text-gray-700'
+                  : 'text-gray-500 hover:bg-surface-2 hover:text-gray-700'
               }`}
             >
               <Icon name={t.icon} size={14} /> {t.label}

@@ -13,7 +13,7 @@ export function ExpenseConceptsModal({ isOpen, onClose }: { isOpen: boolean; onC
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Administrar" size="2xl">
-      <div className="mb-5 inline-flex w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] p-1 sm:w-auto">
+      <div className="mb-5 inline-flex w-full rounded-xl border border-line bg-surface-2 p-1 sm:w-auto">
         <TabButton active={tab === 'concepts'}   onClick={() => setTab('concepts')}   icon="receipt" label="Gastos" />
         <TabButton active={tab === 'categories'} onClick={() => setTab('categories')} icon="box"     label="Categorías" />
       </div>
@@ -41,7 +41,7 @@ function TabButton({
       onClick={onClick}
       className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold transition sm:flex-none ${
         active
-          ? 'bg-[var(--color-surface-card)] text-gray-900 shadow-card'
+          ? 'bg-surface-card text-gray-900 shadow-card'
           : 'text-gray-400 hover:text-gray-700'
       }`}
     >

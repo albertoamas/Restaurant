@@ -28,7 +28,7 @@ function ConfirmDrawModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative rounded-2xl shadow-2xl border border-[var(--border-subtle)] w-full max-w-sm p-6 space-y-4" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="relative rounded-2xl shadow-2xl border border-line w-full max-w-sm p-6 space-y-4" style={{ background: 'var(--color-surface-card)' }}>
         <h3 className="text-base font-bold text-gray-900">
           Sortear {positionLabel(nextPosition)}
         </h3>
@@ -65,7 +65,7 @@ function DeleteRaffleDialog({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative rounded-2xl shadow-2xl border border-[var(--border-subtle)] w-full max-w-sm p-6 flex flex-col gap-4" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="relative rounded-2xl shadow-2xl border border-line w-full max-w-sm p-6 flex flex-col gap-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
             <Icon name="warning" size={20} strokeWidth={2} className="text-red-600" />
@@ -81,7 +81,7 @@ function DeleteRaffleDialog({
         <div className="flex gap-2 justify-end">
           <button
             onClick={onCancel}
-            className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors"
+            className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-surface-2 transition-colors"
           >
             Cancelar
           </button>
@@ -176,7 +176,7 @@ function RaffleDetailContent({ id }: { id: string }) {
           <div className="space-y-5">
 
             {/* ── Encabezado de la página ──────────────────────────────────── */}
-            <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
+            <div className="rounded-2xl border border-line shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                   <h1 className="text-2xl font-black text-gray-900 font-heading leading-tight">
@@ -217,7 +217,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                     Cada {raffle.spendingThreshold} Bs = 1 ticket
                   </span>
                 ) : raffle.productName ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-[var(--color-surface-2)] px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-surface-2 px-2.5 py-1 rounded-full">
                     <IconPackage className="w-3 h-3 text-gray-400" />
                     {raffle.productName}
                   </span>
@@ -249,7 +249,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
             {/* ── Stats ────────────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
+              <div className="rounded-2xl border border-line shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isDrawable && !isActive ? 'Tickets disponibles' : 'Tickets en ánfora'}
                 </p>
@@ -267,7 +267,7 @@ function RaffleDetailContent({ id }: { id: string }) {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
+              <div className="rounded-2xl border border-line shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
                 <p className="text-[11px] text-gray-400 font-medium mb-1">
                   {isSpending ? 'Clientes' : 'Participantes'}
                 </p>
@@ -278,7 +278,7 @@ function RaffleDetailContent({ id }: { id: string }) {
             </div>
 
             {/* ── Participantes (inline) ────────────────────────────────────── */}
-            <section className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
+            <section className="rounded-2xl border border-line shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
                 {isSpending ? 'Clientes y acumulados' : 'Participantes'}
               </p>
@@ -287,7 +287,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
             {/* ── Acciones ─────────────────────────────────────────────────── */}
             {(isActive || isReopenable || isDrawable || activeWinnersCount > 0) && (
-              <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-5 space-y-3" style={{ background: 'var(--color-surface-card)' }}>
+              <div className="rounded-2xl border border-line shadow-card-xl p-5 space-y-3" style={{ background: 'var(--color-surface-card)' }}>
                 {isDrawable && raffle.nextPositionToDraw !== null && (
                   <Button
                     variant="primary"

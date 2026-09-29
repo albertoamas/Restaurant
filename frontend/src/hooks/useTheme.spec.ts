@@ -13,24 +13,36 @@ describe('useTheme', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('arranca en oscuro y pinta la barra con el fondo oscuro', () => {
+  it('sin tema guardado arranca en claro, el predeterminado', () => {
     renderHook(() => useTheme());
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(themeColor()).toBe(THEME_COLORS.dark);
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect(themeColor()).toBe(THEME_COLORS.light);
   });
 
-  it('al cambiar a claro actualiza data-theme, theme-color y lo recuerda', () => {
+  it('al cambiar a oscuro actualiza data-theme, theme-color y lo recuerda', () => {
     const { result } = renderHook(() => useTheme());
     act(() => result.current.toggle());
 
-    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
-    expect(themeColor()).toBe(THEME_COLORS.light);
-    expect(localStorage.getItem('pos_theme')).toBe('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(themeColor()).toBe(THEME_COLORS.dark);
+    expect(localStorage.getItem('pos_color_theme')).toBe('dark');
   });
 
-  it('respeta el tema guardado', () => {
-    localStorage.setItem('pos_theme', 'light');
+  it('no guarda nada si el usuario no eligió un tema', () => {
     renderHook(() => useTheme());
-    expect(themeColor()).toBe(THEME_COLORS.light);
+    expect(localStorage.getItem('pos_color_theme')).toBeNull();
+  });
+
+  it('ignora y borra el "oscuro" que la versión anterior guardaba por defecto', () => {
+    localStorage.setItem('pos_theme', 'dark');
+    renderHook(() => useTheme());
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect(localStorage.getItem('pos_theme')).toBeNull();
+  });
+
+  it('respeta el tema oscuro elegido', () => {
+    localStorage.setItem('pos_color_theme', 'dark');
+    renderHook(() => useTheme());
+    expect(themeColor()).toBe(THEME_COLORS.dark);
   });
 });

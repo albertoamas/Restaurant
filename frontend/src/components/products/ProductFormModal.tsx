@@ -129,7 +129,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
             value={form.categoryId}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             required
-            className="w-full border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface-card)] text-gray-700
+            className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface-card text-gray-700
               focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
               transition-[border-color,box-shadow]"
           >
@@ -147,7 +147,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
           </label>
 
           {imagePreview ? (
-            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-[var(--border-subtle)]">
+            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-line">
               <img src={imagePreview} alt="Vista previa" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -161,7 +161,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
           ) : (
             <label
               htmlFor="product-image-input"
-              className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-[var(--border-subtle)]
+              className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-line
                 rounded-xl hover:border-primary-400 hover:bg-primary-500/8 transition-colors text-gray-400 hover:text-primary-500 cursor-pointer"
             >
               <Icon name="photo" size={28} strokeWidth={1.5} />
@@ -187,7 +187,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
 
         {/* Delete zone — only shown when editing */}
         {product && (
-          <div className="pt-2 border-t border-[var(--border-subtle)] mt-1">
+          <div className="pt-2 border-t border-line mt-1">
             {!confirmDelete ? (
               <button
                 type="button"
@@ -208,7 +208,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
                     type="button"
                     onClick={() => setConfirmDelete(false)}
                     disabled={deleting}
-                    className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-[var(--border-subtle)] rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
+                    className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-line rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
                   >
                     Cancelar
                   </button>

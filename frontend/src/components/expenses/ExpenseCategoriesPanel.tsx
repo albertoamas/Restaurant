@@ -91,7 +91,7 @@ export function ExpenseCategoriesPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-2.5">
+      <div className="flex gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
         <Icon name="warning" size={15} className="mt-0.5 shrink-0 text-gray-400" />
         <p className="text-xs text-gray-500">
           Las categorías agrupan tus gastos en los reportes y en los filtros.
@@ -99,7 +99,7 @@ export function ExpenseCategoriesPanel() {
         </p>
       </div>
 
-      <form onSubmit={handleCreate} className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] p-4">
+      <form onSubmit={handleCreate} className="rounded-2xl border border-line bg-surface-2 p-4">
         <Field label="Nueva categoría">
           <div className="flex gap-2">
             <input
@@ -117,7 +117,7 @@ export function ExpenseCategoriesPanel() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-xl bg-[var(--color-surface-2)]" />
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-surface-2" />
           ))}
         </div>
       ) : categories.length === 0 ? (
@@ -149,7 +149,7 @@ export function ExpenseCategoriesPanel() {
             ) : (
               <div
                 key={category.id}
-                className="flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5"
                 style={{ background: 'var(--color-surface-card)' }}
               >
                 <div className="min-w-0 flex-1">

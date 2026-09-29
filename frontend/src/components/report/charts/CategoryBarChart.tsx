@@ -40,7 +40,7 @@ export function CategoryBarChart({ data }: Props) {
   return (
     <div>
       {/* Toggle */}
-      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-[var(--color-surface-2)] border border-[var(--border-subtle)] w-fit">
+      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-surface-2 border border-line w-fit">
         {(['quantity', 'revenue'] as View[]).map((v) => (
           <button
             key={v}

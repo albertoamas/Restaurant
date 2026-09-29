@@ -78,7 +78,7 @@ export function ExpenseCalendar({ from, to, byDay, selectedDay, onSelect }: Expe
                   className={`min-h-[72px] rounded-xl border p-2 text-left transition ${
                     active
                       ? 'border-gray-900 ring-2 ring-primary-500/30'
-                      : 'border-[var(--border-subtle)]'
+                      : 'border-line'
                   } ${amount > 0 ? 'hover:-translate-y-0.5 hover:shadow-card-md' : 'cursor-default opacity-60'}`}
                 >
                   <span className={`text-xs font-black ${intensity > 0.55 ? 'text-white' : 'text-gray-600'}`}>

@@ -10,7 +10,7 @@ export function CategoryTabs({ categories, selected, onSelect }: Props) {
   const activeClass = 'bg-primary-600 text-white border border-primary-600';
 
   const inactiveClass = [
-    'bg-[var(--color-surface-2)] text-gray-500 border border-[var(--border-subtle)]',
+    'bg-surface-2 text-gray-500 border border-line',
     'hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8',
   ].join(' ');
 

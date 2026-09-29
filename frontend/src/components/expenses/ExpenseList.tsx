@@ -21,7 +21,7 @@ export function ExpenseList({
 }: ExpenseListProps) {
   return (
     <div>
-      <div className={`hidden border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-5 py-2.5 sm:grid ${ROW_GRID}`}>
+      <div className={`hidden border-b border-line bg-surface-2 px-5 py-2.5 sm:grid ${ROW_GRID}`}>
         <Th>Fecha</Th>
         <Th>Detalle</Th>
         <Th align="right">Total</Th>
@@ -81,8 +81,8 @@ function ExpenseRow({
 
   return (
     <div
-      className={`group grid items-start border-t border-[var(--border-subtle)] px-3 py-3 transition-colors first:border-t-0 sm:px-5 sm:py-3.5 ${ROW_GRID} ${
-        isDeleting ? 'bg-[var(--color-surface-2)]' : 'hover:bg-[var(--color-surface-2)]'
+      className={`group grid items-start border-t border-line px-3 py-3 transition-colors first:border-t-0 sm:px-5 sm:py-3.5 ${ROW_GRID} ${
+        isDeleting ? 'bg-surface-2' : 'hover:bg-surface-2'
       }`}
     >
       <div className="flex flex-col pt-0.5">
@@ -157,7 +157,7 @@ function ExpenseRow({
           <button
             onClick={onCancelDelete}
             title="Cancelar"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-[var(--color-surface-3)] hover:text-gray-700"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-gray-700"
           >
             <Icon name="x" size={14} strokeWidth={2.5} />
           </button>
@@ -167,14 +167,14 @@ function ExpenseRow({
           <button
             onClick={onEdit}
             title="Editar gasto"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-[var(--color-surface-3)] hover:text-primary-600"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-primary-600"
           >
             <Icon name="edit" size={15} />
           </button>
           <button
             onClick={onConfirmDelete}
             title="Anular gasto"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-[var(--color-surface-3)] hover:text-red-600"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-red-600"
           >
             <Icon name="trash" size={15} />
           </button>

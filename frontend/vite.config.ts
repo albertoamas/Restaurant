@@ -42,8 +42,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        // Fondo de la pantalla de arranque: el del tema por defecto (oscuro).
-        background_color: THEME_COLORS.dark,
+        // Fondo de la pantalla de arranque: el del tema predeterminado (claro).
+        background_color: THEME_COLORS.light,
         theme_color: BRAND_COLOR,
         categories: ['business', 'food', 'productivity'],
         icons: [

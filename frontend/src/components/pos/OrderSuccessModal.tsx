@@ -38,7 +38,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
         {/* Botón X */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-2 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Cerrar"
         >
           <Icon name="x" size={16} strokeWidth={2} />
@@ -101,7 +101,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = '¡Pedido Cr
               variant="ghost"
               fullWidth
               onClick={handlePrintReceipt}
-              className="border border-[var(--border-subtle)]"
+              className="border border-line"
             >
               Imprimir recibo
             </Button>

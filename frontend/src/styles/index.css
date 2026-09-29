@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* `dark:` sigue al tema elegido en la app, no al del sistema operativo. */
@@ -36,58 +35,55 @@
   --_shadow-lg:     0 4px 18px oklch(0.30 0.008 44 / 0.11);
   --_shadow-md:     0 2px 12px oklch(0.35 0.008 44 / 0.08);
   /* Cash open session */
-  --cash-open-bg:          oklch(0.82 0.13 148);
-  --cash-open-border:      oklch(0.62 0.18 148);
-  --cash-open-text:        oklch(0.20 0.09 148);
-  --cash-open-text-soft:   oklch(0.32 0.08 148);
+  --cash-open-bg:          oklch(0.955 0.035 150);
+  --cash-open-border:      oklch(0.80  0.09  150);
+  --cash-open-text:        oklch(0.30  0.08  150);
+  --cash-open-text-soft:   oklch(0.42  0.07  150);
   /* Skeleton shimmer */
   --shimmer-from: oklch(0.92 0.006 46);
   --shimmer-to:   oklch(0.96 0.004 48);
 }
 
 [data-theme="dark"] {
-  --surface-page:       oklch(0.10  0.012 38);
-  --surface-card:       oklch(0.145 0.016 40);
-  --surface-2:          oklch(0.17  0.016 40);
-  --surface-3:          oklch(0.20  0.018 40);
-  --surface-card-hover: oklch(0.18  0.016 40);
-  --surface-sidebar:    oklch(0.09  0.012 38);
-  --surface-overlay:    oklch(0.06  0.010 38);
-  --text-main:          oklch(0.93  0.010 52);
-  --text-soft:          oklch(0.70  0.012 50);
-  --text-muted:         oklch(0.60  0.008 48);  /* ≥ 4.5:1 sobre page, card y surface-2 */
-  --border-subtle:      oklch(0.23  0.014 40);
-  --border-strong:      oklch(0.32  0.014 40);
-  --scrollbar-thumb:       oklch(0.28 0.016 40);
-  --scrollbar-thumb-hover: oklch(0.40 0.020 42);
-  --aurora-opacity: 1;
-  --shadow-card:    0 1px 3px   oklch(0.06 0.010 38 / 0.50);
-  --_shadow-xl:     0 10px 30px oklch(0.06 0.010 38 / 0.60);
-  --_shadow-lg:     0 8px 24px  oklch(0.06 0.010 38 / 0.55);
-  --_shadow-md:     0 6px 20px  oklch(0.06 0.010 38 / 0.45);
-  --shimmer-from: oklch(0.17 0.012 40);
-  --shimmer-to:   oklch(0.24 0.016 42);
+  /* Grafito cálido: cada capa se distingue de la anterior (antes: casi negro y plano). */
+  --surface-page:       oklch(0.205 0.009 50);  /* #1B1614 */
+  --surface-card:       oklch(0.245 0.010 50);  /* #251F1C */
+  --surface-2:          oklch(0.275 0.010 50);
+  --surface-3:          oklch(0.31  0.011 50);
+  --surface-card-hover: oklch(0.265 0.010 50);
+  --surface-sidebar:    oklch(0.19  0.009 50);
+  --surface-overlay:    oklch(0.10  0.008 50);
+  --text-main:          oklch(0.95  0.008 60);
+  --text-soft:          oklch(0.78  0.010 55);
+  --text-muted:         oklch(0.68  0.008 50);  /* ≥ 4.5:1 sobre todas las superficies */
+  --border-subtle:      oklch(0.34  0.011 50);
+  --border-strong:      oklch(0.43  0.011 50);
+  --scrollbar-thumb:       oklch(0.36 0.012 50);
+  --scrollbar-thumb-hover: oklch(0.46 0.014 50);
+  --aurora-opacity: 0;
+  --shadow-card:    0 1px 3px   oklch(0.08 0.008 50 / 0.45);
+  --_shadow-xl:     0 12px 32px oklch(0.08 0.008 50 / 0.55);
+  --_shadow-lg:     0 8px 24px  oklch(0.08 0.008 50 / 0.45);
+  --_shadow-md:     0 4px 14px  oklch(0.08 0.008 50 / 0.35);
+  --shimmer-from: oklch(0.275 0.010 50);
+  --shimmer-to:   oklch(0.32  0.012 50);
   /* Cash open session */
-  --cash-open-bg:          oklch(0.26 0.08 148);
-  --cash-open-border:      oklch(0.40 0.11 148);
-  --cash-open-text:        oklch(0.88 0.10 148);
-  --cash-open-text-soft:   oklch(0.72 0.12 148);
+  --cash-open-bg:          oklch(0.30 0.06 150);
+  --cash-open-border:      oklch(0.45 0.10 150);
+  --cash-open-text:        oklch(0.90 0.08 150);
+  --cash-open-text-soft:   oklch(0.78 0.09 150);
 
   /* Gray scale — inverted for dark mode (gray-50 = darkest, gray-900 = lightest) */
-  --color-gray-50:  oklch(0.12 0.008 38);
-  --color-gray-100: oklch(0.17 0.010 40);
-  --color-gray-200: oklch(0.23 0.012 40);
-  --color-gray-300: oklch(0.31 0.010 42);
-  --color-gray-400: oklch(0.60 0.008 46);   /* texto secundario: ≥ 4.5:1 */
-  --color-gray-500: oklch(0.66 0.008 46);
-  --color-gray-600: oklch(0.72 0.010 48);
-  --color-gray-700: oklch(0.80 0.010 50);
-  --color-gray-800: oklch(0.87 0.010 52);
-  --color-gray-900: oklch(0.94 0.010 52);
-
-  /* Primary: en oscuro el 600/700 pueden ser más claros (van sobre fondo oscuro). */
-  --color-primary-600: oklch(0.60 0.22  40);
-  --color-primary-700: oklch(0.50 0.20  38);
+  --color-gray-50:  oklch(0.225 0.009 50);
+  --color-gray-100: oklch(0.26  0.010 50);
+  --color-gray-200: oklch(0.31  0.011 50);
+  --color-gray-300: oklch(0.38  0.011 48);
+  --color-gray-400: oklch(0.68  0.008 46);   /* texto secundario: ≥ 4.5:1 */
+  --color-gray-500: oklch(0.72  0.008 46);
+  --color-gray-600: oklch(0.77  0.010 48);
+  --color-gray-700: oklch(0.84  0.010 50);
+  --color-gray-800: oklch(0.90  0.010 52);
+  --color-gray-900: oklch(0.95  0.008 55);
 
   /* Colores de estado — afinados para fondo oscuro. En tema claro rige la paleta estándar de
      Tailwind (texto oscuro sobre fondo claro): definirlos en @theme rompía el tema claro. */
@@ -160,9 +156,38 @@
 
 /* ─── Design Tokens ──────────────────────────────────────── */
 @theme {
-  /* Fonts */
-  --font-sans:    'Outfit', sans-serif;
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  /* Tipografía: una sola familia, Onest (self-hosted, ver main.tsx). `font-heading` se
+     mantiene como nombre de rol para los títulos. */
+  --font-sans:    'Onest Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Onest Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala tipográfica — tamaños con nombre de rol (`text-title`, `text-body`…). */
+  --text-caption:               0.75rem;    /* 12 · notas, metadatos */
+  --text-caption--line-height:  1rem;
+  --text-label:                 0.8125rem;  /* 13 · etiquetas de campo, chips */
+  --text-label--line-height:    1.125rem;
+  --text-body:                  0.9375rem;  /* 15 · texto base (legible en tablet) */
+  --text-body--line-height:     1.375rem;
+  --text-heading:               1.125rem;   /* 18 · título de sección / tarjeta / modal */
+  --text-heading--line-height:  1.5rem;
+  --text-title:                 1.5rem;     /* 24 · título de pantalla */
+  --text-title--line-height:    1.875rem;
+  --text-display:               2.25rem;    /* 36 · montos protagonistas (total, caja) */
+  --text-display--line-height:  2.5rem;
+
+  /* Radios — uno por nivel de jerarquía (`rounded-control`, `rounded-card`, `rounded-dialog`). */
+  --radius-control: 0.625rem;  /* 10 · botones, campos, chips */
+  --radius-card:    0.875rem;  /* 14 · tarjetas, paneles, menús */
+  --radius-dialog:  1.125rem;  /* 18 · modales y hojas */
+
+  /* Bordes como color de Tailwind: `border-line`, `divide-line`, `border-line-strong`. */
+  --color-line:        var(--border-subtle);
+  --color-line-strong: var(--border-strong);
+
+  /* Texto como color de Tailwind: `text-main`, `text-soft`, `text-muted` (admiten opacidad). */
+  --color-main:  var(--text-main);
+  --color-soft:  var(--text-soft);
+  --color-muted: var(--text-muted);
 
   /* Primary — orange vivid */
   --color-primary-50:  oklch(0.15 0.04  42);
@@ -196,6 +221,10 @@
   --shadow-card-xl: var(--_shadow-xl);
   --shadow-card-lg: var(--_shadow-lg);
   --shadow-card-md: var(--_shadow-md);
+  /* Elevación por rol: tarjeta en reposo, elemento flotante (menú), superposición (modal). */
+  --shadow-raised:   var(--_shadow-md);
+  --shadow-floating: var(--_shadow-lg);
+  --shadow-overlay:  var(--_shadow-xl);
 
   /* Surfaces — var() references so Tailwind utilities update with theme */
   --color-surface-page:       var(--surface-page);
@@ -309,14 +338,7 @@
 
 @utility font-heading {
   font-family: var(--font-heading);
-}
-
-@utility text-soft {
-  color: var(--color-text-soft);
-}
-
-@utility text-muted {
-  color: var(--color-text-muted);
+  letter-spacing: -0.01em;
 }
 
 @utility surface-card {
@@ -345,6 +367,7 @@
 
   html {
     font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;

@@ -134,7 +134,7 @@ export function OrdersPage() {
   );
 
   const dateInputCls = [
-    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
+    'border border-line rounded-xl px-3 py-2 text-sm bg-surface-card text-gray-700',
     'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50',
     'transition-[border-color,box-shadow]',
   ].join(' ');
@@ -143,7 +143,7 @@ export function OrdersPage() {
     `px-3 py-1 text-xs font-semibold rounded-lg transition-all duration-150 ${
       activeTab === tab
         ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
-        : 'text-gray-500 hover:text-gray-700 hover:bg-[var(--color-surface-2)]'
+        : 'text-gray-500 hover:text-gray-700 hover:bg-surface-2'
     }`;
 
   const pillClass = (active: boolean) =>
@@ -157,7 +157,7 @@ export function OrdersPage() {
     <PageShell>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-lg p-4 mb-6" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-line shadow-card-lg p-4 mb-6" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-heading font-black text-xl text-gray-900">Gestión de Pedidos</h2>
@@ -170,7 +170,7 @@ export function OrdersPage() {
                 : (historyTotal > historyOrders.length ? `${historyOrders.length} de ${historyTotal}` : historyTotal)
               } pedidos
             </span>
-            <div className="flex gap-1 bg-[var(--color-surface-2)] rounded-lg p-0.5">
+            <div className="flex gap-1 bg-surface-2 rounded-lg p-0.5">
               <button className={tabClass('operation')} onClick={() => setActiveTab('operation')}>
                 Operación
               </button>
@@ -190,7 +190,7 @@ export function OrdersPage() {
               onChange={(e) => setDate(e.target.value)}
               className={dateInputCls}
             />
-            <div className="flex gap-0.5 bg-[var(--color-surface-2)] rounded-xl p-1 overflow-x-auto">
+            <div className="flex gap-0.5 bg-surface-2 rounded-xl p-1 overflow-x-auto">
               {operationStatusFilters.map((f) => (
                 <button key={f.value} onClick={() => setStatusFilter(f.value)} className={pillClass(statusFilter === f.value)}>
                   {f.label}
@@ -222,7 +222,7 @@ export function OrdersPage() {
                   className={dateInputCls}
                 />
               </div>
-              <div className="flex gap-0.5 bg-[var(--color-surface-2)] rounded-xl p-1 overflow-x-auto">
+              <div className="flex gap-0.5 bg-surface-2 rounded-xl p-1 overflow-x-auto">
                 {historyStatusFilters.map((f) => (
                   <button key={f.value} onClick={() => setHistoryStatus(f.value)} className={pillClass(historyStatus === f.value)}>
                     {f.label}
@@ -239,7 +239,7 @@ export function OrdersPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Buscar por #pedido o nombre de cliente..."
-                className="w-full pl-9 pr-4 py-2 border border-[var(--border-subtle)] rounded-xl text-sm bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400
+                className="w-full pl-9 pr-4 py-2 border border-line rounded-xl text-sm bg-surface-2 text-gray-700 placeholder:text-gray-400
                   focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
                   transition-[border-color,box-shadow]"
               />
@@ -270,7 +270,7 @@ export function OrdersPage() {
                     <button
                       onClick={loadMore}
                       disabled={loadingMore}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-sm font-semibold text-gray-600 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-line bg-surface-2 text-sm font-semibold text-gray-600 hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/8 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loadingMore ? (
                         <>

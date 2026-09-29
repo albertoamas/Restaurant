@@ -103,20 +103,20 @@ export function Modal({
           onKeyDown={onKeyDown}
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
-          className="relative w-full outline-none border-t border-[var(--border-subtle)] rounded-t-2xl shadow-[0_-8px_32px_oklch(0.06_0.010_38/0.7)] z-10 animate-slide-sheet"
+          className="relative w-full outline-none border-t border-line rounded-t-2xl shadow-[0_-8px_32px_oklch(0.06_0.010_38/0.7)] z-10 animate-slide-sheet"
           style={{ background: 'var(--color-surface-card)' }}
         >
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-[var(--color-surface-3)] rounded-full" aria-hidden="true" />
+            <div className="w-10 h-1 bg-surface-3 rounded-full" aria-hidden="true" />
           </div>
           {title && (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line">
               <h2 id={titleId} className="text-base font-bold text-gray-800 font-heading">{title}</h2>
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-2 text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <Icon name="x" size={16} strokeWidth={2} />
               </button>
@@ -124,7 +124,7 @@ export function Modal({
           )}
           <div data-modal-body className="px-6 py-4">{children}</div>
           {footer && (
-            <div className="px-6 pb-6 pt-2 border-t border-[var(--border-subtle)] mt-2">{footer}</div>
+            <div className="px-6 pb-6 pt-2 border-t border-line mt-2">{footer}</div>
           )}
         </div>
       </div>,
@@ -145,18 +145,18 @@ export function Modal({
         className={[
           'relative rounded-2xl w-full z-10 animate-in outline-none',
           'shadow-[0_24px_48px_oklch(0.06_0.010_38/0.8),0_4px_16px_oklch(0.06_0.010_38/0.4)]',
-          'ring-1 ring-[var(--border-subtle)]',
+          'ring-1 ring-line',
           sizes[size],
         ].join(' ')}
         style={{ background: 'var(--color-surface-card)' }}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-line">
             <h2 id={titleId} className="text-base font-bold text-gray-800 font-heading">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Cerrar"
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-2 text-gray-500 hover:text-gray-700 transition-colors"
             >
               <Icon name="x" size={16} strokeWidth={2} />
             </button>
@@ -164,7 +164,7 @@ export function Modal({
         )}
         <div data-modal-body className="px-6 py-5 overflow-y-auto max-h-[80vh]">{children}</div>
         {footer && (
-          <div className="px-6 pb-6 pt-2 border-t border-[var(--border-subtle)]">{footer}</div>
+          <div className="px-6 pb-6 pt-2 border-t border-line">{footer}</div>
         )}
       </div>
     </div>,

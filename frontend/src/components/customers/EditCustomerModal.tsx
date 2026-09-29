@@ -55,17 +55,17 @@ export function EditCustomerModal({
     }
   }
 
-  const inputCls = 'w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]';
+  const inputCls = 'w-full text-sm border border-line rounded-xl px-3 py-2.5 bg-surface-card text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]';
 
   return (
     <Modal isOpen onClose={onClose} title="Editar Cliente" size="sm">
       {/* Purchase stats summary */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-[var(--color-surface-2)] rounded-2xl p-4 text-center border border-[var(--border-subtle)] shadow-sm">
+        <div className="bg-surface-2 rounded-2xl p-4 text-center border border-line shadow-sm">
           <p className="text-3xl font-black text-gray-900 font-heading leading-none">{customer.purchaseCount}</p>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-2">Compras</p>
         </div>
-        <div className="bg-[var(--color-surface-2)] rounded-2xl p-4 text-center border border-[var(--border-subtle)] shadow-sm">
+        <div className="bg-surface-2 rounded-2xl p-4 text-center border border-line shadow-sm">
           <p className="text-2xl font-black text-primary-600 font-heading leading-tight flex items-center justify-center gap-1">
             <span className="text-sm text-primary-400 font-bold">Bs</span>
             {customer.totalSpent.toFixed(0)}
@@ -102,7 +102,7 @@ export function EditCustomerModal({
       </div>
 
       {/* Delete zone */}
-      <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]">
+      <div className="mt-5 pt-4 border-t border-line">
         {!confirmDelete ? (
           <button
             onClick={() => setConfirmDelete(true)}
@@ -121,7 +121,7 @@ export function EditCustomerModal({
               <button
                 onClick={() => setConfirmDelete(false)}
                 disabled={deleting}
-                className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-[var(--border-subtle)] rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
+                className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-line rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
               >
                 Cancelar
               </button>

@@ -11,7 +11,7 @@ const variants = {
   warning: 'bg-amber-500/12 text-amber-600 border border-amber-500/25',
   error:   'bg-red-500/12 text-red-600 border border-red-500/25',
   info:    'bg-primary-500/10 text-primary-600 border border-primary-500/20',
-  neutral: 'bg-[var(--color-surface-2)] text-gray-700 border border-[var(--border-subtle)]',
+  neutral: 'bg-surface-2 text-gray-700 border border-line',
 };
 
 const dotColors = {

@@ -96,7 +96,7 @@ export function PosPage() {
     <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       {/* Left: Products */}
       <div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
-        <div className="mb-3 rounded-2xl border border-[var(--border-subtle)] shadow-card-lg p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="mb-3 rounded-2xl border border-line shadow-card-lg p-3 sm:p-4 animate-slide" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-black text-gray-900 leading-tight">Punto de Venta</h2>
@@ -135,7 +135,7 @@ export function PosPage() {
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 text-sm border border-[var(--border-subtle)] rounded-2xl bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400
+              className="w-full pl-10 pr-10 py-2.5 text-sm border border-line rounded-2xl bg-surface-2 text-gray-700 placeholder:text-gray-400
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
                 transition-[border-color,box-shadow] duration-150"
             />
@@ -156,13 +156,13 @@ export function PosPage() {
           selected={selectedCategory}
           onSelect={(cat) => { setSelectedCategory(cat); setSearch(''); }}
         />
-        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-[var(--border-subtle)] p-2 shadow-card-md" style={{ background: 'var(--color-surface-2)' }}>
+        <div className="flex-1 overflow-y-auto mt-3 rounded-2xl border border-line p-2 shadow-card-md" style={{ background: 'var(--color-surface-2)' }}>
           <ProductGrid products={filteredProducts} onSelect={handleProductSelect} showImages={showProductImages} />
         </div>
       </div>
 
       {/* Right: Order panel (desktop) */}
-      <div className="hidden lg:block w-80 border-l border-[var(--border-subtle)]" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="hidden lg:block w-80 border-l border-line" style={{ background: 'var(--color-surface-card)' }}>
         <OrderPanel onCharge={handleCharge} />
       </div>
 
@@ -194,7 +194,7 @@ export function PosPage() {
       {showCart && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-[var(--border-subtle)]" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="absolute bottom-0 left-0 right-0 h-[82vh] rounded-t-2xl overflow-hidden animate-slide-sheet flex flex-col border-t border-line" style={{ background: 'var(--color-surface-card)' }}>
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />

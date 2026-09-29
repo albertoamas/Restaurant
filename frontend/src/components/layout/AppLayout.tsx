@@ -114,17 +114,17 @@ export function AppLayout() {
   if (user?.role === 'CASHIER' && !user.branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="rounded-2xl border border-[var(--border-subtle)] p-8 max-w-sm w-full text-center animate-in shadow-card-xl bg-[var(--color-surface-card)]">
+        <div className="rounded-2xl border border-line p-8 max-w-sm w-full text-center animate-in shadow-card-xl bg-surface-card">
           <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
             <Icon name="warning" size={28} className="text-amber-500" />
           </div>
-          <h2 className="text-base font-bold text-[var(--color-text-main)] mb-2 font-heading">Sin sucursal asignada</h2>
-          <p className="text-sm text-[var(--color-text-soft)] mb-6">
+          <h2 className="text-base font-bold text-main mb-2 font-heading">Sin sucursal asignada</h2>
+          <p className="text-sm text-soft mb-6">
             Tu cuenta no tiene una sucursal asignada. Comunícate con el administrador para que te asigne una.
           </p>
           <button
             onClick={logout}
-            className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] underline transition-colors"
+            className="text-sm text-muted hover:text-main underline transition-colors"
           >
             Cerrar sesión
           </button>
@@ -149,26 +149,26 @@ export function AppLayout() {
       {/* Mobile drawer */}
       <div
         data-print-hide
-        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col bg-[var(--color-surface-sidebar)] border-r border-[var(--border-subtle)] transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 flex flex-col bg-surface-sidebar border-r border-line transition-transform duration-300 ease-in-out ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Drawer header */}
-        <div className="px-4 pt-5 pb-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
+        <div className="px-4 pt-5 pb-4 border-b border-line flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 shadow-md shadow-primary-500/20">
               <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold text-[var(--color-text-main)] truncate font-heading">
+              <h1 className="text-sm font-bold text-main truncate font-heading">
                 {user?.tenantName || 'Mi Negocio'}
               </h1>
-              <p className="text-xs text-[var(--color-text-soft)] truncate">{user?.name}</p>
+              <p className="text-xs text-soft truncate">{user?.name}</p>
             </div>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
+            className="p-1.5 rounded-lg text-muted hover:text-main hover:bg-surface-2 transition-colors"
             aria-label="Cerrar menú"
           >
             <Icon name="x" size={20} />
@@ -177,7 +177,7 @@ export function AppLayout() {
 
         {/* Branch selector for OWNER */}
         {isOwner && (
-          <div className="px-4 pt-3 pb-3 border-b border-[var(--border-subtle)] relative">
+          <div className="px-4 pt-3 pb-3 border-b border-line relative">
             <BranchSelector
               branches={branchSelector.branches}
               currentBranch={branchSelector.currentBranch}
@@ -192,7 +192,7 @@ export function AppLayout() {
 
         {/* Branch indicator for CASHIER */}
         {user?.role === 'CASHIER' && user.branchId && (
-          <div className="px-4 pt-3 pb-3 border-b border-[var(--border-subtle)]">
+          <div className="px-4 pt-3 pb-3 border-b border-line">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-500/10 border border-primary-500/20 text-xs text-primary-600 dark:text-primary-400">
               <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse-dot shrink-0" />
               <span className="truncate font-semibold">Sucursal asignada</span>
@@ -211,8 +211,8 @@ export function AppLayout() {
                 [
                   'relative flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150',
                   isActive
-                    ? 'text-[var(--color-text-main)] bg-[var(--color-surface-3)] border border-[var(--border-subtle)] shadow-sm'
-                    : 'text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)]',
+                    ? 'text-main bg-surface-3 border border-line shadow-sm'
+                    : 'text-soft hover:text-main hover:bg-surface-2',
                 ].join(' ')
               }
             >
@@ -221,7 +221,7 @@ export function AppLayout() {
                   {isActive && (
                     <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-500 rounded-full" />
                   )}
-                  <span className={isActive ? 'text-primary-500' : 'text-[var(--color-text-muted)]'}>
+                  <span className={isActive ? 'text-primary-500' : 'text-muted'}>
                     {item.icon}
                   </span>
                   {item.label}
@@ -232,22 +232,22 @@ export function AppLayout() {
         </nav>
 
         {/* Drawer footer — user dropdown */}
-        <div className="px-3 py-3 border-t border-[var(--border-subtle)]">
+        <div className="px-3 py-3 border-t border-line">
           <div ref={drawerUserMenuRef} className="relative">
             {/* Dropdown (opens upward) */}
             {drawerUserMenuOpen && (
               <div
-                className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl animate-slide-down"
+                className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-line bg-surface-card shadow-card-xl animate-slide-down"
               >
                 <InstallAppMenuItem onSelect={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); }} />
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); navigate('/account'); }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
+                  className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-soft hover:text-main hover:bg-surface-2 transition-colors"
                 >
                   <Icon name="user-circle" size={16} className="shrink-0" />
                   Mi cuenta
                 </button>
-                <div className="h-px bg-[var(--border-subtle)] mx-3" />
+                <div className="h-px bg-line mx-3" />
                 <button
                   onClick={() => { setDrawerUserMenuOpen(false); setDrawerOpen(false); logout(); }}
                   className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-colors"
@@ -261,20 +261,20 @@ export function AppLayout() {
             {/* Trigger */}
             <button
               onClick={() => setDrawerUserMenuOpen((o) => !o)}
-              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors"
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-surface-2 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full bg-[var(--color-surface-3)] border border-[var(--border-strong)] flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-[var(--color-text-main)]">{(user?.name ?? '?')[0].toUpperCase()}</span>
+              <div className="w-7 h-7 rounded-full bg-surface-3 border border-line-strong flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-main">{(user?.name ?? '?')[0].toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium text-[var(--color-text-main)] truncate leading-tight">{user?.name}</p>
-                <p className="text-[10px] text-[var(--color-text-soft)] truncate leading-tight">{user?.email}</p>
+                <p className="text-xs font-medium text-main truncate leading-tight">{user?.name}</p>
+                <p className="text-[10px] text-soft truncate leading-tight">{user?.email}</p>
               </div>
               <Icon
                 name="chevron-down"
                 size={14}
                 strokeWidth={2}
-                className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-150 ${drawerUserMenuOpen ? 'rotate-180' : ''}`}
+                className={`text-muted shrink-0 transition-transform duration-150 ${drawerUserMenuOpen ? 'rotate-180' : ''}`}
               />
             </button>
           </div>
@@ -287,7 +287,7 @@ export function AppLayout() {
           onToggleSidebar={toggleSidebar}
           sidebarCollapsed={sidebarCollapsed}
         />
-        <main className="flex-1 overflow-auto bg-[var(--color-surface-page)]">
+        <main className="flex-1 overflow-auto bg-surface-page">
           <Outlet />
         </main>
       </div>

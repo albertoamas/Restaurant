@@ -53,7 +53,7 @@ function PrintSelectModal({
             <button
               key={t.id}
               onClick={() => handlePrint(t)}
-              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[var(--color-surface-2)] hover:bg-violet-500/80/8 hover:border-violet-500/25 border border-[var(--border-subtle)] transition-colors text-left"
+              className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 bg-surface-2 hover:bg-violet-500/80/8 hover:border-violet-500/25 border border-line transition-colors text-left"
             >
               <span className="font-mono font-bold text-sm text-gray-700 w-10 shrink-0">
                 #{t.ticketNumber}
@@ -111,7 +111,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         placeholder="Buscar por nombre o teléfono…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2.5 text-sm bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
+        className="w-full pl-10 pr-3 py-2.5 text-sm bg-surface-2 border border-line rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 placeholder:text-gray-400"
       />
       {value && (
         <button onClick={() => onChange('')}
@@ -172,7 +172,7 @@ function SpendingRow({
   };
 
   return (
-    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)]'}`}>
+    <div className={`rounded-xl overflow-hidden ${isWinner ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-surface-2 border border-line'}`}>
 
       {/* ── Cabecera — clic para expandir/colapsar ── */}
       <div
@@ -242,7 +242,7 @@ function SpendingRow({
       {/* ── Barra de progreso (siempre visible) ── */}
       <div className="px-4 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-[var(--color-surface-3)] rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-surface-3 rounded-full overflow-hidden">
             <div className="h-full bg-amber-400 rounded-full transition-all duration-300"
               style={{ width: `${pct}%` }} />
           </div>
@@ -254,13 +254,13 @@ function SpendingRow({
 
       {/* ── Lista de tickets (colapsable) ── */}
       {!collapsed && hasTickets && (
-        <div className="border-t border-[var(--border-subtle)] px-4 pt-2 pb-3 space-y-0.5 bg-[var(--color-surface-card)]">
+        <div className="border-t border-line px-4 pt-2 pb-3 space-y-0.5 bg-surface-card">
           {customerTickets.map((t) => {
             const delivered     = isEffectivelyDelivered(t);
             const isToggling    = togglingId === t.id;
             const isWinnerTicket = t.winnerPosition !== undefined;
             return (
-              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-[var(--color-surface-2)] transition-colors">
+              <div key={t.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-surface-2 transition-colors">
                 <span className={`font-mono font-bold text-xs w-9 shrink-0 ${isWinnerTicket ? 'text-amber-700' : 'text-gray-500'}`}>
                   #{t.ticketNumber}
                 </span>
@@ -384,7 +384,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
         </div>
 
         {raffle.spendings.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-[var(--border-subtle)] rounded-xl">
+          <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-line rounded-xl">
             Sin acumulados aún
           </div>
         ) : filtered.length === 0 ? (
@@ -469,7 +469,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
             const isToggling = togglingId === t.id;
             return (
               <div key={t.id} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
-                win ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-[var(--color-surface-2)]'
+                win ? 'bg-amber-500/12 border border-amber-500/25' : 'bg-surface-2'
               }`}>
                 <span className={`text-xs font-mono font-bold shrink-0 w-9 text-center ${
                   win ? 'text-amber-700' : 'text-gray-400'

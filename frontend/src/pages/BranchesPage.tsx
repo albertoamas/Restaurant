@@ -39,7 +39,7 @@ export function BranchesPage() {
 
   return (
     <PageShell>
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Sucursales</h2>
@@ -61,18 +61,18 @@ export function BranchesPage() {
           <Skeleton variant="card" />
         </div>
       ) : branches.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-[var(--border-subtle)] shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
           <Icon name="building" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin sucursales</p>
           <p className="text-xs mt-1">Crea tu primera sucursal</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md divide-y divide-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-line shadow-card-md divide-y divide-line overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {branches.map((branch) => (
             <div
               key={branch.id}
               className={[
-                'flex items-center justify-between px-4 py-4 gap-4 transition-colors hover:bg-[var(--color-surface-2)]',
+                'flex items-center justify-between px-4 py-4 gap-4 transition-colors hover:bg-surface-2',
                 'border-l-4',
                 branch.isActive ? 'border-l-emerald-400' : 'border-l-gray-200',
                 !branch.isActive ? 'opacity-60' : '',

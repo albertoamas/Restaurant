@@ -32,12 +32,12 @@ export function InstallAppMenuItem({ onSelect }: InstallAppMenuItemProps) {
     <>
       <button
         onClick={handleClick}
-        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
+        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-soft hover:text-main hover:bg-surface-2 transition-colors"
       >
         <Icon name="download" size={16} className="shrink-0" />
         Instalar app
       </button>
-      <div className="h-px bg-[var(--border-subtle)] mx-3" />
+      <div className="h-px bg-line mx-3" />
     </>
   );
 }
@@ -63,13 +63,13 @@ export function IosInstallHelp() {
         </div>
       }
     >
-      <ol className="list-decimal pl-5 space-y-2 text-sm text-[var(--color-text-soft)]">
+      <ol className="list-decimal pl-5 space-y-2 text-sm text-soft">
         <li>
-          Toca el botón <span className="font-semibold text-[var(--color-text-main)]">Compartir</span>{' '}
+          Toca el botón <span className="font-semibold text-main">Compartir</span>{' '}
           (el cuadrado con una flecha hacia arriba).
         </li>
         <li>
-          Elige <span className="font-semibold text-[var(--color-text-main)]">Agregar a inicio</span>.
+          Elige <span className="font-semibold text-main">Agregar a inicio</span>.
         </li>
         <li>La app aparecerá en tu pantalla de inicio y se abrirá sin la barra del navegador.</li>
       </ol>

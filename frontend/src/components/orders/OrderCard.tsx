@@ -127,11 +127,11 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
   const handlePrintKitchen = () => printKitchenTicket(order);
   const handlePrintReceipt = () => printReceipt(order, receiptSettings);
 
-  const accent = statusAccent[order.status] ?? { border: 'border-l-[var(--border-strong)]', bg: '', badge: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)]' };
+  const accent = statusAccent[order.status] ?? { border: 'border-l-line-strong', bg: '', badge: 'bg-surface-2 text-gray-500 border-line' };
 
   return (
     <div className={[
-      'rounded-2xl border border-[var(--border-subtle)] shadow-card-lg',
+      'rounded-2xl border border-line shadow-card-lg',
       'overflow-hidden border-l-4 animate-fade',
       accent.border,
       accent.bg,
@@ -147,7 +147,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
             #{order.orderNumber}
           </span>
           {branchLabel && (
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-semibold text-gray-500"><Icon name="building" size={10} strokeWidth={2} />{branchLabel}</span>
+            <span className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-gray-500"><Icon name="building" size={10} strokeWidth={2} />{branchLabel}</span>
           )}
           {isActive ? (
             <ElapsedChip createdAt={order.createdAt} />
@@ -164,7 +164,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
             {statusLabel[order.status]}
           </span>
-          <span className="text-xs font-semibold bg-[var(--color-surface-2)] text-gray-500 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-semibold bg-surface-2 text-gray-500 px-2.5 py-1 rounded-lg">
             {orderTypeLabels[order.type]}
           </span>
         </div>
@@ -175,7 +175,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
         {order.items.map((item) => (
           <span
             key={item.id}
-            className="inline-flex items-center gap-1 text-xs bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-600 rounded-lg px-2.5 py-1"
+            className="inline-flex items-center gap-1 text-xs bg-surface-2 border border-line text-gray-600 rounded-lg px-2.5 py-1"
           >
             <span className="font-heading font-bold text-gray-900">{item.quantity}×</span>
             {item.productName}
@@ -222,8 +222,8 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
                             : order.status === OrderStatus.PREPARING
                               ? 'bg-emerald-500 shadow-[0_0_0_3px_oklch(0.70_0.18_145/0.25)]'
                               : 'bg-sky-500 shadow-[0_0_0_3px_oklch(0.65_0.15_220/0.25)]'
-                          : 'bg-[var(--border-strong)]'
-                        : 'bg-[var(--color-surface-2)] border-2 border-[var(--border-subtle)]',
+                          : 'bg-line-strong'
+                        : 'bg-surface-2 border-2 border-line',
                     ].join(' ')}>
                       {done && !active && (
                         <Icon name="check" size={12} strokeWidth={3} className="text-gray-500" />
@@ -236,7 +236,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
                   </div>
                   {i < STEPS.length - 1 && (
                     <div className={`flex-1 h-0.5 mb-4 mx-1 rounded-full transition-all ${
-                      i < currentStep ? 'bg-[var(--border-strong)]' : 'bg-[var(--border-subtle)]'
+                      i < currentStep ? 'bg-line-strong' : 'bg-line'
                     }`} />
                   )}
                 </div>
@@ -255,7 +255,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
 
       {/* Footer */}
       <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--color-surface-2)]',
+        'flex items-center gap-3 px-4 py-3 border-t border-line bg-surface-2',
         action ? 'flex-col sm:flex-row' : '',
       ].join(' ')}>
         <div className="flex items-center gap-2 shrink-0">
@@ -263,7 +263,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
             Bs {order.total.toFixed(2)}
           </span>
           {order.isPaid ? (
-            <span className="text-xs font-medium text-gray-500 bg-[var(--color-surface-2)] px-2 py-0.5 rounded-md">
+            <span className="text-xs font-medium text-gray-500 bg-surface-2 px-2 py-0.5 rounded-md">
               {order.payments.length > 1
                 ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
                 : (paymentLabel[order.payments[0]?.method] ?? '—')}
@@ -297,7 +297,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
           {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
             <button
               onClick={() => onEdit(order)}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-line hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Editar pedido"
             >
               <Icon name="edit" size={14} strokeWidth={2} />
@@ -306,7 +306,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
           {!isCancelled && (
             <button
               onClick={handlePrintKitchen}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-line hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
               title="Imprimir comanda"
             >
               <Icon name="print" size={14} strokeWidth={2} />
@@ -315,7 +315,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
           {order.isPaid && (
             <button
               onClick={handlePrintReceipt}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-line hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
               title="Imprimir recibo"
             >
               <Icon name="document" size={14} strokeWidth={2} />
@@ -338,7 +338,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
                 </button>
                 <button
                   onClick={() => setConfirming(false)}
-                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
+                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-line rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
                 >
                   No
                 </button>
@@ -346,7 +346,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
             ) : (
               <button
                 onClick={() => setConfirming(true)}
-                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)]
+                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-line
                   rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               >
                 Cancelar

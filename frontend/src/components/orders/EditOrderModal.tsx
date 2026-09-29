@@ -26,21 +26,21 @@ const ORDER_TYPES = [
     value: OrderType.DINE_IN,
     label: 'Local',
     icon: <Icon name="card" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
     active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
   },
   {
     value: OrderType.TAKEOUT,
     label: 'Para Llevar',
     icon: <Icon name="bag" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
     active: 'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
   },
   {
     value: OrderType.DELIVERY,
     label: 'Delivery',
     icon: <Icon name="map" size={20} strokeWidth={1.75} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
     active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
   },
 ];
@@ -50,21 +50,21 @@ const PAYMENT_METHODS = [
     value: PaymentMethod.CASH,
     label: 'Efectivo',
     icon: <Icon name="cash" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
     active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
   },
   {
     value: PaymentMethod.QR,
     label: 'QR',
     icon: <Icon name="qr" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
     active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
   },
   {
     value: PaymentMethod.TRANSFER,
     label: 'Transferencia',
     icon: <Icon name="card" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
     active: 'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
   },
 ];
@@ -168,7 +168,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
 
           {/* Current customer row */}
           {order.customer && !showPicker && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
+            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-2 border border-line">
               <div className="w-8 h-8 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0">
                 <Icon name="user" size={15} strokeWidth={2} className="text-primary-600" />
               </div>
@@ -179,7 +179,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--color-surface-card)] border border-[var(--border-subtle)] text-gray-600 hover:text-primary-600 hover:border-primary-500/40 transition-colors"
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-surface-card border border-line text-gray-600 hover:text-primary-600 hover:border-primary-500/40 transition-colors"
               >
                 Cambiar
               </button>
@@ -217,8 +217,8 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Sin especificaciones especiales..."
-            className="w-full border-2 border-[var(--border-subtle)] rounded-2xl px-3 py-2.5 text-sm resize-none
-              bg-[var(--color-surface-card)] text-gray-700
+            className="w-full border-2 border-line rounded-2xl px-3 py-2.5 text-sm resize-none
+              bg-surface-card text-gray-700
               focus:outline-none focus:border-primary-400 transition-colors placeholder-gray-400"
           />
         </div>

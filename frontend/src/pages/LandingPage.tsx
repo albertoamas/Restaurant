@@ -159,8 +159,8 @@ function PlanCard({ plan }: { plan: PlanDto }) {
   return (
     <div className={`relative flex flex-col rounded-[20px] p-7 transition-all duration-300 hover:-translate-y-1 ${
       meta.highlight 
-        ? 'bg-[var(--color-surface-3)] border-[1.5px] border-[var(--border-strong)] shadow-card-xl' 
-        : 'bg-[var(--color-surface-card)] border border-[var(--border-subtle)] shadow-card-lg'
+        ? 'bg-surface-3 border-[1.5px] border-line-strong shadow-card-xl' 
+        : 'bg-surface-card border border-line shadow-card-lg'
     }`}>
       {meta.highlight && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-black text-white whitespace-nowrap tracking-wide bg-primary-500 shadow-[0_4px_12px_oklch(0.65_0.22_42/0.4)]">
@@ -169,36 +169,36 @@ function PlanCard({ plan }: { plan: PlanDto }) {
       )}
 
       {/* Nombre */}
-      <p className={`text-[11px] font-bold tracking-[0.12em] uppercase mb-2 ${meta.highlight ? 'text-primary-500' : 'text-[var(--color-text-muted)]'}`}>
+      <p className={`text-[11px] font-bold tracking-[0.12em] uppercase mb-2 ${meta.highlight ? 'text-primary-500' : 'text-muted'}`}>
         {plan.displayName}
       </p>
-      <p className="text-[13px] text-[var(--color-text-soft)] leading-relaxed mb-5">
+      <p className="text-[13px] text-soft leading-relaxed mb-5">
         {meta.description}
       </p>
 
       {/* Precio */}
       <div className="mb-5">
         <div className="flex items-end gap-1.5">
-          <span className={`font-heading font-black text-5xl leading-none ${meta.highlight ? 'text-primary-500' : 'text-[var(--color-text-main)]'}`}>
+          <span className={`font-heading font-black text-5xl leading-none ${meta.highlight ? 'text-primary-500' : 'text-main'}`}>
             {plan.priceBs}
           </span>
           <div className="pb-1">
-            <p className="text-sm font-bold text-[var(--color-text-soft)]">Bs</p>
-            <p className="text-[11px] text-[var(--color-text-muted)]">/mes</p>
+            <p className="text-sm font-bold text-soft">Bs</p>
+            <p className="text-[11px] text-muted">/mes</p>
           </div>
         </div>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">~${usd} USD al cambio referencial</p>
+        <p className="text-[11px] text-muted mt-1.5">~${usd} USD al cambio referencial</p>
       </div>
 
       {/* Límites */}
       <div className={`flex flex-wrap gap-1.5 mb-5 p-3 rounded-xl ${
-        meta.highlight ? 'bg-primary-500/15 border border-primary-500/30' : 'bg-[var(--color-surface-3)] border border-[var(--border-subtle)]'
+        meta.highlight ? 'bg-primary-500/15 border border-primary-500/30' : 'bg-surface-3 border border-line'
       }`}>
         {limits.map((l) => (
           <span key={l} className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
             meta.highlight 
               ? 'bg-primary-500/20 text-primary-600 border border-primary-500/30' 
-              : 'bg-[var(--color-surface-card)] text-[var(--color-text-main)] border border-[var(--border-subtle)]'
+              : 'bg-surface-card text-main border border-line'
           }`}>
             {l}
           </span>
@@ -212,13 +212,13 @@ function PlanCard({ plan }: { plan: PlanDto }) {
             <span className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
               f.included
                 ? (meta.highlight ? 'bg-primary-500/20' : 'bg-emerald-500/20')
-                : 'bg-[var(--color-surface-3)]'
+                : 'bg-surface-3'
             }`}>
               <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={f.included ? (meta.highlight ? 'oklch(0.65 0.22 42)' : 'oklch(0.55 0.18 145)') : 'var(--color-text-muted)'} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                 {f.included ? <path d="M5 13l4 4L19 7" /> : <path d="M6 18L18 6M6 6l12 12" />}
               </svg>
             </span>
-            <span className={`text-[13px] leading-snug ${f.included ? 'text-[var(--color-text-soft)]' : 'text-[var(--color-text-muted)]'}`}>
+            <span className={`text-[13px] leading-snug ${f.included ? 'text-soft' : 'text-muted'}`}>
               {f.text}
             </span>
           </li>
@@ -231,7 +231,7 @@ function PlanCard({ plan }: { plan: PlanDto }) {
         className={`block text-center py-3.5 rounded-xl text-[13px] font-bold transition-all duration-200 active:scale-[0.98] ${
           meta.highlight 
             ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-[0_4px_14px_oklch(0.65_0.22_42/0.3)]' 
-            : 'bg-[var(--color-surface-3)] text-[var(--color-text-soft)] border border-[var(--border-strong)] hover:bg-[var(--color-surface-card)]'
+            : 'bg-surface-3 text-soft border border-line-strong hover:bg-surface-card'
         }`}
       >
         {meta.cta}
@@ -251,7 +251,7 @@ function PricingSection() {
   );
 
   if (error || plans.length === 0) return (
-    <p className="text-center py-20 text-sm text-[var(--color-text-muted)]">
+    <p className="text-center py-20 text-sm text-muted">
       No se pudieron cargar los planes. Intenta de nuevo más tarde.
     </p>
   );
@@ -267,7 +267,7 @@ function PricingSection() {
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-4 text-[11px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+    <p className="mb-4 text-[11px] font-bold uppercase tracking-wider text-muted">
       {children}
     </p>
   );
@@ -278,10 +278,10 @@ export function LandingPage() {
   const { theme, toggle: toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[var(--color-surface-page)] text-[var(--color-text-main)] selection:bg-primary-500/30">
+    <div className="min-h-screen overflow-x-hidden bg-surface-page text-main selection:bg-primary-500/30">
       
       {/* ── Barra de navegación ──────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--color-surface-page)]/80 backdrop-blur-xl supports-[backdrop-filter]:bg-[var(--color-surface-page)]/60 transition-colors">
+      <header className="sticky top-0 z-50 border-b border-line bg-surface-page/80 backdrop-blur-xl supports-[backdrop-filter]:bg-surface-page/60 transition-colors">
         <div className="max-w-[1200px] mx-auto px-5 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
@@ -290,23 +290,23 @@ export function LandingPage() {
                 <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
               </svg>
             </div>
-            <span className="font-heading font-black text-lg tracking-tight text-[var(--color-text-main)]">
+            <span className="font-heading font-black text-lg tracking-tight text-main">
               Yanko<span className="text-primary-500">POS</span>
             </span>
           </div>
 
           {/* Links */}
           <nav className="flex items-center gap-4 sm:gap-6">
-            <a href="#features" className="hidden sm:block text-[13px] font-semibold text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] transition-colors">
+            <a href="#features" className="hidden sm:block text-[13px] font-semibold text-soft hover:text-main transition-colors">
               Características
             </a>
-            <a href="#pricing" className="hidden sm:block text-[13px] font-semibold text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] transition-colors">
+            <a href="#pricing" className="hidden sm:block text-[13px] font-semibold text-soft hover:text-main transition-colors">
               Precios
             </a>
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-all"
+              className="p-1.5 rounded-lg text-muted hover:text-main hover:bg-surface-2 transition-all"
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} strokeWidth={2} />
             </button>
@@ -334,7 +334,7 @@ export function LandingPage() {
               </span>
             </div>
 
-            <h1 className="font-heading font-black text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-[var(--color-text-main)] mb-6 drop-shadow-sm">
+            <h1 className="font-heading font-black text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-main mb-6 drop-shadow-sm">
               Tu restaurante<br className="hidden sm:block" />
               {' '}en{' '}
               <span className="text-primary-500 bg-gradient-to-r from-primary-500 to-orange-400 bg-clip-text text-transparent">
@@ -342,7 +342,7 @@ export function LandingPage() {
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-[var(--color-text-soft)] leading-relaxed mb-10 mx-auto lg:mx-0 max-w-[460px]">
+            <p className="text-base sm:text-lg text-soft leading-relaxed mb-10 mx-auto lg:mx-0 max-w-[460px]">
               Toma pedidos, envía a cocina y cobra al instante. Todo en una sola plataforma diseñada para operar a máxima velocidad.
             </p>
 
@@ -350,7 +350,7 @@ export function LandingPage() {
               <Link to="/login" className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-[14px] font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all active:scale-[0.98] shadow-[0_4px_16px_oklch(0.65_0.22_42/0.25)] hover:shadow-[0_6px_20px_oklch(0.65_0.22_42/0.35)] text-center">
                 Entrar al panel
               </Link>
-              <a href="#pricing" className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-[14px] font-bold bg-[var(--color-surface-2)] text-[var(--color-text-main)] border border-[var(--border-strong)] hover:bg-[var(--color-surface-3)] transition-all active:scale-[0.98] text-center">
+              <a href="#pricing" className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-[14px] font-bold bg-surface-2 text-main border border-line-strong hover:bg-surface-3 transition-all active:scale-[0.98] text-center">
                 Ver planes y precios
               </a>
             </div>
@@ -361,7 +361,7 @@ export function LandingPage() {
             {/* Decoración detrás de la imagen */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-[32px] transform translate-x-4 translate-y-4 blur-sm" />
 
-            <div className="relative rounded-[32px] overflow-hidden border border-[var(--border-subtle)] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-[var(--color-surface-card)]">
+            <div className="relative rounded-[32px] overflow-hidden border border-line shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-surface-card">
               {/* Imagen local: se incluye en el build y no depende de un host externo. */}
               <img
                 src={landingPosImage}
@@ -372,22 +372,22 @@ export function LandingPage() {
               <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-[32px] pointer-events-none" />
 
               {/* Etiqueta flotante: cocina conectada */}
-              <div className="hidden sm:flex absolute top-6 right-6 items-center gap-2.5 bg-[var(--color-surface-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] px-3.5 py-2.5 rounded-2xl shadow-lg animate-fade stagger-2">
+              <div className="hidden sm:flex absolute top-6 right-6 items-center gap-2.5 bg-surface-card/90 backdrop-blur-md border border-line px-3.5 py-2.5 rounded-2xl shadow-lg animate-fade stagger-2">
                 <span className="relative flex h-2 w-2 shrink-0">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 animate-pulse-dot" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
-                <p className="text-xs font-bold text-[var(--color-text-main)]">Cocina conectada</p>
+                <p className="text-xs font-bold text-main">Cocina conectada</p>
               </div>
 
               {/* Etiqueta flotante: pedido completado */}
-              <div className="absolute bottom-6 left-6 right-6 sm:left-8 sm:right-auto bg-[var(--color-surface-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] p-4 rounded-2xl shadow-xl flex items-center gap-4">
+              <div className="absolute bottom-6 left-6 right-6 sm:left-8 sm:right-auto bg-surface-card/90 backdrop-blur-md border border-line p-4 rounded-2xl shadow-xl flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
                   <Icon name="check" size={20} className="text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[var(--color-text-main)]">Pedido completado</p>
-                  <p className="text-xs font-medium text-[var(--color-text-muted)] mt-0.5">Cobro en efectivo procesado</p>
+                  <p className="text-sm font-bold text-main">Pedido completado</p>
+                  <p className="text-xs font-medium text-muted mt-0.5">Cobro en efectivo procesado</p>
                 </div>
               </div>
             </div>
@@ -397,20 +397,20 @@ export function LandingPage() {
       </section>
 
       {/* ── Banda de stats ───────────────────────────────── */}
-      <div className="border-y border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
+      <div className="border-y border-line bg-surface-2">
         <div className="max-w-[1200px] mx-auto px-5 py-8">
           <div className="grid grid-cols-2 lg:grid-cols-4">
             {STATS.map((s, i) => (
               <div
                 key={s.label}
-                className={`flex items-center gap-3.5 py-3 ${i > 0 ? 'lg:border-l lg:border-[var(--border-subtle)] lg:pl-6' : ''}`}
+                className={`flex items-center gap-3.5 py-3 ${i > 0 ? 'lg:border-l lg:border-line lg:pl-6' : ''}`}
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-500">
                   <Icon name={s.icon} size={18} strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="font-heading font-black text-2xl leading-none text-[var(--color-text-main)]">{s.value}</p>
-                  <p className="mt-1 text-[12px] font-semibold text-[var(--color-text-muted)]">{s.label}</p>
+                  <p className="font-heading font-black text-2xl leading-none text-main">{s.value}</p>
+                  <p className="mt-1 text-[12px] font-semibold text-muted">{s.label}</p>
                 </div>
               </div>
             ))}
@@ -427,10 +427,10 @@ export function LandingPage() {
               Todo lo que necesitas
             </p>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-              <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-[var(--color-text-main)] max-w-[600px]">
+              <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-main max-w-[600px]">
                 Una plataforma completa,<br />nada de extras innecesarios
               </h2>
-              <p className="text-base text-[var(--color-text-soft)] max-w-[320px] mx-auto sm:mx-0 leading-relaxed">
+              <p className="text-base text-soft max-w-[320px] mx-auto sm:mx-0 leading-relaxed">
                 Herramientas diseñadas para que operes de forma rápida, reduzcas errores y conozcas tus márgenes reales.
               </p>
             </div>
@@ -444,10 +444,10 @@ export function LandingPage() {
                 className={`group relative overflow-hidden p-8 rounded-3xl border shadow-card-md hover:shadow-card-xl hover:-translate-y-1 transition-all duration-300 animate-slide ${STAGGER_CLASS[i % 4]} ${
                   f.featured
                     ? 'lg:col-span-2 bg-primary-500/[0.04] border-primary-500/20'
-                    : 'bg-[var(--color-surface-card)] border-[var(--border-subtle)]'
+                    : 'bg-surface-card border-line'
                 }`}
               >
-                <span className="pointer-events-none absolute -right-3 -top-6 font-heading font-black text-[7rem] leading-none text-[var(--color-text-main)]/[0.035] select-none">
+                <span className="pointer-events-none absolute -right-3 -top-6 font-heading font-black text-[7rem] leading-none text-main/[0.035] select-none">
                   {String(i + 1).padStart(2, '0')}
                 </span>
 
@@ -456,10 +456,10 @@ export function LandingPage() {
                     {f.icon}
                   </svg>
                 </div>
-                <h3 className="relative font-heading font-bold text-xl text-[var(--color-text-main)] mb-3 tracking-tight">
+                <h3 className="relative font-heading font-bold text-xl text-main mb-3 tracking-tight">
                   {f.title}
                 </h3>
-                <p className="relative text-[14.5px] text-[var(--color-text-soft)] leading-relaxed max-w-[380px]">
+                <p className="relative text-[14.5px] text-soft leading-relaxed max-w-[380px]">
                   {f.desc}
                 </p>
               </div>
@@ -469,23 +469,23 @@ export function LandingPage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────────── */}
-      <section id="pricing" className="px-5 py-20 sm:py-32 bg-[var(--color-surface-2)] border-t border-[var(--border-subtle)]">
+      <section id="pricing" className="px-5 py-20 sm:py-32 bg-surface-2 border-t border-line">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16">
             <p className="text-[12px] font-bold text-primary-500 tracking-[0.16em] uppercase mb-4">
               Planes y precios
             </p>
-            <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-[var(--color-text-main)] mb-5">
+            <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-main mb-5">
               Paga solo lo que necesitas
             </h2>
-            <p className="text-base text-[var(--color-text-soft)] max-w-[480px] mx-auto">
+            <p className="text-base text-soft max-w-[480px] mx-auto">
               Precios transparentes en bolivianos, sin contratos ocultos ni comisiones por transacción. Cancela cuando quieras.
             </p>
           </div>
 
           <PricingSection />
 
-          <p className="text-center text-xs font-medium text-[var(--color-text-muted)] mt-12 max-w-xl mx-auto">
+          <p className="text-center text-xs font-medium text-muted mt-12 max-w-xl mx-auto">
             Tipo de cambio referencial: 1 USD = {USD_RATE} Bs. Los precios en bolivianos pueden estar sujetos a ajustes según la variación del tipo de cambio.
           </p>
         </div>
@@ -531,7 +531,7 @@ export function LandingPage() {
       />
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <footer className="relative overflow-hidden border-t border-[var(--border-subtle)] bg-[var(--color-surface-page)] px-5 pt-16 pb-8">
+      <footer className="relative overflow-hidden border-t border-line bg-surface-page px-5 pt-16 pb-8">
         {/* Glow decorativo: eco del hero, muy sutil */}
         <div className="pointer-events-none absolute -bottom-32 left-1/2 h-72 w-[640px] -translate-x-1/2 rounded-full bg-primary-500/5 blur-[110px]" />
 
@@ -546,11 +546,11 @@ export function LandingPage() {
                     <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                   </svg>
                 </div>
-                <span className="font-heading font-black text-lg tracking-tight text-[var(--color-text-main)]">
+                <span className="font-heading font-black text-lg tracking-tight text-main">
                   Yanko<span className="text-primary-500">POS</span>
                 </span>
               </Link>
-              <p className="text-sm text-[var(--color-text-muted)] leading-relaxed max-w-[300px]">
+              <p className="text-sm text-muted leading-relaxed max-w-[300px]">
                 El sistema de punto de venta hecho para restaurantes bolivianos. Pedidos, cocina, caja y reportes en un solo lugar.
               </p>
             </div>
@@ -559,9 +559,9 @@ export function LandingPage() {
             <div className="lg:col-span-2">
               <FooterHeading>Producto</FooterHeading>
               <ul className="space-y-2.5">
-                <li><a href="#features" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Características</a></li>
-                <li><a href="#pricing" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Precios</a></li>
-                <li><Link to="/login" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Acceder al panel</Link></li>
+                <li><a href="#features" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Características</a></li>
+                <li><a href="#pricing" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Precios</a></li>
+                <li><Link to="/login" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Acceder al panel</Link></li>
               </ul>
             </div>
 
@@ -569,26 +569,26 @@ export function LandingPage() {
             <div className="lg:col-span-2">
               <FooterHeading>Legal</FooterHeading>
               <ul className="space-y-2.5">
-                <li><Link to="/terminos" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Términos y Condiciones</Link></li>
-                <li><Link to="/privacidad" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">Política de Privacidad</Link></li>
+                <li><Link to="/terminos" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Términos y Condiciones</Link></li>
+                <li><Link to="/privacidad" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Política de Privacidad</Link></li>
               </ul>
             </div>
 
             {/* Contacto */}
             <div className="col-span-2 sm:col-span-4 lg:col-span-3">
               <FooterHeading>Contacto</FooterHeading>
-              <a href="mailto:albertoamasv@gmail.com" className="text-[13px] font-medium text-[var(--color-text-soft)] hover:text-primary-500 transition-colors">
+              <a href="mailto:albertoamasv@gmail.com" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">
                 albertoamasv@gmail.com
               </a>
             </div>
           </div>
 
           {/* Barra inferior */}
-          <div className="mt-12 pt-8 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs font-medium text-[var(--color-text-muted)]">
+          <div className="mt-12 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs font-medium text-muted">
               © {new Date().getFullYear()} YankoPOS · Hecho en Bolivia 🇧🇴
             </p>
-            <p className="text-xs font-medium text-[var(--color-text-muted)]">
+            <p className="text-xs font-medium text-muted">
               Alberto Amas Villarroel
             </p>
           </div>

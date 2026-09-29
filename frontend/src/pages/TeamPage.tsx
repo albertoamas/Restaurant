@@ -93,7 +93,7 @@ export function TeamPage() {
 
   return (
     <PageShell>
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Equipo y Roles</h2>
@@ -115,11 +115,11 @@ export function TeamPage() {
           <Skeleton variant="card" />
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md divide-y divide-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-line shadow-card-md divide-y divide-line overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
           {users.map((user) => (
             <div
               key={user.id}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 py-4 gap-3 transition-colors hover:bg-[var(--color-surface-2)] ${
+              className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 py-4 gap-3 transition-colors hover:bg-surface-2 ${
                 !user.isActive && user.role !== UserRole.OWNER ? 'opacity-60' : ''
               }`}
             >
@@ -138,9 +138,9 @@ export function TeamPage() {
                   <select
                     value={user.branchId ?? ''}
                     onChange={(e) => handleBranchChange(user, e.target.value || null)}
-                    className="text-xs border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-gray-700
+                    className="text-xs border border-line rounded-lg px-2 py-1.5 text-gray-700
                       focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
-                      max-w-[140px] transition-[border-color,box-shadow] bg-[var(--color-surface-card)]"
+                      max-w-[140px] transition-[border-color,box-shadow] bg-surface-card"
                   >
                     <option value="">Sin sucursal</option>
                     {activeBranches.map((b) => (
@@ -357,7 +357,7 @@ function CreateCashierModal({
             <select
               value={form.branchId}
               onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-              className="w-full border border-[var(--border-subtle)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface-card)] text-gray-700
+              className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface-card text-gray-700
                 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
             >
               <option value="">Sin sucursal</option>

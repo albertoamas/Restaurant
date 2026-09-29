@@ -61,7 +61,7 @@ export function WinnerModal({
         />
 
         <div
-          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-[var(--border-subtle)]"
+          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-line"
           style={{ background: 'var(--color-surface-card)', animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
         >
           <div className={`h-1 w-full bg-gradient-to-r ${medal.badge}`} />
@@ -93,7 +93,7 @@ export function WinnerModal({
             )}
 
             {/* Ticket */}
-            <div className="inline-flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-surface-2 border border-line rounded-xl px-3 py-1.5 mb-4">
               <IconTicket className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-sm font-mono font-bold text-gray-600">
                 Ticket #{winner.ticketNumber}

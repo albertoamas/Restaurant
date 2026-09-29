@@ -102,20 +102,20 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
         {/* Category list */}
         {categories.length === 0 ? (
           <div className="text-center py-10">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-surface-2 flex items-center justify-center mx-auto mb-3">
               <Icon name="box" size={22} strokeWidth={1.5} className="text-gray-300" />
             </div>
             <p className="text-sm text-gray-400">Sin categorías aún</p>
             <p className="text-xs text-gray-300 mt-1">Crea la primera con el botón de abajo</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)] overflow-hidden">
+          <div className="rounded-xl border border-line divide-y divide-line overflow-hidden">
             {categories.map((cat) => (
               <div key={cat.id}>
 
                 {/* View row */}
                 {editingId !== cat.id && (
-                  <div className={`transition-colors ${deletingId === cat.id ? 'bg-red-500/5' : 'hover:bg-[var(--color-surface-2)]'}`}>
+                  <div className={`transition-colors ${deletingId === cat.id ? 'bg-red-500/5' : 'hover:bg-surface-2'}`}>
                     <div className="flex items-center gap-3 px-4 py-3.5">
                       <div className="flex-1 min-w-0">
                         <p className="text-base font-semibold text-gray-900 truncate">{cat.name}</p>
@@ -134,7 +134,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] transition-colors"
+                            className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg border border-line transition-colors"
                           >
                             Cancelar
                           </button>
@@ -163,7 +163,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
 
                 {/* Inline edit form — apilado y con labels */}
                 {editingId === cat.id && (
-                  <div className="px-4 py-4 bg-[var(--color-surface-2)] border-l-2 border-primary-500/50">
+                  <div className="px-4 py-4 bg-surface-2 border-l-2 border-primary-500/50">
                     <p className="text-xs font-bold text-primary-600 uppercase tracking-wide mb-3">
                       Editando categoría
                     </p>
@@ -255,7 +255,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
         ) : (
           <button
             onClick={() => { setShowNewForm(true); setEditingId(null); }}
-            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border border-dashed border-[var(--border-subtle)] text-sm font-medium text-gray-400 hover:text-primary-600 hover:border-primary-500/40 hover:bg-primary-500/5 transition-colors"
+            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border border-dashed border-line text-sm font-medium text-gray-400 hover:text-primary-600 hover:border-primary-500/40 hover:bg-primary-500/5 transition-colors"
           >
             <Icon name="plus" size={16} strokeWidth={2.5} />
             Agregar categoría
@@ -264,7 +264,7 @@ export function CategoryManagerModal({ isOpen, onClose, categories, onSaved }: P
 
       </div>
 
-      <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex justify-end">
+      <div className="mt-4 pt-3 border-t border-line flex justify-end">
         <Button variant="secondary" onClick={onClose}>Cerrar</Button>
       </div>
     </Modal>

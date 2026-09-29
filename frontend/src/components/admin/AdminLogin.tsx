@@ -31,17 +31,17 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
           <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-500/80">
             Panel interno
           </p>
-          <h1 className="font-heading font-black text-2xl text-[var(--color-text-main)] tracking-tight">Admin Console</h1>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Solo personal autorizado de YankoPOS</p>
+          <h1 className="font-heading font-black text-2xl text-main tracking-tight">Admin Console</h1>
+          <p className="mt-1 text-xs text-muted">Solo personal autorizado de YankoPOS</p>
         </div>
 
         <div
-          className="overflow-hidden rounded-[1.5rem] border border-[var(--border-subtle)]"
+          className="overflow-hidden rounded-[1.5rem] border border-line"
           style={{ background: 'var(--color-surface-card)' }}
         >
           <form onSubmit={onSubmit} className="p-7 space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium tracking-wide text-[var(--color-text-soft)]">
+              <label className="mb-1.5 block text-xs font-medium tracking-wide text-soft">
                 Clave de administrador
               </label>
               <div className="relative">
@@ -49,14 +49,14 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
                   name="lock"
                   size={15}
                   strokeWidth={2}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
                 />
                 <input
                   type="password"
                   value={keyInput}
                   onChange={(e) => onKeyChange(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full rounded-xl border border-[var(--border-subtle)] py-[0.69rem] pl-10 pr-3.5 text-sm text-[var(--color-text-main)] placeholder:text-[var(--color-text-muted)] transition-colors focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  className="w-full rounded-xl border border-line py-[0.69rem] pl-10 pr-3.5 text-sm text-main placeholder:text-muted transition-colors focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                   style={{ background: 'var(--color-surface-2)' }}
                   autoFocus
                 />
@@ -79,7 +79,7 @@ export function AdminLogin({ keyInput, keyError, onKeyChange, onSubmit }: AdminL
           </form>
         </div>
 
-        <p className="mt-5 text-center text-[11px] text-[var(--color-text-muted)]">
+        <p className="mt-5 text-center text-[11px] text-muted">
           Este acceso queda registrado. Uso exclusivo de operaciones YankoPOS.
         </p>
       </div>

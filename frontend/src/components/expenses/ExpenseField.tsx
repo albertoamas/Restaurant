@@ -1,7 +1,7 @@
 /** Estilo e input label compartidos por los formularios de gastos. */
 
 export const FIELD =
-  'w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] px-3 py-2.5 text-sm text-gray-700 ' +
+  'w-full rounded-xl border border-line bg-surface-card px-3 py-2.5 text-sm text-gray-700 ' +
   'outline-none transition-[border-color,box-shadow] placeholder:text-gray-400 ' +
   'focus:border-primary-500 focus:ring-[3px] focus:ring-primary-500/20';
 

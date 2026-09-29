@@ -105,7 +105,7 @@ export function ExpenseConceptsPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-2.5">
+      <div className="flex gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
         <Icon name="warning" size={15} className="mt-0.5 shrink-0 text-gray-400" />
         <p className="text-xs text-gray-500">
           Acá defines <strong className="font-bold text-gray-700">qué gastos existen</strong>, no registras ninguno.
@@ -114,7 +114,7 @@ export function ExpenseConceptsPanel() {
       </div>
 
       {showAdd ? (
-        <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-primary-500/30 bg-[var(--color-surface-2)] p-4">
+        <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-primary-500/30 bg-surface-2 p-4">
           <p className="text-xs font-bold text-gray-700">Nuevo gasto en la lista</p>
           <ExpenseConceptFields value={draft} onChange={setDraft} />
           <div className="flex justify-end gap-2">
@@ -135,7 +135,7 @@ export function ExpenseConceptsPanel() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-[var(--color-surface-2)]" />
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-surface-2" />
           ))}
         </div>
       ) : grouped.length === 0 ? (
@@ -164,7 +164,7 @@ export function ExpenseConceptsPanel() {
                   ) : (
                     <div
                       key={concept.id}
-                      className="flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2.5"
+                      className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5"
                       style={{ background: 'var(--color-surface-card)' }}
                     >
                       <div className="min-w-0 flex-1">

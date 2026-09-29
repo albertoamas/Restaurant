@@ -13,6 +13,6 @@ export const BRAND_COLOR = '#f54d00';
 
 /** `--surface-page` de cada tema: la barra del navegador se funde con el Header. */
 export const THEME_COLORS = {
-  dark:  '#060302', // oklch(0.10 0.012 38)
-  light: '#f9f4f2', // oklch(0.97 0.006 50)
+  dark:  '#1b1614', // oklch(0.205 0.009 50)
+  light: '#f9f4f2', // oklch(0.97 0.006 50) · tema predeterminado
 } as const;

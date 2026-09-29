@@ -36,6 +36,7 @@ describe('colores de theme-color en index.html', () => {
     const script = inlineScripts.join('\n');
     expect(script).toContain(`'${THEME_COLORS.dark}'`);
     expect(script).toContain(`'${THEME_COLORS.light}'`);
-    expect(indexHtml).toContain(`<meta name="theme-color" content="${THEME_COLORS.dark}" />`);
+    // Sin tema guardado arranca en claro, el predeterminado.
+    expect(indexHtml).toContain(`<meta name="theme-color" content="${THEME_COLORS.light}" />`);
   });
 });

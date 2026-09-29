@@ -78,20 +78,20 @@ export function ProductsPage() {
   }
 
   const activeClass   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.35)]';
-  const inactiveClass = 'bg-[var(--color-surface-2)] text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400';
+  const inactiveClass = 'bg-surface-2 text-gray-500 border border-line hover:border-primary-500/40 hover:text-primary-400';
 
-  const paginationBtn = 'px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600';
+  const paginationBtn = 'px-3 py-1.5 text-xs font-medium rounded-lg border border-line bg-surface-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600';
   const paginationPage = (active: boolean) =>
     `w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
       active
         ? 'bg-primary-500 border-primary-500 text-white'
-        : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] text-gray-600'
+        : 'border-line bg-surface-2 hover:bg-surface-card-hover text-gray-600'
     }`;
 
   return (
     <PageShell>
       {/* Toolbar */}
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Catálogo de Productos</h2>
@@ -140,12 +140,12 @@ export function ProductsPage() {
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Buscar producto por nombre..."
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-[var(--border-subtle)] rounded-xl bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
+          className="w-full pl-9 pr-4 py-2.5 text-sm border border-line rounded-xl bg-surface-card text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
         />
       </div>
 
       {products.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-[var(--border-subtle)] shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="flex flex-col items-center justify-center py-16 text-gray-400 rounded-2xl border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
           <Icon name="box" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin productos</p>
           <p className="text-xs mt-1">
@@ -159,13 +159,13 @@ export function ProductsPage() {
             {products.map((p) => (
               <div
                 key={p.id}
-                className={`flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)]
+                className={`flex items-center gap-3 rounded-2xl border border-line
                   shadow-card-md p-3 transition-colors
                   ${!p.isActive ? 'opacity-60' : ''}`}
                 style={{ background: 'var(--color-surface-card)' }}
               >
                 {/* Thumbnail */}
-                <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-[var(--color-surface-2)] flex items-center justify-center">
+                <div className="shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-surface-2 flex items-center justify-center">
                   {p.imageUrl ? (
                     <img
                       src={p.imageUrl}
@@ -182,7 +182,7 @@ export function ProductsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-500 bg-[var(--color-surface-2)] rounded-md px-1.5 py-0.5 truncate max-w-[120px]">
+                    <span className="text-xs text-gray-500 bg-surface-2 rounded-md px-1.5 py-0.5 truncate max-w-[120px]">
                       {getCategoryName(p.categoryId)}
                     </span>
                     <span className="font-heading font-bold text-sm text-gray-900 whitespace-nowrap">Bs {p.price.toFixed(2)}</span>
@@ -207,11 +207,11 @@ export function ProductsPage() {
           </div>
 
           {/* Desktop table — hidden below lg */}
-          <div className="hidden lg:block rounded-2xl border border-[var(--border-subtle)] shadow-card-lg overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="hidden lg:block rounded-2xl border border-line shadow-card-lg overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
+                  <tr className="border-b border-line bg-surface-2">
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-16"></th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Producto</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Categoría</th>
@@ -220,11 +220,11 @@ export function ProductsPage() {
                     <th className="text-right px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--border-subtle)]">
+                <tbody className="divide-y divide-line">
                   {products.map((p) => (
-                    <tr key={p.id} className={`transition-colors hover:bg-[var(--color-surface-2)] ${!p.isActive ? 'opacity-60' : ''}`}>
+                    <tr key={p.id} className={`transition-colors hover:bg-surface-2 ${!p.isActive ? 'opacity-60' : ''}`}>
                       <td className="px-4 py-3">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--color-surface-2)] flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-surface-2 flex items-center justify-center shrink-0">
                           {p.imageUrl ? (
                             <img
                               src={p.imageUrl}
@@ -239,7 +239,7 @@ export function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-900">{p.name}</td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-gray-500 bg-[var(--color-surface-2)] rounded-lg px-2 py-1">
+                        <span className="text-xs text-gray-500 bg-surface-2 rounded-lg px-2 py-1">
                           {getCategoryName(p.categoryId)}
                         </span>
                       </td>

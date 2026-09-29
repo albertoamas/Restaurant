@@ -51,7 +51,7 @@ export function SummaryTab({ report, expenseSummary }: Props) {
                 <span className="text-gray-500">Gastos operativos</span>
                 <span className="font-heading font-bold text-red-500">− Bs {expenses.toFixed(2)}</span>
               </div>
-              <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2.5 text-sm">
+              <div className="flex items-center justify-between border-t border-line pt-2.5 text-sm">
                 <span className="font-semibold text-gray-700">Resultado neto</span>
                 <span className={`font-heading font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                   {!isPositive && '− '}Bs {Math.abs(netProfit).toFixed(2)}

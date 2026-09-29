@@ -7,7 +7,7 @@ export function PrivateRoute() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[var(--color-surface-page)]">
+      <div className="flex items-center justify-center h-screen bg-surface-page">
         <Spinner size="md" />
       </div>
     );

@@ -46,8 +46,8 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
   }, [concepts, query, category]);
 
   return (
-    <section className="mb-5 overflow-hidden rounded-2xl border border-[var(--border-subtle)] shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
-      <div className="flex flex-col gap-3 border-b border-[var(--border-subtle)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <section className="mb-5 overflow-hidden rounded-2xl border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="flex flex-col gap-3 border-b border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
           <h2 className="font-heading text-sm font-black text-gray-900">Registrar gasto</h2>
           <p className="text-xs text-gray-500">Toca el gasto y escribe el monto.</p>
@@ -68,7 +68,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
             type="button"
             onClick={onManage}
             title="Configurar la lista de gastos"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] text-gray-500 transition-colors hover:border-primary-500/40 hover:text-primary-600"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line text-gray-500 transition-colors hover:border-primary-500/40 hover:text-primary-600"
           >
             <Icon name="settings" size={16} />
           </button>
@@ -76,7 +76,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
       </div>
 
       {categories.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto border-b border-[var(--border-subtle)] px-4 py-2.5 sm:px-5">
+        <div className="flex gap-1.5 overflow-x-auto border-b border-line px-4 py-2.5 sm:px-5">
           <CategoryChip label="Todos" active={category === ''} onClick={() => setCategory('')} />
           {categories.map((name) => (
             <CategoryChip
@@ -93,7 +93,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
         {loading ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-[var(--color-surface-2)]" />
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-surface-2" />
             ))}
           </div>
         ) : visible.length === 0 ? (
@@ -125,7 +125,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
                 key={concept.id}
                 type="button"
                 onClick={() => setActive(concept)}
-                className="group flex min-h-16 flex-col items-start justify-between gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary-500/50 hover:bg-[var(--color-surface-card)] hover:shadow-card-md"
+                className="group flex min-h-16 flex-col items-start justify-between gap-1 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary-500/50 hover:bg-surface-card hover:shadow-card-md"
               >
                 <span className="line-clamp-2 text-sm font-bold leading-tight text-gray-800 group-hover:text-gray-900">
                   {concept.name}
@@ -135,7 +135,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
                     {concept.categoryName}
                   </span>
                   {concept.unit && (
-                    <span className="shrink-0 rounded-md bg-[var(--color-surface-3)] px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
+                    <span className="shrink-0 rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
                       {concept.unit}
                     </span>
                   )}
@@ -146,7 +146,7 @@ export function QuickExpensePanel({ onRegistered, onManage }: QuickExpensePanelP
             <button
               type="button"
               onClick={() => setCreatingName('')}
-              className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--border-strong)] px-3 py-2.5 text-gray-400 transition-colors hover:border-primary-500/60 hover:text-primary-600"
+              className="flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-line-strong px-3 py-2.5 text-gray-400 transition-colors hover:border-primary-500/60 hover:text-primary-600"
             >
               <Icon name="plus" size={16} strokeWidth={2.2} />
               <span className="text-xs font-bold">Agregar gasto</span>
@@ -186,7 +186,7 @@ function CategoryChip({ label, active, onClick }: { label: string; active: boole
       className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
         active
           ? 'bg-primary-600 text-white'
-          : 'bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700'
+          : 'bg-surface-2 text-gray-500 hover:text-gray-700'
       }`}
     >
       {label}
@@ -303,7 +303,7 @@ function QuickExpenseDialog({
           </label>
         )}
 
-        <div className="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-4 py-3">
+        <div className="flex items-center justify-between rounded-xl border border-line bg-surface-2 px-4 py-3">
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Total</span>
           <span className="font-heading text-xl font-black tabular-nums text-gray-900">
             Bs {total.toFixed(2)}

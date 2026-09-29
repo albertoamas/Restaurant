@@ -48,15 +48,15 @@ export function BranchSelector({
         onClick={() => canSelect && onToggle()}
         className={[
           'w-full flex items-center justify-between gap-1.5 px-3 py-2',
-          'rounded-xl bg-[var(--color-surface-3)] border border-[var(--border-subtle)]',
-          'text-xs text-[var(--color-text-soft)] transition-colors',
+          'rounded-xl bg-surface-3 border border-line',
+          'text-xs text-soft transition-colors',
           canSelect
-            ? 'hover:bg-[var(--color-surface-card-hover)] hover:text-[var(--color-text-main)] cursor-pointer'
+            ? 'hover:bg-surface-card-hover hover:text-main cursor-pointer'
             : 'cursor-default',
         ].join(' ')}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <Icon name="map-pin" size={12} strokeWidth={2} className="shrink-0 text-[var(--color-text-muted)]" />
+          <Icon name="map-pin" size={12} strokeWidth={2} className="shrink-0 text-muted" />
           <span className="truncate">{label}</span>
         </div>
         {canSelect && (
@@ -64,26 +64,26 @@ export function BranchSelector({
             name="chevron-down"
             size={12}
             strokeWidth={2}
-            className={`shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+            className={`shrink-0 text-muted transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
           />
         )}
       </button>
 
       {isOpen && canSelect && (
         <div
-          className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-[var(--border-subtle)] shadow-card-xl bg-[var(--color-surface-card)]"
+          className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-line shadow-card-xl bg-surface-card"
         >
           <button
             onClick={() => onSelect(null)}
             className={[
-              'w-full text-left px-3 py-2.5 text-xs hover:bg-[var(--color-surface-2)] transition-colors',
-              'flex items-center gap-2 border-b border-[var(--border-subtle)]',
-              currentBranchId === null ? 'text-primary-500 font-semibold' : 'text-[var(--color-text-soft)]',
+              'w-full text-left px-3 py-2.5 text-xs hover:bg-surface-2 transition-colors',
+              'flex items-center gap-2 border-b border-line',
+              currentBranchId === null ? 'text-primary-500 font-semibold' : 'text-soft',
             ].join(' ')}
           >
             {currentBranchId === null
               ? <span className="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
-              : <Icon name="building" size={12} strokeWidth={2} className="shrink-0 text-[var(--color-text-muted)]" />}
+              : <Icon name="building" size={12} strokeWidth={2} className="shrink-0 text-muted" />}
             {ALL_BRANCHES_LABEL}
           </button>
 
@@ -92,9 +92,9 @@ export function BranchSelector({
               key={b.id}
               onClick={() => onSelect(b.id)}
               className={[
-                'w-full text-left px-3 py-2.5 text-xs hover:bg-[var(--color-surface-2)] transition-colors',
+                'w-full text-left px-3 py-2.5 text-xs hover:bg-surface-2 transition-colors',
                 'flex items-center gap-2',
-                b.id === currentBranchId ? 'text-primary-500 font-semibold' : 'text-[var(--color-text-soft)]',
+                b.id === currentBranchId ? 'text-primary-500 font-semibold' : 'text-soft',
               ].join(' ')}
             >
               {b.id === currentBranchId && (

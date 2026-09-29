@@ -17,9 +17,9 @@ const variants = {
   ].join(' '),
 
   secondary: [
-    'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-700',
+    'bg-surface-2 border border-line text-gray-700',
     'shadow-[0_1px_2px_oklch(0.06_0.010_38/0.2)]',
-    'hover:border-[var(--border-strong)] hover:bg-[var(--color-surface-card-hover)] hover:text-gray-600',
+    'hover:border-line-strong hover:bg-surface-card-hover hover:text-gray-600',
   ].join(' '),
 
   danger: [
@@ -31,11 +31,11 @@ const variants = {
 
   ghost: [
     'bg-transparent text-gray-500',
-    'hover:bg-[var(--color-surface-2)] hover:text-gray-700',
+    'hover:bg-surface-2 hover:text-gray-700',
   ].join(' '),
 
   outline: [
-    'bg-transparent border border-[var(--border-subtle)] text-gray-600',
+    'bg-transparent border border-line text-gray-600',
     'hover:border-primary-500/50 hover:text-primary-400 hover:bg-primary-500/8',
   ].join(' '),
 

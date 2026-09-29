@@ -23,7 +23,7 @@ export function ExpenseBrowser({
   view, onChangeView, selectedDay, onClearDay, children,
 }: ExpenseBrowserProps) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
+    <section className="overflow-hidden rounded-2xl border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
       {categories.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto px-4 py-3 sm:px-5">
           <CategoryChip label="Todas" active={selectedCategory === ''} onClick={() => onSelectCategory('')} />
@@ -41,10 +41,10 @@ export function ExpenseBrowser({
 
       <div
         className={`flex items-center justify-between gap-3 px-4 py-3 sm:px-5 ${
-          categories.length > 0 ? 'border-t border-[var(--border-subtle)]' : ''
+          categories.length > 0 ? 'border-t border-line' : ''
         }`}
       >
-        <div className="inline-flex rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] p-1">
+        <div className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
           <ViewButton active={view === 'activity'} onClick={() => onChangeView('activity')} icon="receipt" label="Movimientos" />
           <ViewButton active={view === 'calendar'} onClick={() => onChangeView('calendar')} icon="table" label="Calendario" />
         </div>
@@ -59,7 +59,7 @@ export function ExpenseBrowser({
         )}
       </div>
 
-      <div className="border-t border-[var(--border-subtle)]">{children}</div>
+      <div className="border-t border-line">{children}</div>
     </section>
   );
 }
@@ -78,7 +78,7 @@ function CategoryChip({
       className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
         active
           ? 'bg-primary-600 text-white'
-          : 'border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700'
+          : 'border border-line bg-surface-2 text-gray-500 hover:text-gray-700'
       }`}
     >
       {label}
@@ -105,7 +105,7 @@ function ViewButton({
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
         active
-          ? 'bg-[var(--color-surface-card)] text-gray-900 shadow-card'
+          ? 'bg-surface-card text-gray-900 shadow-card'
           : 'text-gray-400 hover:text-gray-700'
       }`}
     >

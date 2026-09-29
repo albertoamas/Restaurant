@@ -85,10 +85,10 @@ export function Sidebar({ collapsed }: SidebarProps) {
     return (
       <aside
         data-print-hide
-        className="hidden lg:flex lg:flex-col w-16 h-screen fixed left-0 top-0 border-r border-[var(--border-subtle)] bg-[var(--color-surface-sidebar)] transition-all duration-200 z-30"
+        className="hidden lg:flex lg:flex-col w-16 h-screen fixed left-0 top-0 border-r border-line bg-surface-sidebar transition-all duration-200 z-30"
       >
         {/* Logo only */}
-        <div className="flex items-center justify-center py-4 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center justify-center py-4 border-b border-line">
           <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
             <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
           </div>
@@ -105,8 +105,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
                 [
                   'relative flex items-center justify-center p-2.5 rounded-xl transition-all duration-150',
                   isActive
-                    ? 'text-primary-500 bg-[var(--color-surface-3)] border border-[var(--border-subtle)]'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)]',
+                    ? 'text-primary-500 bg-surface-3 border border-line'
+                    : 'text-muted hover:text-main hover:bg-surface-2',
                 ].join(' ')
               }
             >
@@ -123,13 +123,13 @@ export function Sidebar({ collapsed }: SidebarProps) {
         </nav>
 
         {/* User avatar only */}
-        <div className="px-2 py-3 border-t border-[var(--border-subtle)] flex justify-center">
+        <div className="px-2 py-3 border-t border-line flex justify-center">
           <button
             title={user?.name}
             onClick={() => navigate('/account')}
-            className="w-8 h-8 rounded-full bg-[var(--color-surface-3)] flex items-center justify-center hover:bg-[var(--color-surface-card-hover)] border border-[var(--border-subtle)] transition-colors"
+            className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center hover:bg-surface-card-hover border border-line transition-colors"
           >
-            <span className="text-xs font-bold text-[var(--color-text-main)]">{userInitial}</span>
+            <span className="text-xs font-bold text-main">{userInitial}</span>
           </button>
         </div>
       </aside>
@@ -139,19 +139,19 @@ export function Sidebar({ collapsed }: SidebarProps) {
   return (
     <aside
       data-print-hide
-      className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-[var(--border-subtle)] bg-[var(--color-surface-sidebar)] transition-all duration-200 z-30"
+      className="hidden lg:flex lg:flex-col w-60 h-screen fixed left-0 top-0 border-r border-line bg-surface-sidebar transition-all duration-200 z-30"
     >
       {/* Brand header */}
-      <div className="px-4 pt-5 pb-4 border-b border-[var(--border-subtle)]">
+      <div className="px-4 pt-5 pb-4 border-b border-line">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 shadow-[0_2px_8px_oklch(0.60_0.22_42/0.45)]">
             <Icon name="cart" size={16} strokeWidth={2} className="text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-bold text-[var(--color-text-main)] truncate font-heading">
+            <h1 className="text-sm font-bold text-main truncate font-heading">
               {user?.tenantName || 'Mi Negocio'}
             </h1>
-            <p className="text-xs text-[var(--color-text-soft)] truncate">{user?.name}</p>
+            <p className="text-xs text-soft truncate">{user?.name}</p>
           </div>
         </div>
 
@@ -187,8 +187,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
               [
                 'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 isActive
-                  ? 'text-[var(--color-text-main)] bg-[var(--color-surface-3)] border border-[var(--border-subtle)] shadow-sm'
-                  : 'text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)]',
+                  ? 'text-main bg-surface-3 border border-line shadow-sm'
+                  : 'text-soft hover:text-main hover:bg-surface-2',
               ].join(' ')
             }
           >
@@ -197,7 +197,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
                 {isActive && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary-500 rounded-full" />
                 )}
-                <span className={isActive ? 'text-primary-500' : 'text-[var(--color-text-muted)]'}>
+                <span className={isActive ? 'text-primary-500' : 'text-muted'}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -208,21 +208,21 @@ export function Sidebar({ collapsed }: SidebarProps) {
       </nav>
 
       {/* User menu */}
-      <div className="px-3 py-3 border-t border-[var(--border-subtle)]">
+      <div className="px-3 py-3 border-t border-line">
         <div ref={userMenuRef} className="relative">
           {userMenuOpen && (
             <div
-              className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--color-surface-card)] shadow-card-xl animate-slide-down"
+              className="absolute bottom-full left-0 right-0 mb-2 rounded-xl overflow-hidden border border-line bg-surface-card shadow-card-xl animate-slide-down"
             >
               <InstallAppMenuItem onSelect={() => setUserMenuOpen(false)} />
               <button
                 onClick={() => { setUserMenuOpen(false); navigate('/account'); }}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--color-text-soft)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-surface-2)] transition-colors"
+                className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-soft hover:text-main hover:bg-surface-2 transition-colors"
               >
                 <Icon name="user-circle" size={16} className="shrink-0" />
                 Mi cuenta
               </button>
-              <div className="h-px bg-[var(--border-subtle)] mx-3" />
+              <div className="h-px bg-line mx-3" />
               <button
                 onClick={() => { setUserMenuOpen(false); logout(); }}
                 className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-colors"
@@ -235,20 +235,20 @@ export function Sidebar({ collapsed }: SidebarProps) {
 
           <button
             onClick={() => setUserMenuOpen((o) => !o)}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors"
+            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-surface-2 transition-colors"
           >
-            <div className="w-7 h-7 rounded-full bg-[var(--color-surface-3)] border border-[var(--border-strong)] flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold text-[var(--color-text-main)]">{userInitial}</span>
+            <div className="w-7 h-7 rounded-full bg-surface-3 border border-line-strong flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-main">{userInitial}</span>
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-medium text-[var(--color-text-main)] truncate leading-tight">{user?.name}</p>
-              <p className="text-[10px] text-[var(--color-text-soft)] truncate leading-tight">{user?.email}</p>
+              <p className="text-xs font-medium text-main truncate leading-tight">{user?.name}</p>
+              <p className="text-[10px] text-soft truncate leading-tight">{user?.email}</p>
             </div>
             <Icon
               name="chevron-down"
               size={14}
               strokeWidth={2}
-              className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-150 ${userMenuOpen ? 'rotate-180' : ''}`}
+              className={`text-muted shrink-0 transition-transform duration-150 ${userMenuOpen ? 'rotate-180' : ''}`}
             />
           </button>
         </div>

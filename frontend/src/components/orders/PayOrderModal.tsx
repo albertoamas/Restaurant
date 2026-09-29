@@ -30,9 +30,9 @@ const ALL_PAYMENT_METHODS = [
     label: 'Efectivo',
     cortesiaOnly: false,
     icon: <Icon name="cash" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
     active:      'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
-    splitIdle:   'border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10',
+    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10',
     splitActive: 'border-2 border-emerald-500/60 bg-emerald-500/18 text-emerald-600',
   },
   {
@@ -40,9 +40,9 @@ const ALL_PAYMENT_METHODS = [
     label: 'QR',
     cortesiaOnly: false,
     icon: <Icon name="qr" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
     active:      'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
-    splitIdle:   'border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10',
+    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10',
     splitActive: 'border-2 border-primary-500/60 bg-primary-500/18 text-primary-600',
   },
   {
@@ -50,9 +50,9 @@ const ALL_PAYMENT_METHODS = [
     label: 'Transferencia',
     cortesiaOnly: false,
     icon: <Icon name="card" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
+    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
     active:      'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
-    splitIdle:   'border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10',
+    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10',
     splitActive: 'border-2 border-violet-500/60 bg-violet-500/18 text-violet-600',
   },
   {
@@ -60,9 +60,9 @@ const ALL_PAYMENT_METHODS = [
     label: 'Cortesía',
     cortesiaOnly: true,
     icon: <Icon name="gift" size={28} strokeWidth={1.5} />,
-    idle:        'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
+    idle:        'border-2 border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
     active:      'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
-    splitIdle:   'border border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10',
+    splitIdle:   'border border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10',
     splitActive: 'border-2 border-amber-500/60 bg-amber-500/18 text-amber-600',
   },
 ];
@@ -141,7 +141,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
       <div className="space-y-4">
 
         {/* ── Resumen del pedido ─────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)]">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface-2 border border-line">
           <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
             <span className="text-sm font-black text-amber-600">#{order.orderNumber}</span>
           </div>
@@ -162,7 +162,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
           </span>
         </div>
 
-        <div className="border-t border-[var(--border-subtle)]" />
+        <div className="border-t border-line" />
 
         {/* ── Método de pago ─────────────────────────────────────────── */}
         <div>
@@ -194,7 +194,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                   onClick={() => { setSplitMode(true); setSplitAmount(total.toFixed(2)); setSelectedMethod(null); }}
                   className="mt-3 w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl
                     text-sm font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-500/10
-                    border-2 border-[var(--border-subtle)] hover:border-primary-400/50 transition-all"
+                    border-2 border-line hover:border-primary-400/50 transition-all"
                 >
                   <Icon name="plus" size={14} strokeWidth={2} />
                   Dividir pago entre varios métodos
@@ -216,7 +216,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
               </div>
 
               <div>
-                <div className="h-2.5 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
+                <div className="h-2.5 bg-surface-2 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{
@@ -240,12 +240,12 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                   {splitPayments.map((p, i) => {
                     const m = methodMap[p.method];
                     return (
-                      <div key={i} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-sm">
+                      <div key={i} className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full bg-surface-2 border border-line text-sm">
                         <span className="font-semibold text-gray-800">{m?.label ?? p.method}</span>
                         <span className="text-gray-500">Bs {p.amount.toFixed(2)}</span>
                         <button
                           onClick={() => setSplitPayments((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="w-4 h-4 rounded-full bg-[var(--border-subtle)] hover:bg-red-400 flex items-center justify-center text-gray-500 hover:text-white transition-colors ml-0.5"
+                          className="w-4 h-4 rounded-full bg-line hover:bg-red-400 flex items-center justify-center text-gray-500 hover:text-white transition-colors ml-0.5"
                           aria-label="Quitar"
                         >
                           <Icon name="x" size={10} strokeWidth={3} />
@@ -283,7 +283,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
                         onChange={(e) => setSplitAmount(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSplit()}
                         placeholder={remaining.toFixed(2)}
-                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-[var(--border-subtle)] rounded-xl bg-[var(--color-surface-card)] text-gray-700
+                        className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-line rounded-xl bg-surface-card text-gray-700
                           focus:outline-none focus:border-primary-400 transition-[border-color]"
                       />
                     </div>
@@ -303,7 +303,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
         </div>
 
         {/* ── Footer: confirmar ──────────────────────────────────────── */}
-        <div className="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
+        <div className="border-t border-line pt-4 space-y-2.5">
           {!canConfirm && (
             <p className="text-[11px] px-1 text-gray-400">
               Selecciona un método de pago para continuar
@@ -317,7 +317,7 @@ export function PayOrderModal({ isOpen, onClose, order, onPaid, allowCortesia = 
               'w-full py-4 rounded-2xl text-base font-bold transition-all duration-200',
               canConfirm
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_oklch(0.55_0.18_145/0.30)] active:scale-[0.98]'
-                : 'bg-[var(--color-surface-2)] text-gray-400 cursor-not-allowed',
+                : 'bg-surface-2 text-gray-400 cursor-not-allowed',
             ].join(' ')}
           >
             {loading

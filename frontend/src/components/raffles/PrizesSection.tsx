@@ -8,12 +8,12 @@ import { printWinnerCertificate } from '../../utils/raffle-certificate';
 
 const MEDAL: Record<number, string> = {
   1: 'bg-amber-500/15 text-amber-600 border-amber-500/30 ring-amber-500/15',
-  2: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-strong)] ring-[var(--border-subtle)]',
+  2: 'bg-surface-2 text-gray-500 border-line-strong ring-line',
   3: 'bg-orange-500/12 text-orange-500 border-orange-500/25 ring-orange-500/10',
 };
 
 function PositionMedal({ position }: { position: number }) {
-  const cls = MEDAL[position] ?? 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)] ring-[var(--border-subtle)]';
+  const cls = MEDAL[position] ?? 'bg-surface-2 text-gray-500 border-line ring-line';
   return (
     <span className={`w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-black shrink-0 ring-2 ${cls}`}>
       {position}°
@@ -41,7 +41,7 @@ export function PrizesSection({
   if (prizes.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-[var(--border-subtle)] p-5" style={{ background: 'var(--color-surface-card)' }}>
+    <section className="rounded-2xl border border-line p-5" style={{ background: 'var(--color-surface-card)' }}>
       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Premios</p>
       <div className="space-y-2">
         {prizes.map((p) => {
@@ -51,7 +51,7 @@ export function PrizesSection({
 
           return (
             <div key={p.position} className={`rounded-xl border px-3.5 py-3 transition-colors ${
-              activeWinner ? 'bg-amber-500/12 border-amber-500/25' : 'bg-[var(--color-surface-2)] border-transparent'
+              activeWinner ? 'bg-amber-500/12 border-amber-500/25' : 'bg-surface-2 border-transparent'
             }`}>
               <div className="flex items-center gap-3">
                 <PositionMedal position={p.position} />

@@ -33,7 +33,7 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
     <div className="-mx-1 overflow-x-auto">
       <table className="w-full min-w-[640px] text-xs">
         <thead>
-          <tr className="border-b border-[var(--border-subtle)]">
+          <tr className="border-b border-line">
             <th className="pb-2 pl-1 pr-3 text-left  font-semibold text-gray-400">Sucursal</th>
             <th className="pb-2 pr-3 text-right font-semibold text-gray-400">Ventas</th>
             <th className="pb-2 pr-3 text-right font-semibold text-gray-400">Gastos</th>
@@ -42,7 +42,7 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
             <th className="pb-2 pr-1 text-right font-semibold text-gray-400">Ticket prom.</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[var(--border-subtle)]">
+        <tbody className="divide-y divide-line">
           {data.map((b) => {
             const sharePct = totals.totalSales > 0 ? (b.totalSales / totals.totalSales) * 100 : 0;
             return (
@@ -53,7 +53,7 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
                     {b.branchName}
                   </span>
                   <span className="mt-1.5 flex items-center gap-2">
-                    <span className="block h-1 w-full max-w-[120px] overflow-hidden rounded-full bg-[var(--color-surface-3)]">
+                    <span className="block h-1 w-full max-w-[120px] overflow-hidden rounded-full bg-surface-3">
                       <span className="block h-full rounded-full bg-gray-400" style={{ width: `${sharePct}%` }} />
                     </span>
                     <span className="font-mono text-[10px] text-gray-400 tabular-nums">{sharePct.toFixed(0)}%</span>
@@ -77,7 +77,7 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
           })}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-[var(--border-strong)]">
+          <tr className="border-t-2 border-line-strong">
             <td className="pt-2.5 pl-1 pr-3 font-semibold text-gray-700">Total</td>
             <td className="pt-2.5 pr-3 text-right font-mono font-bold text-gray-900 tabular-nums">
               Bs {totals.totalSales.toFixed(2)}

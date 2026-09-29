@@ -14,9 +14,9 @@ export const PLAN_CONFIG: Record<SaasPlan, {
 }> = {
   [SaasPlan.BASICO]: {
     label: 'Básico',
-    badge: 'bg-[var(--color-surface-2)] text-gray-600 border-[var(--border-subtle)]',
-    card: 'border-[var(--border-subtle)] bg-[var(--color-surface-2)]',
-    cardActive: 'border-[var(--border-strong)] bg-[var(--color-surface-3)] ring-1 ring-[var(--border-subtle)]',
+    badge: 'bg-surface-2 text-gray-600 border-line',
+    card: 'border-line bg-surface-2',
+    cardActive: 'border-line-strong bg-surface-3 ring-1 ring-line',
     accent: 'text-gray-700',
   },
   [SaasPlan.PRO]: {

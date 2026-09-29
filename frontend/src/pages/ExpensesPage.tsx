@@ -48,7 +48,7 @@ const PERIODS: { key: Period; label: string }[] = [
 ];
 
 const DATE_INPUT =
-  'rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] px-3 py-1.5 text-sm text-gray-700 ' +
+  'rounded-xl border border-line bg-surface-card px-3 py-1.5 text-sm text-gray-700 ' +
   'outline-none transition-[border-color,box-shadow] focus:border-primary-500 focus:ring-[3px] focus:ring-primary-500/20';
 
 export function ExpensesPage() {
@@ -97,7 +97,7 @@ export function ExpensesPage() {
   return (
     <PageShell>
       {/* Cabecera */}
-      <div className="mb-5 rounded-2xl border border-[var(--border-subtle)] shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="mb-5 rounded-2xl border border-line shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
         <div className="px-4 py-4 sm:px-5">
           <div>
             <h1 className="font-heading text-xl font-black text-gray-900 sm:text-2xl">Gastos</h1>
@@ -109,7 +109,7 @@ export function ExpensesPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--border-subtle)] px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 sm:px-5">
           {PERIODS.map((p) => (
             <button
               key={p.key}
@@ -117,7 +117,7 @@ export function ExpensesPage() {
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                 period === p.key
                   ? 'bg-primary-600 text-white'
-                  : 'bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700'
+                  : 'bg-surface-2 text-gray-500 hover:text-gray-700'
               }`}
             >
               {p.label}

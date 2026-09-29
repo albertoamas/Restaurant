@@ -20,7 +20,7 @@ const ORDER_TYPE_LABEL: Record<OrderType, string> = {
 const STATUS_STYLE: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: 'bg-amber-500/12 text-amber-600',
   [OrderStatus.PREPARING]: 'bg-sky-500/12 text-sky-600',
-  [OrderStatus.DELIVERED]: 'bg-[var(--color-surface-2)] text-gray-600',
+  [OrderStatus.DELIVERED]: 'bg-surface-2 text-gray-600',
   [OrderStatus.CANCELLED]: 'bg-red-500/12 text-red-500',
 };
 
@@ -49,7 +49,7 @@ export function CustomerOrderHistory({ customerId }: { customerId: string }) {
   if (loading) return <div className="flex justify-center py-8"><Spinner /></div>;
   if (orders.length === 0) return (
     <div className="flex flex-col items-center justify-center py-10 text-center">
-      <div className="w-12 h-12 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center mb-3">
+      <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center mb-3">
         <Icon name="bag" size={24} className="text-gray-400" />
       </div>
       <p className="text-sm font-medium text-gray-500">Sin pedidos registrados</p>
@@ -64,11 +64,11 @@ export function CustomerOrderHistory({ customerId }: { customerId: string }) {
           : o.paymentMethod ? PAYMENT_LABEL[o.paymentMethod] : null;
 
         return (
-          <div key={o.id} className="bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 hover:border-primary-500/30 transition-colors">
+          <div key={o.id} className="bg-surface-2 border border-line rounded-xl px-4 py-3 hover:border-primary-500/30 transition-colors">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-900 bg-white dark:bg-white/10 px-1.5 py-0.5 rounded-md shadow-sm border border-[var(--border-subtle)]">#{o.orderNumber}</span>
-                <span className="text-[11px] font-medium text-gray-500 bg-[var(--color-surface-3)] px-1.5 py-0.5 rounded-md">{ORDER_TYPE_LABEL[o.type]}</span>
+                <span className="text-xs font-bold text-gray-900 bg-white dark:bg-white/10 px-1.5 py-0.5 rounded-md shadow-sm border border-line">#{o.orderNumber}</span>
+                <span className="text-[11px] font-medium text-gray-500 bg-surface-3 px-1.5 py-0.5 rounded-md">{ORDER_TYPE_LABEL[o.type]}</span>
                 {paymentText && <span className="text-[11px] font-medium text-gray-500">{paymentText}</span>}
               </div>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${STATUS_STYLE[o.status]}`}>
@@ -98,7 +98,7 @@ export function CustomerHistoryModal({
 }) {
   return (
     <Modal isOpen onClose={onClose} title={`Historial de ${customer.name}`} size="md">
-      <div className="bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-2xl p-4 mb-5 flex items-center justify-between shadow-sm">
+      <div className="bg-surface-2 border border-line rounded-2xl p-4 mb-5 flex items-center justify-between shadow-sm">
         <div>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Última compra</p>
           <p className="text-sm font-semibold text-gray-900">{formatDate(customer.lastOrderAt)}</p>

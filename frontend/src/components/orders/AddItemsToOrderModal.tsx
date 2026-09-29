@@ -36,7 +36,7 @@ const PAYMENT_METHODS = [
     label: 'Efectivo',
     cortesiaOnly: false,
     icon: <Icon name="cash" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-emerald-400',
     active: 'border-2 border-emerald-500/70 bg-emerald-500/18 text-emerald-600',
   },
   {
@@ -44,7 +44,7 @@ const PAYMENT_METHODS = [
     label: 'QR',
     cortesiaOnly: false,
     icon: <Icon name="qr" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-primary-400/50 hover:bg-primary-500/10 hover:text-primary-400',
     active: 'border-2 border-primary-500/70 bg-primary-500/18 text-primary-600',
   },
   {
@@ -52,7 +52,7 @@ const PAYMENT_METHODS = [
     label: 'Transferencia',
     cortesiaOnly: false,
     icon: <Icon name="card" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-violet-400/50 hover:bg-violet-500/10 hover:text-violet-400',
     active: 'border-2 border-violet-500/70 bg-violet-500/18 text-violet-600',
   },
   {
@@ -60,7 +60,7 @@ const PAYMENT_METHODS = [
     label: 'Cortesia',
     cortesiaOnly: true,
     icon: <Icon name="gift" size={24} strokeWidth={1.5} />,
-    idle:   'border-2 border-[var(--border-subtle)] bg-[var(--color-surface-2)] text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
+    idle:   'border-2 border-line bg-surface-2 text-gray-500 hover:border-amber-400/50 hover:bg-amber-500/10 hover:text-amber-400',
     active: 'border-2 border-amber-500/70 bg-amber-500/18 text-amber-600',
   },
 ];
@@ -164,7 +164,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
         -mx-6 -mb-5 cancels the Modal's own px-6 py-5 padding so columns reach the edges cleanly.
         overflow-hidden on each column prevents content from spilling out.
       */}
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] -mx-6 -mb-5 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-subtle)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] -mx-6 -mb-5 divide-y lg:divide-y-0 lg:divide-x divide-line">
 
         {/* ====== LEFT — product selector ====== */}
         <div className="flex flex-col gap-3 px-6 py-4 overflow-hidden">
@@ -177,7 +177,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               placeholder="Buscar producto..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-9 py-2.5 text-sm border border-[var(--border-subtle)] rounded-2xl bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
+              className="w-full pl-9 pr-9 py-2.5 text-sm border border-line rounded-2xl bg-surface-2 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
             />
             {search && (
               <button
@@ -201,7 +201,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
 
           {/* Product grid — fixed height, internal scroll only */}
           <div
-            className="overflow-y-auto overflow-x-hidden rounded-2xl border border-[var(--border-subtle)] p-2"
+            className="overflow-y-auto overflow-x-hidden rounded-2xl border border-line p-2"
             style={{ background: 'var(--color-surface-2)', height: '380px' }}
           >
             <ProductGrid products={filteredProducts} onSelect={addToCart} showImages={showProductImages} />
@@ -217,7 +217,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               Productos a anadir
             </p>
             {cartEmpty ? (
-              <div className="flex flex-col items-center justify-center py-8 rounded-2xl border-2 border-dashed border-[var(--border-subtle)] text-gray-400">
+              <div className="flex flex-col items-center justify-center py-8 rounded-2xl border-2 border-dashed border-line text-gray-400">
                 <Icon name="cart" size={28} strokeWidth={1.5} className="mb-2 opacity-50" />
                 <p className="text-sm">Selecciona productos de la izquierda</p>
               </div>
@@ -226,7 +226,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
                 {cart.map((item) => (
                   <div
                     key={item.productId}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-surface-2)] border border-[var(--border-subtle)] min-w-0"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-2 border border-line min-w-0"
                   >
                     <span className="flex-1 text-sm font-semibold text-gray-800 truncate min-w-0">{item.name}</span>
 
@@ -234,7 +234,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => decrementCart(item.productId)}
-                        className="w-6 h-6 rounded-lg bg-[var(--color-surface-card)] border border-[var(--border-subtle)] flex items-center justify-center text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors"
+                        className="w-6 h-6 rounded-lg bg-surface-card border border-line flex items-center justify-center text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors"
                         aria-label="Quitar"
                       >
                         <Icon name="minus" size={12} strokeWidth={2.5} />
@@ -242,7 +242,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
                       <span className="w-6 text-center text-sm font-bold text-gray-800 tabular-nums">{item.quantity}</span>
                       <button
                         onClick={() => incrementCart(item.productId)}
-                        className="w-6 h-6 rounded-lg bg-[var(--color-surface-card)] border border-[var(--border-subtle)] flex items-center justify-center text-gray-500 hover:text-emerald-500 hover:border-emerald-300 transition-colors"
+                        className="w-6 h-6 rounded-lg bg-surface-card border border-line flex items-center justify-center text-gray-500 hover:text-emerald-500 hover:border-emerald-300 transition-colors"
                         aria-label="Agregar"
                       >
                         <Icon name="plus" size={12} strokeWidth={2.5} />
@@ -255,7 +255,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
 
                     <button
                       onClick={() => removeFromCart(item.productId)}
-                      className="w-5 h-5 rounded-full bg-[var(--border-subtle)] hover:bg-red-500/60 flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+                      className="w-5 h-5 rounded-full bg-line hover:bg-red-500/60 flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
                       aria-label="Eliminar"
                     >
                       <Icon name="x" size={10} strokeWidth={3} />
@@ -268,12 +268,12 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
 
           {/* Totals */}
           {!cartEmpty && (
-            <div className="rounded-2xl border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)] overflow-hidden">
-              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-surface-2)]">
+            <div className="rounded-2xl border border-line divide-y divide-line overflow-hidden">
+              <div className="flex justify-between items-center px-4 py-2 bg-surface-2">
                 <span className="text-xs text-gray-500 font-medium">Total actual</span>
                 <span className="text-sm font-bold text-gray-700 tabular-nums">Bs {order.total.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center px-4 py-2 bg-[var(--color-surface-2)]">
+              <div className="flex justify-between items-center px-4 py-2 bg-surface-2">
                 <span className="text-xs text-gray-500 font-medium">
                   {needsPayment ? 'A cobrar ahora' : 'Subtotal adicional'}
                 </span>
@@ -332,7 +332,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               'w-full py-3.5 rounded-2xl text-base font-bold transition-all duration-200',
               canConfirm
                 ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-[0_4px_16px_oklch(0.60_0.22_42/0.30)] active:scale-[0.98]'
-                : 'bg-[var(--color-surface-2)] text-gray-400 cursor-not-allowed',
+                : 'bg-surface-2 text-gray-400 cursor-not-allowed',
             ].join(' ')}
           >
             {loading

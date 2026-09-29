@@ -31,7 +31,7 @@ export function ProductsTab({
               data-print-hide
               value={selectedCategory}
               onChange={(e) => onCategoryChange(e.target.value)}
-              className="cursor-pointer rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] px-3 py-1.5 text-xs text-gray-600 transition-[border-color,box-shadow] focus:border-primary-500/50 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20"
+              className="cursor-pointer rounded-xl border border-line bg-surface-card px-3 py-1.5 text-xs text-gray-600 transition-[border-color,box-shadow] focus:border-primary-500/50 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20"
             >
               <option value="">Todas las categorías</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

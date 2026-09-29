@@ -1,7 +1,7 @@
 import { Icon } from '../ui/Icon';
 
 const TONES = {
-  neutral: 'text-gray-400 hover:bg-[var(--color-surface-2)] hover:text-gray-700',
+  neutral: 'text-gray-400 hover:bg-surface-2 hover:text-gray-700',
   danger:  'text-white bg-red-600 hover:opacity-90',
 };
 

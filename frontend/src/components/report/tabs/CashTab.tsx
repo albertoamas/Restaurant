@@ -45,7 +45,7 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
           <div className="-mx-1 overflow-x-auto">
             <table className="w-full min-w-[560px] text-xs">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
+                <tr className="border-b border-line">
                   <th className="pb-2 pl-1 pr-3 text-left font-semibold text-gray-400">Sucursal</th>
                   <th className="pb-2 pr-3 text-left font-semibold text-gray-400">Apertura</th>
                   <th className="pb-2 pr-3 text-left font-semibold text-gray-400">Cierre</th>
@@ -55,7 +55,7 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
                   <th className="pb-2 pr-1 text-right font-semibold text-gray-400">Diferencia</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)]">
+              <tbody className="divide-y divide-line">
                 {cashSessions.map((s) => {
                   const diff = s.difference;
                   const diffColor =
@@ -63,7 +63,7 @@ export function CashTab({ byCashier, cashSessions, loading }: Props) {
                     diff > 0     ? 'text-emerald-500' :
                     diff < 0     ? 'text-red-500' : 'text-gray-500';
                   return (
-                    <tr key={s.id} className="transition-colors hover:bg-[var(--color-surface-2)]">
+                    <tr key={s.id} className="transition-colors hover:bg-surface-2">
                       <td className="py-2.5 pl-1 pr-3 font-medium text-gray-700">{s.branchName}</td>
                       <td className="py-2.5 pr-3 text-gray-500">
                         {formatBoliviaDateShort(s.openedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.openedAt)}</span>

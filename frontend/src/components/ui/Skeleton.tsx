@@ -52,7 +52,7 @@ export function Skeleton({
   if (variant === 'card') {
     return (
       <div
-        className={`rounded-xl border border-[var(--border-subtle)] p-6 ${className}`}
+        className={`rounded-xl border border-line p-6 ${className}`}
         style={{ background: 'var(--color-surface-card)' }}
         aria-hidden="true"
       >

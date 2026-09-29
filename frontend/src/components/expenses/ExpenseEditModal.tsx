@@ -107,13 +107,13 @@ export function ExpenseEditModal({
   return (
     <Modal isOpen onClose={onClose} title="Editar gasto" size="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-3 py-2.5">
+        <div className="rounded-xl border border-line bg-surface-2 px-3 py-2.5">
           <p className="text-sm font-bold text-gray-800">{label}</p>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{categoryName}</p>
         </div>
 
         {rest.length > 0 && (
-          <p className="rounded-xl bg-[var(--color-surface-2)] px-3 py-2 text-xs text-gray-500">
+          <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-gray-500">
             Este gasto tiene {rest.length + 1} productos. Aquí editas el primero; el resto se conserva igual.
           </p>
         )}
@@ -156,7 +156,7 @@ export function ExpenseEditModal({
           </Field>
         )}
 
-        <div className="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-4 py-3">
+        <div className="flex items-center justify-between rounded-xl border border-line bg-surface-2 px-4 py-3">
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Total</span>
           <span className="font-heading text-xl font-black tabular-nums text-gray-900">
             Bs {total.toFixed(2)}

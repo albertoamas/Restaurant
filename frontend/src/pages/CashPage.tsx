@@ -33,7 +33,7 @@ interface StatRowProps {
 
 function StatRow({ label, value, muted, bold, bordered, valueClass }: StatRowProps) {
   return (
-    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-[var(--border-subtle)]' : ''}`}>
+    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-line' : ''}`}>
       <span className={`text-sm ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
       <span className={`text-sm ${bold ? 'font-heading font-bold' : 'font-medium'} ${valueClass || 'text-gray-900'}`}>
         {value}
@@ -56,7 +56,7 @@ export function CashPage() {
   if (!currentBranchId) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400 px-6">
-        <div className="w-14 h-14 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-surface-2 flex items-center justify-center mb-4">
           <Icon name="building" size={28} strokeWidth={1.5} className="text-gray-300" />
         </div>
         <p className="text-sm font-semibold text-gray-500 text-center">Selecciona una sucursal</p>
@@ -97,7 +97,7 @@ export function CashPage() {
 
   return (
     <PageShell>
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
+      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl font-black text-gray-900">Control de Caja</h2>
@@ -106,7 +106,7 @@ export function CashPage() {
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
             isOpen
               ? 'bg-emerald-500/12 text-emerald-600 border-emerald-500/30'
-              : 'bg-[var(--color-surface-2)] text-gray-600 border-[var(--border-subtle)]'
+              : 'bg-surface-2 text-gray-600 border-line'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-400'}`} />
             {isOpen ? 'Turno abierto' : 'Turno cerrado'}
@@ -171,7 +171,7 @@ export function CashPage() {
                 Abrir caja
               </Button>
             ) : (
-              <p className="text-sm text-gray-400 text-center bg-[var(--color-surface-2)] rounded-xl px-3 py-2.5">
+              <p className="text-sm text-gray-400 text-center bg-surface-2 rounded-xl px-3 py-2.5">
                 El administrador abre el turno al inicio del día.
               </p>
             )}
@@ -181,7 +181,7 @@ export function CashPage() {
 
       {/* Last closing summary */}
       {!isOpen && lastClosed && (
-        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md p-5" style={{ background: 'var(--color-surface-card)' }}>
+        <div className="rounded-2xl border border-line shadow-card-md p-5" style={{ background: 'var(--color-surface-card)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Icon name="orders" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
             <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
@@ -190,7 +190,7 @@ export function CashPage() {
             )}
           </div>
 
-          <div className="divide-y divide-[var(--border-subtle)]">
+          <div className="divide-y divide-line">
             <StatRow label="Monto inicial" value={`Bs ${lastClosed.openingAmount.toFixed(2)}`} />
             <StatRow
               label="Ventas en efectivo"
@@ -224,7 +224,7 @@ export function CashPage() {
         <button
           onClick={() => setShowHistory(true)}
           className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
-            bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-card-md"
+            bg-surface-2 border border-line rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-card-md"
         >
           Ver historial de cierres ({closedSessions.length}) →
         </button>

@@ -82,7 +82,7 @@ export function ExpensesTab({ report, expenseSummary, loading, isMultiDay }: Pro
                 <span className="font-medium text-gray-600">{legacyExpenseLabel(cat)}</span>
                 <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
               </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-[var(--color-surface-3)]">
+              <div className="h-2.5 overflow-hidden rounded-full bg-surface-3">
                 <div
                   className="h-full rounded-full bg-red-400 transition-[width] duration-700"
                   style={{ width: `${(amount / total) * 100}%` }}
