@@ -1,19 +1,19 @@
-import type { BranchReportDto, DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
+import type { DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
 import { Card } from '../../ui/Card';
 import { Icon } from '../../ui/Icon';
 import { PaymentBar, TypeRow } from '../index';
 import { NetProfitDonut } from '../charts/NetProfitDonut';
-import { BranchComparisonTable } from '../charts/BranchComparisonTable';
 
 interface Props {
   report: DailyReportDto | null;
   expenseSummary: ExpenseSummaryDto | null;
-  /** Solo llega con datos en la vista consolidada (sin sucursal seleccionada). */
-  byBranch: BranchReportDto[];
 }
 
-/** Panorama del período: totales, cómo se cobró y resultado neto. */
-export function SummaryTab({ report, expenseSummary, byBranch }: Props) {
+/**
+ * Panorama del período: totales, cómo se cobró y resultado neto. La
+ * comparativa entre sucursales vive en su propia pestaña (`BranchesTab`).
+ */
+export function SummaryTab({ report, expenseSummary }: Props) {
   if (!report) return null;
 
   const expenses   = expenseSummary?.total ?? 0;
@@ -59,16 +59,6 @@ export function SummaryTab({ report, expenseSummary, byBranch }: Props) {
               </div>
             </div>
           </div>
-        </Card>
-      )}
-
-      {byBranch.length > 1 && (
-        <Card variant="panel" className="mb-6">
-          <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Comparativa por Sucursal</h3>
-          <p className="mb-4 text-[11px] text-gray-400">
-            Ventas, gastos y ganancia de cada local en el período seleccionado
-          </p>
-          <BranchComparisonTable data={byBranch} />
         </Card>
       )}
 

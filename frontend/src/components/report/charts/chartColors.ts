@@ -15,6 +15,12 @@ export interface ChartPalette {
   gray:    string;
   /** Línea de grilla (`CartesianGrid`) — tenue sobre la superficie de cada tema. */
   grid:    string;
+  /**
+   * Superficie de la tarjeta del gráfico (`--surface-card`). Se usa como anillo
+   * alrededor de marcas que se superponen (el punto activo de dos líneas que
+   * se cruzan), para que no se fundan en una sola mancha.
+   */
+  surface: string;
 }
 
 /**
@@ -34,6 +40,7 @@ const LIGHT: ChartPalette = {
   red:     '#ef4444',
   gray:    '#6b7280',
   grid:    'rgba(0,0,0,0.08)',
+  surface: '#ffffff',
 };
 
 /**
@@ -53,6 +60,7 @@ const DARK: ChartPalette = {
   red:     '#dc2626',
   gray:    '#6b7280',
   grid:    'rgba(255,255,255,0.06)',
+  surface: '#100806',
 };
 
 /** Set estático (modo claro) — para piezas que aún no leen el tema activo. */

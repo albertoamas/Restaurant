@@ -1,5 +1,6 @@
 import client from './client';
 import type {
+  BranchDailySeriesItemDto,
   BranchReportDto,
   CashierReportDto,
   CashSessionReportItemDto,
@@ -55,6 +56,11 @@ export const reportsApi = {
   getByBranch: (from: string, to: string) =>
     client
       .get<BranchReportDto[]>('/api/v1/reports/by-branch', { params: { from, to } })
+      .then((r) => r.data),
+
+  getDailySeriesByBranch: (from: string, to: string) =>
+    client
+      .get<BranchDailySeriesItemDto[]>('/api/v1/reports/by-branch-daily', { params: { from, to } })
       .then((r) => r.data),
 
   getByCashier: (from: string, to: string, branchId?: string) =>

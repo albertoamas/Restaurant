@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type {
+  BranchDailySeriesItemDto,
   BranchReportDto,
   CashierReportDto,
   CashSessionReportItemDto,
@@ -79,16 +80,32 @@ export function useCashReport(
 }
 
 /**
- * Comparativa entre sucursales para la pestaña Resumen.
- * Solo tiene sentido en la vista consolidada (sin sucursal seleccionada).
+ * Datos de la pestaña Sucursales: totales por local y, en rangos de varios
+ * días, la evolución diaria de cada uno. Ninguno de los dos endpoints acepta
+ * `branchId`: comparan siempre todas las sucursales, sea cual sea la elegida
+ * en el menú.
  */
-export function useBranchComparison(utcFrom: string, utcTo: string, enabled: boolean) {
-  const { data: byBranch = [] as BranchReportDto[], isPending } = useQuery({
+export function useBranchComparison(
+  utcFrom: string,
+  utcTo: string,
+  isMultiDay: boolean,
+  enabled: boolean,
+) {
+  const { data: byBranch = [] as BranchReportDto[], isPending: totalsLoading } = useQuery({
     queryKey: queryKeys.reportByBranch(utcFrom, utcTo),
     queryFn:  () => reportsApi.getByBranch(utcFrom, utcTo),
     staleTime: 0,
     enabled,
   });
 
-  return { byBranch, loading: enabled && isPending };
+  // Un solo día da un punto por sucursal: no hay evolución que mostrar.
+  const { data: dailyByBranch = [] as BranchDailySeriesItemDto[], isPending: dailyLoading } = useQuery({
+    queryKey: queryKeys.reportByBranchDaily(utcFrom, utcTo),
+    queryFn:  () => reportsApi.getDailySeriesByBranch(utcFrom, utcTo),
+    staleTime: 0,
+    enabled:  enabled && isMultiDay,
+  });
+
+  const loading = enabled && (totalsLoading || (isMultiDay && dailyLoading));
+  return { byBranch, dailyByBranch, loading };
 }

@@ -16,11 +16,14 @@ import { ProductsTab } from '../components/report/tabs/ProductsTab';
 import { CustomersTab } from '../components/report/tabs/CustomersTab';
 import { ExpensesTab } from '../components/report/tabs/ExpensesTab';
 import { CashTab } from '../components/report/tabs/CashTab';
+import { BranchesTab } from '../components/report/tabs/BranchesTab';
+import { useBranches } from '../hooks/useBranches';
 import { downloadExcel } from '../utils/excel';
+import { eachDay } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
 import { useAuth } from '../context/auth.context';
 
-type TabKey = 'resumen' | 'ventas' | 'productos' | 'clientes' | 'gastos' | 'caja';
+type TabKey = 'resumen' | 'ventas' | 'sucursales' | 'productos' | 'clientes' | 'gastos' | 'caja';
 
 /**
  * `advanced` marca las pestañas que el plan vende aparte (ver
@@ -28,11 +31,16 @@ type TabKey = 'resumen' | 'ventas' | 'productos' | 'clientes' | 'gastos' | 'caja
  * verdad con `@RequiresModule('advancedReportsEnabled')`: Gastos no entra
  * porque se alimenta de `/expenses/summary`, que el módulo de gastos deja
  * abierto y la pantalla /expenses ya muestra.
+ *
+ * `multiBranch` marca la pestaña que solo aparece con más de una sucursal. No
+ * depende del plan: cualquier negocio con varios locales tiene que poder
+ * compararlos, y un plan de una sola sucursal nunca llega a mostrarla.
  */
-const TABS: { key: TabKey; label: string; icon: IconName; advanced?: boolean }[] = [
-  { key: 'resumen',   label: 'Resumen',   icon: 'chart'   },
-  { key: 'ventas',    label: 'Ventas',    icon: 'dollar'  },
-  { key: 'gastos',    label: 'Gastos',    icon: 'receipt' },
+const TABS: { key: TabKey; label: string; icon: IconName; advanced?: boolean; multiBranch?: boolean }[] = [
+  { key: 'resumen',    label: 'Resumen',    icon: 'chart'    },
+  { key: 'ventas',     label: 'Ventas',     icon: 'dollar'   },
+  { key: 'sucursales', label: 'Sucursales', icon: 'building', multiBranch: true },
+  { key: 'gastos',     label: 'Gastos',     icon: 'receipt'  },
   { key: 'caja',      label: 'Caja',      icon: 'cash',    advanced: true },
   { key: 'productos', label: 'Productos', icon: 'package', advanced: true },
   { key: 'clientes',  label: 'Clientes',  icon: 'users',   advanced: true },
@@ -51,9 +59,14 @@ export function ReportPage() {
   const canExport = plan !== SaasPlan.BASICO;
 
   const advancedReports = useSettingsStore((s) => s.advancedReportsEnabled);
+  // Todas las sucursales, activas o no: una ya dada de baja puede tener ventas
+  // en el período, y además fijan el color de cada una en los gráficos.
+  const { branches } = useBranches();
+  const hasManyBranches = branches.length > 1;
   const visibleTabs = useMemo(
-    () => TABS.filter((t) => !t.advanced || advancedReports),
-    [advancedReports],
+    () => TABS.filter((t) =>
+      (!t.advanced || advancedReports) && (!t.multiBranch || hasManyBranches)),
+    [advancedReports, hasManyBranches],
   );
 
   const [activeTab, setActiveTab] = useState<TabKey>('resumen');
@@ -84,8 +97,8 @@ export function ReportPage() {
   const customers = useTopCustomersReport(fromUtc, toUtc, branchParam, activeTab === 'clientes');
   const trends    = useSalesTrends(fromUtc, toUtc, branchParam, isMultiDay, activeTab === 'ventas');
   const cash      = useCashReport(fromUtc, toUtc, branchParam, activeTab === 'caja');
-  // Solo en la vista consolidada: con una sucursal fija no hay nada que comparar.
-  const branches  = useBranchComparison(fromUtc, toUtc, activeTab === 'resumen' && !branchParam);
+  const compare   = useBranchComparison(fromUtc, toUtc, isMultiDay, activeTab === 'sucursales');
+  const rangeDays = useMemo(() => eachDay(from, to), [from, to]);
 
   /**
    * El Excel incluye todas las secciones, así que pide los datos en el momento
@@ -217,14 +230,25 @@ export function ReportPage() {
       {/* Contenido de la pestaña */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
-      ) : noSales && !['resumen', 'gastos', 'caja'].includes(activeTab) ? (
+      ) : noSales && !['resumen', 'gastos', 'caja', 'sucursales'].includes(activeTab) ? (
+        // `sucursales` queda fuera: `noSales` mira la sucursal elegida en el
+        // menú, y esa pestaña compara todas — tiene su propio estado vacío.
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <Icon name="chart" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
           <p className="text-sm font-semibold text-gray-500">Sin ventas en este período</p>
           <p className="mt-1 text-xs">Selecciona otro rango de fechas</p>
         </div>
       ) : activeTab === 'resumen' ? (
-        <SummaryTab report={report} expenseSummary={expenseSummary} byBranch={branches.byBranch} />
+        <SummaryTab report={report} expenseSummary={expenseSummary} />
+      ) : activeTab === 'sucursales' ? (
+        <BranchesTab
+          byBranch={compare.byBranch}
+          dailyByBranch={compare.dailyByBranch}
+          branches={branches}
+          days={rangeDays}
+          isMultiDay={isMultiDay}
+          loading={compare.loading}
+        />
       ) : activeTab === 'ventas' ? (
         <SalesTab
           report={report}
