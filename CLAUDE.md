@@ -155,7 +155,8 @@ Data-layer rules: `frontend-data` skill. Visual design: `frontend-design` skill.
   inside `AppLayout` the POS/orders/cash screens (CASHIER + OWNER) and the owner-only ones
   (`OwnerRoute`). `/orders`, `/cash`, `/kitchen`, `/team`, `/branches`, `/raffles` are also behind the
   inline `ModuleRoute` in `App.tsx`: a disabled module redirects to `/pos`. Unknown routes → `/`.
-  No public sign-up.
+  No public sign-up. Menu entries come from one list, `components/layout/nav.ts`, shared by the
+  desktop Sidebar and the mobile drawer (`NavParts.tsx`).
 
 ### PWA (installable, no offline mode)
 
