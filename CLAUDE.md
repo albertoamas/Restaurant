@@ -139,8 +139,8 @@ literals. Rooms: `tenant:{tenantId}`, `t:{tenantId}:b:{branchId}`. Recipe: `real
 
 Layered, not hexagonal: `api/` (Axios, no state) → `hooks/` (TanStack Query + socket
 invalidation) → `pages/` / `components/`. Stores in `store/`, auth and socket in `context/`.
-Data-layer rules: `frontend-data` skill. Visual rules and the `components/ui` kit:
-`ui-conventions` skill.
+Data-layer rules: `frontend-data` skill. Visual design: `frontend-design` skill. Theme tokens
+(light/dark via `data-theme`) live in `styles/index.css`; reusable components in `components/ui/`.
 
 - `QueryClient` (`lib/query-client.ts`): `staleTime` 30 s, `refetchOnWindowFocus: false`,
   `retry: 1`. The socket is the freshness mechanism; real-time views poll only while it is
@@ -278,7 +278,7 @@ DB model.
 ## Skills
 
 Project skills (`.claude/skills/`, source of truth): `nest-module`, `prisma-change`,
-`realtime-event`, `frontend-data`, `ui-conventions`, `e2e-test`, `verify`. `.agents/skills/` mirrors
+`realtime-event`, `frontend-data`, `e2e-test`, `verify`. `.agents/skills/` mirrors
 them for Codex / Gemini CLI / Copilot — after editing one, `cp -r .claude/skills/. .agents/skills/`.
 
 Third-party skills are installed with the official CLI and pinned in `skills-lock.json`; never
