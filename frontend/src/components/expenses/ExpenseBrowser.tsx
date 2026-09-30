@@ -1,115 +1,85 @@
+import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import type { IconName } from '../ui/Icon';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { formatDayRange } from '../../utils/date';
+
+export type ExpenseView = 'activity' | 'calendar';
 
 interface ExpenseBrowserProps {
   /** [nombre de categoría, total gastado] ordenado de mayor a menor. */
   categories: [string, number][];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
-  view: 'activity' | 'calendar';
-  onChangeView: (view: 'activity' | 'calendar') => void;
+  view: ExpenseView;
+  onChangeView: (view: ExpenseView) => void;
   selectedDay: string | null;
   onClearDay: () => void;
-  /** La tabla de movimientos o el calendario, según la vista activa. */
+  /** Los movimientos o el calendario, según la vista activa. */
   children: React.ReactNode;
 }
 
+function chipClass(active: boolean) {
+  return [
+    'inline-flex shrink-0 items-center gap-1.5 min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
+    active
+      ? 'border-primary-600 bg-primary-600 text-white'
+      : 'border-line bg-surface-card text-soft hover:text-main hover:border-line-strong',
+  ].join(' ');
+}
+
 /**
- * Tarjeta única de exploración de gastos: filtro por categoría, selector de
- * vista y el contenido (movimientos o calendario) dentro del mismo bloque.
+ * Movimientos del período en una tarjeta: vista (lista o calendario), el único filtro por
+ * categoría (con lo gastado en cada una) y el contenido.
  */
 export function ExpenseBrowser({
   categories, selectedCategory, onSelectCategory,
   view, onChangeView, selectedDay, onClearDay, children,
 }: ExpenseBrowserProps) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
+    <section className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-5">
+        <h2 className="text-heading font-semibold text-main">Movimientos</h2>
+        <SegmentedControl
+          label="Vista de gastos"
+          size="sm"
+          value={view}
+          onChange={onChangeView}
+          options={[{ value: 'activity', label: 'Lista' }, { value: 'calendar', label: 'Calendario' }]}
+        />
+      </div>
+
       {categories.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-3 sm:px-5">
-          <CategoryChip label="Todas" active={selectedCategory === ''} onClick={() => onSelectCategory('')} />
+        <div role="group" aria-label="Filtrar por categoría" className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-3 sm:px-5">
+          <button type="button" className={chipClass(selectedCategory === '')} aria-pressed={selectedCategory === ''} onClick={() => onSelectCategory('')}>
+            Todas
+          </button>
           {categories.map(([cat, total]) => (
-            <CategoryChip
+            <button
               key={cat}
-              label={cat}
-              amount={total}
-              active={selectedCategory === cat}
+              type="button"
+              aria-pressed={selectedCategory === cat}
+              className={chipClass(selectedCategory === cat)}
               onClick={() => onSelectCategory(selectedCategory === cat ? '' : cat)}
-            />
+            >
+              {cat}
+              <span className={`tabular-nums ${selectedCategory === cat ? 'text-white/80' : 'text-muted'}`}>Bs {total.toFixed(2)}</span>
+            </button>
           ))}
         </div>
       )}
 
-      <div
-        className={`flex items-center justify-between gap-3 px-4 py-3 sm:px-5 ${
-          categories.length > 0 ? 'border-t border-line' : ''
-        }`}
-      >
-        <div className="inline-flex rounded-xl border border-line bg-surface-2 p-1">
-          <ViewButton active={view === 'activity'} onClick={() => onChangeView('activity')} icon="receipt" label="Movimientos" />
-          <ViewButton active={view === 'calendar'} onClick={() => onChangeView('calendar')} icon="table" label="Calendario" />
+      {selectedDay && (
+        <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-2 px-4 py-2 sm:px-5">
+          <p className="text-label text-main">Solo el {formatDayRange(selectedDay, selectedDay)}</p>
+          <Button variant="ghost" size="sm" onClick={onClearDay}>
+            <Icon name="x" size={14} />
+            Ver todo el período
+          </Button>
         </div>
-        {selectedDay && (
-          <button
-            onClick={onClearDay}
-            className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700"
-          >
-            <Icon name="x" size={13} />
-            <span className="hidden sm:inline">Ver todo el período</span>
-          </button>
-        )}
-      </div>
+      )}
 
       <div className="border-t border-line">{children}</div>
     </section>
-  );
-}
-
-function CategoryChip({
-  label, amount, active, onClick,
-}: {
-  label: string;
-  amount?: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-        active
-          ? 'bg-primary-600 text-white'
-          : 'border border-line bg-surface-2 text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {label}
-      {amount !== undefined && (
-        <span className={`ml-1.5 tabular-nums ${active ? 'opacity-80' : 'text-gray-400'}`}>
-          Bs {amount.toFixed(2)}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function ViewButton({
-  active, onClick, icon, label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: IconName;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-        active
-          ? 'bg-surface-card text-gray-900 shadow-card'
-          : 'text-gray-400 hover:text-gray-700'
-      }`}
-    >
-      <Icon name={icon} size={14} /> {label}
-    </button>
   );
 }

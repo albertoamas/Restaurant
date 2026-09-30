@@ -1,185 +1,87 @@
 import type { ExpenseDto } from '@pos/shared';
-import { Icon } from '../ui/Icon';
+import { ActionMenu } from '../ui/ActionMenu';
 import { formatBoliviaDateShort, formatBoliviaTime } from '../../utils/date';
-import { expenseCategoryLabel } from '../../utils/expense-labels';
+import { expenseCategoryLabel, pluralUnit } from '../../utils/expense-labels';
 import { useAuth } from '../../context/auth.context';
 import { useBranchNames } from '../../hooks/useBranches';
 
 interface ExpenseListProps {
   expenses: ExpenseDto[];
-  deletingId: string | null;
   onEdit: (expense: ExpenseDto) => void;
-  onConfirmDelete: (id: string) => void;
-  onCancelDelete: () => void;
-  onDelete: (id: string) => void;
+  /** Pide confirmación antes de anular (la confirmación vive en la página). */
+  onVoid: (expense: ExpenseDto) => void;
 }
 
-const ROW_GRID = 'grid-cols-[52px_minmax(0,1fr)_74px_60px] gap-2.5 sm:grid-cols-[92px_1fr_110px_64px] sm:gap-4';
-
-export function ExpenseList({
-  expenses, deletingId, onEdit, onConfirmDelete, onCancelDelete, onDelete,
-}: ExpenseListProps) {
-  return (
-    <div>
-      <div className={`hidden border-b border-line bg-surface-2 px-5 py-2.5 sm:grid ${ROW_GRID}`}>
-        <Th>Fecha</Th>
-        <Th>Detalle</Th>
-        <Th align="right">Total</Th>
-        <span />
-      </div>
-
-      {expenses.map((expense) => (
-        <ExpenseRow
-          key={expense.id}
-          expense={expense}
-          isDeleting={deletingId === expense.id}
-          onEdit={() => onEdit(expense)}
-          onConfirmDelete={() => onConfirmDelete(expense.id)}
-          onCancelDelete={onCancelDelete}
-          onDelete={() => onDelete(expense.id)}
-        />
-      ))}
-    </div>
+/** Une frases con ". " sin duplicar el punto de las que ya terminan en él ("Embol S.A."). */
+const sentences = (parts: (string | null | undefined)[]) =>
+  (parts.filter(Boolean) as string[]).reduce(
+    (text, part) => (text ? `${text}${text.endsWith('.') ? ' ' : '. '}${part}` : part),
+    '',
   );
+
+const fmtQty = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(3).replace(/0+$/, ''));
+
+/** "6 kg a Bs 36.10": solo cuando el desglose aporta (hay unidad o más de una unidad). */
+function breakdown(item: ExpenseDto['items'][number]): string | null {
+  const qty = Number(item.quantity);
+  if (qty === 1 && !item.unit) return null;
+  const unit = item.unit ? ` ${pluralUnit(item.unit, qty)}` : '';
+  return `${fmtQty(qty)}${unit} a Bs ${item.unitPrice.toFixed(2)}`;
 }
 
-function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
-  return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider text-gray-400 ${align === 'right' ? 'text-right' : ''}`}>
-      {children}
-    </span>
-  );
-}
-
-function CategoryTag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex shrink-0 items-center rounded-md border border-primary-500/20 bg-primary-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-700">
-      {children}
-    </span>
-  );
-}
-
-function ExpenseRow({
-  expense, isDeleting, onEdit, onConfirmDelete, onCancelDelete, onDelete,
-}: {
-  expense: ExpenseDto;
-  isDeleting: boolean;
-  onEdit: () => void;
-  onConfirmDelete: () => void;
-  onCancelDelete: () => void;
-  onDelete: () => void;
-}) {
+/**
+ * Movimientos del período: qué se gastó y cuánto arriba, y en una sola línea de apoyo la
+ * categoría, cuándo y el detalle (cantidad, proveedor, comprobante, nota).
+ */
+export function ExpenseList({ expenses, onEdit, onVoid }: ExpenseListProps) {
   const { currentBranchId } = useAuth();
-  const { branchName }      = useBranchNames();
-  // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
-  const branchLabel = currentBranchId === null ? branchName(expense.branchId) : null;
-
-  const dateStr  = formatBoliviaDateShort(expense.expenseDate);
-  const timeStr  = formatBoliviaTime(expense.expenseDate);
-  const hasItems = expense.items.length > 0;
-  const fallback = expenseCategoryLabel(expense);
+  const { branchName } = useBranchNames();
 
   return (
-    <div
-      className={`group grid items-start border-t border-line px-3 py-3 transition-colors first:border-t-0 sm:px-5 sm:py-3.5 ${ROW_GRID} ${
-        isDeleting ? 'bg-surface-2' : 'hover:bg-surface-2'
-      }`}
-    >
-      <div className="flex flex-col pt-0.5">
-        <span className="text-sm font-bold leading-tight text-gray-800">{dateStr}</span>
-        <span className="mt-0.5 text-[11px] text-gray-400">{timeStr}</span>
-        {branchLabel && (
-          <span className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400">
-            <Icon name="building" size={10} strokeWidth={2} />
-            {branchLabel}
-          </span>
-        )}
-      </div>
+    <ul className="divide-y divide-line">
+      {expenses.map((expense) => {
+        const items    = expense.items;
+        const category = expenseCategoryLabel(expense);
+        const title    = items.length > 0 ? items.map((i) => i.name).join(', ') : (expense.description ?? category);
+        // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
+        const branch   = currentBranchId === null ? branchName(expense.branchId) : null;
 
-      <div className="min-w-0">
-        {hasItems ? (
-          <div className="space-y-1.5">
-            {expense.items.map((item) => {
-              const qty = Number(item.quantity);
-              return (
-                <div key={item.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                  <CategoryTag>{item.categoryName ?? fallback}</CategoryTag>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800">{item.name}</span>
-                  {/* Con unidad siempre se muestra el desglose, aunque sea 1 ("1 garrafa × Bs 180");
-                      sin unidad y con cantidad 1 el desglose repetiría el total, así que se omite. */}
-                  {(qty !== 1 || item.unit) && (
-                    <span className="shrink-0 text-xs tabular-nums text-gray-400">
-                      {qty % 1 === 0 ? qty : qty.toFixed(3)}{item.unit ? ` ${item.unit}` : ''} × Bs {item.unitPrice.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <CategoryTag>{fallback}</CategoryTag>
-            {expense.description && <span className="truncate text-sm text-gray-700">{expense.description}</span>}
-          </div>
-        )}
+        const meta = sentences([
+          category,
+          `${formatBoliviaDateShort(expense.expenseDate)}, ${formatBoliviaTime(expense.expenseDate)}`,
+          branch,
+        ]);
 
-        {hasItems && expense.description && (
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <Icon name="chat" size={12} className="shrink-0 text-gray-300" />
-            <p className="truncate text-xs italic text-gray-400">{expense.description}</p>
-          </div>
-        )}
+        const details = sentences([
+          ...items.map((i) => {
+            const b = breakdown(i);
+            return b && items.length > 1 ? `${i.name}: ${b}` : b;
+          }),
+          expense.supplierName,
+          expense.documentNumber ? `Comprobante ${expense.documentNumber}` : null,
+          items.length > 0 && expense.description ? `Nota: ${expense.description}` : null,
+        ]);
 
-        {(expense.supplierName || expense.documentNumber) && (
-          <p className="mt-1.5 text-[11px] font-medium text-gray-400">
-            {[expense.supplierName, expense.documentNumber ? `Comp. ${expense.documentNumber}` : null]
-              .filter(Boolean)
-              .join(', ')}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-start justify-end pt-0.5">
-        <span className="font-heading text-sm font-black tabular-nums leading-tight text-gray-900">
-          Bs {expense.amount.toFixed(2)}
-        </span>
-      </div>
-
-      {isDeleting ? (
-        <div className="flex items-center justify-end gap-1 pt-0.5">
-          <button
-            onClick={onDelete}
-            title="Confirmar anulación"
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-white transition-opacity hover:opacity-90"
-          >
-            <Icon name="check" size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            onClick={onCancelDelete}
-            title="Cancelar"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-gray-700"
-          >
-            <Icon name="x" size={14} strokeWidth={2.5} />
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-end gap-0.5 pt-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-          <button
-            onClick={onEdit}
-            title="Editar gasto"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-primary-600"
-          >
-            <Icon name="edit" size={15} />
-          </button>
-          <button
-            onClick={onConfirmDelete}
-            title="Anular gasto"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-surface-3 hover:text-red-600"
-          >
-            <Icon name="trash" size={15} />
-          </button>
-        </div>
-      )}
-    </div>
+        return (
+          <li key={expense.id} className="flex items-start gap-2 px-4 py-3 sm:px-5 hover:bg-surface-2 transition-colors">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="min-w-0 truncate text-body font-semibold text-main">{title}</p>
+                <p className="shrink-0 text-body font-bold text-main tabular-nums">Bs {expense.amount.toFixed(2)}</p>
+              </div>
+              <p className="mt-0.5 text-caption text-muted">{meta}</p>
+              {details && <p className="mt-0.5 text-caption text-soft">{details}</p>}
+            </div>
+            <ActionMenu
+              label={`Más acciones del gasto ${title}`}
+              items={[
+                { label: 'Editar gasto', icon: 'edit', onSelect: () => onEdit(expense) },
+                { label: 'Anular gasto', icon: 'ban', onSelect: () => onVoid(expense), danger: true },
+              ]}
+            />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
