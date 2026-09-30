@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { ExpenseConceptDto, SOCKET_EVENTS } from '@pos/shared';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { EXPENSE_CATALOG_LIMITS, ExpenseConceptDto, SOCKET_EVENTS } from '@pos/shared';
 import { EventsService } from '../../../events/events.service';
 import { ExpenseConceptEntity } from '../../domain/entities/expense-concept.entity';
 import {
@@ -32,6 +32,15 @@ export class CreateExpenseConceptUseCase {
     if (!category) throw new NotFoundException('Categoría no encontrada');
 
     const existing = await this.repo.findByName(tenantId, name);
+    // Crear o reactivar suma un gasto activo a la lista: ambos respetan el tope.
+    if (!existing?.isActive) {
+      const active = await this.repo.findAll(tenantId);
+      if (active.length >= EXPENSE_CATALOG_LIMITS.concepts) {
+        throw new ForbiddenException(
+          `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.concepts} gastos en tu lista. Quita los que ya no uses para agregar otros.`,
+        );
+      }
+    }
     if (existing) {
       // El índice único (tenant, name) cubre también los desactivados: reactivar
       // en vez de fallar, para que borrar y volver a crear no quede bloqueado.

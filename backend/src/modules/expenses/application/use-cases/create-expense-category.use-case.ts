@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, Inject, Injectable, Optional } from '@nestjs/common';
-import { SOCKET_EVENTS } from '@pos/shared';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Optional } from '@nestjs/common';
+import { EXPENSE_CATALOG_LIMITS, SOCKET_EVENTS } from '@pos/shared';
 import { ExpenseCategoryEntity } from '../../domain/entities/expense-category.entity';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -27,6 +27,8 @@ export class CreateExpenseCategoryUseCase {
     if (!name) throw new BadRequestException('El nombre de la categoría es obligatorio');
 
     const existing = await this.repo.findByName(tenantId, name);
+    // Crear o reactivar suma una categoría activa: ambas respetan el tope.
+    if (!existing?.isActive) await this.assertBelowLimit(tenantId);
     if (existing) {
       // El índice único (tenant, name) también cubre las desactivadas: se
       // reactiva en vez de fallar, para que borrar y volver a crear funcione.
@@ -57,6 +59,15 @@ export class CreateExpenseCategoryUseCase {
     const created = await this.repo.save(category);
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, created);
     return created;
+  }
+
+  private async assertBelowLimit(tenantId: string): Promise<void> {
+    const active = await this.repo.findAll(tenantId);
+    if (active.length >= EXPENSE_CATALOG_LIMITS.categories) {
+      throw new ForbiddenException(
+        `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.categories} categorías de gasto. Elimina las que ya no uses para crear otra.`,
+      );
+    }
   }
 
   /**

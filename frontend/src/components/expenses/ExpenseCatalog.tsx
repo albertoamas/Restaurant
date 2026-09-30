@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
 import type { ExpenseCategoryDto, ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
 import { useExpenseCategories, useExpenseConcepts } from '../../hooks/useExpenses';
@@ -51,6 +52,10 @@ export function ExpenseCatalog() {
       .filter((g) => !q || g.items.length > 0);
   }, [categories, concepts, q]);
 
+  // Topes de la lista (el servidor también los aplica): al llegar, crear se deshabilita y se explica.
+  const conceptsFull   = concepts.length >= EXPENSE_CATALOG_LIMITS.concepts;
+  const categoriesFull = categories.length >= EXPENSE_CATALOG_LIMITS.categories;
+
   const countIn = (categoryId: string) => concepts.filter((c) => c.categoryId === categoryId).length;
 
   const handleRemove = async () => {
@@ -87,21 +92,36 @@ export function ExpenseCatalog() {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1 sm:flex-none" onClick={() => setCategoryForm({ open: true, category: null })}>
+          <Button variant="secondary" className="flex-1 sm:flex-none" disabled={categoriesFull} onClick={() => setCategoryForm({ open: true, category: null })}>
             <Icon name="plus" size={18} />
             <span className="sm:hidden">Categoría</span>
             <span className="hidden sm:inline">Nueva categoría</span>
           </Button>
-          <Button className="flex-1 sm:flex-none" onClick={() => setConceptForm({ mode: 'create' })}>
+          <Button className="flex-1 sm:flex-none" disabled={conceptsFull} onClick={() => setConceptForm({ mode: 'create' })}>
             <Icon name="plus" size={18} />
             Nuevo gasto
           </Button>
         </div>
       </div>
 
-      <p className="text-label text-soft">
-        Aquí defines qué gastos existen. Cambiar o quitar uno no afecta lo ya registrado.
-      </p>
+      <div className="space-y-1">
+        <p className="text-label text-soft">
+          Aquí defines qué gastos existen. Cambiar o quitar uno no afecta lo ya registrado.
+        </p>
+        <p className="text-label text-muted tabular-nums">
+          {concepts.length} de {EXPENSE_CATALOG_LIMITS.concepts} gastos. {categories.length} de {EXPENSE_CATALOG_LIMITS.categories} categorías.
+        </p>
+        {(conceptsFull || categoriesFull) && (
+          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
+            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
+            {conceptsFull && categoriesFull
+              ? 'Llegaste al máximo de gastos y de categorías. Quita los que ya no uses para agregar otros.'
+              : conceptsFull
+                ? `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.concepts} gastos. Quita los que ya no uses para agregar otros.`
+                : `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.categories} categorías. Elimina las que ya no uses para crear otra.`}
+          </p>
+        )}
+      </div>
 
       {loading || catLoading ? (
         <div className="grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>
@@ -127,7 +147,7 @@ export function ExpenseCatalog() {
                 <ActionMenu
                   label={`Más acciones de la categoría ${category.name}`}
                   items={[
-                    { label: 'Agregar gasto aquí', icon: 'plus', onSelect: () => setConceptForm({ mode: 'create', categoryId: category.id }) },
+                    ...(conceptsFull ? [] : [{ label: 'Agregar gasto aquí', icon: 'plus' as const, onSelect: () => setConceptForm({ mode: 'create', categoryId: category.id }) }]),
                     { label: 'Renombrar', icon: 'edit', onSelect: () => setCategoryForm({ open: true, category }) },
                     { label: 'Eliminar categoría', icon: 'trash', danger: true, onSelect: () => setRemoving({ kind: 'category', category, count: countIn(category.id) }) },
                   ]}
@@ -136,7 +156,7 @@ export function ExpenseCatalog() {
               {items.length === 0 ? (
                 <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <p className="text-label text-muted">Todavía sin gastos.</p>
-                  <Button variant="ghost" size="sm" onClick={() => setConceptForm({ mode: 'create', categoryId: category.id })}>
+                  <Button variant="ghost" size="sm" disabled={conceptsFull} onClick={() => setConceptForm({ mode: 'create', categoryId: category.id })}>
                     <Icon name="plus" size={14} />
                     Agregar
                   </Button>

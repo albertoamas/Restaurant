@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
 import type { ExpenseConceptDto } from '@pos/shared';
 import { useExpenseConcepts } from '../../hooks/useExpenses';
 import { Button } from '../ui/Button';
@@ -48,6 +49,8 @@ export function ExpensePicker({ onPick, onAdd }: ExpensePickerProps) {
   const [query, setQuery]       = useState('');
   const [category, setCategory] = useState('');
   const q = query.trim();
+  // Con la lista llena no se ofrece agregar: el servidor lo rechazaría.
+  const full = concepts.length >= EXPENSE_CATALOG_LIMITS.concepts;
 
   const categories = useMemo(
     () => [...new Set(concepts.map((c) => c.categoryName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')),
@@ -120,9 +123,11 @@ export function ExpensePicker({ onPick, onAdd }: ExpensePickerProps) {
             {concepts.length === 0 ? 'Tu lista de gastos está vacía' : q ? `"${q}" no está en tu lista` : 'Ningún gasto en esta categoría'}
           </p>
           <p className="text-label text-soft">
-            {q || concepts.length === 0 ? 'Agrégalo y lo registras enseguida.' : 'Elige otra categoría o agrega gastos en la pestaña Lista.'}
+            {full
+              ? `Tu lista llegó al máximo de ${EXPENSE_CATALOG_LIMITS.concepts} gastos. Quita alguno en la pestaña Lista para agregar este.`
+              : q || concepts.length === 0 ? 'Agrégalo y lo registras enseguida.' : 'Elige otra categoría o agrega gastos en la pestaña Lista.'}
           </p>
-          {(q || concepts.length === 0) && (
+          {!full && (q || concepts.length === 0) && (
             <Button onClick={() => onAdd(q)}>
               <Icon name="plus" size={18} />
               {q ? `Agregar "${q}" y registrar` : 'Agregar un gasto'}

@@ -117,3 +117,12 @@ export interface ExpenseSummaryDto {
   byDay: Record<string, number>;
   transactionCount: number;
 }
+
+/**
+ * Topes de la lista de gastos por negocio. Son técnicos, no del plan: la pantalla muestra la lista
+ * completa de una vez. Solo cuentan los activos (lo eliminado o quitado no ocupa lugar).
+ */
+export const EXPENSE_CATALOG_LIMITS = {
+  categories: 20,
+  concepts:   100,
+} as const;
