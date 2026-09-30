@@ -14,10 +14,10 @@ import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Skeleton } from '../components/ui/Skeleton';
 import { PickBranch } from '../components/branch/PickBranch';
 import { ExpenseEditModal } from '../components/expenses/ExpenseEditModal';
-import { ExpenseConceptsModal } from '../components/expenses/ExpenseConceptsModal';
 import { ExpensePicker } from '../components/expenses/ExpensePicker';
 import { QuickExpenseDialog } from '../components/expenses/QuickExpenseDialog';
-import { NewConceptModal } from '../components/expenses/NewConceptModal';
+import { ConceptFormModal, type ConceptFormTarget } from '../components/expenses/ConceptFormModal';
+import { ExpenseCatalog } from '../components/expenses/ExpenseCatalog';
 import { ExpenseList } from '../components/expenses/ExpenseList';
 import { ExpenseMovements } from '../components/expenses/ExpenseMovements';
 import { ExpenseDetailSheet } from '../components/expenses/ExpenseDetailSheet';
@@ -25,13 +25,20 @@ import { handleApiError } from '../utils/api-error';
 import { formatDayRange, today } from '../utils/date';
 import { getBoliviaDayBounds } from '../utils/timezone';
 
-type Tab = 'register' | 'movements';
+type Tab = 'register' | 'movements' | 'catalog';
 
 const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 
+const TAB_HINT: Record<Tab, string> = {
+  register:  'Toca el gasto y escribe el monto',
+  movements: 'Revisa, corrige o anula',
+  catalog:   'Los gastos que registras seguido y sus categorías',
+};
+
 /**
- * Gastos en dos pestañas: Registrar (lo frecuente: tocar el gasto y escribir el monto) y
- * Movimientos (revisar un período, filtrar, corregir o anular). Se abre en Registrar.
+ * Gastos en tres pestañas: Registrar (lo frecuente: tocar el gasto y escribir el monto),
+ * Movimientos (revisar un período, filtrar, corregir o anular) y Lista (qué gastos existen y sus
+ * categorías). Se abre en Registrar.
  */
 export function ExpensesPage() {
   const { currentBranchId, user } = useAuth();
@@ -41,8 +48,7 @@ export function ExpensesPage() {
   const [movementsVisited, setMovementsVisited] = useState(false);
 
   const [active, setActive]             = useState<ExpenseConceptDto | null>(null);
-  const [creatingName, setCreatingName] = useState<string | null>(null);
-  const [showConcepts, setConcepts]     = useState(false);
+  const [creating, setCreating]         = useState<ConceptFormTarget | null>(null);
   const [detail, setDetail]             = useState<ExpenseDto | null>(null);
   const [editing, setEditing]           = useState<ExpenseDto | null>(null);
   const [voiding, setVoiding]           = useState<ExpenseDto | null>(null);
@@ -81,13 +87,17 @@ export function ExpensesPage() {
     <PageShell>
       <PageHeader
         title="Gastos"
-        description={`${tab === 'register' ? 'Toca el gasto y escribe el monto' : 'Revisa, corrige o anula'}. ${scope}.`}
+        description={`${TAB_HINT[tab]}. ${scope}.`}
         actions={
           <SegmentedControl
             label="Sección de gastos"
             value={tab}
             onChange={changeTab}
-            options={[{ value: 'register', label: 'Registrar' }, { value: 'movements', label: 'Movimientos' }]}
+            options={[
+              { value: 'register', label: 'Registrar' },
+              { value: 'movements', label: 'Movimientos' },
+              { value: 'catalog', label: 'Lista' },
+            ]}
           />
         }
       />
@@ -98,8 +108,7 @@ export function ExpensesPage() {
             {canRegister ? (
               <ExpensePicker
                 onPick={setActive}
-                onAdd={(name) => setCreatingName(name)}
-                onManage={() => setConcepts(true)}
+                onAdd={(name) => setCreating({ mode: 'create', name, thenRegister: true })}
               />
             ) : (
               <PickBranch description="Cada gasto se registra en una sucursal." />
@@ -124,6 +133,8 @@ export function ExpensesPage() {
         </div>
       )}
 
+      {tab === 'catalog' && <ExpenseCatalog />}
+
       {movementsVisited && (
         <div hidden={tab !== 'movements'}>
           <ExpenseMovements branchId={branchParam} onOpen={setDetail} />
@@ -138,12 +149,11 @@ export function ExpensesPage() {
         />
       )}
 
-      <NewConceptModal
-        isOpen={creatingName !== null}
-        initialName={creatingName ?? ''}
-        onClose={() => setCreatingName(null)}
+      <ConceptFormModal
+        target={creating}
+        onClose={() => setCreating(null)}
         // Encadena directo al registro: para eso lo estaba agregando.
-        onCreated={(concept) => { setCreatingName(null); setActive(concept); }}
+        onSaved={(concept) => setActive(concept)}
       />
 
       <ExpenseDetailSheet
@@ -153,7 +163,6 @@ export function ExpensesPage() {
         onVoid={(e) => { setDetail(null); setVoiding(e); }}
       />
       <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} onSaved={reload} />
-      <ExpenseConceptsModal isOpen={showConcepts} onClose={() => setConcepts(false)} />
 
       <ConfirmModal
         isOpen={voiding !== null}
