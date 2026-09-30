@@ -1,9 +1,8 @@
 import type { DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
-import { Card } from '../../ui/Card';
-import { Spinner } from '../../ui/Spinner';
-import { Icon } from '../../ui/Icon';
+import { EmptyState } from '../../ui/EmptyState';
+import { Skeleton } from '../../ui/Skeleton';
 import { ExpenseTrendChart } from '../charts/ExpenseTrendChart';
-import { StatCard } from '../index';
+import { BreakdownRow, ChartCard, Kpi, bs, share } from '../index';
 import { legacyExpenseLabel } from '../../../utils/expense-labels';
 
 interface Props {
@@ -11,87 +10,47 @@ interface Props {
   expenseSummary: ExpenseSummaryDto | null;
   loading: boolean;
   isMultiDay: boolean;
+  /** Días del período (hora Bolivia): el gráfico diario muestra también los días sin gastos. */
+  days: string[];
 }
 
-/** En qué se fue la plata: total del período, tendencia diaria y desglose por categoría. */
-export function ExpensesTab({ report, expenseSummary, loading, isMultiDay }: Props) {
+/** En qué se fue el dinero: total del período, gasto por día y desglose por categoría. */
+export function ExpensesTab({ report, expenseSummary, loading, isMultiDay, days }: Props) {
   if (loading) {
-    return <div className="flex justify-center py-12"><Spinner /></div>;
+    return <div className="grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>;
   }
 
   const total = expenseSummary?.total ?? 0;
-
   if (total === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-        <Icon name="receipt" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
-        <p className="text-sm font-semibold text-gray-500">Sin gastos en este período</p>
-        <p className="mt-1 text-xs">Regístralos desde la pestaña Gastos</p>
-      </div>
-    );
+    return <EmptyState icon="receipt" title="Sin gastos en este período" description="Los gastos se registran en la pantalla Gastos." />;
   }
 
-  const sales     = report?.totalSales ?? 0;
-  const ratio     = sales > 0 ? (total / sales) * 100 : null;
-  const entries   = (Object.entries(expenseSummary!.byCategory) as [string, number][])
+  const sales   = report?.totalSales ?? 0;
+  const entries = (Object.entries(expenseSummary!.byCategory) as [string, number][])
     .filter(([, amount]) => amount > 0)
     .sort(([, a], [, b]) => b - a);
-  const byDayEntries = Object.keys(expenseSummary!.byDay).length;
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard
-          label="Total gastado"
-          value={`Bs ${total.toFixed(2)}`}
-          icon={<Icon name="minus" size={20} />}
-          accent="text-red-600 dark:text-red-400" bg="bg-red-500/10"
-          valueClassName="text-red-600"
-        />
-        <StatCard
-          label="Movimientos"
-          value={String(expenseSummary!.transactionCount)}
-          icon={<Icon name="receipt" size={20} />}
-          accent="text-violet-600 dark:text-violet-400" bg="bg-violet-500/10"
-        />
-        <StatCard
-          label="Peso sobre ventas"
-          value={ratio !== null ? `${ratio.toFixed(1)}%` : '-'}
-          icon={<Icon name="chart" size={20} />}
-          accent="text-sky-600 dark:text-sky-400" bg="bg-sky-500/10"
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="max-sm:col-span-2"><Kpi label="Total gastado" value={bs(total)} /></div>
+        <Kpi label="Movimientos" value={String(expenseSummary!.transactionCount)} />
+        <Kpi label="Sobre las ventas" value={sales > 0 ? `${share(total, sales).toFixed(1)}%` : '-'} sub="Cuánto de lo vendido se fue en gastos" />
       </div>
 
-      {isMultiDay && byDayEntries >= 2 && (
-        <Card variant="panel">
-          <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Evolución de Gastos</h3>
-          <p className="mb-4 text-[11px] text-gray-400">Gasto (Bs) día a día en el período</p>
-          <ExpenseTrendChart byDay={expenseSummary!.byDay} />
-        </Card>
+      {isMultiDay && days.length >= 2 && (
+        <ChartCard title="Gastos por día" description="En bolivianos (Bs). Los días sin gastos quedan en cero.">
+          <ExpenseTrendChart byDay={expenseSummary!.byDay} days={days} />
+        </ChartCard>
       )}
 
-      <Card variant="panel">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-heading text-sm font-bold text-gray-700">Gastos por Categoría</h3>
-          <span className="font-heading text-sm font-bold text-red-500">Bs {total.toFixed(2)}</span>
-        </div>
-        <div className="space-y-3">
+      <ChartCard title="Gastos por categoría" description={`Total: ${bs(total)}`}>
+        <ul className="space-y-4">
           {entries.map(([cat, amount]) => (
-            <div key={cat}>
-              <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-gray-600">{legacyExpenseLabel(cat)}</span>
-                <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
-              </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-surface-3">
-                <div
-                  className="h-full rounded-full bg-red-400 transition-[width] duration-700"
-                  style={{ width: `${(amount / total) * 100}%` }}
-                />
-              </div>
-            </div>
+            <BreakdownRow key={cat} label={legacyExpenseLabel(cat)} value={bs(amount)} pct={share(amount, total)} color="bg-rose-500" />
           ))}
-        </div>
-      </Card>
+        </ul>
+      </ChartCard>
     </div>
   );
 }

@@ -239,7 +239,7 @@ export function ReportPage() {
       ) : activeTab === 'clientes' ? (
         <CustomersTab topCustomers={customers.topCustomers} loading={customers.loading} />
       ) : activeTab === 'gastos' ? (
-        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} isMultiDay={isMultiDay} />
+        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} isMultiDay={isMultiDay} days={rangeDays} />
       ) : (
         <CashTab byCashier={cash.byCashier} cashSessions={cash.cashSessions} loading={cash.loading} />
       )}

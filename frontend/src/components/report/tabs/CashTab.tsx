@@ -1,8 +1,10 @@
 import type { CashierReportDto, CashSessionReportItemDto } from '@pos/shared';
-import { Card } from '../../ui/Card';
-import { Spinner } from '../../ui/Spinner';
-import { Icon } from '../../ui/Icon';
+import { Badge } from '../../ui/Badge';
+import { EmptyState } from '../../ui/EmptyState';
+import { Skeleton } from '../../ui/Skeleton';
 import { CashierRankingTable } from '../charts/CashierRankingTable';
+import { ChartCard, bs } from '../index';
+import { cashResult } from '../../cash/cash-result';
 import { formatBoliviaDateShort, formatBoliviaTime } from '../../../utils/date';
 
 interface Props {
@@ -11,87 +13,90 @@ interface Props {
   loading: boolean;
 }
 
-/** Quién cobró y cómo cerró la caja: ranking de cajeros y arqueos. */
+const when = (iso: string) => `${formatBoliviaDateShort(iso)}, ${formatBoliviaTime(iso)}`;
+const amount = (n: number | null) => (n == null ? '-' : bs(n));
+
+/** Resultado del cierre en palabras, igual que en la pantalla Caja. */
+function Result({ s }: { s: CashSessionReportItemDto }) {
+  if (!s.closedAt) return <Badge variant="warning" dot>Abierta</Badge>;
+  if (s.difference == null) return <span className="text-muted">-</span>;
+  const r = cashResult(s.difference);
+  return <Badge variant={r.tone}>{r.label}</Badge>;
+}
+
+/** Quién vendió y cómo cerró la caja: cajeros y cierres del período. */
 export function CashTab({ byCashier, cashSessions, loading }: Props) {
   if (loading) {
-    return <div className="flex justify-center py-12"><Spinner /></div>;
+    return <div className="grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>;
   }
 
   return (
     <div className="space-y-4">
-      <Card variant="panel">
-        <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Rendimiento por Cajero</h3>
-        <p className="mb-4 text-[11px] text-gray-400">Ranking por ventas y ticket promedio por cajero</p>
-        {byCashier.length > 0 ? (
-          <CashierRankingTable data={byCashier} />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-            <Icon name="users" size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
-            <p className="text-xs">Sin datos para este período</p>
-          </div>
-        )}
-      </Card>
+      <ChartCard title="Ventas por cajero" description="Ordenados por lo que vendieron en el período.">
+        {byCashier.length > 0
+          ? <CashierRankingTable data={byCashier} />
+          : <EmptyState compact icon="users" title="Sin ventas en este período" />}
+      </ChartCard>
 
-      <Card variant="panel">
-        <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Arqueos de Caja</h3>
-        <p className="mb-4 text-[11px] text-gray-400">Historial de sesiones en el período</p>
-
+      <ChartCard title="Cierres de caja" description="Cada turno del período: lo esperado, lo contado y si cuadró.">
         {cashSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-            <Icon name="dollar" size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
-            <p className="text-xs">Sin sesiones de caja en este período</p>
-          </div>
+          <EmptyState compact icon="cash" title="Sin turnos de caja en este período" />
         ) : (
-          <div className="-mx-1 overflow-x-auto">
-            <table className="w-full min-w-[560px] text-xs">
-              <thead>
-                <tr className="border-b border-line">
-                  <th className="pb-2 pl-1 pr-3 text-left font-semibold text-gray-400">Sucursal</th>
-                  <th className="pb-2 pr-3 text-left font-semibold text-gray-400">Apertura</th>
-                  <th className="pb-2 pr-3 text-left font-semibold text-gray-400">Cierre</th>
-                  <th className="pb-2 pr-3 text-right font-semibold text-gray-400">Inicial</th>
-                  <th className="pb-2 pr-3 text-right font-semibold text-gray-400">Esperado</th>
-                  <th className="pb-2 pr-3 text-right font-semibold text-gray-400">Real</th>
-                  <th className="pb-2 pr-1 text-right font-semibold text-gray-400">Diferencia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {cashSessions.map((s) => {
-                  const diff = s.difference;
-                  const diffColor =
-                    diff == null ? 'text-gray-400' :
-                    diff > 0     ? 'text-emerald-500' :
-                    diff < 0     ? 'text-red-500' : 'text-gray-500';
-                  return (
-                    <tr key={s.id} className="transition-colors hover:bg-surface-2">
-                      <td className="py-2.5 pl-1 pr-3 font-medium text-gray-700">{s.branchName}</td>
-                      <td className="py-2.5 pr-3 text-gray-500">
-                        {formatBoliviaDateShort(s.openedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.openedAt)}</span>
-                      </td>
-                      <td className="py-2.5 pr-3 text-gray-500">
-                        {s.closedAt ? (
-                          <>{formatBoliviaDateShort(s.closedAt)}{' '}<span className="text-gray-400">{formatBoliviaTime(s.closedAt)}</span></>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 font-semibold text-amber-500">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                            Abierta
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">Bs {s.openingAmount.toFixed(2)}</td>
-                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.expectedAmount != null ? `Bs ${s.expectedAmount.toFixed(2)}` : '-'}</td>
-                      <td className="py-2.5 pr-3 text-right font-mono text-gray-600">{s.closingAmount  != null ? `Bs ${s.closingAmount.toFixed(2)}`  : '-'}</td>
-                      <td className={`py-2.5 pr-1 text-right font-mono font-bold ${diffColor}`}>
-                        {diff != null ? `${diff > 0 ? '+' : ''}Bs ${diff.toFixed(2)}` : '-'}
-                      </td>
+          <>
+            {/* Celular y tablet: una fila por turno */}
+            <ul className="lg:hidden -my-3 divide-y divide-line">
+              {cashSessions.map((s) => (
+                <li key={s.id} className="py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-body font-semibold text-main">{formatBoliviaDateShort(s.openedAt)}</p>
+                      <p className="text-caption text-muted">
+                        {s.branchName}, {formatBoliviaTime(s.openedAt)} a {s.closedAt ? formatBoliviaTime(s.closedAt) : 'ahora'}
+                      </p>
+                    </div>
+                    <Result s={s} />
+                  </div>
+                  <dl className="mt-2 grid grid-cols-3 gap-2 text-caption">
+                    <div><dt className="text-muted">Inicial</dt><dd className="text-soft tabular-nums">{amount(s.openingAmount)}</dd></div>
+                    <div><dt className="text-muted">Esperado</dt><dd className="text-soft tabular-nums">{amount(s.expectedAmount)}</dd></div>
+                    <div><dt className="text-muted">Contado</dt><dd className="font-semibold text-main tabular-nums">{amount(s.closingAmount)}</dd></div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+
+            {/* Escritorio: tabla */}
+            <div className="hidden lg:block -mx-2">
+              <table className="w-full text-label">
+                <thead>
+                  <tr className="border-b border-line text-left text-soft">
+                    <th scope="col" className="px-2 pb-2 font-medium">Sucursal</th>
+                    <th scope="col" className="px-2 pb-2 font-medium">Apertura</th>
+                    <th scope="col" className="px-2 pb-2 font-medium">Cierre</th>
+                    <th scope="col" className="px-2 pb-2 font-medium text-right">Inicial</th>
+                    <th scope="col" className="px-2 pb-2 font-medium text-right">Esperado</th>
+                    <th scope="col" className="px-2 pb-2 font-medium text-right">Contado</th>
+                    <th scope="col" className="px-2 pb-2 font-medium text-right">Resultado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {cashSessions.map((s) => (
+                    <tr key={s.id} className="hover:bg-surface-2 transition-colors">
+                      <td className="px-2 py-2.5 text-main">{s.branchName}</td>
+                      <td className="px-2 py-2.5 text-soft whitespace-nowrap">{when(s.openedAt)}</td>
+                      <td className="px-2 py-2.5 text-soft whitespace-nowrap">{s.closedAt ? when(s.closedAt) : '-'}</td>
+                      <td className="px-2 py-2.5 text-right text-soft tabular-nums">{amount(s.openingAmount)}</td>
+                      <td className="px-2 py-2.5 text-right text-soft tabular-nums">{amount(s.expectedAmount)}</td>
+                      <td className="px-2 py-2.5 text-right font-semibold text-main tabular-nums">{amount(s.closingAmount)}</td>
+                      <td className="px-2 py-2.5 text-right"><Result s={s} /></td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
-      </Card>
+      </ChartCard>
     </div>
   );
 }
