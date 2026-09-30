@@ -2,7 +2,90 @@
  * Componentes reutilizables del módulo de Reportes.
  */
 
+import type { ReactNode } from 'react';
 import type { TopProductDto, TopCustomerDto } from '@pos/shared';
+import { Card } from '../ui/Card';
+
+/* ── Kpi ──────────────────────────────────────────────────────────────────── */
+
+const KPI_TONE = {
+  neutral:  'text-main',
+  positive: 'text-emerald-700 dark:text-emerald-300',
+  negative: 'text-red-700 dark:text-red-300',
+};
+
+/** Cifra principal de una sección: etiqueta, valor y una línea de contexto opcional. */
+export function Kpi({ label, value, tone = 'neutral', sub }: {
+  label: string;
+  value: string;
+  tone?: keyof typeof KPI_TONE;
+  sub?: ReactNode;
+}) {
+  return (
+    <Card padding="sm">
+      <p className="text-label text-soft">{label}</p>
+      <p className={`mt-0.5 text-heading sm:text-title font-bold font-heading tabular-nums whitespace-nowrap ${KPI_TONE[tone]}`}>{value}</p>
+      {sub && <p className="mt-0.5 text-caption text-muted">{sub}</p>}
+    </Card>
+  );
+}
+
+/* ── ChartCard ────────────────────────────────────────────────────────────── */
+
+/** Tarjeta de cada bloque del reporte: título, qué muestra y, a la derecha, un control opcional. */
+export function ChartCard({ title, description, action, className = '', children }: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className={className}>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-heading font-semibold text-main">{title}</h2>
+          {description && <p className="mt-0.5 text-label text-soft">{description}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </Card>
+  );
+}
+
+/* ── BreakdownRow ─────────────────────────────────────────────────────────── */
+
+/** Una parte de un total: nombre, valor, porcentaje y barra proporcional. */
+export function BreakdownRow({ label, value, pct, color }: {
+  label: string;
+  value: string;
+  /** 0 a 100. */
+  pct: number;
+  /** Clase de fondo de la barra (ej.: bg-emerald-500). */
+  color: string;
+}) {
+  return (
+    <li>
+      <div className="flex items-baseline justify-between gap-3 text-body">
+        <span className="text-main min-w-0 truncate">{label}</span>
+        <span className="shrink-0 tabular-nums">
+          <span className="font-semibold text-main">{value}</span>
+          <span className="ml-2 inline-block w-10 text-right text-caption text-muted">{Math.round(pct)}%</span>
+        </span>
+      </div>
+      <div className="mt-1.5 h-2 rounded-full bg-surface-3 overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+      </div>
+    </li>
+  );
+}
+
+/** Porcentaje de una parte sobre un total (0 si el total es 0). */
+export const share = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
+
+/** Monto con dos decimales, como en el resto de la app. */
+export const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 
 /* ── Rank colors ──────────────────────────────────────────────────────────── */
 
@@ -43,66 +126,6 @@ export function StatCard({ label, value, icon, accent, bg, valueClassName, sub }
         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
         <p className={`font-heading font-black text-2xl leading-tight ${valueClassName ?? 'text-gray-900'}`}>{value}</p>
         {sub && <div className="mt-1.5">{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-/* ── PaymentBar ───────────────────────────────────────────────────────────── */
-
-export interface PaymentBarProps {
-  label:  string;
-  amount: number;
-  total:  number;
-  color:  string;
-}
-
-export function PaymentBar({ label, amount, total, color }: PaymentBarProps) {
-  const pct = total > 0 ? (amount / total) * 100 : 0;
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-2">
-        <span className="text-gray-600 font-medium">{label}</span>
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-heading font-bold text-gray-900">Bs {amount.toFixed(2)}</span>
-          <span className="text-[11px] text-gray-400 tabular-nums">{pct.toFixed(0)}%</span>
-        </div>
-      </div>
-      <div className="h-2.5 bg-surface-3 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-[width] duration-700 ease-out ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ── TypeRow ──────────────────────────────────────────────────────────────── */
-
-export interface TypeRowProps {
-  label: string;
-  count: number;
-  total: number;
-  color: string;
-}
-
-export function TypeRow({ label, count, total, color }: TypeRowProps) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="font-heading font-bold text-sm text-gray-900">{count}</span>
-          <span className="text-[11px] font-semibold text-gray-400 tabular-nums">{pct}%</span>
-        </div>
-      </div>
-      <div className="h-2.5 bg-surface-3 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-[width] duration-700 ease-out ${color}`}
-          style={{ width: `${pct}%` }}
-        />
       </div>
     </div>
   );

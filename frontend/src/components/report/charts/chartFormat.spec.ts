@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmountAxis, formatBsFull } from './chartFormat';
+import { formatAmountAxis, formatBsFull, formatDayTick } from './chartFormat';
 
 describe('formatAmountAxis', () => {
   it('deja los montos menores a mil tal cual', () => {
@@ -25,5 +25,12 @@ describe('formatAmountAxis', () => {
 describe('formatBsFull', () => {
   it('siempre con dos decimales', () => {
     expect(formatBsFull(1234.5)).toBe('Bs 1234.50');
+  });
+});
+
+describe('formatDayTick', () => {
+  it('día y mes corto para el eje, sin cruzar de día', () => {
+    expect(formatDayTick('2026-09-15')).toMatch(/^15 sept?\.?$/);
+    expect(formatDayTick('2026-10-01')).toMatch(/^1 oct\.?$/);
   });
 });

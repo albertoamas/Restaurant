@@ -12,6 +12,7 @@ import {
 import type { TopCategoryDto } from '@pos/shared';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useBarColors, useChartColors } from './chartColors';
+import { formatAmountAxis, useChartAnimation } from './chartFormat';
 
 type View = 'quantity' | 'revenue';
 
@@ -22,6 +23,7 @@ interface Props {
 export function CategoryBarChart({ data }: Props) {
   const [view, setView] = useState<View>('quantity');
   const barColors = useBarColors();
+  const animate = useChartAnimation();
   const { grid }  = useChartColors();
 
   const top    = data.slice(0, 8);
@@ -70,7 +72,7 @@ export function CategoryBarChart({ data }: Props) {
             tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(v: number) => view === 'revenue' ? `Bs ${v}` : String(v)}
+            tickFormatter={(v: number) => formatAmountAxis(v)}
           />
           <YAxis
             type="category"
@@ -85,7 +87,7 @@ export function CategoryBarChart({ data }: Props) {
             cursor={{ fill: 'rgba(255,255,255,0.04)' }}
             wrapperStyle={{ background: 'none', border: 'none', boxShadow: 'none', padding: 0 }}
           />
-          <Bar dataKey={dataKey} radius={[0, 4, 4, 0]}>
+          <Bar dataKey={dataKey} radius={[0, 4, 4, 0]} isAnimationActive={animate}>
             {chartData.map((_, i) => (
               <Cell key={i} fill={barColors[i % barColors.length]} fillOpacity={0.85} />
             ))}

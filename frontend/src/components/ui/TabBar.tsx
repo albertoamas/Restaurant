@@ -57,7 +57,7 @@ export function TabBar<T extends string>({ items, value, onChange, label, panelI
               'relative -mb-px inline-flex items-center gap-2 shrink-0 min-h-11 px-3.5 text-body font-semibold whitespace-nowrap',
               'border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 rounded-t-control',
               active
-                ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-300'
+                ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-400'
                 : 'border-transparent text-soft hover:text-main hover:border-line-strong',
             ].join(' ')}
           >
