@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatDayRange, mondayOf } from './date';
 import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
 
 describe('date utils', () => {
@@ -107,5 +108,21 @@ describe('tiempos en minutos', () => {
     expect(durationLabel(1440)).toBe('1 día');
     expect(durationLabel(2100)).toBe('1 día 11 h');
     expect(durationLabel(3000)).toBe('2 días 2 h');
+  });
+});
+
+describe('formatDayRange', () => {
+  it('un día, mismo mes y meses distintos', () => {
+    expect(formatDayRange('2026-09-29', '2026-09-29')).toBe('29 de septiembre');
+    expect(formatDayRange('2026-09-22', '2026-09-29')).toBe('Del 22 al 29 de septiembre');
+    expect(formatDayRange('2026-08-31', '2026-09-02')).toBe('Del 31 de agosto al 2 de septiembre');
+  });
+});
+
+describe('mondayOf', () => {
+  it('lunes de la semana, también desde domingo', () => {
+    expect(mondayOf('2026-09-29')).toBe('2026-09-28'); // martes
+    expect(mondayOf('2026-09-28')).toBe('2026-09-28'); // lunes
+    expect(mondayOf('2026-10-04')).toBe('2026-09-28'); // domingo
   });
 });

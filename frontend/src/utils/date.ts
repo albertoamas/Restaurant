@@ -96,3 +96,28 @@ export function formatBoliviaTime(iso: string): string {
     minute: '2-digit',
   }).format(new Date(iso));
 }
+
+/** Día `YYYY-MM-DD` (ya en hora de Bolivia) como Date al mediodía UTC: formatearlo no cruza de día. */
+const dayAtNoon = (day: string) => new Date(`${day}T12:00:00Z`);
+
+const dayMonth = (day: string) =>
+  new Intl.DateTimeFormat('es-BO', { timeZone: 'UTC', day: 'numeric', month: 'long' }).format(dayAtNoon(day));
+
+/**
+ * Período en palabras para encabezados: "29 de septiembre", "Del 22 al 29 de septiembre",
+ * "Del 30 de agosto al 2 de septiembre". Recibe días `YYYY-MM-DD` de Bolivia.
+ */
+export function formatDayRange(from: string, to: string): string {
+  if (from === to) return dayMonth(from);
+  const sameMonth = from.slice(0, 7) === to.slice(0, 7);
+  const start = sameMonth ? String(Number(from.slice(8, 10))) : dayMonth(from);
+  return `Del ${start} al ${dayMonth(to)}`;
+}
+
+/** Lunes de la semana del día dado (`YYYY-MM-DD`), en el mismo formato. */
+export function mondayOf(day: string): string {
+  const d = dayAtNoon(day);
+  const offset = (d.getUTCDay() + 6) % 7; // lunes = 0
+  d.setUTCDate(d.getUTCDate() - offset);
+  return d.toISOString().slice(0, 10);
+}

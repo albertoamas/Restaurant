@@ -67,7 +67,8 @@ export interface OrderRepositoryPort {
     newDominantMethod?: PaymentMethod,
   ): Promise<Order>;
   getDailyReport(tenantId: string, date: string, branchId?: string | null): Promise<DailyReportResult>;
-  getReportByRange(tenantId: string, branchId: string | null, from: string, to: string): Promise<DailyReportResult>;
+  /** `createdBy`: solo los pedidos que tomó ese usuario (la rendición de un cajero). */
+  getReportByRange(tenantId: string, branchId: string | null, from: string, to: string, createdBy?: string): Promise<DailyReportResult>;
   getTopProducts(tenantId: string, branchId: string | null, from: string, to: string, categoryId?: string, limit?: number): Promise<TopProductDto[]>;
   getTopCustomers(tenantId: string, branchId: string | null, from: string, to: string, limit?: number): Promise<TopCustomerDto[]>;
   resetOrderSequences(tenantId: string, periods: string[]): Promise<void>;
