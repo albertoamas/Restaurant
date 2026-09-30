@@ -406,11 +406,17 @@
       radial-gradient(ellipse 65% 50% at 50% 100%, oklch(0.48 0.16 48 / 0.07) 0%, transparent 65%);
   }
 
-  /* Date/time inputs adapt color-scheme to theme */
-  [data-theme="dark"] input[type="date"],
-  [data-theme="dark"] input[type="time"],
-  [data-theme="dark"] input[type="datetime-local"] {
-    color-scheme: dark;
+  /* Controles nativos (lista de un select, calendario de un date, barras de desplazamiento)
+     en el tema activo. Antes solo los campos de fecha: en oscuro, la lista de un select abría
+     con fondo claro y el texto claro del tema, y las opciones no se veían. */
+  :root { color-scheme: light; }
+  [data-theme="dark"] { color-scheme: dark; }
+
+  /* Windows no siempre toma color-scheme para las opciones: se fijan explícitas. */
+  option,
+  optgroup {
+    background-color: var(--surface-card);
+    color: var(--text-main);
   }
 
   /* Focus ring — orange */
