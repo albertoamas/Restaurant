@@ -28,6 +28,13 @@ describe('useTheme', () => {
     expect(localStorage.getItem('pos_color_theme')).toBe('dark');
   });
 
+  it('dos pantallas que usan el tema quedan sincronizadas', () => {
+    const header  = renderHook(() => useTheme());
+    const account = renderHook(() => useTheme());
+    act(() => account.result.current.setTheme('dark'));
+    expect(header.result.current.theme).toBe('dark');
+  });
+
   it('no guarda nada si el usuario no eligió un tema', () => {
     renderHook(() => useTheme());
     expect(localStorage.getItem('pos_color_theme')).toBeNull();

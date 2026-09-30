@@ -30,20 +30,31 @@ function applyTheme(t: Theme) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[t]);
 }
 
+/** Avisa a las demás instancias del hook (barra superior, Mi cuenta) que el tema cambió. */
+const CHANGE_EVENT = 'pos-theme-change';
+
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getStored);
+  const [theme, setThemeState] = useState<Theme>(getStored);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  const toggle = useCallback(() => {
-    setTheme((t) => {
-      const next = t === 'dark' ? 'light' : 'dark';
-      try { localStorage.setItem(STORAGE_KEY, next); } catch { /* sin storage: vale para esta sesión */ }
-      return next;
-    });
+  useEffect(() => {
+    const onChange = (e: Event) => setThemeState((e as CustomEvent<Theme>).detail);
+    window.addEventListener(CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(CHANGE_EVENT, onChange);
   }, []);
 
-  return { theme, toggle };
+  const setTheme = useCallback((next: Theme) => {
+    try { localStorage.setItem(STORAGE_KEY, next); } catch { /* sin storage: vale para esta sesión */ }
+    setThemeState(next);
+    window.dispatchEvent(new CustomEvent<Theme>(CHANGE_EVENT, { detail: next }));
+  }, []);
+
+  const toggle = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
+
+  return { theme, toggle, setTheme };
 }

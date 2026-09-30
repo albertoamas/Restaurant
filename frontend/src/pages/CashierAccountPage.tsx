@@ -1,33 +1,90 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { UserRole } from '@pos/shared';
 import { useAuth } from '../context/auth.context';
 import { usersApi } from '../api/users.api';
+import { useBranchNames } from '../hooks/useBranches';
+import { useTheme } from '../hooks/useTheme';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { Input } from '../components/ui/Input';
+import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { handleApiError } from '../utils/api-error';
+import { MIN_PASSWORD_LENGTH, validatePasswordForm, type PasswordForm } from '../utils/password-form';
 
-const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
+const EMPTY: PasswordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
+/** Mismas etiquetas que la pantalla Equipo. */
 const ROLE_LABEL: Record<string, string> = {
-  OWNER:   'Propietario',
-  CASHIER: 'Cajero',
+  [UserRole.OWNER]:   'Dueño',
+  [UserRole.CASHIER]: 'Cajero',
 };
 
+/** Campo de contraseña con botón para ver lo que se escribe. */
+function PasswordInput({ label, value, onChange, autoComplete, error, hint }: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+  error?: string;
+  hint?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Input
+      label={label}
+      type={visible ? 'text' : 'password'}
+      autoComplete={autoComplete}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      error={error}
+      hint={hint}
+      rightAddon={
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          className="w-9 h-9 -mr-1 flex items-center justify-center rounded-control text-muted hover:text-main transition-colors"
+        >
+          <Icon name={visible ? 'eye-off' : 'eye'} size={18} />
+        </button>
+      }
+    />
+  );
+}
+
+function ProfileRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-2.5">
+      <dt className="text-label text-soft">{label}</dt>
+      <dd className="text-body text-main text-right min-w-0 truncate">{value}</dd>
+    </div>
+  );
+}
+
 export function CashierAccountPage() {
-  const { user } = useAuth();
-  const [pw, setPw]           = useState(EMPTY);
+  const { user, logout } = useAuth();
+  const { branchName } = useBranchNames();
+  const { theme, setTheme } = useTheme();
+  const [pw, setPw]           = useState<PasswordForm>(EMPTY);
   const [loading, setLoading] = useState(false);
-  const userInitial            = (user?.name ?? '?')[0].toUpperCase();
-  const roleLabel              = ROLE_LABEL[user?.role ?? ''] ?? user?.role ?? '';
+
+  const isOwner   = user?.role === UserRole.OWNER;
+  const initial   = (user?.name ?? '?')[0].toUpperCase();
+  const roleLabel = ROLE_LABEL[user?.role ?? ''] ?? '';
+  // El dueño no tiene una sucursal fija: trabaja con todas.
+  const branch    = isOwner ? 'Todas las sucursales' : (branchName(user?.branchId) ?? '-');
+
+  const { errors, valid } = validatePasswordForm(pw);
+  const set = (field: keyof PasswordForm) => (v: string) => setPw((p) => ({ ...p, [field]: v }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw.newPassword !== pw.confirmPassword) {
-      toast.error('Las contraseñas nuevas no coinciden');
-      return;
-    }
+    if (!valid) return;
     setLoading(true);
     try {
       await usersApi.changePassword({
@@ -44,69 +101,80 @@ export function CashierAccountPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-heading font-black text-gray-900">Mi cuenta</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Gestiona tu contraseña e información de perfil.</p>
+    <PageShell>
+      <div className="max-w-2xl">
+        <PageHeader title="Mi cuenta" description="Tus datos, tu contraseña y cómo se ve la app en este equipo." />
+
+        <div className="space-y-4">
+          <Card>
+            <div className="flex items-center gap-4">
+              <span className="w-14 h-14 shrink-0 rounded-full bg-primary-500/12 border border-primary-500/25 flex items-center justify-center text-title font-bold text-primary-700 dark:text-primary-300">
+                {initial}
+              </span>
+              <div className="min-w-0">
+                <p className="text-heading font-semibold text-main truncate">{user?.name}</p>
+                <p className="text-body text-soft truncate">{user?.email}</p>
+              </div>
+            </div>
+            <dl className="mt-4 divide-y divide-line border-t border-line">
+              <ProfileRow label="Rol" value={roleLabel} />
+              <ProfileRow label="Negocio" value={user?.tenantName ?? '-'} />
+              <ProfileRow label="Sucursal" value={branch} />
+            </dl>
+          </Card>
+
+          <Card>
+            <h2 className="text-heading font-semibold text-main">Cambiar contraseña</h2>
+            <p className="text-label text-soft mt-0.5">Tu sesión en este equipo sigue abierta después del cambio.</p>
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <PasswordInput
+                label="Contraseña actual"
+                autoComplete="current-password"
+                value={pw.currentPassword}
+                onChange={set('currentPassword')}
+              />
+              <PasswordInput
+                label="Nueva contraseña"
+                autoComplete="new-password"
+                value={pw.newPassword}
+                onChange={set('newPassword')}
+                error={errors.newPassword}
+                hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres.`}
+              />
+              <PasswordInput
+                label="Repite la nueva contraseña"
+                autoComplete="new-password"
+                value={pw.confirmPassword}
+                onChange={set('confirmPassword')}
+                error={errors.confirmPassword}
+              />
+              <Button type="submit" loading={loading} disabled={!valid} className="w-full sm:w-auto">
+                Cambiar contraseña
+              </Button>
+            </form>
+          </Card>
+
+          <Card>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-heading font-semibold text-main">Apariencia</h2>
+                <p className="text-label text-soft mt-0.5">Se guarda en este equipo. También se cambia desde la barra superior.</p>
+              </div>
+              <SegmentedControl
+                label="Tema"
+                value={theme}
+                onChange={setTheme}
+                options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]}
+              />
+            </div>
+          </Card>
+
+          <Button variant="secondary" onClick={logout} className="w-full sm:w-auto">
+            <Icon name="logout" size={18} />
+            Cerrar sesión
+          </Button>
+        </div>
       </div>
-
-      {/* Profile card */}
-      <Card className="mb-4 p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
-          <span className="text-xl font-bold text-primary-600">{userInitial}</span>
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-gray-900 truncate">{user?.name}</p>
-          <p className="text-sm text-gray-500 truncate">{user?.email}</p>
-          {roleLabel && (
-            <span className="inline-block mt-1 text-xs font-medium text-primary-600 bg-primary-500/10 border border-primary-500/20 px-2 py-0.5 rounded-full">
-              {roleLabel}
-            </span>
-          )}
-        </div>
-      </Card>
-
-      {/* Change password card */}
-      <Card className="p-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Icon name="lock" size={16} strokeWidth={2} className="text-gray-400" />
-          Cambiar contraseña
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Contraseña actual"
-            type="password"
-            autoComplete="current-password"
-            value={pw.currentPassword}
-            onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })}
-            required
-          />
-          <Input
-            label="Nueva contraseña"
-            type="password"
-            autoComplete="new-password"
-            value={pw.newPassword}
-            onChange={(e) => setPw({ ...pw, newPassword: e.target.value })}
-            minLength={6}
-            required
-          />
-          <Input
-            label="Confirmar nueva contraseña"
-            type="password"
-            autoComplete="new-password"
-            value={pw.confirmPassword}
-            onChange={(e) => setPw({ ...pw, confirmPassword: e.target.value })}
-            minLength={6}
-            required
-          />
-          <div className="pt-1">
-            <Button type="submit" loading={loading}>
-              Guardar cambios
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </div>
+    </PageShell>
   );
 }

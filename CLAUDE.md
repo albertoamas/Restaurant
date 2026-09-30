@@ -134,7 +134,7 @@ literals. Rooms: `tenant:{tenantId}`, `t:{tenantId}:b:{branchId}`. Recipe: `real
   in `CustomerRaffleSpending`). `RaffleAutoTicketService` issues tickets on order create/complete.
 - **admin** — `POST /admin/tenants` creates tenant + owner + first branch in one transaction;
   `/admin/tenants/:id/health` is the onboarding checklist (`docs/onboarding-cliente.md`).
-- **auth** — `PATCH /auth/me/password` requires the `x-admin-key` header.
+- **auth** — `PATCH /auth/me/password` (Mi cuenta) needs only the JWT and the current password; throttled to 5/min.
 - **catalog** — pagination via `X-Total-Count` header.
 
 ## Frontend
