@@ -8,7 +8,7 @@ import type { ButtonVariant } from '../ui/Button';
 import { orderTypeLabels } from '../../utils/order';
 import { durationLabel, minutesBetween } from '../../utils/date';
 
-/** A partir de estos minutos de espera la tarjeta pasa a ámbar y a rojo (igual que en Pedidos). */
+/** A partir de estos minutos el tiempo pasa a ámbar y a rojo (igual que en Pedidos); en rojo, también el borde. */
 const WAIT_WARNING_MIN = 5;
 const WAIT_URGENT_MIN  = 10;
 
@@ -23,9 +23,10 @@ function waitTone(minutes: number) {
     return { border: 'border-t-red-500', pill: 'bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/30' };
   }
   if (minutes >= WAIT_WARNING_MIN) {
-    return { border: 'border-t-amber-500', pill: 'bg-amber-500/14 text-amber-800 dark:text-amber-300 border-amber-500/30' };
+    // Sin borde de color: el ámbar ya identifica la columna Pendientes y se confundiría.
+    return { border: 'border-t-line', pill: 'bg-amber-500/14 text-amber-800 dark:text-amber-300 border-amber-500/30' };
   }
-  return { border: 'border-t-line-strong', pill: 'bg-surface-2 text-soft border-line' };
+  return { border: 'border-t-line', pill: 'bg-surface-2 text-soft border-line' };
 }
 
 interface KitchenCardProps {

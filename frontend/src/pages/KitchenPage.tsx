@@ -52,28 +52,36 @@ interface ColumnProps {
   hiddenOnPhone: boolean;
 }
 
+/** Franja de título de cada columna, con el color de su fase: separa las dos de un vistazo. */
+const COLUMN_BAND: Partial<Record<OrderStatus, string>> = {
+  [OrderStatus.PENDING]:   'bg-amber-500/14 text-amber-900 dark:text-amber-300 border-amber-500/30',
+  [OrderStatus.PREPARING]: 'bg-sky-500/12 text-sky-700 border-sky-500/30',
+};
+
 function KitchenColumn({ status, title, orders, loading, now, empty, onAction, hiddenOnPhone }: ColumnProps) {
   const ui = ORDER_STATUS_UI[status];
   return (
+    // Cada columna es un panel propio (fondo, borde y franja de color): en la pantalla de la
+    // cocina tiene que quedar claro de qué lado está cada pedido.
     <section
       aria-label={title}
-      className={`flex flex-col min-h-0 ${hiddenOnPhone ? 'max-md:hidden' : ''}`}
+      className={`flex flex-col min-h-0 rounded-dialog border border-line bg-surface-2 overflow-hidden ${hiddenOnPhone ? 'max-md:hidden' : ''}`}
     >
-      <h2 className="max-md:sr-only flex items-center gap-2 pb-3 text-heading font-semibold text-main">
-        <span className={`w-2.5 h-2.5 rounded-full ${ui.dot}`} />
+      <h2 className={`max-md:sr-only shrink-0 flex items-center gap-2.5 px-4 py-3 border-b text-title font-bold font-heading ${COLUMN_BAND[status] ?? ''}`}>
+        <span className={`w-3 h-3 rounded-full ${ui.dot}`} />
         {title}
-        <span className="text-heading text-muted tabular-nums">{orders.length}</span>
+        <span className="ml-auto min-w-9 h-9 px-2 rounded-full bg-surface-card border border-line flex items-center justify-center text-heading font-bold text-main tabular-nums">
+          {orders.length}
+        </span>
       </h2>
-      <div className="md:flex-1 md:min-h-0 md:overflow-y-auto md:pr-1">
+      <div className="p-3 md:flex-1 md:min-h-0 md:overflow-y-auto">
         {loading ? (
-          <div className="grid gap-4"><Skeleton variant="card" /><Skeleton variant="card" /></div>
+          <div className="grid gap-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
         ) : orders.length === 0 ? (
-          <div className="rounded-card border border-dashed border-line-strong">
-            <EmptyState compact icon={empty.icon} title={empty.title} description={empty.description} />
-          </div>
+          <EmptyState compact icon={empty.icon} title={empty.title} description={empty.description} />
         ) : (
           // En monitores anchos, dos comandas por fila dentro de cada columna.
-          <div className="grid gap-4 2xl:grid-cols-2 items-start">
+          <div className="grid gap-3 2xl:grid-cols-2 items-start">
             {orders.map((order, i) => (
               <KitchenCard
                 key={order.id}
