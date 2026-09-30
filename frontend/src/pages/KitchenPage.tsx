@@ -1,274 +1,192 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { OrderStatus, OrderType } from '@pos/shared';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { useAuth } from '../context/auth.context';
 import { useKitchenOrders } from '../hooks/useKitchenOrders';
-import { elapsed } from '../utils/date';
-import { orderTypeLabels } from '../utils/order';
+import { useKitchenSound } from '../hooks/useKitchenSound';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { useBranchNames } from '../hooks/useBranches';
+import { useNow } from '../hooks/useNow';
+import { formatBoliviaTime } from '../utils/date';
 import { Icon } from '../components/ui/Icon';
+import type { IconName } from '../components/ui/Icon';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
+import { KitchenCard } from '../components/kitchen/KitchenCard';
+import { PickBranch } from '../components/branch/PickBranch';
+import { ORDER_STATUS_UI } from '../components/orders/order-status';
 
-const typeColors: Record<OrderType, string> = {
-  [OrderType.DINE_IN]: 'bg-primary-500/10 text-primary-600 border border-primary-500/20',
-  [OrderType.TAKEOUT]: 'bg-amber-500/12 text-amber-600 border border-amber-500/25',
-  [OrderType.DELIVERY]: 'bg-violet-500/12 text-violet-600 border border-violet-500/25',
-};
+/** Los tiempos se muestran en minutos: basta con recalcular cada 15 s. */
+const TICK_MS = 15_000;
 
-function getElapsedMinutes(createdAt: string): number {
-  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60_000);
-}
+type Column = 'pending' | 'preparing';
 
-function timerPill(minutes: number): string {
-  if (minutes >= 10) return 'bg-red-50 text-red-700 border border-red-200';
-  if (minutes >= 5) return 'bg-amber-50 text-amber-700 border border-amber-200';
-  return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-}
-
-function KitchenClock() {
-  const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setTime(new Date()), 1_000);
-    return () => clearInterval(id);
-  }, []);
+/** Botón de ícono de la barra (44 px, táctil). */
+function BarButton({ icon, label, onClick, pressed, className = '' }: { icon: IconName; label: string; onClick: () => void; pressed?: boolean; className?: string }) {
   return (
-    <span className="font-heading font-bold text-sm text-gray-500 tabular-nums whitespace-nowrap">
-      {time.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-    </span>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      className={`${className} w-11 h-11 shrink-0 flex items-center justify-center rounded-control border border-line bg-surface-card text-soft hover:text-main hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60`}
+    >
+      <Icon name={icon} size={20} />
+    </button>
   );
 }
 
-interface KitchenCardProps {
-  order: OrderDto;
+interface ColumnProps {
+  status: OrderStatus;
+  title: string;
+  orders: OrderDto[];
+  loading: boolean;
+  now: number;
+  empty: { icon: IconName; title: string; description: string };
   onAction: (id: string, status: OrderStatus) => void;
-  actionLabel: string;
-  actionStatus: OrderStatus;
-  actionColor: string;
-  actionAriaLabel: string;
+  /** Solo en celular: la columna que no está elegida se oculta. */
+  hiddenOnPhone: boolean;
 }
 
-function KitchenCard({ order, onAction, actionLabel, actionStatus, actionColor, actionAriaLabel }: KitchenCardProps) {
-  const minutes = getElapsedMinutes(order.createdAt);
-
+function KitchenColumn({ status, title, orders, loading, now, empty, onAction, hiddenOnPhone }: ColumnProps) {
+  const ui = ORDER_STATUS_UI[status];
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col animate-slide border border-line shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-line bg-surface-2">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.14em] text-gray-400 font-semibold mb-1">Orden</p>
-          <span className="font-heading font-black text-4xl sm:text-5xl text-gray-900 tracking-tight leading-none">
-            #{order.orderNumber}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-2.5">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeColors[order.type]}`}>
-            {orderTypeLabels[order.type]}
-          </span>
-          <span className={`px-2.5 py-1 rounded-full text-xs tabular-nums font-bold ${timerPill(minutes)}`}>
-            {elapsed(order.createdAt)}
-          </span>
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="flex-1 px-5 py-4 space-y-2.5">
-        {order.items.map((item) => (
-          <div key={item.id} className="flex items-baseline gap-3 rounded-xl px-3 py-2 bg-surface-2 border border-line">
-            <span className="font-heading font-black text-2xl sm:text-3xl text-gray-500 w-10 shrink-0 tabular-nums">
-              {item.quantity}×
-            </span>
-            <span className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{item.productName}</span>
+    <section
+      aria-label={title}
+      className={`flex flex-col min-h-0 ${hiddenOnPhone ? 'max-md:hidden' : ''}`}
+    >
+      <h2 className="max-md:sr-only flex items-center gap-2 pb-3 text-heading font-semibold text-main">
+        <span className={`w-2.5 h-2.5 rounded-full ${ui.dot}`} />
+        {title}
+        <span className="text-heading text-muted tabular-nums">{orders.length}</span>
+      </h2>
+      <div className="md:flex-1 md:min-h-0 md:overflow-y-auto md:pr-1">
+        {loading ? (
+          <div className="grid gap-4"><Skeleton variant="card" /><Skeleton variant="card" /></div>
+        ) : orders.length === 0 ? (
+          <div className="rounded-card border border-dashed border-line-strong">
+            <EmptyState compact icon={empty.icon} title={empty.title} description={empty.description} />
           </div>
-        ))}
-
-        {order.notes && (
-          <div className="mt-3 rounded-xl px-4 py-3 border bg-amber-50 border-amber-100">
-            <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-1">Nota</p>
-            <p className="text-base text-amber-800 leading-snug">{order.notes}</p>
+        ) : (
+          // En monitores anchos, dos comandas por fila dentro de cada columna.
+          <div className="grid gap-4 2xl:grid-cols-2 items-start">
+            {orders.map((order, i) => (
+              <KitchenCard
+                key={order.id}
+                order={order}
+                now={now}
+                isNext={status === OrderStatus.PENDING && i === 0}
+                onAction={onAction}
+              />
+            ))}
           </div>
         )}
       </div>
-
-      {/* Action */}
-      <div className="px-4 pb-4 pt-2">
-        <button
-          onClick={() => onAction(order.id, actionStatus)}
-          className={`w-full py-4 rounded-xl text-white font-black text-lg border transition-all duration-150 active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2 ${actionColor}`}
-          aria-label={actionAriaLabel}
-        >
-          {actionLabel}
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
 
 export function KitchenPage() {
-  const [, setTick] = useState(0);
+  const navigate = useNavigate();
   const { currentBranchId } = useAuth();
-  const { pending, preparing, updateStatus, refresh } = useKitchenOrders(currentBranchId);
+  const { branchName } = useBranchNames();
+  const sound = useKitchenSound();
+  const fullscreen = useFullscreen();
+  const { pending, preparing, loading, updateStatus, refresh } = useKitchenOrders(currentBranchId, sound.play);
+  const now = useNow(TICK_MS);
+  const [column, setColumn] = useState<Column>('pending');
 
-  useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1_000);
-    return () => clearInterval(interval);
-  }, []);
+  const branchLabel = branchName(currentBranchId);
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-surface-page">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: [
-            'radial-gradient(1200px 540px at 0% 0%, oklch(0.55 0.20 42 / 0.12), transparent 62%)',
-            'radial-gradient(1200px 540px at 100% 0%, oklch(0.48 0.18 38 / 0.10), transparent 64%)',
-          ].join(','),
-        }}
-      />
-
-      {/* Kitchen header */}
-      <div className="relative z-10 px-4 sm:px-6 py-4 flex items-center justify-between border-b border-line shrink-0 shadow-card-md" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shadow-[inset_0_1px_0_oklch(1_0_0/0.10)]">
-            <Icon name="flame" size={16} className="text-amber-600 dark:text-amber-400" />
-          </div>
-          <div>
-            <h1 className="font-heading font-black text-gray-900 text-lg tracking-tight whitespace-nowrap">
-              <span className="hidden sm:inline">Panel de </span>Cocina
-            </h1>
-            <p className="hidden sm:block text-xs text-gray-500 font-medium">Flujo en tiempo real por estado</p>
-          </div>
+    <div className="min-h-dvh md:h-dvh flex flex-col bg-surface-page">
+      <header className="shrink-0 flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-line bg-surface-card">
+        <span className="w-10 h-10 shrink-0 rounded-control bg-amber-500/14 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-300">
+          <Icon name="flame" size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-heading font-bold text-main font-heading leading-tight">Cocina</h1>
+          {branchLabel && <p className="text-caption text-soft truncate">Sucursal {branchLabel}</p>}
         </div>
-
-        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
-          <KitchenClock />
-          <div className="hidden sm:flex items-center gap-3 text-sm">
-            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              {pending.length} pendientes
-            </span>
-            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              {preparing.length} preparando
-            </span>
-          </div>
-          <button
-            onClick={refresh}
-            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-500 hover:text-gray-600 hover:bg-surface-2 transition-colors border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
-            title="Actualizar"
-            aria-label="Actualizar pedidos de cocina"
-          >
-            <Icon name="refresh" size={16} />
-          </button>
-          <Link
-            to="/pos"
-            className="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-500 bg-surface-2 border border-line hover:border-primary-500/40 hover:text-primary-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2"
-            aria-label="Volver al panel principal"
-          >
-            <Icon name="arrow-left" size={14} />
+        <span className="hidden sm:block text-heading font-semibold text-main tabular-nums">{formatBoliviaTime(new Date(now).toISOString())}</span>
+        <div className="flex items-center gap-2">
+          <BarButton
+            icon={sound.enabled ? 'volume' : 'volume-off'}
+            label={sound.enabled ? 'Silenciar aviso de pedidos nuevos' : 'Activar aviso de pedidos nuevos'}
+            pressed={sound.enabled}
+            onClick={sound.toggle}
+          />
+          {fullscreen.supported && (
+            <BarButton
+              icon={fullscreen.active ? 'minimize' : 'maximize'}
+              label={fullscreen.active ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              onClick={fullscreen.toggle}
+              // En celular casi no se usa y quita espacio al nombre de la sucursal.
+              className="max-sm:hidden"
+            />
+          )}
+          <BarButton icon="refresh" label="Actualizar pedidos" onClick={() => { void refresh(); }} />
+          <Button variant="secondary" onClick={() => navigate('/pos')} aria-label="Volver al panel">
+            <Icon name="arrow-left" size={18} />
             <span className="hidden sm:inline">Volver al panel</span>
-          </Link>
+          </Button>
         </div>
-      </div>
+      </header>
 
-      <div className="relative z-10 sm:hidden px-4 pb-3 border-b border-line bg-surface-2">
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-500/20">
-            <p className="text-amber-600 dark:text-amber-400 font-black uppercase tracking-[0.08em]">Pendientes</p>
-            <p className="text-gray-900 font-heading font-black text-lg leading-tight mt-0.5">{pending.length}</p>
-          </div>
-          <div className="rounded-xl px-3 py-2 bg-emerald-500/10 border border-emerald-500/20">
-            <p className="text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.08em]">Preparando</p>
-            <p className="text-gray-900 font-heading font-black text-lg leading-tight mt-0.5">{preparing.length}</p>
-          </div>
-        </div>
-      </div>
+      {!currentBranchId ? (
+        <main className="flex-1">
+          <PickBranch description="La cocina muestra los pedidos de una sucursal." />
+        </main>
+      ) : (
+        <main className="flex-1 min-h-0 flex flex-col px-4 sm:px-6 py-4">
+          {sound.enabled && sound.blocked && (
+            <p className="mb-3 flex items-center gap-2 rounded-control border border-line bg-surface-2 px-3 py-2 text-label text-soft">
+              <Icon name="volume" size={16} className="shrink-0" />
+              Toca la pantalla una vez para activar el aviso de pedidos nuevos.
+            </p>
+          )}
 
-      {!currentBranchId && (
-        <div className="relative z-10 mx-4 sm:mx-6 mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
-          <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-amber-600" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">
-            La cocina trabaja sobre una sola sucursal. Elegí una en el menú lateral para ver sus pedidos.
-          </p>
-        </div>
+          <div className="md:hidden mb-4">
+            <SegmentedControl
+              label="Columna de cocina"
+              fullWidth
+              value={column}
+              onChange={setColumn}
+              options={[
+                { value: 'pending',   label: 'Pendientes', count: pending.length },
+                { value: 'preparing', label: 'Preparando', count: preparing.length },
+              ]}
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 grid md:grid-cols-2 gap-6">
+            <KitchenColumn
+              status={OrderStatus.PENDING}
+              title="Pendientes"
+              orders={pending}
+              loading={loading}
+              now={now}
+              empty={{ icon: 'orders', title: 'Sin pedidos pendientes', description: 'Los pedidos nuevos aparecen aquí al instante.' }}
+              onAction={updateStatus}
+              hiddenOnPhone={column !== 'pending'}
+            />
+            <KitchenColumn
+              status={OrderStatus.PREPARING}
+              title="Preparando"
+              orders={preparing}
+              loading={loading}
+              now={now}
+              empty={{ icon: 'flame', title: 'Nada en preparación', description: 'Toca "Iniciar preparación" en un pedido pendiente.' }}
+              onAction={updateStatus}
+              hiddenOnPhone={column !== 'preparing'}
+            />
+          </div>
+        </main>
       )}
-
-      {/* Two-column board */}
-      <div className="relative z-10 flex-1 grid grid-cols-1 xl:grid-cols-2 gap-4 p-4 sm:p-6 min-h-0">
-        {/* PENDING column */}
-        <div className="flex flex-col min-h-0 rounded-2xl border border-line shadow-card-xl overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-          <div className="px-5 py-3 flex items-center gap-2.5 border-b border-amber-500/20 bg-amber-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
-            <span className="text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-[0.12em]">Pendientes</span>
-            <span
-              className={[
-                'text-xs font-black rounded-full w-5 h-5 flex items-center justify-center tabular-nums transition-colors',
-                pending.length > 0
-                  ? 'bg-amber-500 text-white'
-                  : 'bg-surface-2 text-gray-400 border border-line',
-              ].join(' ')}
-              aria-label={`Pedidos pendientes: ${pending.length}`}
-            >
-              {pending.length}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-            {pending.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-300">
-                <Icon name="orders" size={40} strokeWidth={1.5} className="opacity-60" />
-                <p className="text-sm">Sin pedidos pendientes</p>
-              </div>
-            ) : (
-              pending.map((order) => (
-                <KitchenCard
-                  key={order.id}
-                  order={order}
-                  actionLabel="▶  Iniciar preparación"
-                  actionStatus={OrderStatus.PREPARING}
-                  actionColor="bg-amber-500 hover:bg-amber-600 border-amber-500 shadow-[0_3px_10px_oklch(0.72_0.16_85/0.22)]"
-                  actionAriaLabel={`Iniciar preparación de la orden ${order.orderNumber}`}
-                  onAction={updateStatus}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* PREPARING column */}
-        <div className="flex flex-col min-h-0 rounded-2xl border border-line shadow-card-xl overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-          <div className="px-5 py-3 flex items-center gap-2.5 border-b border-emerald-500/20 bg-emerald-500/[0.08] sticky top-0 z-10 backdrop-blur-sm">
-            <span className="text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase tracking-[0.12em]">Preparando</span>
-            <span
-              className={[
-                'text-xs font-black rounded-full w-5 h-5 flex items-center justify-center tabular-nums transition-colors',
-                preparing.length > 0
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-surface-2 text-gray-400 border border-line',
-              ].join(' ')}
-              aria-label={`Pedidos preparando: ${preparing.length}`}
-            >
-              {preparing.length}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-            {preparing.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-300">
-                <Icon name="clock" size={40} strokeWidth={1.5} className="opacity-60" />
-                <p className="text-sm">Nada en preparación</p>
-              </div>
-            ) : (
-              preparing.map((order) => (
-                <KitchenCard
-                  key={order.id}
-                  order={order}
-                  actionLabel="Listo, entregar"
-                  actionStatus={OrderStatus.DELIVERED}
-                  actionColor="bg-emerald-600 hover:bg-emerald-700 border-emerald-600 shadow-[0_3px_10px_oklch(0.62_0.18_148/0.22)]"
-                  actionAriaLabel={`Marcar como lista y entregar la orden ${order.orderNumber}`}
-                  onAction={updateStatus}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

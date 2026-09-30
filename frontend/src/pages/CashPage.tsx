@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CashSessionStatus, UserRole } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
-import { useAuth, BRANCH_PINNED_KEY } from '../context/auth.context';
+import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -13,42 +13,17 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useCashSession } from '../hooks/useCashSession';
-import { useBranches, useBranchNames } from '../hooks/useBranches';
+import { useBranchNames } from '../hooks/useBranches';
 import { formatBoliviaDayMonth, formatBoliviaTime } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
 import { CashAmountModal } from '../components/cash/CashAmountModal';
 import { HistoryModal } from '../components/cash/HistoryModal';
 import { CashSessionRow } from '../components/cash/CashSessionRow';
 import { OpenShift, ClosedShift } from '../components/cash/CurrentShift';
+import { PickBranch } from '../components/branch/PickBranch';
 
 /** Cierres que se ven en la página; el resto, en "Ver todos". */
 const RECENT_CLOSINGS = 5;
-
-/** El dueño en la vista consolidada: la caja es de cada sucursal, así que elige una aquí mismo. */
-function PickBranch() {
-  const { setCurrentBranch } = useAuth();
-  const { branches: all } = useBranches();
-  const branches = all.filter((b) => b.isActive);
-  const select = (id: string) => {
-    // Igual que el selector del menú: la elección del dueño se respeta entre sesiones.
-    localStorage.setItem(BRANCH_PINNED_KEY, '1');
-    setCurrentBranch(id);
-  };
-  return (
-    <EmptyState
-      icon="building"
-      title="Elige una sucursal"
-      description="Cada sucursal tiene su propia caja."
-      action={branches.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          {branches.map((b) => (
-            <Button key={b.id} variant="secondary" onClick={() => select(b.id)}>{b.name}</Button>
-          ))}
-        </div>
-      )}
-    />
-  );
-}
 
 export function CashPage() {
   const { cashEnabled } = useSettingsStore();
@@ -78,7 +53,7 @@ export function CashPage() {
   );
 
   if (!currentBranchId) {
-    return <PageShell>{header}<PickBranch /></PageShell>;
+    return <PageShell>{header}<PickBranch description="Cada sucursal tiene su propia caja." /></PageShell>;
   }
 
   const handleOpen = async (amount: number, notes?: string) => {
