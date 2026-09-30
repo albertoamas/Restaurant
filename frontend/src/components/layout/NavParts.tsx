@@ -64,7 +64,7 @@ export function NavList({ collapsed = false, onNavigate }: { collapsed?: boolean
   const groups = useNavGroups();
 
   return (
-    <nav aria-label="Menú principal" className={`flex-1 overflow-y-auto py-3 ${collapsed ? 'px-2' : 'px-3'}`}>
+    <nav aria-label="Menú principal" className={`flex-1 min-h-0 overflow-y-auto py-3 ${collapsed ? 'px-2' : 'px-3'}`}>
       {groups.filter((g) => g.length > 0).map((group, gi) => (
         <div key={gi} className={gi > 0 ? 'mt-3 pt-3 border-t border-line' : ''}>
           <ul className="space-y-0.5">
