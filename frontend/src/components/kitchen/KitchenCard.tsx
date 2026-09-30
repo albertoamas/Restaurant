@@ -12,10 +12,13 @@ import { durationLabel, minutesBetween } from '../../utils/date';
 const WAIT_WARNING_MIN = 5;
 const WAIT_URGENT_MIN  = 10;
 
-/** Acción de cada columna: mismo color e ícono que el siguiente paso en Pedidos. */
+/**
+ * Acción de cada columna: mismo texto, color e ícono que el siguiente paso en Pedidos. No hay un
+ * estado "Listo": terminar en la cocina deja el pedido como entregado, y el botón lo dice así.
+ */
 const ACTION: Partial<Record<OrderStatus, { label: string; next: OrderStatus; icon: IconName; variant: ButtonVariant }>> = {
   [OrderStatus.PENDING]:   { label: 'Iniciar preparación', next: OrderStatus.PREPARING, icon: 'flame', variant: 'info' },
-  [OrderStatus.PREPARING]: { label: 'Listo para entregar', next: OrderStatus.DELIVERED, icon: 'check', variant: 'success' },
+  [OrderStatus.PREPARING]: { label: 'Marcar como entregado', next: OrderStatus.DELIVERED, icon: 'check', variant: 'success' },
 };
 
 function waitTone(minutes: number) {
