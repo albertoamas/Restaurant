@@ -105,17 +105,17 @@ export function ExpenseConceptsPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
-        <Icon name="warning" size={15} className="mt-0.5 shrink-0 text-gray-400" />
-        <p className="text-xs text-gray-500">
-          Acá defines <strong className="font-bold text-gray-700">qué gastos existen</strong>, no registras ninguno.
-          Para registrar, tócalo en «Registrar gasto». Editar la lista no afecta a lo ya registrado.
+      <div className="flex gap-2.5 rounded-control border border-line bg-surface-2 px-3 py-2.5">
+        <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-muted" />
+        <p className="text-label text-soft">
+          Aquí defines <strong className="font-semibold text-main">qué gastos existen</strong>; no registras ninguno.
+          Para registrar, tócalo en "Registrar gasto". Cambiar la lista no afecta lo ya registrado.
         </p>
       </div>
 
       {showAdd ? (
-        <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-primary-500/30 bg-surface-2 p-4">
-          <p className="text-xs font-bold text-gray-700">Nuevo gasto en la lista</p>
+        <form onSubmit={handleCreate} className="space-y-3 rounded-card border border-primary-500/30 bg-surface-2 p-4">
+          <p className="text-body font-semibold text-main">Nuevo gasto en la lista</p>
           <ExpenseConceptFields value={draft} onChange={setDraft} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={() => { setShowAdd(false); setDraft(EMPTY_CONCEPT); }}>
@@ -125,35 +125,32 @@ export function ExpenseConceptsPanel() {
           </div>
         </form>
       ) : (
-        <Button type="button" variant="secondary" size="sm" onClick={() => setShowAdd(true)}>
-          <span className="flex items-center gap-1.5">
-            <Icon name="plus" size={14} strokeWidth={2.2} /> Agregar gasto
-          </span>
+        <Button type="button" variant="secondary" onClick={() => setShowAdd(true)}>
+          <Icon name="plus" size={16} />
+          Agregar gasto a la lista
         </Button>
       )}
 
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-surface-2" />
+            <div key={i} className="h-14 animate-pulse rounded-control bg-surface-2" />
           ))}
         </div>
       ) : grouped.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-500">Tu lista de gastos está vacía.</p>
+        <p className="py-8 text-center text-body text-soft">Tu lista de gastos está vacía.</p>
       ) : (
-        <div className="max-h-[46vh] space-y-4 overflow-y-auto pr-1">
+        <div className="space-y-4">
           {grouped.map(([categoryName, list]) => (
             <div key={categoryName}>
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                {categoryName}
-              </p>
+              <h3 className="mb-1.5 text-label font-semibold text-soft">{categoryName}</h3>
               <div className="space-y-2">
                 {list.map((concept) => (
                   editingId === concept.id ? (
                     <div
                       key={concept.id}
-                      className="space-y-3 rounded-xl border border-primary-500/30 p-3"
-                      style={{ background: 'var(--color-surface-card)' }}
+                      className="space-y-3 rounded-control border border-primary-500/30 p-3"
+                      
                     >
                       <ExpenseConceptFields value={editDraft} onChange={setEditDraft} />
                       <div className="flex justify-end gap-2">
@@ -164,19 +161,19 @@ export function ExpenseConceptsPanel() {
                   ) : (
                     <div
                       key={concept.id}
-                      className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5"
-                      style={{ background: 'var(--color-surface-card)' }}
+                      className="flex items-center gap-3 rounded-control border border-line px-3 py-2.5"
+                      
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-gray-800">{concept.name}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="truncate text-body font-semibold text-main">{concept.name}</p>
+                        <p className="text-caption text-muted">
                           {concept.unit ? `Por ${concept.unit}` : 'Monto libre'}
-                          {concept.defaultUnitPrice ? `, Bs ${concept.defaultUnitPrice.toFixed(2)} habitual` : ''}
+                          {concept.defaultUnitPrice ? `, habitual Bs ${concept.defaultUnitPrice.toFixed(2)}` : ''}
                         </p>
                       </div>
                       {confirmId === concept.id ? (
                         <div className="flex shrink-0 items-center gap-2">
-                          <span className="text-[11px] font-semibold text-gray-500">¿Quitar?</span>
+                          <span className="text-label text-soft">¿Quitar de la lista?</span>
                           <IconAction icon="check" label="Confirmar" tone="danger" onClick={() => handleDelete(concept.id)} />
                           <IconAction icon="x" label="Cancelar" onClick={() => setConfirm(null)} />
                         </div>

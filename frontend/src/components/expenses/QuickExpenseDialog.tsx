@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
@@ -6,11 +6,11 @@ import { useAuth } from '../../context/auth.context';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { FIELD } from './ExpenseField';
+import { Input } from '../ui/Input';
 import { handleApiError } from '../../utils/api-error';
-import { today } from '../../utils/date';
+import { formatDayRange, today } from '../../utils/date';
 
-/** Diálogo compacto: cantidad/precio (o monto) y listo. */
+/** Registro de un gasto de la lista: el monto (o cantidad y precio) y, si hace falta, la fecha. */
 export function QuickExpenseDialog({
   concept, onClose, onSaved,
 }: {
@@ -18,30 +18,29 @@ export function QuickExpenseDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const formId = useId();
   const { currentBranchId } = useAuth();
   const tracksQuantity = !!concept.unit;
 
-  const [quantity, setQuantity]   = useState('1');
-  const [price, setPrice]         = useState(concept.defaultUnitPrice ? String(concept.defaultUnitPrice) : '');
-  const [expenseDate, setDate]    = useState(today());
-  const [showDate, setShowDate]   = useState(false);
-  const [saving, setSaving]       = useState(false);
+  const [quantity, setQuantity] = useState('1');
+  const [price, setPrice]       = useState(concept.defaultUnitPrice ? String(concept.defaultUnitPrice) : '');
+  const [expenseDate, setDate]  = useState(today());
+  const [showDate, setShowDate] = useState(false);
+  const [saving, setSaving]     = useState(false);
 
   const qty   = parseFloat(quantity) || 0;
   const unit  = parseFloat(price)    || 0;
   const total = Math.round(qty * unit * 100) / 100;
+  const valid = qty > 0 && unit > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (qty <= 0)  { toast.error('La cantidad debe ser mayor a 0'); return; }
-    if (unit <= 0) { toast.error('El monto debe ser mayor a 0');    return; }
-    // Un gasto siempre pertenece a una sucursal: en la vista consolidada no hay
-    // ninguna a la que imputarlo.
+    if (!valid) return;
+    // Un gasto siempre es de una sucursal: en la vista consolidada no hay a cuál imputarlo.
     if (!currentBranchId) {
-      toast.error('Selecciona una sucursal antes de registrar un gasto');
+      toast.error('Elige una sucursal antes de registrar un gasto');
       return;
     }
-
     setSaving(true);
     try {
       await expensesApi.create({
@@ -54,7 +53,7 @@ export function QuickExpenseDialog({
           unitPrice:  unit,
         }],
         expenseDate,
-        branchId: currentBranchId ?? undefined,
+        branchId: currentBranchId,
       });
       toast.success(`${concept.name}: Bs ${total.toFixed(2)}`);
       onSaved();
@@ -66,86 +65,73 @@ export function QuickExpenseDialog({
   };
 
   return (
-    <Modal isOpen onClose={onClose} title={concept.name} size="sm">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="-mt-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {concept.categoryName}
-        </p>
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={concept.name}
+      size="sm"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+          <Button type="submit" form={formId} fullWidth loading={saving} disabled={!valid}>Registrar</Button>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+        <p className="-mt-1 text-label text-soft">{concept.categoryName}</p>
 
         {tracksQuantity ? (
           <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Cantidad ({concept.unit})
-              </span>
-              <input
-                autoFocus
-                type="number" inputMode="decimal" min="0.001" step="0.001"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className={`${FIELD} text-right tabular-nums`}
-                required
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                Precio por {concept.unit}
-              </span>
-              <input
-                type="number" inputMode="decimal" min="0.01" step="0.01"
-                placeholder="0.00"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className={`${FIELD} text-right tabular-nums`}
-                required
-              />
-            </label>
+            <Input
+              label={`Cantidad (${concept.unit})`}
+              autoFocus
+              type="number" inputMode="decimal" min="0.001" step="0.001"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+            <Input
+              label={`Precio por ${concept.unit}`}
+              type="number" inputMode="decimal" min="0.01" step="0.01"
+              placeholder="0.00"
+              leftAddon="Bs"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
+            />
           </div>
         ) : (
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-gray-500">Monto</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-gray-400">Bs</span>
-              <input
-                autoFocus
-                type="number" inputMode="decimal" min="0.01" step="0.01"
-                placeholder="0.00"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className={`${FIELD} text-right text-lg font-bold tabular-nums`}
-                required
-              />
-            </div>
-          </label>
+          <Input
+            label="Monto"
+            autoFocus
+            type="number" inputMode="decimal" min="0.01" step="0.01"
+            placeholder="0.00"
+            leftAddon="Bs"
+            inputSize="lg"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
         )}
 
-        <div className="flex items-center justify-between rounded-xl border border-line bg-surface-2 px-4 py-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Total</span>
-          <span className="font-heading text-xl font-black tabular-nums text-gray-900">
-            Bs {total.toFixed(2)}
-          </span>
-        </div>
+        {tracksQuantity && (
+          <div className="flex items-baseline justify-between rounded-card border border-line bg-surface-2 px-4 py-3">
+            <span className="text-body font-semibold text-main">Total</span>
+            <span className="text-heading font-bold text-main tabular-nums">Bs {total.toFixed(2)}</span>
+          </div>
+        )}
 
         {showDate ? (
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-gray-500">Fecha</span>
-            <input type="date" value={expenseDate} onChange={(e) => setDate(e.target.value)} className={FIELD} required />
-          </label>
+          <Input type="date" label="Fecha del gasto" value={expenseDate} onChange={(e) => setDate(e.target.value)} required />
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowDate(true)}
-            className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-gray-500 transition-colors hover:text-primary-600"
-          >
-            <Icon name="clock" size={13} />
-            Hoy (cambiar fecha)
-          </button>
+          <div className="flex items-center justify-between gap-3 text-label">
+            <span className="inline-flex items-center gap-1.5 text-soft">
+              <Icon name="clock" size={14} />
+              Fecha: hoy, {formatDayRange(expenseDate, expenseDate)}
+            </span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setShowDate(true)}>Cambiar</Button>
+          </div>
         )}
-
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={saving}>Registrar</Button>
-        </div>
       </form>
     </Modal>
   );

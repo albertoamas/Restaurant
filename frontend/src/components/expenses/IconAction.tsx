@@ -1,11 +1,11 @@
 import { Icon } from '../ui/Icon';
 
 const TONES = {
-  neutral: 'text-gray-400 hover:bg-surface-2 hover:text-gray-700',
-  danger:  'text-white bg-red-600 hover:opacity-90',
+  neutral: 'text-soft hover:bg-surface-2 hover:text-main',
+  danger:  'text-white bg-red-700 hover:bg-red-800',
 };
 
-/** Botón cuadrado de acción en las filas de las listas de gastos. */
+/** Botón cuadrado de 44 px para las acciones de las filas de la lista de gastos. */
 export function IconAction({
   icon, label, onClick, tone = 'neutral',
 }: {
@@ -20,9 +20,9 @@ export function IconAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${TONES[tone]}`}
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${TONES[tone]}`}
     >
-      <Icon name={icon} size={15} strokeWidth={2.2} />
+      <Icon name={icon} size={18} />
     </button>
   );
 }

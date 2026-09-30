@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
@@ -23,6 +23,7 @@ export function NewConceptModal({
   const { invalidate } = useExpenseConcepts();
   const [draft, setDraft] = useState<ConceptDraft>(EMPTY_CONCEPT);
   const [saving, setSaving] = useState(false);
+  const formId = useId();
 
   useEffect(() => {
     if (isOpen) setDraft({ ...EMPTY_CONCEPT, name: initialName });
@@ -52,18 +53,23 @@ export function NewConceptModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Agregar gasto a la lista" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="-mt-1 text-xs text-gray-500">
-          Primero queda en tu lista; al guardarlo te pedimos el monto para registrarlo.
-        </p>
-
-        <ExpenseConceptFields value={draft} onChange={setDraft} autoFocusName={!initialName} />
-
-        <div className="flex gap-3 pt-1">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Agregar gasto a la lista"
+      size="lg"
+      footer={
+        <div className="flex gap-3">
           <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={saving}>Agregar y registrar</Button>
+          <Button type="submit" form={formId} fullWidth loading={saving}>Agregar y registrar</Button>
         </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+        <p className="-mt-1 text-label text-soft">
+          Queda en tu lista para la próxima vez. Al guardarlo te pedimos el monto para registrarlo.
+        </p>
+        <ExpenseConceptFields value={draft} onChange={setDraft} autoFocusName={!initialName} />
       </form>
     </Modal>
   );

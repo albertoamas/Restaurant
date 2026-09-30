@@ -5,7 +5,7 @@ import { expensesApi } from '../../api/expenses.api';
 import { useExpenseCategories, useExpenseConcepts } from '../../hooks/useExpenses';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { FIELD, Field } from './ExpenseField';
+import { Input } from '../ui/Input';
 import { IconAction } from './IconAction';
 import { handleApiError } from '../../utils/api-error';
 
@@ -91,77 +91,71 @@ export function ExpenseCategoriesPanel() {
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2.5 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
-        <Icon name="warning" size={15} className="mt-0.5 shrink-0 text-gray-400" />
-        <p className="text-xs text-gray-500">
+      <div className="flex gap-2.5 rounded-control border border-line bg-surface-2 px-3 py-2.5">
+        <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-muted" />
+        <p className="text-label text-soft">
           Las categorías agrupan tus gastos en los reportes y en los filtros.
           Al eliminar una, sus gastos dejan de aparecer en la lista. El historial no cambia.
         </p>
       </div>
 
-      <form onSubmit={handleCreate} className="rounded-2xl border border-line bg-surface-2 p-4">
-        <Field label="Nueva categoría">
-          <div className="flex gap-2">
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Ej: Delivery"
-              maxLength={100}
-              className={`${FIELD} flex-1`}
-            />
-            <Button type="submit" size="sm" loading={busy}>Agregar</Button>
-          </div>
-        </Field>
+      <form onSubmit={handleCreate} className="flex items-end gap-2 rounded-card border border-line bg-surface-2 p-4">
+        <div className="flex-1">
+          <Input label="Nueva categoría" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ej.: delivery" maxLength={100} />
+        </div>
+        <Button type="submit" loading={busy}>Agregar</Button>
       </form>
 
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-xl bg-surface-2" />
+            <div key={i} className="h-12 animate-pulse rounded-control bg-surface-2" />
           ))}
         </div>
       ) : categories.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-500">Todavía no hay categorías.</p>
+        <p className="py-8 text-center text-body text-soft">Todavía no hay categorías.</p>
       ) : (
-        <div className="max-h-[46vh] space-y-2 overflow-y-auto pr-1">
+        <div className="space-y-2">
           {categories.map((category) => {
             const count = countByCategory.get(category.id) ?? 0;
             return editingId === category.id ? (
               <div
                 key={category.id}
-                className="flex gap-2 rounded-xl border border-primary-500/30 p-3"
-                style={{ background: 'var(--color-surface-card)' }}
+                className="flex gap-2 rounded-control border border-primary-500/30 p-3"
+                
               >
-                <input
-                  autoFocus
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); handleRename(category.id); }
-                    if (e.key === 'Escape') { e.preventDefault(); setEditing(null); }
-                  }}
-                  maxLength={100}
-                  className={`${FIELD} flex-1`}
-                />
+                <div className="flex-1">
+                  <Input
+                    aria-label="Nombre de la categoría"
+                    autoFocus
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); handleRename(category.id); }
+                      if (e.key === 'Escape') { e.preventDefault(); setEditing(null); }
+                    }}
+                    maxLength={100}
+                  />
+                </div>
                 <Button type="button" size="sm" loading={busy} onClick={() => handleRename(category.id)}>Guardar</Button>
                 <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(null)}>Cancelar</Button>
               </div>
             ) : (
               <div
                 key={category.id}
-                className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5"
-                style={{ background: 'var(--color-surface-card)' }}
+                className="flex items-center gap-3 rounded-control border border-line px-3 py-2.5"
+                
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-gray-800">{category.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="truncate text-body font-semibold text-main">{category.name}</p>
+                  <p className="text-caption text-muted">
                     {count === 0 ? 'Sin gastos' : `${count} gasto${count !== 1 ? 's' : ''} en la lista`}
                   </p>
                 </div>
                 {confirmId === category.id ? (
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-[11px] font-semibold text-gray-500">
-                      {count > 0 ? `¿Eliminar y ocultar ${count}?` : '¿Eliminar?'}
+                    <span className="text-label text-soft">
+                      {count > 0 ? `¿Eliminar y ocultar sus ${count} gastos?` : '¿Eliminar?'}
                     </span>
                     <IconAction icon="check" label="Confirmar" tone="danger" onClick={() => handleDelete(category.id)} />
                     <IconAction icon="x" label="Cancelar" onClick={() => setConfirm(null)} />
