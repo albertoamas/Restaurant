@@ -22,14 +22,21 @@ interface ExpensePickerProps {
 export function ExpensePicker({ onPick, onAdd, onManage }: ExpensePickerProps) {
   const { concepts, loading } = useExpenseConcepts();
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
   const q = query.trim();
+
+  const categories = useMemo(
+    () => [...new Set(concepts.map((c) => c.categoryName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')),
+    [concepts],
+  );
 
   const visible = useMemo(() => {
     const needle = q.toLowerCase();
     return [...concepts]
+      .filter((c) => !category || c.categoryName === category)
       .filter((c) => !needle || c.name.toLowerCase().includes(needle) || c.categoryName.toLowerCase().includes(needle))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  }, [concepts, q]);
+  }, [concepts, q, category]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -48,14 +55,35 @@ export function ExpensePicker({ onPick, onAdd, onManage }: ExpensePickerProps) {
         </Button>
       </div>
 
+      {categories.length > 1 && (
+        <div role="group" aria-label="Filtrar la lista por categoría" className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {['', ...categories].map((name) => {
+            const active = category === name;
+            return (
+              <button
+                key={name || 'todas'}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setCategory(name)}
+                className={`inline-flex shrink-0 items-center min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${
+                  active ? 'border-primary-600 bg-primary-600 text-white' : 'border-line bg-surface-card text-soft hover:text-main hover:border-line-strong'
+                }`}
+              >
+                {name || 'Todas'}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {loading ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="rect" h="64px" />)}
         </div>
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-line-strong px-4 py-6 text-center">
           <p className="text-body font-semibold text-main">
-            {concepts.length === 0 ? 'Tu lista de gastos está vacía' : `"${q}" no está en tu lista`}
+            {concepts.length === 0 ? 'Tu lista de gastos está vacía' : q ? `"${q}" no está en tu lista` : 'Ningún gasto en esta categoría'}
           </p>
           <p className="text-label text-soft">Agrégalo a la lista y lo registras enseguida.</p>
           <Button onClick={() => onAdd(q)}>
@@ -64,7 +92,7 @@ export function ExpensePicker({ onPick, onAdd, onManage }: ExpensePickerProps) {
           </Button>
         </div>
       ) : (
-        <ul className="grid grid-cols-2 gap-2">
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {visible.map((concept) => (
             <li key={concept.id}>
               <button

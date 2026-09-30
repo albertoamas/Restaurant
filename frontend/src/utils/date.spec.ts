@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDayRange, mondayOf } from './date';
+import { formatDayRange, formatWeekdayDay, mondayOf } from './date';
 import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
 
 describe('date utils', () => {
@@ -124,5 +124,11 @@ describe('mondayOf', () => {
     expect(mondayOf('2026-09-29')).toBe('2026-09-28'); // martes
     expect(mondayOf('2026-09-28')).toBe('2026-09-28'); // lunes
     expect(mondayOf('2026-10-04')).toBe('2026-09-28'); // domingo
+  });
+});
+
+describe('formatWeekdayDay', () => {
+  it('día de la semana con mayúscula, sin coma', () => {
+    expect(formatWeekdayDay('2026-09-28')).toBe('Lunes 28 de septiembre');
   });
 });

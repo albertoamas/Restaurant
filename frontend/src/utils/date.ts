@@ -121,3 +121,11 @@ export function mondayOf(day: string): string {
   d.setUTCDate(d.getUTCDate() - offset);
   return d.toISOString().slice(0, 10);
 }
+
+/** Día `YYYY-MM-DD` de Bolivia con su nombre, para encabezados: "Lunes 28 de septiembre". */
+export function formatWeekdayDay(day: string): string {
+  const s = new Intl.DateTimeFormat('es-BO', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' })
+    .format(new Date(`${day}T12:00:00Z`))
+    .replace(',', '');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
