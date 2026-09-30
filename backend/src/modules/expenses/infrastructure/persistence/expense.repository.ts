@@ -3,7 +3,7 @@ import { ExpenseSummaryDto } from '@pos/shared';
 import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { Expense } from '../../domain/entities/expense.entity';
-import { ExpensePatch, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
+import { ExpenseListFilters, ExpensePatch, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 type PrismaExpenseWithItems = PrismaExpense & {
@@ -166,6 +166,50 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       include: ITEMS_INCLUDE,
     });
     return rows.map((r) => toDomain(r as PrismaExpenseWithItems));
+  }
+
+  async findPage(
+    tenantId: string,
+    branchId: string | null,
+    from: Date,
+    to: Date,
+    filters: ExpenseListFilters,
+  ): Promise<{ data: Expense[]; total: number }> {
+    const q = filters.q?.trim();
+    const where: Prisma.ExpenseWhereInput = {
+      tenantId,
+      ...(branchId ? { branchId } : {}),
+      expenseDate: { gte: from, lte: to },
+      status: 'ACTIVE',
+      AND: [
+        ...(filters.category ? [{
+          OR: [
+            { items: { some: { category: { name: filters.category } } } },
+            { category: filters.category },
+          ],
+        }] : []),
+        ...(q ? [{
+          OR: [
+            { description:    { contains: q, mode: 'insensitive' as const } },
+            { supplierName:   { contains: q, mode: 'insensitive' as const } },
+            { documentNumber: { contains: q, mode: 'insensitive' as const } },
+            { items: { some: { name: { contains: q, mode: 'insensitive' as const } } } },
+          ],
+        }] : []),
+      ],
+    };
+
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.expense.findMany({
+        where,
+        orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        include: ITEMS_INCLUDE,
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+      }),
+      this.prisma.expense.count({ where }),
+    ]);
+    return { data: rows.map((r) => toDomain(r as PrismaExpenseWithItems)), total };
   }
 
   async getSummary(

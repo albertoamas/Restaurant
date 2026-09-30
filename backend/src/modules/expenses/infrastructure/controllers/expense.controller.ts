@@ -11,8 +11,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -145,23 +147,37 @@ export class ExpenseController {
   }
 
   @Get()
-  findAll(
+  async findAll(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('branchId') branchId?: string,
+    @Query('category') category?: string,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.listExpenses.execute(
+    // Sin `limit` responde como antes (todo el período); con `limit`, una página.
+    const result = await this.listExpenses.execute(
       tenantId,
       effectiveBranchId,
       new Date(from || defaultStart),
       new Date(to   || defaultEnd),
+      {
+        category,
+        q,
+        page:  page  ? Number(page)  : undefined,
+        limit: limit ? Number(limit) : undefined,
+      },
     );
+    res.setHeader('X-Total-Count', result.total);
+    return result.data;
   }
 
   @Get('summary')
