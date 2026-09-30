@@ -9,7 +9,13 @@ import { expensesApi } from '../api/expenses.api';
 import { PageShell } from '../components/ui/PageShell';
 import { Icon } from '../components/ui/Icon';
 import type { IconName } from '../components/ui/Icon';
-import { Spinner } from '../components/ui/Spinner';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Input, Select } from '../components/ui/Input';
+import { PageHeader } from '../components/ui/PageHeader';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
+import { TabBar } from '../components/ui/TabBar';
 import { SummaryTab } from '../components/report/tabs/SummaryTab';
 import { SalesTab } from '../components/report/tabs/SalesTab';
 import { ProductsTab } from '../components/report/tabs/ProductsTab';
@@ -17,7 +23,7 @@ import { CustomersTab } from '../components/report/tabs/CustomersTab';
 import { ExpensesTab } from '../components/report/tabs/ExpensesTab';
 import { CashTab } from '../components/report/tabs/CashTab';
 import { BranchesTab } from '../components/report/tabs/BranchesTab';
-import { useBranches } from '../hooks/useBranches';
+import { useBranches, useBranchNames } from '../hooks/useBranches';
 import { downloadExcel } from '../utils/excel';
 import { eachDay } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
@@ -46,15 +52,16 @@ const TABS: { key: TabKey; label: string; icon: IconName; advanced?: boolean; mu
   { key: 'clientes',  label: 'Clientes',  icon: 'users',   advanced: true },
 ];
 
-const PERIODS: { key: Period; label: string }[] = [
-  { key: 'today',  label: 'Hoy'         },
-  { key: 'week',   label: 'Esta semana' },
-  { key: 'month',  label: 'Este mes'    },
-  { key: 'custom', label: 'Rango'       },
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'today',  label: 'Hoy' },
+  { value: 'week',   label: 'Esta semana' },
+  { value: 'month',  label: 'Este mes' },
+  { value: 'custom', label: 'Rango' },
 ];
 
 export function ReportPage() {
-  const { user } = useAuth();
+  const { user, currentBranchId } = useAuth();
+  const { branchName } = useBranchNames();
   const plan      = useSettingsStore((s) => s.plan);
   const canExport = plan !== SaasPlan.BASICO;
 
@@ -124,16 +131,9 @@ export function ReportPage() {
     }
   };
 
-  const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const pInactive = 'bg-surface-2 border border-line text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
-
-  const dateInputCls = [
-    'border border-line rounded-xl px-3 py-2 text-sm bg-surface-card text-gray-700',
-    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
-  ].join(' ');
-
   const activeLabel = TABS.find((t) => t.key === activeTab)?.label ?? '';
   const noSales = !loading && report !== null && report.orderCount === 0 && report.paymentBreakdown.cortesia === 0;
+  const scope = currentBranchId ? `Sucursal ${branchName(currentBranchId) ?? 'elegida'}` : 'Todas las sucursales';
 
   return (
     <PageShell>
@@ -146,98 +146,67 @@ export function ReportPage() {
         </p>
       </div>
 
-      {/* ── Tarjeta de cabecera ──────────────────────────────────────── */}
-      <div data-print-hide className="mb-5 rounded-2xl border border-line shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div>
-            <h2 className="font-heading text-xl font-black text-gray-900 sm:text-2xl">Reporte y Rendimiento</h2>
-            <p className="mt-0.5 text-xs text-gray-500">Cada sección en su propia pestaña.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-semibold text-primary-600">
-              {rangeLabel}
+      <div data-print-hide>
+        <PageHeader
+          title="Reportes"
+          description={`${rangeLabel}. ${scope}.`}
+          actions={canExport ? (
+            <>
+              <Button variant="secondary" onClick={handleExportExcel} loading={exporting} disabled={loading}>
+                {!exporting && <Icon name="download" size={18} />}
+                Excel
+              </Button>
+              <Button variant="secondary" onClick={() => window.print()} disabled={loading}>
+                <Icon name="print" size={18} />
+                Imprimir
+              </Button>
+            </>
+          ) : (
+            // Visible sin pasar el mouse: en una tablet un tooltip no se ve nunca.
+            <span className="inline-flex items-center gap-1.5 text-label text-soft">
+              <Icon name="lock" size={16} />
+              Exportar e imprimir: planes PRO y NEGOCIO
             </span>
-            {canExport ? (
-              <>
-                <button
-                  onClick={handleExportExcel}
-                  disabled={exporting || loading}
-                  title="Exportar todo el reporte a Excel"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-emerald-400 hover:bg-emerald-500/8 hover:text-emerald-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {exporting ? <Spinner size="sm" /> : <Icon name="download" size={14} />}Excel
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  disabled={loading}
-                  title={`Imprimir la sección ${activeLabel}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-primary-400 hover:bg-primary-500/8 hover:text-primary-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Icon name="print" size={14} />PDF
-                </button>
-              </>
-            ) : (
-              <div className="group relative">
-                <button disabled className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-gray-400">
-                  <Icon name="lock" size={14} />Exportar
-                </button>
-                <div className="absolute right-0 top-full z-10 mt-1.5 hidden w-48 rounded-xl border border-line px-3 py-2.5 text-xs leading-snug text-gray-500 shadow-lg group-hover:block" style={{ background: 'var(--color-surface-card)' }}>
-                  Disponible en plan <span className="font-semibold text-primary-600">PRO</span> o <span className="font-semibold text-primary-600">NEGOCIO</span>.
-                </div>
+          )}
+        >
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+            <SegmentedControl label="Período" wrap value={period} onChange={setPeriod} options={PERIODS} />
+            {period === 'custom' && (
+              <div className="grid grid-cols-2 gap-3 sm:w-80">
+                <Input type="date" label="Desde" value={customFrom} max={customTo} onChange={(e) => setCustomFrom(e.target.value)} />
+                <Input type="date" label="Hasta" value={customTo} min={customFrom} onChange={(e) => setCustomTo(e.target.value)} />
               </div>
             )}
           </div>
-        </div>
+        </PageHeader>
 
-        {/* Período */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-4 py-3 sm:px-5">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-150 ${period === p.key ? pActive : pInactive}`}
-            >
-              {p.label}
-            </button>
-          ))}
-          {period === 'custom' && (
-            <>
-              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={dateInputCls} />
-              <span className="shrink-0 text-sm text-gray-400">a</span>
-              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={dateInputCls} />
-            </>
-          )}
-        </div>
-
-        {/* Sub-pestañas */}
-        <div className="flex gap-1 overflow-x-auto border-t border-line px-4 py-2.5 sm:px-5">
-          {visibleTabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition ${
-                activeTab === t.key
-                  ? 'bg-primary-600 text-white shadow-[0_2px_6px_oklch(0.60_0.22_42/0.30)]'
-                  : 'text-gray-500 hover:bg-surface-2 hover:text-gray-700'
-              }`}
-            >
-              <Icon name={t.icon} size={14} /> {t.label}
-            </button>
-          ))}
+        {/* Siete secciones: en celular, un desplegable las muestra todas; desde tablet, pestañas. */}
+        <div className="mb-5">
+          <div className="md:hidden">
+            <Select aria-label="Sección del reporte" value={activeTab} onChange={(e) => setActiveTab(e.target.value as TabKey)}>
+              {visibleTabs.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+            </Select>
+          </div>
+          <div className="hidden md:block">
+            <TabBar
+              label="Secciones del reporte"
+              panelId="report-panel"
+              value={activeTab}
+              onChange={setActiveTab}
+              items={visibleTabs.map((t) => ({ value: t.key, label: t.label, icon: t.icon }))}
+            />
+          </div>
         </div>
       </div>
 
       {/* Contenido de la pestaña */}
+      <div id="report-panel" role="tabpanel" aria-label={activeLabel}>
       {loading ? (
-        <div className="flex justify-center py-12"><Spinner /></div>
+        <div className="grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : noSales && !['resumen', 'gastos', 'caja', 'sucursales'].includes(activeTab) ? (
         // `sucursales` queda fuera: `noSales` mira la sucursal elegida en el
-        // menú, y esa pestaña compara todas — tiene su propio estado vacío.
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <Icon name="chart" size={40} strokeWidth={1.5} className="mb-3 opacity-40" />
-          <p className="text-sm font-semibold text-gray-500">Sin ventas en este período</p>
-          <p className="mt-1 text-xs">Selecciona otro rango de fechas</p>
-        </div>
+        // menú, y esa pestaña compara todas; tiene su propio estado vacío.
+        <EmptyState icon="chart" title="Sin ventas en este período" description="Elige otro período para ver esta sección." />
       ) : activeTab === 'resumen' ? (
         <SummaryTab report={report} expenseSummary={expenseSummary} />
       ) : activeTab === 'sucursales' ? (
@@ -274,6 +243,7 @@ export function ReportPage() {
       ) : (
         <CashTab byCashier={cash.byCashier} cashSessions={cash.cashSessions} loading={cash.loading} />
       )}
+      </div>
     </PageShell>
   );
 }
