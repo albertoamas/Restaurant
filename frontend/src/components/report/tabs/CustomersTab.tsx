@@ -1,8 +1,7 @@
 import type { TopCustomerDto } from '@pos/shared';
-import { Card } from '../../ui/Card';
-import { Spinner } from '../../ui/Spinner';
-import { Icon } from '../../ui/Icon';
-import { TopCustomerRow } from '../index';
+import { EmptyState } from '../../ui/EmptyState';
+import { Skeleton } from '../../ui/Skeleton';
+import { ChartCard, RankRow, bs, share } from '../index';
 import { ExpandableList } from '../ExpandableList';
 
 interface Props {
@@ -10,27 +9,30 @@ interface Props {
   loading: boolean;
 }
 
-/** Quiénes compran: ranking de clientes por gasto en el período. */
+/** Quiénes compran: ranking de clientes por lo que gastaron en el período. */
 export function CustomersTab({ topCustomers, loading }: Props) {
   return (
-    <Card variant="default">
-      <h3 className="mb-4 font-heading text-sm font-bold text-gray-700">Clientes Más Frecuentes</h3>
-
+    <ChartCard title="Clientes que más compraron" description="Por monto gastado en el período. Solo pedidos con cliente registrado.">
       {loading ? (
-        <div className="flex justify-center py-8"><Spinner /></div>
+        <Skeleton variant="rect" h="240px" />
       ) : topCustomers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-          <Icon name="users" size={32} strokeWidth={1.5} className="mb-2 opacity-40" />
-          <p className="text-xs font-medium text-gray-500">Sin clientes registrados en este período</p>
-        </div>
+        <EmptyState compact icon="users" title="Sin pedidos con cliente en este período" description="Asigna un cliente al cobrar para verlo aquí." />
       ) : (
         <ExpandableList
           items={topCustomers}
           renderItem={(c, i) => (
-            <TopCustomerRow key={c.customerId} rank={i + 1} customer={c} maxSpent={topCustomers[0].totalSpent} />
+            <RankRow
+              key={c.customerId}
+              rank={i + 1}
+              title={c.customerName}
+              detail={c.customerPhone ?? undefined}
+              value={bs(c.totalSpent)}
+              secondary={`${c.orderCount} ${c.orderCount === 1 ? 'pedido' : 'pedidos'}`}
+              pct={share(c.totalSpent, topCustomers[0].totalSpent)}
+            />
           )}
         />
       )}
-    </Card>
+    </ChartCard>
   );
 }

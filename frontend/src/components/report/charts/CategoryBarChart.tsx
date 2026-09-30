@@ -13,6 +13,7 @@ import type { TopCategoryDto } from '@pos/shared';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useBarColors, useChartColors } from './chartColors';
 import { formatAmountAxis, useChartAnimation } from './chartFormat';
+import { SegmentedControl } from '../../ui/SegmentedControl';
 
 type View = 'quantity' | 'revenue';
 
@@ -30,32 +31,25 @@ export function CategoryBarChart({ data }: Props) {
   const height = Math.max(180, top.length * 50);
 
   const chartData = top.map((cat) => ({
-    name:     cat.categoryName ?? 'Sin cat.',
+    name:     cat.categoryName ?? 'Sin categoría',
     Unidades: cat.totalQuantity,
     Ingresos: cat.totalRevenue,
   }));
 
   const dataKey  = view === 'quantity' ? 'Unidades' : 'Ingresos';
   const fmtFull  = (v: number | string) =>
-    view === 'revenue' ? `Bs ${Number(v).toFixed(2)}` : `${v} uds`;
+    view === 'revenue' ? `Bs ${Number(v).toFixed(2)}` : `${v} unidades`;
 
   return (
     <div>
-      {/* Toggle */}
-      <div className="flex gap-1 mb-3 p-0.5 rounded-lg bg-surface-2 border border-line w-fit">
-        {(['quantity', 'revenue'] as View[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
-              view === v
-                ? 'bg-primary-600 text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            {v === 'quantity' ? 'Cantidad' : 'Ingresos'}
-          </button>
-        ))}
+      <div className="mb-3">
+        <SegmentedControl
+          label="Medir categorías por"
+          size="sm"
+          value={view}
+          onChange={setView}
+          options={[{ value: 'quantity', label: 'Unidades' }, { value: 'revenue', label: 'Ingresos' }]}
+        />
       </div>
 
       <ResponsiveContainer width="100%" height={height}>

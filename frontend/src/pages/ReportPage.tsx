@@ -25,6 +25,8 @@ import { CashTab } from '../components/report/tabs/CashTab';
 import { BranchesTab } from '../components/report/tabs/BranchesTab';
 import { useBranches, useBranchNames } from '../hooks/useBranches';
 import { downloadExcel } from '../utils/excel';
+import { printReportDocument } from '../utils/report-print';
+import { buildPrintTables } from '../components/report/print-tables';
 import { eachDay } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
 import { useAuth } from '../context/auth.context';
@@ -135,17 +137,31 @@ export function ReportPage() {
   const noSales = !loading && report !== null && report.orderCount === 0 && report.paymentBreakdown.cortesia === 0;
   const scope = currentBranchId ? `Sucursal ${branchName(currentBranchId) ?? 'elegida'}` : 'Todas las sucursales';
 
+  /** Imprime la sección abierta en A4, con las cifras que ya están cargadas en pantalla. */
+  const handlePrint = () => {
+    printReportDocument(
+      {
+        businessName: user?.tenantName ?? '',
+        section: activeLabel,
+        period: rangeLabel,
+        // La comparativa entre sucursales siempre cubre todas.
+        scope: activeTab === 'sucursales' ? 'Todas las sucursales' : scope,
+      },
+      buildPrintTables(activeTab, {
+        report,
+        expenseSummary,
+        dailySeries:  trends.dailySeries,
+        byBranch:     compare.byBranch,
+        byCashier:    cash.byCashier,
+        cashSessions: cash.cashSessions,
+        topProducts:  products.topProducts,
+        topCustomers: customers.topCustomers,
+      }),
+    );
+  };
+
   return (
     <PageShell>
-      {/* Encabezado solo para impresión */}
-      <div className="mb-6 hidden border-b border-gray-200 pb-4 print:block">
-        <h1 className="text-2xl font-bold text-gray-900">{user?.tenantName ?? 'Reporte de Ventas'}</h1>
-        <p className="mt-0.5 text-sm text-gray-600">{activeLabel}, {rangeLabel}</p>
-        <p className="mt-0.5 text-xs text-gray-400">
-          Generado el {new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}
-        </p>
-      </div>
-
       <div data-print-hide>
         <PageHeader
           title="Reportes"
@@ -156,7 +172,7 @@ export function ReportPage() {
                 {!exporting && <Icon name="download" size={18} />}
                 Excel
               </Button>
-              <Button variant="secondary" onClick={() => window.print()} disabled={loading}>
+              <Button variant="secondary" onClick={handlePrint} disabled={loading}>
                 <Icon name="print" size={18} />
                 Imprimir
               </Button>

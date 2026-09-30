@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../ui/Icon';
+import { Button } from '../ui/Button';
 
 /**
  * Lista que muestra los primeros N elementos y despliega el resto bajo demanda.
@@ -18,19 +19,14 @@ export function ExpandableList<T>({
 
   return (
     <>
-      <div className="space-y-3">
+      <ol className="space-y-4">
         {visible.map(renderItem)}
-      </div>
+      </ol>
       {hidden > 0 && (
-        <button
-          type="button"
-          data-print-hide
-          onClick={() => setShowAll((prev) => !prev)}
-          className="mt-3.5 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-primary-500/15 bg-primary-500/5 px-3 py-2 text-xs font-semibold text-primary-600 transition-all duration-150 hover:bg-primary-500/10 hover:text-primary-700 active:scale-[0.99]"
-        >
-          <span>{showAll ? 'Mostrar menos' : `Mostrar más (${hidden} más)`}</span>
-          <Icon name={showAll ? 'chevron-up' : 'chevron-down'} size={14} strokeWidth={2.5} />
-        </button>
+        <Button variant="ghost" fullWidth className="mt-3" onClick={() => setShowAll((prev) => !prev)}>
+          {showAll ? 'Ver menos' : `Ver los ${hidden} restantes`}
+          <Icon name={showAll ? 'chevron-up' : 'chevron-down'} size={16} />
+        </Button>
       )}
     </>
   );
