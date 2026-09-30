@@ -112,9 +112,11 @@ export function ExpenseCatalog() {
           description={q ? 'Prueba con otro nombre o agrégalo como gasto nuevo.' : 'Crea una categoría y agrega los gastos que registras seguido.'}
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 items-start">
+        // En columnas y no en grilla: con alturas distintas, la grilla dejaba huecos debajo de
+        // las tarjetas cortas. Aquí cada tarjeta sigue a la anterior en su columna.
+        <div className="columns-1 lg:columns-2 gap-4">
           {groups.map(({ category, items }) => (
-            <section key={category.id} aria-label={category.name} className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+            <section key={category.id} aria-label={category.name} className="mb-4 break-inside-avoid overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
               <div className="flex items-center gap-3 border-b border-line bg-surface-2 px-4 py-2">
                 <h3 className="min-w-0 flex-1 truncate text-body font-semibold text-main">
                   {category.name}
