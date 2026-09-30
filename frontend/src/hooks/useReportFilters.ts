@@ -16,10 +16,11 @@ function buildRange(period: Period, customFrom: string, customTo: string) {
   return { from: customFrom, to: customTo };
 }
 
-export function useReportFilters() {
+/** `initialPeriod`: Clientes arranca en 'all' (histórico); Reportes, en hoy. */
+export function useReportFilters(initialPeriod: Period = 'today') {
   const { currentBranchId, user } = useAuth();
 
-  const [period,           setPeriod]           = useState<Period>('today');
+  const [period,           setPeriod]           = useState<Period>(initialPeriod);
   const [customFrom,       setCustomFrom]        = useState(today);
   const [customTo,         setCustomTo]          = useState(today);
   const [selectedCategory, setSelectedCategory]  = useState('');
