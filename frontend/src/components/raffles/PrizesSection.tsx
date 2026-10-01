@@ -1,131 +1,71 @@
 import type { RafflePrizeDto, RaffleWinnerDto } from '@pos/shared';
-import { Icon } from '../ui/Icon';
-import type { BusyState } from '../../hooks/useRaffleDetail';
+import { ActionMenu } from '../ui/ActionMenu';
 import type { BusinessInfo } from '../../utils/raffle-certificate';
-import { IconGift, IconAward } from './RaffleIcons';
 import { positionLabel } from '../../utils/raffle-utils';
 import { printWinnerCertificate } from '../../utils/raffle-certificate';
 
-const MEDAL: Record<number, string> = {
-  1: 'bg-amber-500/15 text-amber-600 border-amber-500/30 ring-amber-500/15',
-  2: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-strong)] ring-[var(--border-subtle)]',
-  3: 'bg-orange-500/12 text-orange-500 border-orange-500/25 ring-orange-500/10',
-};
-
-function PositionMedal({ position }: { position: number }) {
-  const cls = MEDAL[position] ?? 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)] ring-[var(--border-subtle)]';
+/** Primer lugar en oro de la marca; los demás neutros. */
+function Place({ position }: { position: number }) {
+  const first = position === 1;
   return (
-    <span className={`w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-black shrink-0 ring-2 ${cls}`}>
+    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-label font-bold tabular-nums ${
+      first ? 'border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'border-line bg-surface-2 text-soft'
+    }`}>
       {position}°
     </span>
   );
 }
 
 interface Props {
-  prizes:        RafflePrizeDto[];
-  winners:       RaffleWinnerDto[];
-  raffleName:    string;
-  canVoid:       boolean;
-  busy:          BusyState;
-  voidConfirmId: string | null;
-  onVoidRequest: (id: string) => void;
-  onVoidConfirm: (id: string) => void;
-  onVoidCancel:  () => void;
-  business:      BusinessInfo;
+  prizes:     RafflePrizeDto[];
+  winners:    RaffleWinnerDto[];
+  raffleName: string;
+  canVoid:    boolean;
+  /** Pide confirmación para anular un ganador (la ventana vive en la página). */
+  onVoid:     (winner: RaffleWinnerDto) => void;
+  business:   BusinessInfo;
 }
 
-export function PrizesSection({
-  prizes, winners, raffleName, canVoid, busy,
-  voidConfirmId, onVoidRequest, onVoidConfirm, onVoidCancel, business,
-}: Props) {
+/** Cada lugar con su premio y, si ya salió, su ganador; certificado y anular en el menú del lugar. */
+export function PrizesSection({ prizes, winners, raffleName, canVoid, onVoid, business }: Props) {
   if (prizes.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-[var(--border-subtle)] p-5" style={{ background: 'var(--color-surface-card)' }}>
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">Premios</p>
-      <div className="space-y-2">
-        {prizes.map((p) => {
-          const activeWinner  = winners.find((w) => w.position === p.position && !w.voided);
-          const voidedWinner  = winners.find((w) => w.position === p.position &&  w.voided);
-          const isConfirming  = voidConfirmId === activeWinner?.id;
-
-          return (
-            <div key={p.position} className={`rounded-xl border px-3.5 py-3 transition-colors ${
-              activeWinner ? 'bg-amber-500/12 border-amber-500/25' : 'bg-[var(--color-surface-2)] border-transparent'
-            }`}>
-              <div className="flex items-center gap-3">
-                <PositionMedal position={p.position} />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <IconGift className="w-3 h-3 text-gray-400 shrink-0" />
-                    <p className="text-sm font-semibold text-gray-700 truncate">{p.prizeDescription}</p>
-                  </div>
-
-                  {activeWinner && !isConfirming && (
-                    <div className="flex items-center gap-1.5">
-                      <IconAward className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span className="text-xs font-semibold text-amber-800 truncate">{activeWinner.customer.name}</span>
-                      <div className="ml-auto flex items-center gap-0.5">
-                        <button
-                          onClick={() => printWinnerCertificate(activeWinner, raffleName, business)}
-                          title="Imprimir certificado"
-                          className="text-gray-300 hover:text-primary-500 p-1 rounded-lg transition-colors"
-                        >
-                          <Icon name="print" size={14} strokeWidth={1.8} />
-                        </button>
-                        {canVoid && (
-                          <button
-                            onClick={() => onVoidRequest(activeWinner.id)}
-                            disabled={!!busy}
-                            className="text-[10px] text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40"
-                          >
-                            Anular
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {voidedWinner && !activeWinner && (
-                    <p className="text-[10px] text-red-400 mt-0.5">
-                      <span className="line-through">{voidedWinner.customer.name}</span>
-                      {' '}· anulado
-                    </p>
-                  )}
-
-                  {!activeWinner && !voidedWinner && (
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      {positionLabel(p.position)} · Pendiente
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {isConfirming && (
-                <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-amber-200">
-                  <p className="text-xs text-red-600 font-semibold flex-1">
-                    ¿Anular a <strong>{activeWinner!.customer.name}</strong>?
-                  </p>
-                  <button
-                    onClick={() => onVoidConfirm(activeWinner!.id)}
-                    disabled={!!busy}
-                    className="text-[11px] font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    Sí, anular
-                  </button>
-                  <button
-                    onClick={onVoidCancel}
-                    className="text-[11px] text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
+    <ul className="divide-y divide-line">
+      {[...prizes].sort((a, b) => a.position - b.position).map((p) => {
+        const winner = winners.find((w) => w.position === p.position && !w.voided);
+        const voided = winners.filter((w) => w.position === p.position && w.voided);
+        return (
+          <li key={p.position} className="flex items-center gap-3 px-4 py-3 sm:px-5">
+            <Place position={p.position} />
+            <div className="min-w-0 flex-1">
+              <p className="text-body font-semibold text-main">{p.prizeDescription}</p>
+              {winner ? (
+                <p className="text-label text-main">
+                  Ganó <span className="font-semibold">{winner.customer.name}</span>
+                  <span className="text-muted"> con el ticket #{winner.ticketNumber}</span>
+                </p>
+              ) : (
+                <p className="text-label text-muted">{positionLabel(p.position)}: sin sortear</p>
+              )}
+              {voided.length > 0 && (
+                <p className="text-caption text-muted">
+                  Anulado: {voided.map((v) => v.customer.name).join(', ')}
+                </p>
               )}
             </div>
-          );
-        })}
-      </div>
-    </section>
+            {winner && (
+              <ActionMenu
+                label={`Más acciones del ${positionLabel(p.position)}`}
+                items={[
+                  { label: 'Imprimir certificado', icon: 'print', onSelect: () => printWinnerCertificate(winner, raffleName, business) },
+                  ...(canVoid ? [{ label: 'Anular ganador', icon: 'ban' as const, danger: true, onSelect: () => onVoid(winner) }] : []),
+                ]}
+              />
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

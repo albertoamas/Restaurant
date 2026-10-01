@@ -146,12 +146,12 @@ export function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-page)]">
+    <div className="min-h-screen bg-surface-page">
 
       {/* Top bar */}
       <header
         data-print-hide
-        className="sticky top-0 z-20 border-b border-[var(--border-subtle)] bg-[var(--color-surface-page)]/85 backdrop-blur-xl transition-colors"
+        className="sticky top-0 z-20 border-b border-line bg-surface-page/85 backdrop-blur-xl transition-colors"
       >
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
           <div className="flex shrink-0 items-center gap-2.5">
@@ -159,15 +159,15 @@ export function AdminPage() {
               <Icon name="lock" size={14} strokeWidth={2} className="text-primary-500" />
             </div>
             <div className="leading-tight">
-              <p className="font-heading text-sm font-bold text-[var(--color-text-main)]">Admin Console</p>
-              <p className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-muted)] sm:block">YankoPOS</p>
+              <p className="font-heading text-sm font-bold text-main">Admin Console</p>
+              <p className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:block">YankoPOS</p>
             </div>
           </div>
 
-          <div className="h-6 w-px shrink-0 bg-[var(--border-subtle)]" />
+          <div className="h-6 w-px shrink-0 bg-line" />
 
           <div className="flex items-center gap-2 text-xs">
-            <span className="hidden text-[var(--color-text-muted)] sm:inline">{tenants.length} negocios</span>
+            <span className="hidden text-muted sm:inline">{tenants.length} negocios</span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
               {activeCount} activos
@@ -185,7 +185,7 @@ export function AdminPage() {
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              className="rounded-lg p-2 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-main)]"
+              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-main"
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} strokeWidth={1.75} />
             </button>
@@ -193,7 +193,7 @@ export function AdminPage() {
               onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
                 showForm
-                  ? 'bg-[var(--color-surface-2)] text-[var(--color-text-soft)] hover:bg-[var(--color-surface-3)]'
+                  ? 'bg-surface-2 text-soft hover:bg-surface-3'
                   : 'bg-primary-600 text-white hover:bg-primary-500'
               }`}
             >
@@ -203,7 +203,7 @@ export function AdminPage() {
             <button
               onClick={handleLogout}
               title="Cerrar sesión"
-              className="rounded-lg p-2 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-soft)]"
+              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-soft"
             >
               <Icon name="logout" size={15} strokeWidth={1.75} />
             </button>
@@ -215,7 +215,7 @@ export function AdminPage() {
 
         {/* Create tenant form */}
         {showForm && (
-          <div className="rounded-2xl p-5 mb-6 border border-[var(--border-subtle)] animate-slide" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl p-5 mb-6 border border-line animate-slide" style={{ background: 'var(--color-surface-card)' }}>
             <h2 className="font-heading font-bold text-sm text-gray-900 mb-4">Nuevo negocio</h2>
             <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
               {CREATE_FIELDS.map(({ field, label, type, placeholder, required, minLength }) => (
@@ -226,7 +226,7 @@ export function AdminPage() {
                   <input
                     type={type} value={form[field] ?? ''} onChange={setField(field)}
                     placeholder={placeholder} required={required} minLength={minLength}
-                    className="w-full text-sm border border-[var(--border-subtle)] rounded-xl px-3 py-2 bg-[var(--color-surface-2)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
+                    className="w-full text-sm border border-line rounded-xl px-3 py-2 bg-surface-2 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
                   />
                 </div>
               ))}
@@ -250,12 +250,12 @@ export function AdminPage() {
             <p className="text-xs text-gray-400 mt-0.5">Gestión de tenants, planes y módulos</p>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border-subtle)] overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
+          <div className="rounded-2xl border border-line overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
             {loading ? (
               <div className="flex justify-center py-12"><Spinner /></div>
             ) : tenants.length === 0 ? (
               <div className="flex flex-col items-center py-14 text-center">
-                <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-2)] flex items-center justify-center mb-3">
+                <div className="w-10 h-10 rounded-xl bg-surface-2 flex items-center justify-center mb-3">
                   <Icon name="building" size={20} strokeWidth={1.5} className="text-gray-300" />
                 </div>
                 <p className="text-sm text-gray-400">No hay negocios registrados</p>
@@ -264,11 +264,11 @@ export function AdminPage() {
             ) : (
               <div>
                 {tenants.map((t, idx) => (
-                  <div key={t.id} className={idx !== 0 ? 'border-t border-[var(--border-subtle)]' : ''}>
-                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--color-surface-2)] transition-colors">
+                  <div key={t.id} className={idx !== 0 ? 'border-t border-line' : ''}>
+                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors">
                       <button
                         onClick={() => setExpandedId((prev) => prev === t.id ? null : t.id)}
-                        className="p-1 rounded-lg text-gray-500 hover:text-gray-400 hover:bg-[var(--color-surface-2)] transition-colors shrink-0"
+                        className="p-1 rounded-lg text-gray-500 hover:text-gray-400 hover:bg-surface-2 transition-colors shrink-0"
                         aria-expanded={expandedId === t.id}
                       >
                         <Icon
@@ -293,7 +293,7 @@ export function AdminPage() {
                             <p className="text-xs text-gray-400 truncate">{t.owner.email}</p>
                           </>
                         ) : (
-                          <span className="text-gray-300 text-xs">—</span>
+                          <span className="text-gray-300 text-xs">-</span>
                         )}
                       </div>
 
@@ -306,7 +306,7 @@ export function AdminPage() {
                       </div>
 
                       <div className="shrink-0 hidden sm:block">
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${t.isActive ? 'bg-emerald-400' : 'bg-red-400'}`} />
                           {t.isActive ? 'Activo' : 'Inactivo'}
                         </span>
@@ -315,7 +315,7 @@ export function AdminPage() {
                       <button
                         onClick={() => handleToggle(t.id)}
                         disabled={toggling === t.id}
-                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${t.isActive ? 'bg-red-500/12 text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/12 text-emerald-400 hover:bg-emerald-500/20'}`}
+                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${t.isActive ? 'bg-red-500/12 text-red-600 dark:text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'}`}
                       >
                         {toggling === t.id ? '…' : t.isActive ? 'Desactivar' : 'Activar'}
                       </button>

@@ -1,14 +1,12 @@
-import { OrderStatus } from '@pos/shared';
-import { Badge } from '../ui/Badge';
-
-const statusConfig: Record<OrderStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'info' | 'neutral' }> = {
-  [OrderStatus.PENDING]: { label: 'Pendiente', variant: 'warning' },
-  [OrderStatus.PREPARING]: { label: 'Preparando', variant: 'info' },
-  [OrderStatus.DELIVERED]: { label: 'Entregado', variant: 'success' },
-  [OrderStatus.CANCELLED]: { label: 'Cancelado', variant: 'error' },
-};
+import type { OrderStatus } from '@pos/shared';
+import { ORDER_STATUS_UI } from './order-status';
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const config = statusConfig[status];
-  return <Badge variant={config.variant} dot>{config.label}</Badge>;
+  const ui = ORDER_STATUS_UI[status];
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-semibold whitespace-nowrap ${ui.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${ui.dot}`} />
+      {ui.label}
+    </span>
+  );
 }

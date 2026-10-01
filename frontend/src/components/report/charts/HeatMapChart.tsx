@@ -76,7 +76,7 @@ export function HeatMapChart({ data }: Props) {
           {/* Day headers */}
           <div className="flex mb-1.5 pl-10">
             {DISPLAY_DAYS.map((d) => (
-              <div key={d} className="flex-1 text-center text-[10px] font-semibold text-gray-400">
+              <div key={d} className="flex-1 text-center text-caption font-semibold text-muted">
                 {d}
               </div>
             ))}
@@ -87,7 +87,7 @@ export function HeatMapChart({ data }: Props) {
             {hours.map((h) => (
               <div key={h} className="flex items-center gap-1">
                 {/* Hour label — every hour */}
-                <div className="w-9 shrink-0 text-right pr-2 text-[10px] text-gray-400 font-medium">
+                <div className="w-9 shrink-0 text-right pr-2 text-caption text-muted">
                   {`${String(h).padStart(2, '0')}h`}
                 </div>
 
@@ -114,7 +114,7 @@ export function HeatMapChart({ data }: Props) {
 
           {/* Color scale legend */}
           <div className="flex items-center gap-2 mt-3 pl-10">
-            <span className="text-[10px] text-gray-400">Menor</span>
+            <span className="text-caption text-muted">Menor</span>
             <div className="flex gap-1">
               {[0.08, 0.22, 0.38, 0.56, 0.74, 0.92].map((op) => (
                 <div
@@ -124,13 +124,13 @@ export function HeatMapChart({ data }: Props) {
                 />
               ))}
             </div>
-            <span className="text-[10px] text-gray-400">Mayor</span>
+            <span className="text-caption text-muted">Mayor</span>
           </div>
         </div>
       </div>
 
       {/* Mobile scroll hint */}
-      <p className="sm:hidden text-center text-[10px] text-gray-400 mt-1.5">← desliza para ver todos los días →</p>
+      <p className="sm:hidden text-center text-caption text-muted mt-1.5">Desliza para ver todos los días</p>
 
       {/* Custom tooltip — flips above/below based on proximity to top */}
       {hovered && (
@@ -153,7 +153,7 @@ export function HeatMapChart({ data }: Props) {
           }}
         >
           <p style={{ color: '#9ca3af', fontSize: 10, fontWeight: 600, marginBottom: 4 }}>
-            {hovered.dayLabel} · {String(hovered.hour).padStart(2, '0')}:00
+            {hovered.dayLabel}, {String(hovered.hour).padStart(2, '0')}:00
           </p>
           {hovered.totalSales > 0 ? (
             <>

@@ -1,4 +1,5 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { CreateExpenseConceptUseCase } from './create-expense-concept.use-case';
 import { ExpenseConceptRepositoryPort } from '../../domain/ports/expense-concept-repository.port';
@@ -34,8 +35,15 @@ describe('CreateExpenseConceptUseCase', () => {
     useCase      = new CreateExpenseConceptUseCase(repo, categoryRepo);
     categoryRepo.findById.mockResolvedValue(makeCategory());
     repo.findByName.mockResolvedValue(null);
+    repo.findAll.mockResolvedValue([]);
     repo.save.mockImplementation(async (c) => c);
     repo.update.mockImplementation(async (c) => c);
+  });
+
+  it('no agrega más gastos a la lista al llegar al tope de activos', async () => {
+    repo.findAll.mockResolvedValue(Array.from({ length: EXPENSE_CATALOG_LIMITS.concepts }, () => makeConcept(true)));
+    await expect(useCase.execute(TENANT, { categoryId: CATEGORY_ID, name: 'Aceite' })).rejects.toThrow(ForbiddenException);
+    expect(repo.save).not.toHaveBeenCalled();
   });
 
   it('crea un concepto nuevo con su unidad y precio sugerido', async () => {
@@ -54,6 +62,14 @@ describe('CreateExpenseConceptUseCase', () => {
     categoryRepo.findById.mockResolvedValue(null);
     await expect(
       useCase.execute(TENANT, { categoryId: 'ajeno', name: 'Carne' }),
+    ).rejects.toThrow(NotFoundException);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('lanza NotFoundException si la categoría está eliminada', async () => {
+    categoryRepo.findById.mockResolvedValue(makeCategory().withChanges({ isActive: false }));
+    await expect(
+      useCase.execute(TENANT, { categoryId: CATEGORY_ID, name: 'Carne' }),
     ).rejects.toThrow(NotFoundException);
     expect(repo.save).not.toHaveBeenCalled();
   });

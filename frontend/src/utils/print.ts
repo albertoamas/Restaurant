@@ -1,4 +1,4 @@
-import type { OrderDto } from '@pos/shared';
+import type { DailyReportDto, OrderDto } from '@pos/shared';
 import { OrderType, PaymentMethod } from '@pos/shared';
 
 /**
@@ -231,7 +231,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     ? order.payments
         .map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`)
         .join(' + ')
-    : '—';
+    : '-';
 
   const html = `
     <div class="center" style="font-size:36pt;font-weight:900;line-height:1.1">#${order.orderNumber}</div>
@@ -312,4 +312,50 @@ export function printRaffleTickets(
     .join('');
 
   printViaIframe(html, 450);
+}
+
+/* ─── Rendición del cajero ───────────────────────────────────────────────── */
+
+export interface CashierReportPrintInfo {
+  cashierName:  string;
+  businessName: string;
+  branchName:   string | null;
+  /** Período en palabras: "Hoy, 29 de septiembre", "Del 22 al 29 de septiembre". */
+  periodLabel:  string;
+}
+
+/**
+ * Rendición en la impresora del punto de venta (58 mm): el efectivo a entregar arriba y en
+ * grande, el resto del desglose debajo y una línea para la firma de quien recibe.
+ */
+export function printCashierReport(report: DailyReportDto, info: CashierReportPrintInfo): void {
+  const money = (n: number) => `Bs ${n.toFixed(2)}`;
+  const row = (label: string, value: string) =>
+    `<div class="row" style="font-size:9pt;margin:2pt 0"><span>${label}</span><span>${value}</span></div>`;
+  const p = report.paymentBreakdown;
+
+  const html = `
+    <div class="center" style="font-size:11pt">${escapeHtml(info.businessName)}</div>
+    ${info.branchName ? `<div class="center" style="font-size:9pt">${escapeHtml(info.branchName)}</div>` : ''}
+    <div class="divider"></div>
+    <div class="center" style="font-size:12pt">RENDICION</div>
+    <div class="center" style="font-size:9pt">${escapeHtml(info.cashierName)}</div>
+    <div class="center" style="font-size:9pt">${escapeHtml(info.periodLabel)}</div>
+    <div class="divider"></div>
+    <div class="center" style="font-size:9pt">Efectivo a entregar</div>
+    <div class="center" style="font-size:18pt;margin:2pt 0">${money(p.cash)}</div>
+    <div class="divider"></div>
+    ${row('QR', money(p.qr))}
+    ${row('Transferencia', money(p.transfer))}
+    ${row('Total cobrado', money(report.totalSales))}
+    ${p.cortesia > 0 ? row('Cortesias', money(p.cortesia)) : ''}
+    <div class="divider"></div>
+    ${row('Pedidos', String(report.orderCount))}
+    ${row('Ticket promedio', money(report.averageTicket))}
+    <div style="margin-top:24pt;border-top:1px solid #000"></div>
+    <div class="center" style="font-size:8pt;margin-top:2pt">Firma de quien recibe</div>
+    <div class="center" style="font-size:8pt;margin-top:6pt">Impreso ${formatDateTime(new Date().toISOString())}</div>
+  `;
+
+  printViaIframe(html, 150);
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay } from './date';
+import { formatDayRange, formatWeekdayDay, mondayOf } from './date';
+import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
 
 describe('date utils', () => {
   describe('formatDate', () => {
@@ -81,5 +82,53 @@ describe('date utils', () => {
       // La fecha debe ser el 16, no el 17
       expect(result).toContain('16/04/2026');
     });
+  });
+});
+
+describe('tiempos en minutos', () => {
+  const base = Date.parse('2026-09-29T12:00:00Z');
+  const ago = (min: number) => new Date(base - min * 60_000).toISOString();
+
+  it('timeAgo', () => {
+    expect(timeAgo(ago(0.5), base)).toBe('Hace un momento');
+    expect(timeAgo(ago(12), base)).toBe('Hace 12 min');
+    expect(timeAgo(ago(65), base)).toBe('Hace 1 h 5 min');
+    expect(timeAgo(ago(120), base)).toBe('Hace 2 h');
+  });
+
+  it('minutesBetween nunca es negativo', () => {
+    expect(minutesBetween(ago(-5), base)).toBe(0);
+    expect(minutesBetween(ago(18), new Date(base).toISOString())).toBe(18);
+  });
+
+  it('durationLabel', () => {
+    expect(durationLabel(0)).toBe('menos de 1 min');
+    expect(durationLabel(45)).toBe('45 min');
+    expect(durationLabel(65)).toBe('1 h 5 min');
+    expect(durationLabel(1440)).toBe('1 día');
+    expect(durationLabel(2100)).toBe('1 día 11 h');
+    expect(durationLabel(3000)).toBe('2 días 2 h');
+  });
+});
+
+describe('formatDayRange', () => {
+  it('un día, mismo mes y meses distintos', () => {
+    expect(formatDayRange('2026-09-29', '2026-09-29')).toBe('29 de septiembre');
+    expect(formatDayRange('2026-09-22', '2026-09-29')).toBe('Del 22 al 29 de septiembre');
+    expect(formatDayRange('2026-08-31', '2026-09-02')).toBe('Del 31 de agosto al 2 de septiembre');
+  });
+});
+
+describe('mondayOf', () => {
+  it('lunes de la semana, también desde domingo', () => {
+    expect(mondayOf('2026-09-29')).toBe('2026-09-28'); // martes
+    expect(mondayOf('2026-09-28')).toBe('2026-09-28'); // lunes
+    expect(mondayOf('2026-10-04')).toBe('2026-09-28'); // domingo
+  });
+});
+
+describe('formatWeekdayDay', () => {
+  it('día de la semana con mayúscula, sin coma', () => {
+    expect(formatWeekdayDay('2026-09-28')).toBe('Lunes 28 de septiembre');
   });
 });

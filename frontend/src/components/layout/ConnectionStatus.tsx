@@ -40,7 +40,7 @@ export function ConnectionStatus() {
       role="status"
       aria-live="polite"
       title={config.label}
-      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-50 border border-gray-200/80"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-card border border-line"
     >
       <span className="relative flex h-2 w-2">
         {config.pulse && (
@@ -48,7 +48,7 @@ export function ConnectionStatus() {
         )}
         <span className={`relative inline-flex rounded-full h-2 w-2 ${config.dot}`} />
       </span>
-      <span className={`hidden sm:inline text-[11px] font-semibold ${config.text}`}>
+      <span className={`hidden sm:inline text-caption font-semibold ${config.text}`}>
         {config.label}
       </span>
     </div>

@@ -9,13 +9,15 @@ export class GetReportByRangeUseCase {
     private readonly orderRepo: OrderRepositoryPort,
   ) {}
 
-  execute(tenantId: string, branchId: string | null, from?: string, to?: string): Promise<DailyReportResult> {
+  /** `createdBy`: la rendición de un cajero cuenta solo los pedidos que él tomó. */
+  execute(tenantId: string, branchId: string | null, from?: string, to?: string, createdBy?: string): Promise<DailyReportResult> {
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     return this.orderRepo.getReportByRange(
       tenantId,
       branchId,
       from || defaultStart,
       to   || defaultEnd,
+      createdBy,
     );
   }
 }

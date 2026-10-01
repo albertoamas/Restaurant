@@ -1,30 +1,25 @@
+import { createPortal } from 'react-dom';
 import { useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Confetti } from '../ui/Confetti';
 import { Icon } from '../ui/Icon';
 import type { RaffleWinnerDto } from '@pos/shared';
-import { IconTicket, IconGift } from './RaffleIcons';
 import { playWinnerFanfare } from '../../utils/raffle-sounds';
 import { positionLabel } from '../../utils/raffle-utils';
 import { printWinnerCertificate } from '../../utils/raffle-certificate';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
 
-// ─── Position medal config ────────────────────────────────────────────────────
+// Mismo escenario oscuro que la pantalla del sorteo: es la continuación del show.
+const STAGE_BG = 'oklch(0.17 0.012 45 / 0.97)';
+const CARD_BG  = 'oklch(0.23 0.012 45)';
+const EDGE     = 'oklch(0.32 0.014 45)';
+const TEXT     = 'oklch(0.96 0.008 60)';
+const SOFT     = 'oklch(0.78 0.012 60)';
+const BRAND    = 'oklch(0.72 0.19 45)';
+const BRAND_A  = 'oklch(0.72 0.19 45 /';
 
-const MEDAL: Record<number, { badge: string; glow: string; text: string }> = {
-  1: { badge: 'from-amber-400 to-amber-500',  glow: 'oklch(0.73 0.16 85 / 0.50)',  text: 'oklch(0.73 0.16 85)'  },
-  2: { badge: 'from-gray-300 to-gray-400',     glow: 'oklch(0.70 0.01 260 / 0.40)', text: 'oklch(0.70 0.01 260)' },
-  3: { badge: 'from-orange-400 to-orange-500', glow: 'oklch(0.68 0.18 45 / 0.45)',  text: 'oklch(0.68 0.18 45)'  },
-};
-const DEFAULT_MEDAL = {
-  badge: 'from-primary-500 to-primary-600',
-  glow:  'oklch(0.55 0.16 232 / 0.40)',
-  text:  'oklch(0.55 0.16 232)',
-};
-
-// ─── WinnerModal ──────────────────────────────────────────────────────────────
-
+/** Anuncio del ganador recién sorteado, con confeti y fanfarria. */
 export function WinnerModal({
   raffleName,
   winner,
@@ -35,102 +30,92 @@ export function WinnerModal({
   onClose: () => void;
 }) {
   useEffect(() => { playWinnerFanfare(); }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const { user } = useAuth();
   const { businessAddress, businessPhone } = useSettingsStore();
-  const business = {
-    name:    user?.tenantName ?? '',
-    address: businessAddress || undefined,
-    phone:   businessPhone   || undefined,
-  };
+  const business = { name: user?.tenantName ?? '', address: businessAddress || undefined, phone: businessPhone || undefined };
 
-  const medal = MEDAL[winner.position] ?? DEFAULT_MEDAL;
-  const hasPhone = Boolean(winner.customer.phone);
-
-  return (
+  // En el body, por la misma razón que la pantalla del sorteo: cubrir la pantalla completa.
+  return createPortal(
     <>
       <Confetti active />
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="winner-name"
         className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-        style={{ background: 'oklch(0.10 0.015 255 / 0.96)', backdropFilter: 'blur(4px)' }}
+        style={{ background: STAGE_BG }}
       >
         <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse 60% 40% at 50% 50%, ${medal.glow} 0%, transparent 100%)` }}
+          className="pointer-events-none absolute inset-0"
+          style={{ background: `radial-gradient(ellipse 60% 45% at 50% 50%, ${BRAND_A} 0.30) 0%, transparent 100%)` }}
         />
 
         <div
-          className="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-[var(--border-subtle)]"
-          style={{ background: 'var(--color-surface-card)', animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+          className="relative z-10 w-full max-w-sm overflow-hidden rounded-dialog text-center"
+          style={{ background: CARD_BG, border: `1px solid ${EDGE}`, boxShadow: `0 24px 70px ${BRAND_A} 0.25)`, animation: 'winner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
         >
-          <div className={`h-1 w-full bg-gradient-to-r ${medal.badge}`} />
-
-          <div className="px-7 py-7 text-center">
-
-            {/* Position medal */}
-            <div className="relative inline-flex mb-5">
-              <div
-                className={`w-20 h-20 rounded-full bg-gradient-to-br ${medal.badge} flex items-center justify-center shadow-xl`}
-                style={{ boxShadow: `0 0 30px ${medal.glow}, 0 4px 16px rgba(0,0,0,0.15)` }}
-              >
-                <span className="text-2xl font-black text-white">{winner.position}°</span>
-              </div>
+          <div className="h-1.5 w-full" style={{ background: BRAND }} />
+          <div className="px-6 py-7">
+            <div
+              className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full font-heading text-title font-bold tabular-nums"
+              style={{ background: `${BRAND_A} 0.18)`, border: `2px solid ${BRAND}`, color: BRAND }}
+            >
+              {winner.position}°
             </div>
 
-            <p className="text-[10px] font-black uppercase tracking-[0.35em] mb-2" style={{ color: medal.text }}>
-              {positionLabel(winner.position)}
-            </p>
-
-            {/* Winner name — mb-4 always so ticket badge has consistent top spacing
-                whether or not a phone is present */}
-            <p className={`text-3xl font-heading font-black text-gray-900 leading-tight ${hasPhone ? 'mb-0.5' : 'mb-4'}`}>
+            <p className="text-label font-semibold" style={{ color: BRAND }}>Ganador del {positionLabel(winner.position)}</p>
+            <p id="winner-name" className="mt-1 font-heading text-display font-bold leading-tight" style={{ color: TEXT }}>
               {winner.customer.name}
             </p>
+            <p className="mt-1 text-body tabular-nums" style={{ color: SOFT }}>
+              {[winner.customer.phone, `Ticket #${winner.ticketNumber}`].filter(Boolean).join('. ')}
+            </p>
 
-            {hasPhone && (
-              <p className="text-sm text-gray-400 mb-4">{winner.customer.phone}</p>
-            )}
-
-            {/* Ticket */}
-            <div className="inline-flex items-center gap-1.5 bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl px-3 py-1.5 mb-4">
-              <IconTicket className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-sm font-mono font-bold text-gray-600">
-                Ticket #{winner.ticketNumber}
-              </span>
-            </div>
-
-            {/* Prize */}
             {winner.prizeDescription && (
-              <div className="flex items-center justify-center gap-2 mb-4 px-4 py-2.5 bg-primary-500/10 border border-primary-500/20 rounded-xl">
-                <IconGift className="w-4 h-4 text-primary-500 shrink-0" />
-                <span className="text-sm font-semibold text-primary-700">{winner.prizeDescription}</span>
-              </div>
+              <p
+                className="mt-5 flex items-center justify-center gap-2 rounded-control px-4 py-3 text-body font-semibold"
+                style={{ background: `${BRAND_A} 0.14)`, border: `1px solid ${BRAND_A} 0.4)`, color: TEXT }}
+              >
+                <span className="shrink-0" style={{ color: BRAND }}><Icon name="gift" size={18} /></span>
+                {winner.prizeDescription}
+              </p>
             )}
 
-            <p className="text-xs text-gray-400 mb-5">{raffleName}</p>
+            <p className="mt-4 text-label" style={{ color: SOFT }}>{raffleName}</p>
 
-            <Button variant="primary" fullWidth onClick={onClose}>
-              Continuar
-            </Button>
-
-            <button
-              onClick={() => printWinnerCertificate(winner, raffleName, business)}
-              className="mt-2.5 w-full flex items-center justify-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 py-1.5 transition-colors"
-            >
-              <Icon name="print" size={14} strokeWidth={1.8} className="shrink-0" />
-              Imprimir certificado
-            </button>
+            <div className="mt-5 grid gap-2">
+              <Button size="lg" fullWidth onClick={onClose} autoFocus>Continuar</Button>
+              <Button
+                variant="ghost"
+                fullWidth
+                onClick={() => printWinnerCertificate(winner, raffleName, business)}
+                style={{ color: SOFT }}
+              >
+                <Icon name="print" size={18} />
+                Imprimir certificado
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       <style>{`
         @keyframes winner-pop {
-          from { opacity: 0; transform: scale(0.75) translateY(20px); }
-          to   { opacity: 1; transform: scale(1)    translateY(0);    }
+          from { opacity: 0; transform: scale(0.8) translateY(20px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0);    }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes winner-pop { from { opacity: 0; } to { opacity: 1; } }
         }
       `}</style>
-    </>
+    </>,
+    document.body,
   );
 }

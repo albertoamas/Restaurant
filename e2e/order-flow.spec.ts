@@ -30,8 +30,8 @@ test.describe('Flujo de pedido', () => {
     await firstProduct.waitFor({ timeout: 10_000 });
     await firstProduct.click();
 
-    // OrderPanel button changes to "Cobrar · Bs X.XX" when cart has items
-    await expect(page.getByRole('button', { name: /cobrar.*Bs/i })).toBeVisible({ timeout: 5_000 });
+    // Con productos en el pedido, "Cobrar" se habilita y el total deja de ser 0.
+    await expect(page.getByRole('button', { name: /^cobrar$/i }).first()).toBeEnabled({ timeout: 5_000 });
   });
 
   test('confirmar pedido con pago QR aparece en /orders', async ({ page }) => {

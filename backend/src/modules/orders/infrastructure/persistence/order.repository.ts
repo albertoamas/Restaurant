@@ -390,12 +390,16 @@ export class OrderRepository implements OrderRepositoryPort {
     branchId: string | null,
     from: string,
     to: string,
+    createdBy?: string,
   ): Promise<DailyReportResult> {
     const fromTs = new Date(from);
     const toTs   = new Date(to);
 
     const branchFilter = branchId
       ? Prisma.sql`AND o.branch_id = ${branchId}`
+      : Prisma.sql``;
+    const createdByFilter = createdBy
+      ? Prisma.sql`AND o.created_by = ${createdBy}`
       : Prisma.sql``;
 
     const result = await this.prisma.$queryRaw<[Record<string, unknown>]>`
@@ -408,6 +412,7 @@ export class OrderRepository implements OrderRepositoryPort {
         FROM orders o
         WHERE o.tenant_id = ${tenantId}
           ${branchFilter}
+          ${createdByFilter}
           AND o.created_at BETWEEN ${fromTs} AND ${toTs}
           AND o.status != ${OrderStatus.CANCELLED}
           AND EXISTS (SELECT 1 FROM order_payments op2 WHERE op2.order_id = o.id)

@@ -10,6 +10,7 @@ import {
 import type { DailySeriesItemDto } from '@pos/shared';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useChartColors } from './chartColors';
+import { formatDayTick, useChartAnimation } from './chartFormat';
 
 interface Props {
   data: DailySeriesItemDto[];
@@ -17,8 +18,9 @@ interface Props {
 
 export function OrdersAreaChart({ data }: Props) {
   const c = useChartColors();
+  const animate = useChartAnimation();
   const chartData = data.map((d) => ({
-    fecha:   d.date.slice(5), // MM-DD
+    fecha:   formatDayTick(d.date),
     Pedidos: d.orderCount,
   }));
 
@@ -59,6 +61,7 @@ export function OrdersAreaChart({ data }: Props) {
         <Area
           type="monotone"
           dataKey="Pedidos"
+          isAnimationActive={animate}
           stroke={c.emerald}
           strokeWidth={2.5}
           fill="url(#gradPedidos)"

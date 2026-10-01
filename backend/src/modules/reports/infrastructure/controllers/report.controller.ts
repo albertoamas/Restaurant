@@ -68,7 +68,9 @@ export class ReportController {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.getReportByRangeUseCase.execute(tenantId, effectiveBranchId, from, to);
+    // Un cajero ve su rendición: los pedidos que tomó él, no los de toda la sucursal.
+    const createdBy = user.role === UserRole.CASHIER ? user.sub : undefined;
+    return this.getReportByRangeUseCase.execute(tenantId, effectiveBranchId, from, to, createdBy);
   }
 
   @Get('top-products')

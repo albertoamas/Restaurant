@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ExpenseSummaryDto } from '@pos/shared';
 import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { Expense } from '../../domain/entities/expense.entity';
-import { ExpensePatch, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
+import { ExpenseListFilters, ExpensePatch, ExpenseRepositoryPort, NewExpenseItemInput } from '../../domain/ports/expense-repository.port';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 type PrismaExpenseWithItems = PrismaExpense & {
@@ -119,15 +119,10 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
     items: NewExpenseItemInput[],
   ): Promise<Expense> {
     const row = await this.prisma.$transaction(async (tx) => {
-      await tx.expenseItem.deleteMany({ where: { expenseId: id } });
-
-      if (items.length > 0) {
-        await tx.expenseItem.createMany({ data: toItemRows(id, items) });
-      }
-
-      await tx.expense.updateMany({
-        // `status` acá es defensa en profundidad: el use-case ya rechaza editar
-        // un gasto anulado, esto evita que otro caller futuro lo saltee.
+      // Primero el gasto, filtrado por tenant y estado: si no es del tenant o está anulado no se
+      // tocan sus ítems (antes se borraban por `expenseId` antes de comprobarlo).
+      // `status` es defensa en profundidad: el use-case ya rechaza editar un gasto anulado.
+      const { count } = await tx.expense.updateMany({
         where: { id, tenantId, status: 'ACTIVE' },
         data:  {
           category: patch.category,
@@ -139,6 +134,12 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
           documentNumber: patch.documentNumber,
         },
       });
+      if (count === 0) throw new NotFoundException('Gasto no encontrado');
+
+      await tx.expenseItem.deleteMany({ where: { expenseId: id } });
+      if (items.length > 0) {
+        await tx.expenseItem.createMany({ data: toItemRows(id, items) });
+      }
 
       return tx.expense.findFirstOrThrow({
         where:   { id, tenantId },
@@ -166,6 +167,50 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       include: ITEMS_INCLUDE,
     });
     return rows.map((r) => toDomain(r as PrismaExpenseWithItems));
+  }
+
+  async findPage(
+    tenantId: string,
+    branchId: string | null,
+    from: Date,
+    to: Date,
+    filters: ExpenseListFilters,
+  ): Promise<{ data: Expense[]; total: number }> {
+    const q = filters.q?.trim();
+    const where: Prisma.ExpenseWhereInput = {
+      tenantId,
+      ...(branchId ? { branchId } : {}),
+      expenseDate: { gte: from, lte: to },
+      status: 'ACTIVE',
+      AND: [
+        ...(filters.category ? [{
+          OR: [
+            { items: { some: { category: { name: filters.category } } } },
+            { category: filters.category },
+          ],
+        }] : []),
+        ...(q ? [{
+          OR: [
+            { description:    { contains: q, mode: 'insensitive' as const } },
+            { supplierName:   { contains: q, mode: 'insensitive' as const } },
+            { documentNumber: { contains: q, mode: 'insensitive' as const } },
+            { items: { some: { name: { contains: q, mode: 'insensitive' as const } } } },
+          ],
+        }] : []),
+      ],
+    };
+
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.expense.findMany({
+        where,
+        orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        include: ITEMS_INCLUDE,
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+      }),
+      this.prisma.expense.count({ where }),
+    ]);
+    return { data: rows.map((r) => toDomain(r as PrismaExpenseWithItems)), total };
   }
 
   async getSummary(
@@ -240,10 +285,11 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
     return { total, byCategory, byDay, transactionCount };
   }
 
-  async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void> {
-    await this.prisma.expense.updateMany({
+  async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean> {
+    const { count } = await this.prisma.expense.updateMany({
       where: { id, tenantId, status: 'ACTIVE' },
       data: { status: 'VOIDED', voidedAt: new Date(), voidedBy: userId, voidReason: reason },
     });
+    return count > 0;
   }
 }

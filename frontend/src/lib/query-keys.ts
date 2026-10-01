@@ -10,6 +10,9 @@ export const queryKeys = {
   raffleDetail: (id: string) =>
     ['raffles', id] as const,
 
+  /** Productos activos (lo que cuenta el límite del plan). Bajo 'products': se invalida con el resto. */
+  productsActiveCount: ['products', 'activeCount'] as const,
+  productsCountByCategory: (categoryIds: string[]) => ['products', 'countByCategory', categoryIds] as const,
   products: (p: { q: string; categoryId?: string; page: number; includeInactive: boolean; pageSize: number }) =>
     ['products', p] as const,
 
@@ -21,12 +24,21 @@ export const queryKeys = {
 
   expenses: (from: string, to: string, branchId?: string) =>
     ['expenses', from, to, branchId] as const,
+  /** Bajo el prefijo 'expenses': los eventos de gastos invalidan también estas páginas. */
+  expenseMovements: (p: { from: string; to: string; branchId?: string; category: string; q: string }) =>
+    ['expenses', 'movements', p] as const,
+  expenseSummary: (from: string, to: string, branchId?: string) =>
+    ['expenses', 'summary', from, to, branchId] as const,
 
   orderHistory: (p: { from: string; to: string; q: string; status: string; branchId: string | null }) =>
     ['orderHistory', p] as const,
 
   orders: (p: { date: string; statusFilter: string; branchId: string | null }) =>
     ['orders', p] as const,
+
+  /** Cantidad de pedidos del día por estado (contadores de los filtros de Operación). */
+  orderCounts: (p: { date: string; branchId: string | null }) =>
+    ['orderCounts', p] as const,
 
   kitchenOrders: (branchId: string | null) =>
     ['kitchenOrders', branchId] as const,
@@ -36,6 +48,9 @@ export const queryKeys = {
 
   cashSession: (branchId: string) =>
     ['cashSession', branchId] as const,
+  /** Solo la caja abierta (ficha de sucursal); cuelga de `cashSession` y se invalida con ella. */
+  cashSessionCurrent: (branchId: string) =>
+    ['cashSession', branchId, 'current'] as const,
 
   // ── Reports ───────────────────────────────────────────────────────────────
   reportRange: (from: string, to: string, branchId?: string) =>

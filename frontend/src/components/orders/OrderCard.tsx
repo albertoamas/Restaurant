@@ -1,100 +1,76 @@
-import { useState, useEffect } from 'react';
-import { OrderStatus, PaymentMethod, UserRole } from '@pos/shared';
+import { OrderStatus } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import { orderTypeLabels } from '../../utils/order';
-import { elapsed, elapsedBetween, formatBoliviaTime } from '../../utils/date';
+import { durationLabel, formatBoliviaTime, minutesBetween, timeAgo } from '../../utils/date';
 import { Icon } from '../ui/Icon';
-import { useReceiptSettings } from '../../hooks/useReceiptSettings';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { OrderStatusBadge } from './OrderStatusBadge';
+import { NEXT_STEP, ORDER_STATUS_UI, ORDER_STEPS } from './order-status';
+import { OrderActionsMenu, ACTIVE_STATUSES } from './OrderActionsMenu';
+import { paymentMethodLabel } from '../pos/PaymentMethodSection';
 import { useAuth } from '../../context/auth.context';
 import { useBranchNames } from '../../hooks/useBranches';
-import { printKitchenTicket, printReceipt } from '../../utils/print';
+import { useNow } from '../../hooks/useNow';
 
-/* ─── Static data ────────────────────────────────────────────────────────── */
+/** A partir de estos minutos el tiempo de espera pasa a ámbar y a rojo. */
+const WAIT_WARNING_MIN = 5;
+const WAIT_URGENT_MIN  = 10;
 
-export const ACTIVE_STATUSES = new Set([OrderStatus.PENDING, OrderStatus.PREPARING]);
-
-export const STEPS = [
-  { status: OrderStatus.PENDING,   label: 'Recibido'   },
-  { status: OrderStatus.PREPARING, label: 'Preparando' },
-  { status: OrderStatus.DELIVERED, label: 'Entregado'  },
-];
-
-const stepIndex = (s: OrderStatus) => STEPS.findIndex((x) => x.status === s);
-
-export const statusAccent: Record<string, { border: string; bg: string; badge: string }> = {
-  [OrderStatus.PENDING]:   { border: 'border-l-amber-400',   bg: 'bg-amber-400/8',   badge: 'bg-amber-500/12 text-amber-600 border-amber-500/25' },
-  [OrderStatus.PREPARING]: { border: 'border-l-emerald-400', bg: 'bg-emerald-400/8', badge: 'bg-emerald-500/12 text-emerald-600 border-emerald-500/25' },
-  [OrderStatus.DELIVERED]: { border: 'border-l-sky-400',     bg: 'bg-sky-400/8',     badge: 'bg-sky-500/12 text-sky-600 border-sky-500/25' },
-  [OrderStatus.CANCELLED]: { border: 'border-l-red-400',     bg: '',                 badge: 'bg-red-500/12 text-red-600 border-red-500/25' },
-};
-
-export const statusLabel: Record<string, string> = {
-  [OrderStatus.PENDING]:   'Pendiente',
-  [OrderStatus.PREPARING]: 'Preparando',
-  [OrderStatus.DELIVERED]: 'Entregado',
-  [OrderStatus.CANCELLED]: 'Cancelado',
-};
-
-const paymentLabel: Record<string, string> = {
-  [PaymentMethod.CASH]:      'Efectivo',
-  [PaymentMethod.QR]:        'QR',
-  [PaymentMethod.TRANSFER]:  'Transferencia',
-  [PaymentMethod.CORTESIA]:  'Cortesía',
-};
-
-const actionConfig: Record<string, { label: string; nextStatus: OrderStatus; color: string } | null> = {
-  [OrderStatus.PENDING]:   { label: 'Iniciar preparación',    nextStatus: OrderStatus.PREPARING, color: 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700' },
-  [OrderStatus.PREPARING]: { label: 'Marcar como entregado',  nextStatus: OrderStatus.DELIVERED, color: 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700' },
-  [OrderStatus.DELIVERED]: null,
-  [OrderStatus.CANCELLED]: null,
-};
-
-/* ─── Elapsed chips ──────────────────────────────────────────────────────── */
-
-function useElapsed(createdAt: string) {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const secs = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
-  return { text: elapsed(createdAt), secs };
-}
-
-function ElapsedChip({ createdAt }: { createdAt: string }) {
-  const { text, secs } = useElapsed(createdAt);
-  const urgent  = secs >= 600;
-  const warning = secs >= 300;
+function WaitTime({ createdAt }: { createdAt: string }) {
+  const now = useNow();
+  const minutes = minutesBetween(createdAt, now);
+  const tone = minutes >= WAIT_URGENT_MIN
+    ? 'text-red-700 dark:text-red-400 font-semibold'
+    : minutes >= WAIT_WARNING_MIN
+      ? 'text-amber-700 dark:text-amber-300 font-semibold'
+      : 'text-soft';
   return (
-    <span className={[
-      'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums',
-      urgent
-        ? 'bg-red-500/12 text-red-600 border-red-500/25 animate-pulse'
-        : warning
-          ? 'bg-amber-500/12 text-amber-600 border-amber-500/25'
-          : 'bg-emerald-500/12 text-emerald-600 border-emerald-500/25',
-    ].join(' ')}>
-      <Icon name="clock" size={12} strokeWidth={2} className="shrink-0" />
-      {text}
+    <span className={`inline-flex items-center gap-1 text-label ${tone}`}>
+      <Icon name="clock" size={14} className="shrink-0" />
+      {timeAgo(createdAt, now)}
     </span>
   );
 }
 
-function DeliveredAtChip({ createdAt, updatedAt }: { createdAt: string; updatedAt: string }) {
+/** Barra de tres tramos (Recibido, Preparando, Entregado) pintada hasta la fase actual. */
+function OrderProgress({ status }: { status: OrderStatus }) {
+  const current = ORDER_STEPS.findIndex((s) => s.status === status);
+  const ui = ORDER_STATUS_UI[status];
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="text-xs font-medium text-gray-400 tabular-nums">
-        {formatBoliviaTime(updatedAt)}
-      </span>
-      <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg border tabular-nums bg-sky-500/10 text-sky-600 border-sky-500/20">
-        <Icon name="check" size={12} strokeWidth={2} className="shrink-0" />
-        {elapsedBetween(createdAt, updatedAt)}
-      </span>
-    </span>
+    <div className="mt-3" role="img" aria-label={`Fase ${current + 1} de ${ORDER_STEPS.length}: ${ORDER_STEPS[current].label}`}>
+      <div className="grid grid-cols-3 gap-1">
+        {ORDER_STEPS.map((step, i) => (
+          <span key={step.status} className={`h-1.5 rounded-full ${i <= current ? ui.bar : 'bg-surface-3'}`} />
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-3 gap-1 text-caption">
+        {ORDER_STEPS.map((step, i) => (
+          <span
+            key={step.status}
+            className={i === current ? `font-semibold ${ui.text}` : i < current ? 'text-soft' : 'text-muted'}
+          >
+            {step.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
-/* ─── Component ──────────────────────────────────────────────────────────── */
+/** "Efectivo" o "Efectivo y QR" (pago dividido). */
+export function paymentSummary(order: OrderDto): string {
+  return order.payments.length > 0
+    ? order.payments.map((p) => paymentMethodLabel(p.method)).join(' y ')
+    : '-';
+}
+
+/** Momento del pedido fuera de la espera activa: entregado (y cuánto tardó) o creado. */
+export function orderMoment(order: OrderDto): string {
+  return order.status === OrderStatus.DELIVERED
+    ? `Entregado ${formatBoliviaTime(order.updatedAt)}, tardó ${durationLabel(minutesBetween(order.createdAt, order.updatedAt))}`
+    : `Creado ${formatBoliviaTime(order.createdAt)}`;
+}
 
 interface OrderCardProps {
   order: OrderDto;
@@ -104,265 +80,113 @@ interface OrderCardProps {
   onAddItems: (order: OrderDto) => void;
 }
 
+/**
+ * Pedido en la vista Operación: encabezado en una línea, productos y, abajo, las acciones por
+ * prioridad (siguiente paso o cobrar, añadir, y el resto en "Más").
+ */
 export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItems }: OrderCardProps) {
-  const action       = actionConfig[order.status];
-  const currentStep  = stepIndex(order.status);
+  const { currentBranchId } = useAuth();
+  const { branchName } = useBranchNames();
+
   const isCancelled  = order.status === OrderStatus.CANCELLED;
   const isActive     = ACTIVE_STATUSES.has(order.status);
-
-  const { user, currentBranchId } = useAuth();
-  const { branchName } = useBranchNames();
-  const [confirming, setConfirming] = useState(false);
-
+  const next         = NEXT_STEP[order.status];
+  const needsPayment = !order.isPaid && !isCancelled;
+  /** Cobrar junto a un siguiente paso, o Añadir. Sin ninguno, el menú va al lado de la acción principal. */
+  const hasSecondary = Boolean(next && needsPayment) || isActive;
+  const hasActions   = Boolean(next) || needsPayment;
   // Solo en la vista consolidada: con una sucursal fija la etiqueta es ruido.
   const branchLabel = currentBranchId === null ? branchName(order.branchId) : null;
 
-  const isOwner   = user?.role === UserRole.OWNER;
-  // Cajero: solo puede cancelar PENDING y PREPARING.
-  // Owner: puede cancelar cualquier estado no terminal, incluido DELIVERED.
-  const canCancel = !isCancelled && (isActive || (order.status === OrderStatus.DELIVERED && isOwner));
-
-  const receiptSettings = useReceiptSettings();
-
-  const handlePrintKitchen = () => printKitchenTicket(order);
-  const handlePrintReceipt = () => printReceipt(order, receiptSettings);
-
-  const accent = statusAccent[order.status] ?? { border: 'border-l-[var(--border-strong)]', bg: '', badge: 'bg-[var(--color-surface-2)] text-gray-500 border-[var(--border-subtle)]' };
-
   return (
-    <div className={[
-      'rounded-2xl border border-[var(--border-subtle)] shadow-card-lg',
-      'overflow-hidden border-l-4 animate-fade',
-      accent.border,
-      accent.bg,
-      isCancelled ? 'opacity-60' : '',
-    ].join(' ')}
-    style={{ background: 'var(--color-surface-card)' }}
+    <article
+      aria-label={`Pedido #${order.orderNumber}`}
+      className={[
+        'rounded-card border border-line border-l-4 bg-surface-card shadow-raised p-4 animate-fade',
+        ORDER_STATUS_UI[order.status].accent,
+        isCancelled ? 'opacity-70' : '',
+      ].join(' ')}
     >
-
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="font-heading font-black text-2xl text-gray-900 leading-none">
-            #{order.orderNumber}
-          </span>
-          {branchLabel && (
-            <span className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] px-2 py-0.5 text-[11px] font-semibold text-gray-500"><Icon name="building" size={10} strokeWidth={2} />{branchLabel}</span>
-          )}
-          {isActive ? (
-            <ElapsedChip createdAt={order.createdAt} />
-          ) : order.status === OrderStatus.DELIVERED ? (
-            <DeliveredAtChip createdAt={order.createdAt} updatedAt={order.updatedAt} />
-          ) : (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Icon name="clock" size={12} strokeWidth={2} />
-              {formatBoliviaTime(order.createdAt)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
-            {statusLabel[order.status]}
-          </span>
-          <span className="text-xs font-semibold bg-[var(--color-surface-2)] text-gray-500 px-2.5 py-1 rounded-lg">
-            {orderTypeLabels[order.type]}
-          </span>
-        </div>
-      </div>
-
-      {/* Items */}
-      <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-        {order.items.map((item) => (
-          <span
-            key={item.id}
-            className="inline-flex items-center gap-1 text-xs bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-600 rounded-lg px-2.5 py-1"
-          >
-            <span className="font-heading font-bold text-gray-900">{item.quantity}×</span>
-            {item.productName}
-          </span>
-        ))}
-      </div>
-
-      {/* Customer */}
-      {order.customer && (
-        <div className="px-4 pb-2 -mt-1">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
-            <Icon name="user" size={12} strokeWidth={2} className="shrink-0" />
-            {order.customer.name}
-          </span>
-        </div>
-      )}
-
-      {/* Notes */}
-      {order.notes && (
-        <div className="px-4 pb-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-xl">
-            <Icon name="chat" size={12} strokeWidth={2} className="shrink-0" />
-            {order.notes}
-          </span>
-        </div>
-      )}
-
-      {/* Progress stepper */}
-      {!isCancelled ? (
-        <div className="px-4 pb-4">
-          <div className="flex items-center gap-0">
-            {STEPS.map((step, i) => {
-              const done   = i <= currentStep;
-              const active = i === currentStep;
-              return (
-                <div key={step.status} className="flex items-center flex-1 last:flex-none">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={[
-                      'w-6 h-6 rounded-full flex items-center justify-center transition-all',
-                      done
-                        ? active
-                          ? order.status === OrderStatus.PENDING
-                            ? 'bg-amber-400 shadow-[0_0_0_3px_oklch(0.85_0.14_80/0.25)]'
-                            : order.status === OrderStatus.PREPARING
-                              ? 'bg-emerald-500 shadow-[0_0_0_3px_oklch(0.70_0.18_145/0.25)]'
-                              : 'bg-sky-500 shadow-[0_0_0_3px_oklch(0.65_0.15_220/0.25)]'
-                          : 'bg-[var(--border-strong)]'
-                        : 'bg-[var(--color-surface-2)] border-2 border-[var(--border-subtle)]',
-                    ].join(' ')}>
-                      {done && !active && (
-                        <Icon name="check" size={12} strokeWidth={3} className="text-gray-500" />
-                      )}
-                      {active && <span className="w-2 h-2 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-[10px] font-semibold whitespace-nowrap ${done ? 'text-gray-600' : 'text-gray-400'}`}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div className={`flex-1 h-0.5 mb-4 mx-1 rounded-full transition-all ${
-                      i < currentStep ? 'bg-[var(--border-strong)]' : 'bg-[var(--border-subtle)]'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-heading font-bold text-main font-heading">#{order.orderNumber}</h3>
+            <Badge>{orderTypeLabels[order.type]}</Badge>
+            {branchLabel && <Badge>{branchLabel}</Badge>}
+          </div>
+          <div className="mt-1">
+            {isActive ? <WaitTime createdAt={order.createdAt} /> : <span className="text-label text-soft">{orderMoment(order)}</span>}
           </div>
         </div>
-      ) : (
-        <div className="px-4 pb-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg">
-            <Icon name="x" size={14} strokeWidth={2} />
-            Cancelado
+        <OrderStatusBadge status={order.status} />
+      </div>
+
+      <p className="mt-3 text-body text-main">
+        {order.items.map((item, i) => (
+          <span key={item.id}>
+            {i > 0 && ', '}
+            <span className="font-semibold">{item.quantity}</span> {item.productName}
           </span>
+        ))}
+      </p>
+
+      {(order.customer || order.notes) && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-label text-soft">
+          {order.customer && (
+            <span className="inline-flex items-center gap-1.5"><Icon name="user" size={14} />{order.customer.name}</span>
+          )}
+          {order.notes && (
+            <span className="inline-flex items-center gap-1.5"><Icon name="chat" size={14} />{order.notes}</span>
+          )}
         </div>
       )}
 
-      {/* Footer */}
-      <div className={[
-        'flex items-center gap-3 px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--color-surface-2)]',
-        action ? 'flex-col sm:flex-row' : '',
-      ].join(' ')}>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-heading font-black text-xl text-gray-900">
-            Bs {order.total.toFixed(2)}
-          </span>
-          {order.isPaid ? (
-            <span className="text-xs font-medium text-gray-500 bg-[var(--color-surface-2)] px-2 py-0.5 rounded-md">
-              {order.payments.length > 1
-                ? order.payments.map((p) => paymentLabel[p.method] ?? p.method).join(' + ')
-                : (paymentLabel[order.payments[0]?.method] ?? '—')}
-            </span>
-          ) : (
-            <span className="text-xs font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-0.5 rounded-md">
-              Pendiente de cobro
-            </span>
-          )}
+      {!isCancelled && <OrderProgress status={order.status} />}
+
+      <div className="mt-4 pt-3 border-t border-line">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-heading font-bold text-main font-heading">Bs {order.total.toFixed(2)}</span>
+          <div className="flex items-center gap-2">
+            {needsPayment ? <Badge variant="warning">Sin cobrar</Badge>
+              : order.isPaid ? <span className="text-label text-soft">{paymentSummary(order)}</span>
+              : null}
+            {/* Pedido cerrado (entregado y cobrado, o cancelado): solo queda el menú, junto al total. */}
+            {!hasActions && <OrderActionsMenu order={order} onEdit={onEdit} onStatusChange={onStatusChange} />}
+          </div>
         </div>
 
-        <div className="flex gap-2 w-full sm:flex-1">
-          {isActive && (
-            <button
-              onClick={() => onAddItems(order)}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold border-2 border-primary-500/60 text-primary-600 bg-primary-500/10 hover:bg-primary-500/20 hover:border-primary-500/80 transition-all active:scale-[0.97] flex items-center gap-1.5 shrink-0"
-              title="Añadir más productos a este pedido"
-            >
-              <Icon name="plus" size={14} strokeWidth={2.5} />
-              Añadir
-            </button>
-          )}
-          {!order.isPaid && !isCancelled && (
-            <button
-              onClick={() => onPayOrder(order)}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white transition-all active:scale-[0.97]"
-            >
-              Cobrar
-            </button>
-          )}
-          {!isCancelled && (order.status !== OrderStatus.DELIVERED || isOwner) && (
-            <button
-              onClick={() => onEdit(order)}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
-              title="Editar pedido"
-            >
-              <Icon name="edit" size={14} strokeWidth={2} />
-            </button>
-          )}
-          {!isCancelled && (
-            <button
-              onClick={handlePrintKitchen}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-primary-500/40 hover:text-primary-400 hover:bg-primary-500/10 transition-colors shrink-0"
-              title="Imprimir comanda"
-            >
-              <Icon name="print" size={14} strokeWidth={2} />
-            </button>
-          )}
-          {order.isPaid && (
-            <button
-              onClick={handlePrintReceipt}
-              className="px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] hover:border-sky-500/40 hover:text-sky-400 hover:bg-sky-500/10 transition-colors shrink-0"
-              title="Imprimir recibo"
-            >
-              <Icon name="document" size={14} strokeWidth={2} />
-            </button>
-          )}
-          {canCancel && (
-            confirming ? (
-              <>
-                <span className="text-xs font-semibold text-red-500 shrink-0 self-center">
-                  ¿Cancelar pedido?
-                </span>
-                <button
-                  onClick={() => {
-                    onStatusChange(order.id, OrderStatus.CANCELLED);
-                    setConfirming(false);
-                  }}
-                  className="px-3 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-xl transition-colors shrink-0"
-                >
-                  Sí, cancelar
-                </button>
-                <button
-                  onClick={() => setConfirming(false)}
-                  className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)] rounded-xl hover:border-gray-400/40 transition-colors shrink-0"
-                >
-                  No
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setConfirming(true)}
-                className="px-3 py-2.5 text-xs font-semibold text-gray-500 border border-[var(--border-subtle)]
-                  rounded-xl hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
-              >
-                Cancelar
-              </button>
-            )
-          )}
-          {action && (
-            <button
-              onClick={() => onStatusChange(order.id, action.nextStatus)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] ${action.color}`}
-            >
-              {action.label}
-            </button>
-          )}
-        </div>
+        {/* En celular la acción principal ocupa su propia fila; las secundarias van debajo, parejas. */}
+        {hasActions && (
+          <div className={`mt-3 flex gap-2 ${hasSecondary ? 'flex-col sm:flex-row' : ''}`}>
+            {next ? (
+              <Button variant={next.variant} className="flex-1 w-full" onClick={() => onStatusChange(order.id, next.status)}>
+                <Icon name={next.icon} size={17} />
+                {next.label}
+              </Button>
+            ) : needsPayment && (
+              <Button className="flex-1 w-full" onClick={() => onPayOrder(order)}>
+                <Icon name="cash" size={17} />
+                Cobrar
+              </Button>
+            )}
+            <div className="flex justify-end gap-2">
+              {next && needsPayment && (
+                <Button variant="secondary" className="flex-1 sm:flex-none" onClick={() => onPayOrder(order)}>
+                  <Icon name="cash" size={17} />
+                  Cobrar
+                </Button>
+              )}
+              {isActive && (
+                <Button variant="secondary" className="flex-1 sm:flex-none" onClick={() => onAddItems(order)}>
+                  <Icon name="plus" size={17} />
+                  Añadir
+                </Button>
+              )}
+              <OrderActionsMenu order={order} onEdit={onEdit} onStatusChange={onStatusChange} />
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </article>
   );
 }

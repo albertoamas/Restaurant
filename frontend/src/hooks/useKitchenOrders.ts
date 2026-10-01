@@ -9,6 +9,11 @@ import { handleApiError } from '../utils/api-error';
 import { queryKeys } from '../lib/query-keys';
 
 const FALLBACK_POLL_MS = 30_000;
+/** Tope por estado: sobra para una cocina (el backend admite hasta 200 por página). */
+const MAX_PER_STATUS = 200;
+
+/** Primero el que lleva más tiempo esperando: así trabaja una cocina. */
+const byArrival = (a: OrderDto, b: OrderDto) => a.createdAt.localeCompare(b.createdAt);
 
 /**
  * Live kitchen orders for the current branch (PENDING + PREPARING only).
@@ -18,21 +23,31 @@ const FALLBACK_POLL_MS = 30_000;
  *  - Polling every 30s only when the socket is disconnected (fallback).
  *  - On reconnection, refetches immediately to recover events missed while offline.
  *  - Mutations are optimistic; on error we resync from the server.
+ *
+ * Se piden los pedidos por estado. Antes se traía la primera página del día (50, los más
+ * nuevos) y se filtraba: en un día con movimiento, los pendientes más viejos no aparecían.
+ *
+ * `onNewPending` avisa de un pedido nuevo de esta sucursal (para el sonido de la cocina).
  */
-export function useKitchenOrders(branchId: string | null) {
+export function useKitchenOrders(branchId: string | null, onNewPending?: (order: OrderDto) => void) {
   const queryClient     = useQueryClient();
   const { connected }   = useSocket();
   const wasConnectedRef = useRef<boolean | null>(null);
 
   const qk = queryKeys.kitchenOrders(branchId);
+  const onNewPendingRef = useRef(onNewPending);
+  onNewPendingRef.current = onNewPending;
 
-  const { data: orders = [] as OrderDto[], refetch } = useQuery<OrderDto[]>({
+  const { data: orders = [] as OrderDto[], refetch, isPending: loading } = useQuery<OrderDto[]>({
     queryKey: qk,
     queryFn:  async () => {
-      const { data } = await ordersApi.getAll({ date: today(), branchId: branchId ?? undefined });
-      return data.filter((o) =>
-        o.status === OrderStatus.PENDING || o.status === OrderStatus.PREPARING,
-      );
+      const byStatus = (status: OrderStatus) => ordersApi
+        .getAll({ date: today(), branchId: branchId ?? undefined, status, limit: MAX_PER_STATUS })
+        .then((r) => r.data);
+      const [pending, preparing] = await Promise.all([
+        byStatus(OrderStatus.PENDING), byStatus(OrderStatus.PREPARING),
+      ]);
+      return [...pending, ...preparing];
     },
     enabled:         !!branchId,
     refetchInterval: connected ? false : FALLBACK_POLL_MS,
@@ -51,7 +66,9 @@ export function useKitchenOrders(branchId: string | null) {
   const handleOrderCreated = useCallback((order: OrderDto) => {
     if (order.branchId !== branchId) return;
     if (order.status !== OrderStatus.PENDING) return;
-    queryClient.setQueryData<OrderDto[]>(qk, (old = []) => [...old, order]);
+    queryClient.setQueryData<OrderDto[]>(qk, (old = []) =>
+      old.some((o) => o.id === order.id) ? old : [...old, order]);
+    onNewPendingRef.current?.(order);
   }, [branchId, queryClient, qk]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOrderUpdated = useCallback((order: OrderDto) => {
@@ -83,10 +100,10 @@ export function useKitchenOrders(branchId: string | null) {
     }
   };
 
-  const pending   = orders.filter((o) => o.status === OrderStatus.PENDING);
-  const preparing = orders.filter((o) => o.status === OrderStatus.PREPARING);
+  const pending   = orders.filter((o) => o.status === OrderStatus.PENDING).sort(byArrival);
+  const preparing = orders.filter((o) => o.status === OrderStatus.PREPARING).sort(byArrival);
 
   const refresh = useCallback(async () => { await refetch(); }, [refetch]);
 
-  return { orders, pending, preparing, updateStatus, refresh };
+  return { orders, pending, preparing, loading: !!branchId && loading, updateStatus, refresh };
 }

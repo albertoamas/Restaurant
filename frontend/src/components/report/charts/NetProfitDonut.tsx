@@ -1,6 +1,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ChartTooltip } from './ChartTooltip';
 import { useChartColors } from './chartColors';
+import { formatBsFull, useChartAnimation } from './chartFormat';
 
 interface Props {
   sales:    number;
@@ -17,6 +18,7 @@ interface Props {
  */
 export function NetProfitDonut({ sales, expenses }: Props) {
   const c = useChartColors();
+  const animate = useChartAnimation();
 
   const total = sales + expenses;
   if (total <= 0) return null;
@@ -27,13 +29,13 @@ export function NetProfitDonut({ sales, expenses }: Props) {
     { name: 'Gastos',  value: expenses, color: c.red },
   ].filter((d) => d.value > 0);
 
-  const fmtFull = (v: number | string) => `Bs ${Number(v).toFixed(2)}`;
 
   return (
     <div className="relative" style={{ height: 180 }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
+            isAnimationActive={animate}
             data={data}
             dataKey="value"
             nameKey="name"
@@ -48,17 +50,17 @@ export function NetProfitDonut({ sales, expenses }: Props) {
             ))}
           </Pie>
           <Tooltip
-            content={<ChartTooltip formatter={fmtFull} />}
+            content={<ChartTooltip formatter={formatBsFull} />}
             wrapperStyle={{ background: 'none', border: 'none', boxShadow: 'none', padding: 0 }}
           />
         </PieChart>
       </ResponsiveContainer>
 
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`font-heading text-2xl font-black ${marginPct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-          {marginPct >= 0 ? '' : '−'}{Math.abs(marginPct).toFixed(0)}%
+        <span className={`font-heading text-title font-bold tabular-nums ${marginPct >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+          {marginPct >= 0 ? '' : '-'}{Math.abs(marginPct).toFixed(0)}%
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">margen</span>
+        <span className="text-caption text-muted">de margen</span>
       </div>
     </div>
   );

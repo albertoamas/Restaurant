@@ -1,8 +1,8 @@
 import type { CategoryDto, TopCategoryDto, TopProductDto } from '@pos/shared';
-import { Card } from '../../ui/Card';
-import { Spinner } from '../../ui/Spinner';
-import { Icon } from '../../ui/Icon';
-import { TopProductRow } from '../index';
+import { EmptyState } from '../../ui/EmptyState';
+import { Select } from '../../ui/Input';
+import { Skeleton } from '../../ui/Skeleton';
+import { ChartCard, RankRow, bs, share } from '../index';
 import { CategoryBarChart } from '../charts/CategoryBarChart';
 import { ExpandableList } from '../ExpandableList';
 
@@ -16,6 +16,8 @@ interface Props {
   categoriesLoading: boolean;
 }
 
+const units = (n: number) => `${n} ${n === 1 ? 'unidad' : 'unidades'}`;
+
 /** Qué se vendió: ranking de productos y peso de cada categoría. */
 export function ProductsTab({
   topProducts, topCategories, categories,
@@ -23,53 +25,49 @@ export function ProductsTab({
 }: Props) {
   return (
     <div className="space-y-4">
-      <Card variant="default">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <h3 className="font-heading text-sm font-bold text-gray-700">Productos Más Vendidos</h3>
-          {categories.length > 0 && (
-            <select
-              data-print-hide
-              value={selectedCategory}
-              onChange={(e) => onCategoryChange(e.target.value)}
-              className="cursor-pointer rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] px-3 py-1.5 text-xs text-gray-600 transition-[border-color,box-shadow] focus:border-primary-500/50 focus:outline-none focus:ring-[3px] focus:ring-primary-500/20"
-            >
+      <ChartCard
+        title="Productos más vendidos"
+        description="Por unidades vendidas en el período."
+        action={categories.length > 0 && (
+          <div className="w-full sm:w-56">
+            <Select aria-label="Filtrar por categoría" inputSize="sm" value={selectedCategory} onChange={(e) => onCategoryChange(e.target.value)}>
               <option value="">Todas las categorías</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          )}
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-8"><Spinner /></div>
-        ) : topProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-            <Icon name="package" size={32} strokeWidth={1.5} className="mb-2 opacity-40" />
-            <p className="text-xs font-medium text-gray-500">Sin datos para este período</p>
+            </Select>
           </div>
+        )}
+      >
+        {loading ? (
+          <Skeleton variant="rect" h="240px" />
+        ) : topProducts.length === 0 ? (
+          <EmptyState compact icon="package" title="Sin ventas de productos en este período" />
         ) : (
           <ExpandableList
             items={topProducts}
             renderItem={(p, i) => (
-              <TopProductRow key={p.productId} rank={i + 1} product={p} maxQty={topProducts[0].totalQuantity} />
+              <RankRow
+                key={p.productId}
+                rank={i + 1}
+                title={p.productName}
+                detail={p.categoryName ?? undefined}
+                value={units(p.totalQuantity)}
+                secondary={bs(p.totalRevenue)}
+                pct={share(p.totalQuantity, topProducts[0].totalQuantity)}
+              />
             )}
           />
         )}
-      </Card>
+      </ChartCard>
 
-      <Card variant="panel">
-        <h3 className="mb-0.5 font-heading text-sm font-bold text-gray-700">Categorías Más Vendidas</h3>
-        <p className="mb-4 text-[11px] text-gray-400">Toggle entre unidades e ingresos</p>
+      <ChartCard title="Categorías más vendidas" description="Por unidades vendidas o por ingresos.">
         {categoriesLoading ? (
-          <div className="flex justify-center py-8"><Spinner /></div>
+          <Skeleton variant="rect" h="200px" />
         ) : topCategories.length > 0 ? (
           <CategoryBarChart data={topCategories} />
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-            <Icon name="package" size={28} strokeWidth={1.5} className="mb-2 opacity-40" />
-            <p className="text-xs">Sin datos para este período</p>
-          </div>
+          <EmptyState compact icon="package" title="Sin ventas por categoría en este período" />
         )}
-      </Card>
+      </ChartCard>
     </div>
   );
 }

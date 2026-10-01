@@ -1,75 +1,8 @@
-import { Type } from 'class-transformer';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  IsUUID,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
-import { PaymentMethod } from '@pos/shared';
+import { IsOptional, IsUUID } from 'class-validator';
+import { ExpenseFieldsDto } from './expense-fields.dto';
 
-export class CreateExpenseItemDto {
-  @IsOptional()
-  @IsUUID()
-  categoryId?: string;
-
-  @IsOptional()
-  @IsUUID()
-  conceptId?: string;
-
-  @IsString()
-  @MaxLength(255)
-  name: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  unit?: string;
-
-  @IsNumber()
-  @IsPositive()
-  quantity: number;
-
-  @IsNumber()
-  @IsPositive()
-  unitPrice: number;
-}
-
-export class CreateExpenseDto {
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => CreateExpenseItemDto)
-  items: CreateExpenseItemDto[];
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
-  @IsDateString()
-  expenseDate?: string;
-
-  @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(150)
-  supplierName?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(80)
-  documentNumber?: string;
-
+export class CreateExpenseDto extends ExpenseFieldsDto {
+  /** Solo el dueño la manda: el cajero registra en la sucursal de su sesión. */
   @IsOptional()
   @IsUUID()
   branchId?: string;

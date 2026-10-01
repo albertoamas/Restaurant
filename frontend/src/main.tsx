@@ -11,6 +11,8 @@ import { initPwaInstall } from './utils/pwa-install';
 import { PwaUpdatePrompt } from './components/pwa/PwaUpdatePrompt';
 import { OfflineBanner } from './components/pwa/OfflineBanner';
 import { IosInstallHelp } from './components/pwa/InstallAppMenuItem';
+// Onest servida desde el propio servidor: sin dependencia de Google Fonts y compatible con la CSP.
+import '@fontsource-variable/onest';
 import './styles/index.css';
 
 // Antes del primer render: `beforeinstallprompt` puede dispararse antes de que monte el menú.

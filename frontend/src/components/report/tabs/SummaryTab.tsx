@@ -1,7 +1,7 @@
+import { OrderType } from '@pos/shared';
 import type { DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
-import { Card } from '../../ui/Card';
-import { Icon } from '../../ui/Icon';
-import { PaymentBar, TypeRow } from '../index';
+import { orderTypeLabels } from '../../../utils/order';
+import { BreakdownRow, ChartCard, Kpi, bs, share } from '../index';
 import { NetProfitDonut } from '../charts/NetProfitDonut';
 
 interface Props {
@@ -9,87 +9,96 @@ interface Props {
   expenseSummary: ExpenseSummaryDto | null;
 }
 
+/** Mismo color por método que en el resto del reporte (y en el POS). */
+const METHOD_COLOR = { cash: 'bg-emerald-500', qr: 'bg-primary-500', transfer: 'bg-purple-500' };
+const TYPE_COLOR: Record<OrderType, string> = {
+  [OrderType.DINE_IN]:  'bg-primary-500',
+  [OrderType.TAKEOUT]:  'bg-amber-500',
+  [OrderType.DELIVERY]: 'bg-purple-500',
+};
+
 /**
- * Panorama del período: totales, cómo se cobró y resultado neto. La
- * comparativa entre sucursales vive en su propia pestaña (`BranchesTab`).
+ * Panorama del período: las cifras clave arriba, y debajo el resultado, cómo se cobró y qué
+ * tipo de pedido fue. La comparativa entre sucursales vive en su propia pestaña.
  */
 export function SummaryTab({ report, expenseSummary }: Props) {
   if (!report) return null;
 
-  const expenses   = expenseSummary?.total ?? 0;
-  const netProfit  = report.totalSales - expenses;
-  const isPositive = netProfit >= 0;
-  const marginPct  = report.totalSales > 0 ? (netProfit / report.totalSales) * 100 : 0;
+  const hasExpenses = expenseSummary !== null;
+  const expenses    = expenseSummary?.total ?? 0;
+  const net         = report.totalSales - expenses;
+  const margin      = share(net, report.totalSales);
+  const p           = report.paymentBreakdown;
+  const types: { type: OrderType; count: number }[] = [
+    { type: OrderType.DINE_IN,  count: report.ordersByType.dineIn },
+    { type: OrderType.TAKEOUT,  count: report.ordersByType.takeout },
+    { type: OrderType.DELIVERY, count: report.ordersByType.delivery },
+  ];
 
   return (
-    <>
-      {expenseSummary !== null && (
-        <Card variant="panel" className="mb-6">
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Ganancia Neta</p>
-              <p className={`font-heading text-3xl font-black leading-none ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                {!isPositive && <span className="mr-0.5 text-xl">−</span>}Bs {Math.abs(netProfit).toFixed(2)}
-              </p>
-            </div>
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${
-              isPositive
-                ? 'border-emerald-500/25 bg-emerald-500/12 text-emerald-600'
-                : 'border-red-500/25 bg-red-500/12 text-red-600'
-            }`}>
-              {isPositive ? '↑' : '↓'} {Math.abs(marginPct).toFixed(1)}% margen
-            </span>
-          </div>
-          <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
-            <NetProfitDonut sales={report.totalSales} expenses={expenses} />
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Ingresos</span>
-                <span className="font-heading font-bold text-gray-900">Bs {report.totalSales.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Gastos operativos</span>
-                <span className="font-heading font-bold text-red-500">− Bs {expenses.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2.5 text-sm">
-                <span className="font-semibold text-gray-700">Resultado neto</span>
-                <span className={`font-heading font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {!isPositive && '− '}Bs {Math.abs(netProfit).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card variant="panel">
-          <h3 className="mb-4 font-heading text-sm font-bold text-gray-700">Métodos de Pago</h3>
-          <div className="space-y-4">
-            <PaymentBar label="Efectivo"      amount={report.paymentBreakdown.cash}     total={report.totalSales} color="bg-emerald-500" />
-            <PaymentBar label="QR"            amount={report.paymentBreakdown.qr}       total={report.totalSales} color="bg-primary-500" />
-            <PaymentBar label="Transferencia" amount={report.paymentBreakdown.transfer} total={report.totalSales} color="bg-violet-500"  />
-            {report.paymentBreakdown.cortesia > 0 && (
-              <PaymentBar label="Cortesía" amount={report.paymentBreakdown.cortesia} total={report.totalSales + report.paymentBreakdown.cortesia} color="bg-amber-400" />
-            )}
-          </div>
-        </Card>
-
-        <Card variant="panel">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-heading text-sm font-bold text-gray-700">Tipo de Pedido</h3>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-500/20 bg-primary-500/10 px-2.5 py-1 text-xs font-bold text-primary-600">
-              <Icon name="orders" size={12} strokeWidth={2.5} />
-              {report.orderCount} pedidos
-            </span>
-          </div>
-          <div className="space-y-4">
-            <TypeRow label="Local"       count={report.ordersByType.dineIn}   total={report.orderCount} color="bg-primary-500" />
-            <TypeRow label="Para Llevar" count={report.ordersByType.takeout}  total={report.orderCount} color="bg-amber-500"   />
-            <TypeRow label="Delivery"    count={report.ordersByType.delivery} total={report.orderCount} color="bg-violet-500"  />
-          </div>
-        </Card>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Kpi label="Ventas" value={bs(report.totalSales)} />
+        <Kpi label="Gastos" value={hasExpenses ? bs(expenses) : '-'} />
+        <Kpi
+          label="Ganancia neta"
+          value={`${net < 0 ? '-' : ''}${bs(Math.abs(net))}`}
+          tone={net < 0 ? 'negative' : 'positive'}
+          sub={report.totalSales > 0 ? `Margen de ${margin.toFixed(1)}%` : undefined}
+        />
+        <Kpi label="Pedidos" value={String(report.orderCount)} sub={`Ticket promedio ${bs(report.averageTicket)}`} />
       </div>
-    </>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 items-start">
+        {hasExpenses && (
+          <ChartCard title="Resultado del período" description="Cuánto de lo vendido queda después de los gastos.">
+            <NetProfitDonut sales={report.totalSales} expenses={expenses} />
+            <dl className="mt-4 space-y-2 text-body">
+              <div className="flex justify-between gap-3">
+                <dt className="text-soft">Ventas</dt>
+                <dd className="text-main tabular-nums">{bs(report.totalSales)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-soft">Gastos</dt>
+                <dd className="text-main tabular-nums">-{bs(expenses)}</dd>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-line pt-2">
+                <dt className="font-semibold text-main">Ganancia neta</dt>
+                <dd className={`font-bold tabular-nums ${net < 0 ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                  {net < 0 ? '-' : ''}{bs(Math.abs(net))}
+                </dd>
+              </div>
+            </dl>
+          </ChartCard>
+        )}
+
+        <ChartCard title="Cómo se cobró" description={`Total cobrado: ${bs(report.totalSales)}`}>
+          <ul className="space-y-4">
+            <BreakdownRow label="Efectivo"      value={bs(p.cash)}     pct={share(p.cash, report.totalSales)}     color={METHOD_COLOR.cash} />
+            <BreakdownRow label="QR"            value={bs(p.qr)}       pct={share(p.qr, report.totalSales)}       color={METHOD_COLOR.qr} />
+            <BreakdownRow label="Transferencia" value={bs(p.transfer)} pct={share(p.transfer, report.totalSales)} color={METHOD_COLOR.transfer} />
+          </ul>
+          {p.cortesia > 0 && (
+            <p className="mt-4 rounded-control bg-surface-2 border border-line px-3 py-2 text-label text-soft">
+              Cortesías por <span className="font-semibold text-main tabular-nums">{bs(p.cortesia)}</span>: no suman a lo cobrado.
+            </p>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Tipo de pedido" description={`${report.orderCount} ${report.orderCount === 1 ? 'pedido' : 'pedidos'} cobrados`}>
+          <ul className="space-y-4">
+            {types.map((t) => (
+              <BreakdownRow
+                key={t.type}
+                label={orderTypeLabels[t.type]}
+                value={String(t.count)}
+                pct={share(t.count, report.orderCount)}
+                color={TYPE_COLOR[t.type]}
+              />
+            ))}
+          </ul>
+        </ChartCard>
+      </div>
+    </div>
   );
 }

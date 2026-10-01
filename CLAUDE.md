@@ -48,6 +48,8 @@ Vite proxies `/api`, `/uploads`, `/socket.io` to `:3000`.
 - Keep changes small and scoped to the requested module — no unsolicited global refactors.
 - `any` is an ESLint error; `_` prefix silences unused params.
 - Use-case error messages are in **Spanish** — they reach the UI verbatim via `HttpExceptionFilter`.
+- User-visible text (UI, toasts, error messages, prints, Excel) never uses em/en dashes, arrows
+  (→ ← ↑ ↓) or middle dots (·) as separators: use a period, colon, comma or "de"; "-" for no data.
 - The automated suite is not comprehensive: typecheck + manual test of affected screens.
 - After `pnpm add`, check `onlyBuiltDependencies` in `pnpm-workspace.yaml` (Prisma, esbuild and
   Sharp need their build scripts).
@@ -132,7 +134,7 @@ literals. Rooms: `tenant:{tenantId}`, `t:{tenantId}:b:{branchId}`. Recipe: `real
   in `CustomerRaffleSpending`). `RaffleAutoTicketService` issues tickets on order create/complete.
 - **admin** — `POST /admin/tenants` creates tenant + owner + first branch in one transaction;
   `/admin/tenants/:id/health` is the onboarding checklist (`docs/onboarding-cliente.md`).
-- **auth** — `PATCH /auth/me/password` requires the `x-admin-key` header.
+- **auth** — `PATCH /auth/me/password` (Mi cuenta) needs only the JWT and the current password; throttled to 5/min.
 - **catalog** — pagination via `X-Total-Count` header.
 
 ## Frontend
@@ -155,7 +157,8 @@ Data-layer rules: `frontend-data` skill. Visual design: `frontend-design` skill.
   inside `AppLayout` the POS/orders/cash screens (CASHIER + OWNER) and the owner-only ones
   (`OwnerRoute`). `/orders`, `/cash`, `/kitchen`, `/team`, `/branches`, `/raffles` are also behind the
   inline `ModuleRoute` in `App.tsx`: a disabled module redirects to `/pos`. Unknown routes → `/`.
-  No public sign-up.
+  No public sign-up. Menu entries come from one list, `components/layout/nav.ts`, shared by the
+  desktop Sidebar and the mobile drawer (`NavParts.tsx`).
 
 ### PWA (installable, no offline mode)
 

@@ -11,8 +11,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
@@ -20,7 +22,7 @@ import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { CreateExpenseUseCase } from '../../application/use-cases/create-expense.use-case';
 import { ListExpensesUseCase } from '../../application/use-cases/list-expenses.use-case';
-import { DeleteExpenseUseCase } from '../../application/use-cases/delete-expense.use-case';
+import { VoidExpenseUseCase } from '../../application/use-cases/void-expense.use-case';
 import { GetExpenseSummaryUseCase } from '../../application/use-cases/get-expense-summary.use-case';
 import { CreateExpenseCategoryUseCase } from '../../application/use-cases/create-expense-category.use-case';
 import { ListExpenseCategoriesUseCase } from '../../application/use-cases/list-expense-categories.use-case';
@@ -38,11 +40,13 @@ import { UpdateExpenseConceptUseCase } from '../../application/use-cases/update-
 import { DeleteExpenseConceptUseCase } from '../../application/use-cases/delete-expense-concept.use-case';
 import { CreateExpenseConceptDto } from '../../application/dto/create-expense-concept.dto';
 import { UpdateExpenseConceptDto } from '../../application/dto/update-expense-concept.dto';
+import { LoadSuggestedCatalogDto } from '../../application/dto/load-suggested-catalog.dto';
+import { LoadSuggestedExpenseCatalogUseCase } from '../../application/use-cases/load-suggested-expense-catalog.use-case';
 import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
-  if (isNaN(new Date(val).getTime())) throw new BadRequestException(`Invalid date for '${name}': ${val}`);
+  if (isNaN(new Date(val).getTime())) throw new BadRequestException(`Fecha no válida en '${name}': ${val}`);
 }
 
 @Controller('expenses')
@@ -52,7 +56,7 @@ export class ExpenseController {
   constructor(
     private readonly createExpense: CreateExpenseUseCase,
     private readonly listExpenses: ListExpensesUseCase,
-    private readonly deleteExpense: DeleteExpenseUseCase,
+    private readonly voidExpense: VoidExpenseUseCase,
     private readonly getExpenseSummary: GetExpenseSummaryUseCase,
     private readonly createExpenseCategory: CreateExpenseCategoryUseCase,
     private readonly listExpenseCategories: ListExpenseCategoriesUseCase,
@@ -63,6 +67,7 @@ export class ExpenseController {
     private readonly createExpenseConcept: CreateExpenseConceptUseCase,
     private readonly updateExpenseConcept: UpdateExpenseConceptUseCase,
     private readonly deleteExpenseConcept: DeleteExpenseConceptUseCase,
+    private readonly loadSuggestedCatalog: LoadSuggestedExpenseCatalogUseCase,
   ) {}
 
   // ── Expense categories ──────────────────────────────────────────
@@ -96,6 +101,15 @@ export class ExpenseController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.deleteExpenseCategory.execute(id, tenantId);
+  }
+
+  /** Carga las categorías elegidas del catálogo sugerido, con sus gastos. */
+  @Post('catalog/suggested')
+  loadSuggested(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: LoadSuggestedCatalogDto,
+  ) {
+    return this.loadSuggestedCatalog.execute(tenantId, dto.categories);
   }
 
   // ── Gastos predefinidos (conceptos) ─────────────────────────────
@@ -140,28 +154,42 @@ export class ExpenseController {
     @Body() dto: CreateExpenseDto,
   ) {
     const branchId = user.branchId ?? dto.branchId;
-    if (!branchId) throw new BadRequestException('branchId is required');
+    if (!branchId) throw new BadRequestException('Elige la sucursal del gasto');
     return this.createExpense.execute(tenantId, branchId, user.sub, dto);
   }
 
   @Get()
-  findAll(
+  async findAll(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('branchId') branchId?: string,
+    @Query('category') category?: string,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
     const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
     const effectiveBranchId = user.branchId ?? branchId ?? null;
-    return this.listExpenses.execute(
+    // Sin `limit` responde como antes (todo el período); con `limit`, una página.
+    const result = await this.listExpenses.execute(
       tenantId,
       effectiveBranchId,
       new Date(from || defaultStart),
       new Date(to   || defaultEnd),
+      {
+        category,
+        q,
+        page:  page  ? Number(page)  : undefined,
+        limit: limit ? Number(limit) : undefined,
+      },
     );
+    res.setHeader('X-Total-Count', result.total);
+    return result.data;
   }
 
   @Get('summary')
@@ -201,6 +229,6 @@ export class ExpenseController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: VoidExpenseDto,
   ) {
-    return this.deleteExpense.execute(id, tenantId, user.sub, dto?.reason);
+    return this.voidExpense.execute(id, tenantId, user.sub, dto?.reason);
   }
 }

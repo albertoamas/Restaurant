@@ -24,6 +24,16 @@ export interface ExpensePatch {
   documentNumber: string | null;
 }
 
+/** Filtros y página de la lista de gastos (pantalla Movimientos). */
+export interface ExpenseListFilters {
+  /** Nombre de la categoría: la del ítem o, en gastos viejos, la guardada en el gasto. */
+  category?: string;
+  /** Texto en el nombre de un ítem, la nota, el proveedor o el comprobante. */
+  q?: string;
+  page: number;
+  limit: number;
+}
+
 export interface ExpenseRepositoryPort {
   save(expense: Expense, items: NewExpenseItemInput[]): Promise<Expense>;
   findById(id: string, tenantId: string): Promise<Expense | null>;
@@ -34,11 +44,19 @@ export interface ExpenseRepositoryPort {
     from: Date,
     to: Date,
   ): Promise<Expense[]>;
+  findPage(
+    tenantId: string,
+    branchId: string | null,
+    from: Date,
+    to: Date,
+    filters: ExpenseListFilters,
+  ): Promise<{ data: Expense[]; total: number }>;
   getSummary(
     tenantId: string,
     branchId: string | null,
     from: Date,
     to: Date,
   ): Promise<ExpenseSummaryDto>;
-  void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void>;
+  /** Anula un gasto activo del tenant. `false` si no existe o ya estaba anulado. */
+  void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean>;
 }

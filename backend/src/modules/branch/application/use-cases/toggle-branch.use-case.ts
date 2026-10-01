@@ -59,8 +59,8 @@ export class ToggleBranchUseCase {
     if (cashiers > 0) {
       throw new BadRequestException(
         cashiers === 1
-          ? 'Hay 1 cajero asignado a esta sucursal. Reasignalo antes de desactivarla.'
-          : `Hay ${cashiers} cajeros asignados a esta sucursal. Reasignalos antes de desactivarla.`,
+          ? 'Hay 1 cajero asignado a esta sucursal. Reasígnalo antes de desactivarla.'
+          : `Hay ${cashiers} cajeros asignados a esta sucursal. Reasígnalos antes de desactivarla.`,
       );
     }
   }

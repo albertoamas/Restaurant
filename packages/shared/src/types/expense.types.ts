@@ -35,7 +35,6 @@ export interface CreateExpenseConceptRequest {
   name: string;
   unit?: string;
   defaultUnitPrice?: number | null;
-  sortOrder?: number;
 }
 
 export interface UpdateExpenseConceptRequest {
@@ -43,8 +42,6 @@ export interface UpdateExpenseConceptRequest {
   name?: string;
   unit?: string | null;
   defaultUnitPrice?: number | null;
-  isActive?: boolean;
-  sortOrder?: number;
 }
 
 export interface ExpenseItemDto {
@@ -117,3 +114,37 @@ export interface ExpenseSummaryDto {
   byDay: Record<string, number>;
   transactionCount: number;
 }
+
+/**
+ * Topes de la lista de gastos por negocio. Son técnicos, no del plan: la pantalla muestra la lista
+ * completa de una vez. Solo cuentan los activos (lo eliminado o quitado no ocupa lugar).
+ */
+export const EXPENSE_CATALOG_LIMITS = {
+  categories: 20,
+  concepts:   100,
+} as const;
+
+export interface SuggestedExpenseCategory {
+  name: string;
+  icon: string;
+  /** Pide cantidad y unidad al registrar (insumos que se compran por kg, unidad, etc.). */
+  trackQuantity: boolean;
+  /** Gastos de la categoría: [nombre, unidad o null]. */
+  concepts: [name: string, unit: string | null][];
+}
+
+/**
+ * Catálogo sugerido, corto y genérico (sirve a un restaurante, una cafetería o una heladería). No se
+ * crea solo: el dueño lo carga desde la pestaña Lista y elige qué categorías quiere.
+ */
+export const SUGGESTED_EXPENSE_CATALOG: SuggestedExpenseCategory[] = [
+  {
+    name: 'Insumos', icon: '🧂', trackQuantity: true,
+    concepts: [['Carnes', 'kg'], ['Verduras y frutas', 'kg'], ['Abarrotes', null], ['Bebidas para la venta', 'unidad']],
+  },
+  { name: 'Personal',   icon: '👤', trackQuantity: false, concepts: [['Sueldos', 'mes'], ['Adelanto de sueldo', null]] },
+  { name: 'Servicios',  icon: '💡', trackQuantity: false, concepts: [['Luz', 'mes'], ['Agua', 'mes'], ['Gas', null], ['Internet', 'mes']] },
+  { name: 'Alquiler',   icon: '🏠', trackQuantity: false, concepts: [['Alquiler del local', 'mes']] },
+  { name: 'Operativos', icon: '🧽', trackQuantity: false, concepts: [['Limpieza', null], ['Empaques', null], ['Reparaciones', null]] },
+  { name: 'Otros',      icon: '📋', trackQuantity: false, concepts: [['Transporte', null], ['Otro gasto', null]] },
+];

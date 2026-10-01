@@ -11,7 +11,7 @@ import {
 import type { BranchSeries, ChartRow } from '../../../utils/branch-series';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useChartColors } from './chartColors';
-import { formatAmountAxis, formatBsFull } from './chartFormat';
+import { formatAmountAxis, formatBsFull, useChartAnimation } from './chartFormat';
 
 interface Props {
   /** Una fila por medida (Ventas, Gastos, Ganancia), una columna por serie. */
@@ -37,6 +37,7 @@ const BAR_SIZE = 28;
  */
 export function BranchTotalsChart({ data, series }: Props) {
   const c = useChartColors();
+  const animate = useChartAnimation();
 
   return (
     <ResponsiveContainer width="100%" height={240}>
@@ -63,6 +64,7 @@ export function BranchTotalsChart({ data, series }: Props) {
         />
         {series.map((s) => (
           <Bar
+            isAnimationActive={animate}
             key={s.key}
             dataKey={s.key}
             name={s.name}

@@ -60,7 +60,7 @@ const DARK: ChartPalette = {
   red:     '#dc2626',
   gray:    '#6b7280',
   grid:    'rgba(255,255,255,0.06)',
-  surface: '#100806',
+  surface: '#251F1C',
 };
 
 /** Set estático (modo claro) — para piezas que aún no leen el tema activo. */

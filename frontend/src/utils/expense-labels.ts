@@ -22,3 +22,12 @@ export function legacyExpenseLabel(category: string): string {
 export function expenseCategoryLabel(expense: ExpenseDto): string {
   return expense.items[0]?.categoryName ?? legacyExpenseLabel(expense.category);
 }
+
+/**
+ * Unidad en plural según la cantidad: "7 unidades", "2 cajas", "3 meses". Las abreviaturas
+ * (kg, lt, m2) no cambian.
+ */
+export function pluralUnit(unit: string, quantity: number): string {
+  if (quantity === 1 || unit.length <= 2 || /[.\d]/.test(unit)) return unit;
+  return /[aeiouáéíóú]$/i.test(unit) ? `${unit}s` : `${unit}es`;
+}

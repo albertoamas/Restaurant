@@ -1,265 +1,247 @@
-import { useState, useEffect } from 'react';
-import { Button } from '../components/ui/Button';
-import { Spinner } from '../components/ui/Spinner';
-import { Icon } from '../components/ui/Icon';
-import { useCustomers } from '../hooks/useCustomers';
-import { useReportFilters } from '../hooks/useReportFilters';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { CustomerStatsDto } from '@pos/shared';
+import { useCustomers, type CustomerSortBy, type CustomerSortDir } from '../hooks/useCustomers';
+import { useReportFilters, type Period } from '../hooks/useReportFilters';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { customersApi } from '../api/customers.api';
+import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Icon } from '../components/ui/Icon';
+import { Input, Select } from '../components/ui/Input';
+import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
+import { CustomerSheet } from '../components/customers/CustomerSheet';
+import { CustomerFormModal } from '../components/customers/CustomerFormModal';
+import { formatBoliviaDateShort } from '../utils/date';
+import { handleApiError } from '../utils/api-error';
 
-import { EditCustomerModal } from '../components/customers/EditCustomerModal';
-import { CustomerHistoryModal } from '../components/customers/CustomerHistoryModal';
-import { CreateCustomerModal } from '../components/customers/CreateCustomerModal';
+const PERIODS: { value: Period; label: string }[] = [
+  { value: 'all',    label: 'Histórico' },
+  { value: 'today',  label: 'Hoy' },
+  { value: 'week',   label: 'Esta semana' },
+  { value: 'month',  label: 'Este mes' },
+  { value: 'custom', label: 'Rango' },
+];
 
+/** Opciones de "Ordenar por": en celular no hay encabezados de tabla que tocar. */
+const SORTS: { value: string; label: string; by: CustomerSortBy; dir: CustomerSortDir }[] = [
+  { value: 'name-asc',           label: 'Nombre (A a Z)',        by: 'name',          dir: 'asc'  },
+  { value: 'totalSpent-desc',    label: 'Los que más gastaron',  by: 'totalSpent',    dir: 'desc' },
+  { value: 'purchaseCount-desc', label: 'Los que más compraron', by: 'purchaseCount', dir: 'desc' },
+];
 
-// ── Sort header ───────────────────────────────────────────────────────────────
+const bs = (n: number) => `Bs ${n.toFixed(2)}`;
+const lastPurchase = (c: CustomerStatsDto) => (c.lastOrderAt ? formatBoliviaDateShort(c.lastOrderAt) : '-');
 
-type SortBy = 'name' | 'totalSpent' | 'purchaseCount';
-type SortDir = 'asc' | 'desc';
-
-function SortHeader({
-  label, col, sortBy, sortDir, onSort, align = 'left',
-}: {
-  label: string;
-  col: SortBy;
-  sortBy: SortBy;
-  sortDir: SortDir;
-  onSort: (col: SortBy) => void;
-  align?: 'left' | 'right';
+function SortHeader({ label, by, sortBy, sortDir, onSort, align = 'left' }: {
+  label: string; by: CustomerSortBy; sortBy: CustomerSortBy; sortDir: CustomerSortDir;
+  onSort: (by: CustomerSortBy) => void; align?: 'left' | 'right';
 }) {
-  const active = sortBy === col;
+  const active = sortBy === by;
   return (
-    <button
-      onClick={() => onSort(col)}
-      className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wide transition-colors select-none ${
-        active ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'
-      } ${align === 'right' ? 'justify-end w-full' : ''}`}
-    >
-      {label}
-      <span className="flex flex-col gap-[1px]">
-        <svg className={`w-2.5 h-2.5 ${active && sortDir === 'asc' ? 'text-primary-500' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
-          <path d="M5 0L10 6H0z" />
-        </svg>
-        <svg className={`w-2.5 h-2.5 ${active && sortDir === 'desc' ? 'text-primary-500' : 'text-gray-300'}`} viewBox="0 0 10 6" fill="currentColor">
-          <path d="M5 6L0 0h10z" />
-        </svg>
-      </span>
-    </button>
+    <th scope="col" aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className={`px-3 py-2.5 font-medium ${align === 'right' ? 'text-right' : 'text-left'}`}>
+      <button
+        type="button"
+        onClick={() => onSort(by)}
+        className={`inline-flex items-center gap-1 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${active ? 'text-main' : 'text-soft hover:text-main'}`}
+      >
+        {label}
+        {active && <Icon name={sortDir === 'asc' ? 'chevron-up' : 'chevron-down'} size={14} />}
+      </button>
+    </th>
   );
 }
 
-
-// ── Main page ─────────────────────────────────────────────────────────────────
-
-const PERIODS: { key: any; label: string }[] = [
-  { key: 'all',    label: 'Histórico'    },
-  { key: 'today',  label: 'Hoy'          },
-  { key: 'week',   label: 'Esta semana'  },
-  { key: 'month',  label: 'Este mes'     },
-  { key: 'custom', label: 'Rango'        },
-];
-
 export function CustomersPage() {
-  const filters = useReportFilters();
-  
-  // Set default period to 'all' if it's currently 'today' (which is the hook's default)
-  useEffect(() => {
-    if (filters.period === 'today') {
-      filters.setPeriod('all');
-    }
-  }, []);
+  // Clientes arranca en "Histórico": antes se forzaba después del primer render y los datos se pedían dos veces.
+  const filters = useReportFilters('all');
+  const [search, setSearch] = useState('');
+  const q = useDebouncedValue(search.trim(), 350);
 
-  const { customers, loading, q, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort } = useCustomers(
+  const { customers, loading, setQ, reload, total, page, totalPages, setPage, sortBy, sortDir, setSort, setSortTo } = useCustomers(
     '',
     filters.period === 'all' ? undefined : filters.utcFrom,
-    filters.period === 'all' ? undefined : filters.utcTo
+    filters.period === 'all' ? undefined : filters.utcTo,
   );
-  
-  const [editCustomer, setEditCustomer] = useState<CustomerStatsDto | null>(null);
-  const [historyCustomer, setHistoryCustomer] = useState<CustomerStatsDto | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setQ(q); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleSearchChange(val: string) {
-    setSearchInput(val);
-    if (searchTimer) clearTimeout(searchTimer);
-    const t = setTimeout(() => setQ(val), 350);
-    setSearchTimer(t);
-  }
+  const [selected, setSelected] = useState<CustomerStatsDto | null>(null);
+  const [form, setForm]         = useState<{ open: boolean; customer: CustomerStatsDto | null }>({ open: false, customer: null });
+  const [deleting, setDeleting] = useState<CustomerStatsDto | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
-  const paginationBtn = 'px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600';
-  const paginationPage = (active: boolean) =>
-    `w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
-      active
-        ? 'bg-primary-500 border-primary-500 text-white'
-        : 'border-[var(--border-subtle)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-card-hover)] text-gray-600'
-    }`;
+  const periodLabel = filters.period === 'all' ? 'En todo el historial' : `Del período: ${filters.rangeLabel}`;
+  const sortValue = SORTS.find((s) => s.by === sortBy && s.dir === sortDir)?.value ?? '';
 
-  const pActive   = 'bg-primary-600 text-white border border-primary-600 shadow-[0_2px_8px_oklch(0.45_0.16_235/0.22)]';
-  const pInactive = 'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-500 hover:border-primary-500/40 hover:text-primary-400';
-  const dateInputCls = [
-    'border border-[var(--border-subtle)] rounded-xl px-3 py-2 text-sm bg-[var(--color-surface-card)] text-gray-700',
-    'focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]',
-  ].join(' ');
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    try {
+      await customersApi.delete(deleting.id);
+      toast.success(`${deleting.name} eliminado de tus clientes`);
+      setDeleting(null);
+      reload();
+    } catch (err) {
+      handleApiError(err, 'Error al eliminar el cliente');
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
 
   return (
-    <div className="p-4 lg:p-6 animate-slide">
-      {/* Header */}
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Clientes</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Historial de compras, tickets y fidelización.</p>
-          </div>
-          <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo cliente</Button>
-        </div>
-        
-        {/* Period selector */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-          {PERIODS.map((p) => (
-            <button key={p.key} onClick={() => filters.setPeriod(p.key)}
-              className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 ${filters.period === p.key ? pActive : pInactive}`}>
-              {p.label}
-            </button>
-          ))}
+    <PageShell>
+      <PageHeader
+        title="Clientes"
+        description="Lo gastado y las compras de cada cliente son del período elegido."
+        actions={
+          <Button onClick={() => setForm({ open: true, customer: null })}>
+            <Icon name="plus" size={18} />
+            Nuevo cliente
+          </Button>
+        }
+      >
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+          <SegmentedControl label="Período" wrap value={filters.period} onChange={filters.setPeriod} options={PERIODS} />
           {filters.period === 'custom' && (
-            <div className="flex items-center gap-1.5 ml-2">
-              <input type="date" value={filters.customFrom} onChange={(e) => filters.setCustomFrom(e.target.value)} className={dateInputCls} />
-              <span className="text-gray-400 text-sm shrink-0">→</span>
-              <input type="date" value={filters.customTo} onChange={(e) => filters.setCustomTo(e.target.value)} className={dateInputCls} />
+            <div className="grid grid-cols-2 gap-3 sm:w-80">
+              <Input type="date" label="Desde" value={filters.customFrom} max={filters.customTo} onChange={(e) => filters.setCustomFrom(e.target.value)} />
+              <Input type="date" label="Hasta" value={filters.customTo} min={filters.customFrom} onChange={(e) => filters.setCustomTo(e.target.value)} />
             </div>
           )}
         </div>
+      </PageHeader>
+
+      <div className="mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <Input
+            aria-label="Buscar cliente"
+            placeholder="Buscar por nombre o teléfono"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftAddon={<Icon name="search" size={18} />}
+          />
+        </div>
+        <div className="sm:w-64">
+          <Select
+            aria-label="Ordenar por"
+            value={sortValue}
+            onChange={(e) => { const s = SORTS.find((x) => x.value === e.target.value); if (s) setSortTo(s.by, s.dir); }}
+          >
+            {!sortValue && <option value="">Orden personalizado</option>}
+            {SORTS.map((s) => <option key={s.value} value={s.value}>Ordenar: {s.label}</option>)}
+          </Select>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Icon name="search" size={16} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Buscar por nombre o teléfono..."
-          className="w-full pl-9 pr-4 py-2.5 text-sm border border-[var(--border-subtle)] rounded-xl bg-[var(--color-surface-card)] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
-        />
-      </div>
-
-      {/* Table */}
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner /></div>
+        <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : customers.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center mx-auto mb-3">
-            <Icon name="users" size={28} strokeWidth={1.5} className="text-gray-400" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">
-            {q ? 'No se encontraron clientes' : 'Sin clientes registrados aún'}
-          </p>
-          {!q && (
-            <button onClick={() => setShowCreate(true)} className="mt-2 text-sm text-primary-500 hover:text-primary-700 underline">
-              Crear el primer cliente
-            </button>
-          )}
-        </div>
+        <EmptyState
+          icon="users"
+          title={q ? `Ningún cliente con "${q}"` : 'Todavía no tienes clientes'}
+          description={q ? 'Prueba con otro nombre o teléfono.' : 'Los clientes se crean aquí o al cobrar en el punto de venta.'}
+          action={!q ? <Button onClick={() => setForm({ open: true, customer: null })}>Crear el primero</Button> : undefined}
+        />
       ) : (
-        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-lg overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-          {/* Table header */}
-          <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--color-surface-2)]">
-            <SortHeader label="Nombre" col="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
-            <SortHeader label="Gastado" col="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
-            <SortHeader label="Compras" col="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
-            <span className="w-[88px] text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] text-center">Acciones</span>
-          </div>
+        <section className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+          {/* Celular: una fila por cliente, se toca para ver su ficha. */}
+          <ul className="md:hidden divide-y divide-line">
+            {customers.map((c) => (
+              <li key={c.id}>
+                <button type="button" onClick={() => setSelected(c)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:outline-none focus-visible:bg-surface-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="min-w-0 truncate text-body font-semibold text-main">{c.name}</p>
+                      <p className="shrink-0 text-body font-bold text-main tabular-nums">{bs(c.totalSpent)}</p>
+                    </div>
+                    <p className="mt-0.5 text-caption text-muted">
+                      {[c.phone, `${c.purchaseCount} ${c.purchaseCount === 1 ? 'compra' : 'compras'}`, c.lastOrderAt ? `Última compra ${lastPurchase(c)}` : null].filter(Boolean).join('. ')}
+                    </p>
+                  </div>
+                  <Icon name="chevron-right" size={16} className="shrink-0 text-muted" />
+                </button>
+              </li>
+            ))}
+          </ul>
 
-          {/* Rows */}
-          {customers.map((c) => (
-            <div
-              key={c.id}
-              className="w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors items-center"
-            >
-              <div className="min-w-0 pr-2">
-                <p className="text-sm font-semibold text-[var(--color-text-main)] truncate">{c.name}</p>
-                <p className="text-[13px] text-[var(--color-text-soft)] truncate">{c.phone ?? c.email ?? '—'}</p>
+          {/* Tablet y escritorio: tabla ordenable; la fila entera abre la ficha. */}
+          <table className="hidden md:table w-full text-body">
+            <thead className="border-b border-line bg-surface-2 text-label">
+              <tr>
+                <SortHeader label="Cliente" by="name" sortBy={sortBy} sortDir={sortDir} onSort={setSort} />
+                <SortHeader label="Gastado" by="totalSpent" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
+                <SortHeader label="Compras" by="purchaseCount" sortBy={sortBy} sortDir={sortDir} onSort={setSort} align="right" />
+                <th scope="col" className="px-3 py-2.5 text-right font-medium text-soft">Última compra</th>
+                <th scope="col" className="w-10"><span className="sr-only">Ver ficha</span></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {customers.map((c) => (
+                <tr key={c.id} onClick={() => setSelected(c)} className="cursor-pointer transition-colors hover:bg-surface-2">
+                  <td className="px-3 py-3">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setSelected(c); }} className="text-left font-semibold text-main hover:underline focus-visible:outline-none focus-visible:underline">
+                      {c.name}
+                    </button>
+                    <p className="text-caption text-muted">{c.phone ?? c.email ?? '-'}</p>
+                  </td>
+                  <td className="px-3 py-3 text-right font-semibold text-main tabular-nums">{bs(c.totalSpent)}</td>
+                  <td className="px-3 py-3 text-right text-main tabular-nums">{c.purchaseCount}</td>
+                  <td className="px-3 py-3 text-right text-soft">{lastPurchase(c)}</td>
+                  <td className="pr-3 text-right"><Icon name="chevron-right" size={16} className="inline text-muted" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-line px-4 py-3">
+            <p className="text-label text-soft">
+              {totalPages > 1 ? `Página ${page} de ${totalPages}. ` : ''}{total === 1 ? '1 cliente' : `${total} clientes`}
+            </p>
+            {totalPages > 1 && (
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setPage(page - 1)} disabled={page <= 1}>
+                  <Icon name="chevron-left" size={16} />
+                  Anterior
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages}>
+                  Siguiente
+                  <Icon name="chevron-right" size={16} />
+                </Button>
               </div>
-              <p className="text-[14px] font-medium text-[var(--color-text-soft)] text-right whitespace-nowrap">Bs {c.totalSpent.toFixed(0)}</p>
-              <p className="text-[14px] font-bold text-[var(--color-text-main)] text-right">{c.purchaseCount}</p>
-              
-              <div className="flex items-center justify-end gap-1.5 w-[88px] shrink-0">
-                <button
-                  onClick={() => setHistoryCustomer(c)}
-                  title="Historial de pedidos"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:text-primary-500 hover:bg-primary-500/10 transition-colors border border-transparent hover:border-primary-500/20 bg-[var(--color-surface-3)] hover:shadow-sm"
-                >
-                  <Icon name="document" size={16} strokeWidth={2} />
-                </button>
-                <button
-                  onClick={() => setEditCustomer(c)}
-                  title="Editar cliente"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-text-muted)] hover:text-primary-500 hover:bg-primary-500/10 transition-colors border border-transparent hover:border-primary-500/20 bg-[var(--color-surface-3)] hover:shadow-sm"
-                >
-                  <Icon name="edit" size={16} strokeWidth={2} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </div>
+        </section>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && !loading && (
-        <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-xs text-gray-500">
-            Página {page} de {totalPages} · {total} clientes
-          </p>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setPage(page - 1)} disabled={page <= 1} className={paginationBtn}>
-              ← Anterior
-            </button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              let pg: number;
-              if (totalPages <= 7) {
-                pg = i + 1;
-              } else if (page <= 4) {
-                pg = i + 1;
-              } else if (page >= totalPages - 3) {
-                pg = totalPages - 6 + i;
-              } else {
-                pg = page - 3 + i;
-              }
-              return (
-                <button key={pg} onClick={() => setPage(pg)} className={paginationPage(pg === page)}>
-                  {pg}
-                </button>
-              );
-            })}
-            <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className={paginationBtn}>
-              Siguiente →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
-      {editCustomer && (
-        <EditCustomerModal
-          customer={editCustomer}
-          onClose={() => setEditCustomer(null)}
-          onUpdate={() => { reload(); setEditCustomer(null); }}
-          onDeleted={() => { reload(); }}
+      {selected && (
+        <CustomerSheet
+          customer={selected}
+          periodLabel={periodLabel}
+          onClose={() => setSelected(null)}
+          onEdit={() => { setForm({ open: true, customer: selected }); setSelected(null); }}
+          onDelete={() => { setDeleting(selected); setSelected(null); }}
         />
       )}
 
-      {historyCustomer && (
-        <CustomerHistoryModal
-          customer={historyCustomer}
-          onClose={() => setHistoryCustomer(null)}
-        />
+      {form.open && (
+        <CustomerFormModal customer={form.customer} onClose={() => setForm({ open: false, customer: null })} onSaved={reload} />
       )}
 
-      {/* Create modal */}
-      {showCreate && (
-        <CreateCustomerModal onClose={() => setShowCreate(false)} onCreated={reload} />
-      )}
-    </div>
+      <ConfirmModal
+        isOpen={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleDelete}
+        loading={deleteBusy}
+        variant="danger"
+        title={deleting ? `Eliminar a ${deleting.name}` : 'Eliminar cliente'}
+        message="Sus pedidos se conservan en los reportes, pero ya no quedan a su nombre. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar cliente"
+        cancelLabel="Volver"
+      />
+    </PageShell>
   );
 }

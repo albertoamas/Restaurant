@@ -1,199 +1,183 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserRole } from '@pos/shared';
-import type { ExpenseDto } from '@pos/shared';
+import type { ExpenseConceptDto, ExpenseDto } from '@pos/shared';
 import { expensesApi } from '../api/expenses.api';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAuth } from '../context/auth.context';
-import { Skeleton } from '../components/ui/Skeleton';
-import { Icon } from '../components/ui/Icon';
+import { useBranchNames } from '../hooks/useBranches';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { EmptyState } from '../components/ui/EmptyState';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
+import { PickBranch } from '../components/branch/PickBranch';
+import { bs } from '../components/report';
 import { ExpenseEditModal } from '../components/expenses/ExpenseEditModal';
-import { ExpenseConceptsModal } from '../components/expenses/ExpenseConceptsModal';
-import { QuickExpensePanel } from '../components/expenses/QuickExpensePanel';
-import { ExpenseBrowser } from '../components/expenses/ExpenseBrowser';
-import { ExpenseCalendar } from '../components/expenses/ExpenseCalendar';
+import { ExpensePicker } from '../components/expenses/ExpensePicker';
+import { QuickExpenseDialog } from '../components/expenses/QuickExpenseDialog';
+import { ConceptFormModal, type ConceptFormTarget } from '../components/expenses/ConceptFormModal';
+import { ExpenseCatalog } from '../components/expenses/ExpenseCatalog';
 import { ExpenseList } from '../components/expenses/ExpenseList';
-import { expenseCategoryLabel } from '../utils/expense-labels';
+import { ExpenseMovements } from '../components/expenses/ExpenseMovements';
+import { ExpenseDetailSheet } from '../components/expenses/ExpenseDetailSheet';
 import { handleApiError } from '../utils/api-error';
-import { today } from '../utils/date';
-import { getBoliviaDayBounds, toBoliviaDateString } from '../utils/timezone';
+import { formatDayRange, today } from '../utils/date';
+import { getBoliviaDayBounds } from '../utils/timezone';
 
-type Period = 'today' | 'week' | 'month' | 'custom';
+type Tab = 'register' | 'movements' | 'catalog';
 
-function getRange(period: Period, customFrom: string, customTo: string): { from: string; to: string } {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const fmt = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  const todayStr = fmt(d);
-  if (period === 'today') return { from: todayStr, to: todayStr };
-  if (period === 'week') {
-    const day = d.getDay() || 7;
-    const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
-    return { from: fmt(mon), to: todayStr };
-  }
-  if (period === 'month') {
-    const first = new Date(d.getFullYear(), d.getMonth(), 1);
-    const last  = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    return { from: fmt(first), to: fmt(last) };
-  }
-  return { from: customFrom, to: customTo };
-}
 
-const PERIODS: { key: Period; label: string }[] = [
-  { key: 'today',  label: 'Hoy' },
-  { key: 'week',   label: 'Esta semana' },
-  { key: 'month',  label: 'Este mes' },
-  { key: 'custom', label: 'Rango' },
-];
+const TAB_HINT: Record<Tab, string> = {
+  register:  'Toca el gasto y escribe el monto',
+  movements: 'Revisa, corrige o anula',
+  catalog:   'Los gastos que registras seguido y sus categorías',
+};
 
-const DATE_INPUT =
-  'rounded-xl border border-[var(--border-subtle)] bg-[var(--color-surface-card)] px-3 py-1.5 text-sm text-gray-700 ' +
-  'outline-none transition-[border-color,box-shadow] focus:border-primary-500 focus:ring-[3px] focus:ring-primary-500/20';
-
+/**
+ * Gastos en tres pestañas: Registrar (lo frecuente: tocar el gasto y escribir el monto),
+ * Movimientos (revisar un período, filtrar, corregir o anular) y Lista (qué gastos existen y sus
+ * categorías). Se abre en Registrar.
+ */
 export function ExpensesPage() {
   const { currentBranchId, user } = useAuth();
-  const [period, setPeriod]         = useState<Period>('month');
-  const [customFrom, setCustomFrom] = useState(today);
-  const [customTo, setCustomTo]     = useState(today);
-  const [showConcepts, setConcepts] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ExpenseDto | null>(null);
-  const [deletingId, setDeletingId]         = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [view, setView]                     = useState<'activity' | 'calendar'>('activity');
-  const [selectedDay, setSelectedDay]       = useState<string | null>(null);
+  const { branchName } = useBranchNames();
+  const [tab, setTab] = useState<Tab>('register');
+  // Movimientos se monta al abrirla por primera vez y queda montada: conserva filtros y página.
+  const [movementsVisited, setMovementsVisited] = useState(false);
 
-  const { from, to } = getRange(period, customFrom, customTo);
-  const branchParam = user?.role === UserRole.OWNER ? (currentBranchId ?? undefined) : undefined;
+  const [active, setActive]             = useState<ExpenseConceptDto | null>(null);
+  const [creating, setCreating]         = useState<ConceptFormTarget | null>(null);
+  const [detail, setDetail]             = useState<ExpenseDto | null>(null);
+  const [editing, setEditing]           = useState<ExpenseDto | null>(null);
+  const [voiding, setVoiding]           = useState<ExpenseDto | null>(null);
+  const [voidBusy, setVoidBusy]         = useState(false);
 
-  const { start: utcFrom } = getBoliviaDayBounds(from);
-  const { end:   utcTo   } = getBoliviaDayBounds(to);
+  const isOwner = user?.role === UserRole.OWNER;
+  const branchParam = isOwner ? (currentBranchId ?? undefined) : undefined;
+  // Un gasto siempre es de una sucursal: en la vista consolidada primero se elige una.
+  const canRegister = !isOwner || currentBranchId !== null;
+  const scope = currentBranchId ? `Sucursal ${branchName(currentBranchId) ?? 'elegida'}` : 'Todas las sucursales';
 
-  const { expenses, summary, loading, reload } = useExpenses(utcFrom, utcTo, branchParam);
+  // "Registrado hoy": pocos movimientos, se piden completos.
+  const todayStr = today();
+  const { start: todayFrom, end: todayTo } = getBoliviaDayBounds(todayStr);
+  // `invalidate` refresca todo lo de gastos: también Movimientos, aunque el socket esté caído.
+  const { expenses: todayExpenses, summary: todaySummary, loading: todayLoading, invalidate } =
+    useExpenses(todayFrom, todayTo, branchParam);
 
-  const handleDelete = async (id: string) => {
+  const changeTab = (t: Tab) => { setTab(t); if (t === 'movements') setMovementsVisited(true); };
+
+  const handleVoid = async () => {
+    if (!voiding) return;
+    setVoidBusy(true);
     try {
-      await expensesApi.void(id);
+      await expensesApi.void(voiding.id);
       toast.success('Gasto anulado. El registro se conserva en el historial.');
-      setDeletingId(null);
-      reload();
+      setVoiding(null);
+      invalidate();
     } catch (err) {
       handleApiError(err, 'Error al anular el gasto');
+    } finally {
+      setVoidBusy(false);
     }
   };
 
-  const summaryCategories = Object.entries(summary.byCategory)
-    .filter(([, v]) => v > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  const filteredExpenses = useMemo(() => expenses.filter((expense) => {
-    const matchesCategory = !selectedCategory || expense.items.some((item) =>
-      (item.categoryName ?? expenseCategoryLabel(expense)) === selectedCategory,
-    );
-    const matchesDay = !selectedDay || toBoliviaDateString(new Date(expense.expenseDate)) === selectedDay;
-    return matchesCategory && matchesDay;
-  }), [expenses, selectedCategory, selectedDay]);
-
   return (
     <PageShell>
-      {/* Cabecera */}
-      <div className="mb-5 rounded-2xl border border-[var(--border-subtle)] shadow-card-xl" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="px-4 py-4 sm:px-5">
-          <div>
-            <h1 className="font-heading text-xl font-black text-gray-900 sm:text-2xl">Gastos</h1>
-            <p className="mt-0.5 text-xs text-gray-500">
-              {summary.transactionCount} movimiento{summary.transactionCount !== 1 ? 's' : ''}
-              {' · '}
-              {from === to ? from : `${from} → ${to}`}
-            </p>
-          </div>
-        </div>
+      <PageHeader
+        title="Gastos"
+        description={`${TAB_HINT[tab]}. ${scope}.`}
+        actions={
+          <SegmentedControl
+            label="Sección de gastos"
+            value={tab}
+            onChange={changeTab}
+            options={[
+              { value: 'register', label: 'Registrar' },
+              { value: 'movements', label: 'Movimientos' },
+              { value: 'catalog', label: 'Lista' },
+            ]}
+          />
+        }
+      />
 
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--border-subtle)] px-4 py-3 sm:px-5">
-          {PERIODS.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                period === p.key
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-[var(--color-surface-2)] text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-          {period === 'custom' && (
-            <>
-              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className={DATE_INPUT} />
-              <span className="shrink-0 text-sm text-gray-400">→</span>
-              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className={DATE_INPUT} />
-            </>
-          )}
-        </div>
-      </div>
+      {tab === 'register' && (
+        <div className="space-y-4">
+          <section className="rounded-card border border-line bg-surface-card shadow-raised p-4 sm:p-5">
+            {canRegister ? (
+              <ExpensePicker
+                onPick={setActive}
+                onAdd={(name) => setCreating({ mode: 'create', name, thenRegister: true })}
+              />
+            ) : (
+              <PickBranch description="Cada gasto se registra en una sucursal." />
+            )}
+          </section>
 
-      {user?.role === UserRole.OWNER && !currentBranchId && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5">
-          <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-amber-600" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">
-            Estás viendo <strong>todas las sucursales</strong>. Elegí una en el menú lateral para registrar gastos.
-          </p>
+          <section className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+            <div className="flex items-baseline justify-between gap-3 px-4 py-3 sm:px-5">
+              <h2 className="text-heading font-semibold text-main">Registrado hoy</h2>
+              <span className="text-body font-semibold text-main tabular-nums">{bs(todaySummary.total)}</span>
+            </div>
+            <div className="border-t border-line">
+              {todayLoading ? (
+                <div className="p-4"><Skeleton variant="rect" h="96px" /></div>
+              ) : todayExpenses.length === 0 ? (
+                <EmptyState compact icon="receipt" title={`Nada registrado hoy, ${formatDayRange(todayStr, todayStr)}`} description="Lo que registres aparece aquí para revisarlo al momento." />
+              ) : (
+                <ExpenseList expenses={todayExpenses} onOpen={setDetail} />
+              )}
+            </div>
+          </section>
         </div>
       )}
 
-      {/* Registro rápido */}
-      <QuickExpensePanel onRegistered={reload} onManage={() => setConcepts(true)} />
+      {tab === 'catalog' && <ExpenseCatalog />}
 
-      {/* Filtro, vista y contenido — todo en una sola tarjeta */}
-      <ExpenseBrowser
-        categories={summaryCategories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        view={view}
-        onChangeView={setView}
-        selectedDay={selectedDay}
-        onClearDay={() => setSelectedDay(null)}
-      >
-        {view === 'calendar' ? (
-          <ExpenseCalendar
-            from={from}
-            to={to}
-            byDay={summary.byDay}
-            selectedDay={selectedDay}
-            onSelect={(day) => { setSelectedDay(day === selectedDay ? null : day); setView('activity'); }}
-          />
-        ) : loading ? (
-          <div className="space-y-3 p-4 sm:p-5">
-            <Skeleton variant="card" />
-            <Skeleton variant="card" />
-            <Skeleton variant="card" />
-          </div>
-        ) : filteredExpenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
-            <Icon name="receipt" size={36} strokeWidth={1.5} className="mb-3 text-gray-300" />
-            <p className="text-sm font-bold text-gray-600">Sin gastos en este período</p>
-            <p className="mt-1 text-xs text-gray-400">Registra el primero desde el panel de arriba.</p>
-          </div>
-        ) : (
-          <ExpenseList
-            expenses={filteredExpenses}
-            deletingId={deletingId}
-            onEdit={setEditingExpense}
-            onConfirmDelete={setDeletingId}
-            onCancelDelete={() => setDeletingId(null)}
-            onDelete={handleDelete}
-          />
-        )}
-      </ExpenseBrowser>
+      {movementsVisited && (
+        <div hidden={tab !== 'movements'}>
+          <ExpenseMovements branchId={branchParam} onOpen={setDetail} />
+        </div>
+      )}
 
-      <ExpenseEditModal
-        expense={editingExpense}
-        onClose={() => setEditingExpense(null)}
-        onSaved={reload}
+      {active && (
+        <QuickExpenseDialog
+          concept={active}
+          onClose={() => setActive(null)}
+          onSaved={() => { setActive(null); invalidate(); }}
+        />
+      )}
+
+      {creating && (
+        <ConceptFormModal
+          target={creating}
+          onClose={() => setCreating(null)}
+          // Encadena directo al registro: para eso lo estaba agregando.
+          onSaved={(concept) => setActive(concept)}
+        />
+      )}
+
+      <ExpenseDetailSheet
+        expense={detail}
+        onClose={() => setDetail(null)}
+        onEdit={(e) => { setDetail(null); setEditing(e); }}
+        onVoid={(e) => { setDetail(null); setVoiding(e); }}
       />
+      {editing && <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} onSaved={invalidate} />}
 
-      <ExpenseConceptsModal isOpen={showConcepts} onClose={() => setConcepts(false)} />
+      <ConfirmModal
+        isOpen={voiding !== null}
+        onClose={() => setVoiding(null)}
+        onConfirm={handleVoid}
+        loading={voidBusy}
+        variant="danger"
+        title={voiding ? `Anular gasto de ${bs(voiding.amount)}` : 'Anular gasto'}
+        message="Deja de contar en los totales y reportes. El registro se conserva en el historial."
+        confirmLabel="Anular gasto"
+        cancelLabel="Volver"
+      />
     </PageShell>
   );
 }

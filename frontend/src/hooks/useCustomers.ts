@@ -8,8 +8,10 @@ import { queryKeys } from '../lib/query-keys';
 
 const PAGE_SIZE = 50;
 
-type SortBy  = 'name' | 'totalSpent' | 'purchaseCount';
-type SortDir = 'asc' | 'desc';
+export type CustomerSortBy  = 'name' | 'totalSpent' | 'purchaseCount';
+export type CustomerSortDir = 'asc' | 'desc';
+type SortBy  = CustomerSortBy;
+type SortDir = CustomerSortDir;
 
 export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) {
   const queryClient = useQueryClient();
@@ -34,6 +36,7 @@ export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) 
 
   useSocketEvent(SOCKET_EVENTS.CUSTOMER_CREATED, invalidate);
   useSocketEvent(SOCKET_EVENTS.CUSTOMER_UPDATED, invalidate);
+  useSocketEvent(SOCKET_EVENTS.CUSTOMER_DELETED, invalidate);
 
   function setQ(value: string)    { setQState(value);    setPageState(1); }
   function setPage(pg: number)    { setPageState(pg); }
@@ -47,6 +50,9 @@ export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) 
     setPageState(1);
   }
 
+  /** Orden explícito (el selector "Ordenar por"): no alterna como el encabezado de la tabla. */
+  function setSortTo(by: SortBy, dir: SortDir) { setSortByState(by); setSortDirState(dir); setPageState(1); }
+
   const total      = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -56,7 +62,7 @@ export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) 
     total,
     q,       setQ,
     page,    totalPages, setPage,
-    sortBy,  sortDir,    setSort,
+    sortBy,  sortDir,    setSort, setSortTo,
     reload:  refetch,
   };
 }

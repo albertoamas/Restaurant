@@ -11,7 +11,7 @@ export function TermsPage() {
       <LegalSection title="1. Quién ofrece el servicio">
         <LegalP>
           YankoPOS es un servicio de software (SaaS) para la gestión de restaurantes: pedidos, cocina, caja,
-          reportes, gastos, clientes y sorteos. Lo ofrece <strong className="text-[var(--color-text-main)]">Alberto Amas Villarroel</strong>,
+          reportes, gastos, clientes y sorteos. Lo ofrece <strong className="text-main">Alberto Amas Villarroel</strong>,
           persona natural con domicilio en Tarija, Bolivia (en adelante, "nosotros" o "el Proveedor").
         </LegalP>
         <LegalP>

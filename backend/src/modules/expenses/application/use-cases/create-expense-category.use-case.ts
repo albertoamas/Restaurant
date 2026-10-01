@@ -1,17 +1,9 @@
-import { BadRequestException, ConflictException, Inject, Injectable, Optional } from '@nestjs/common';
-import { SOCKET_EVENTS } from '@pos/shared';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Optional } from '@nestjs/common';
+import { EXPENSE_CATALOG_LIMITS, SOCKET_EVENTS } from '@pos/shared';
 import { ExpenseCategoryEntity } from '../../domain/entities/expense-category.entity';
 import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
 import { EventsService } from '../../../events/events.service';
 import { CreateExpenseCategoryDto } from '../dto/create-expense-category.dto';
-
-const DEFAULT_CATEGORIES: { name: string; icon: string; trackQuantity: boolean; sortOrder: number }[] = [
-  { name: 'Insumos',    icon: '🧂', trackQuantity: true,  sortOrder: 10 },
-  { name: 'Personal',   icon: '👤', trackQuantity: false, sortOrder: 20 },
-  { name: 'Servicios',  icon: '💡', trackQuantity: false, sortOrder: 30 },
-  { name: 'Transporte', icon: '🚗', trackQuantity: false, sortOrder: 40 },
-  { name: 'Otro',       icon: '📋', trackQuantity: false, sortOrder: 99 },
-];
 
 @Injectable()
 export class CreateExpenseCategoryUseCase {
@@ -27,6 +19,8 @@ export class CreateExpenseCategoryUseCase {
     if (!name) throw new BadRequestException('El nombre de la categoría es obligatorio');
 
     const existing = await this.repo.findByName(tenantId, name);
+    // Crear o reactivar suma una categoría activa: ambas respetan el tope.
+    if (!existing?.isActive) await this.assertBelowLimit(tenantId);
     if (existing) {
       // El índice único (tenant, name) también cubre las desactivadas: se
       // reactiva en vez de fallar, para que borrar y volver a crear funcione.
@@ -59,23 +53,12 @@ export class CreateExpenseCategoryUseCase {
     return created;
   }
 
-  /**
-   * Siembra las categorías base la primera vez. Alta masiva idempotente: si dos
-   * requests del mismo tenant entran a la vez, el segundo ignora los duplicados
-   * en vez de chocar contra el único (tenant, name).
-   */
-  async seedDefaults(tenantId: string): Promise<ExpenseCategoryEntity[]> {
-    await this.repo.saveMany(
-      DEFAULT_CATEGORIES.map((def) => ExpenseCategoryEntity.create({
-        tenantId,
-        name:          def.name,
-        icon:          def.icon,
-        trackQuantity: def.trackQuantity,
-        sortOrder:     def.sortOrder,
-      })),
-    );
-    // Relectura: con `skipDuplicates` las filas que quedaron pueden ser las del
-    // request que ganó la carrera, con otros ids que los recién generados.
-    return this.repo.findAll(tenantId);
+  private async assertBelowLimit(tenantId: string): Promise<void> {
+    const active = await this.repo.findAll(tenantId);
+    if (active.length >= EXPENSE_CATALOG_LIMITS.categories) {
+      throw new ForbiddenException(
+        `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.categories} categorías de gasto. Elimina las que ya no uses para crear otra.`,
+      );
+    }
   }
 }

@@ -28,6 +28,12 @@ export const expensesApi = {
   deleteCategory: (id: string) =>
     client.delete(`/api/v1/expenses/categories/${id}`).then((r) => r.data),
 
+  /** Crea las categorías elegidas del catálogo sugerido, con sus gastos. */
+  loadSuggestedCatalog: (categories: string[]) =>
+    client
+      .post<{ categories: number; concepts: number }>('/api/v1/expenses/catalog/suggested', { categories })
+      .then((r) => r.data),
+
   // ── Gastos predefinidos ────────────────────────────────────────
 
   getConcepts: () =>
@@ -50,6 +56,22 @@ export const expensesApi = {
         params: { from, to, ...(branchId ? { branchId } : {}) },
       })
       .then((r) => r.data),
+
+  /** Una página de movimientos con filtros; el total viene en X-Total-Count. */
+  getPage: (params: {
+    from: string; to: string; branchId?: string;
+    category?: string; q?: string; page: number; limit: number;
+  }): Promise<{ data: ExpenseDto[]; total: number }> =>
+    client
+      .get<ExpenseDto[]>('/api/v1/expenses', {
+        params: {
+          from: params.from, to: params.to, page: params.page, limit: params.limit,
+          ...(params.branchId ? { branchId: params.branchId } : {}),
+          ...(params.category ? { category: params.category } : {}),
+          ...(params.q ? { q: params.q } : {}),
+        },
+      })
+      .then((r) => ({ data: r.data, total: Number(r.headers['x-total-count'] ?? r.data.length) })),
 
   getSummary: (from: string, to: string, branchId?: string) =>
     client

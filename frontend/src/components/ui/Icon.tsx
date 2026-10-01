@@ -39,6 +39,8 @@ export type IconName =
   | 'print'
   | 'logout'
   | 'menu'
+  | 'sidebar'
+  | 'more'
   // Navegación / orientación
   | 'chevron-down'
   | 'chevron-up'
@@ -84,7 +86,12 @@ export type IconName =
   | 'trending-down'
   // Tema
   | 'sun'
-  | 'moon';
+  | 'moon'
+  // Pantalla de cocina
+  | 'volume'
+  | 'volume-off'
+  | 'maximize'
+  | 'minimize';
 
 interface IconProps {
   name: IconName;
@@ -250,9 +257,18 @@ const PATHS: Record<IconName, string | string[]> = {
   'trending-up':   'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
   'trending-down': 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',
 
+  /* ── Layout ──────────────────────────────────────────────────── */
+  sidebar: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 4v16',
+  // Tres puntos: con strokeWidth ~3 y extremos redondeados se dibujan como puntos.
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+
   /* ── Tema ────────────────────────────────────────────────────── */
   sun: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
   moon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
+  volume: 'M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z',
+  'volume-off': 'M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z',
+  maximize: 'M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15',
+  minimize: 'M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25',
 };
 
 export function Icon({ name, size = 18, strokeWidth = 1.75, className = '' }: IconProps) {

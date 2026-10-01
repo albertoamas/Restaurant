@@ -20,15 +20,15 @@
 
     <!-- Color de la barra del navegador / ventana de la app. Lo ajusta el script de abajo y
          luego useTheme al cambiar de tema. Valores = THEME_COLORS de src/theme-colors.ts (lo verifica src/index-html.spec.ts). -->
-    <meta name="theme-color" content="#060302" />
+    <meta name="theme-color" content="#f9f4f2" />
 
     <!-- FOUC prevention: apply stored theme before first paint -->
     <script>
       try {
-        var t = localStorage.getItem('pos_theme') || 'dark';
+        var t = localStorage.getItem('pos_color_theme') || 'light';
         if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
         document.querySelector('meta[name="theme-color"]')
-          .setAttribute('content', t === 'dark' ? '#060302' : '#f9f4f2');
+          .setAttribute('content', t === 'dark' ? '#1b1614' : '#f9f4f2');
       } catch(e) {}
     </script>
   </head>

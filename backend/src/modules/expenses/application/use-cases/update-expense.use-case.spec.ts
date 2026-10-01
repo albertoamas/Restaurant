@@ -3,6 +3,8 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { UpdateExpenseUseCase } from './update-expense.use-case';
 import { ExpenseRepositoryPort } from '../../domain/ports/expense-repository.port';
 import { ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
+import { ExpenseConceptRepositoryPort } from '../../domain/ports/expense-concept-repository.port';
+import { ExpenseItemsService } from '../services/expense-items.service';
 import { Expense } from '../../domain/entities/expense.entity';
 
 const TENANT = 'tenant-1';
@@ -43,11 +45,13 @@ describe('UpdateExpenseUseCase', () => {
   let useCase: UpdateExpenseUseCase;
   let repo: MockProxy<ExpenseRepositoryPort>;
   let categoryRepo: MockProxy<ExpenseCategoryRepositoryPort>;
+  let conceptRepo: MockProxy<ExpenseConceptRepositoryPort>;
 
   beforeEach(() => {
     repo         = mock<ExpenseRepositoryPort>();
     categoryRepo = mock<ExpenseCategoryRepositoryPort>();
-    useCase      = new UpdateExpenseUseCase(repo, categoryRepo);
+    conceptRepo  = mock<ExpenseConceptRepositoryPort>();
+    useCase      = new UpdateExpenseUseCase(repo, new ExpenseItemsService(categoryRepo, conceptRepo));
     repo.update.mockImplementation(async () => makeExpense('ACTIVE'));
   });
 
@@ -74,5 +78,47 @@ describe('UpdateExpenseUseCase', () => {
     const [, , patch, items] = repo.update.mock.calls[0];
     expect(patch.amount).toBe(100);
     expect(items[0].totalPrice).toBe(100);
+  });
+
+  it('rechaza una categoría que no es del negocio', async () => {
+    repo.findById.mockResolvedValue(makeExpense('ACTIVE'));
+    categoryRepo.findById.mockResolvedValue(null);
+
+    await expect(useCase.execute(EXPENSE_ID, TENANT, {
+      items: [{ name: 'Carne', quantity: 1, unitPrice: 10, categoryId: 'cat-ajena' }],
+    })).rejects.toThrow(NotFoundException);
+    expect(categoryRepo.findById).toHaveBeenCalledWith('cat-ajena', TENANT);
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un gasto predefinido que no es del negocio', async () => {
+    repo.findById.mockResolvedValue(makeExpense('ACTIVE'));
+    conceptRepo.findById.mockResolvedValue(null);
+
+    await expect(useCase.execute(EXPENSE_ID, TENANT, {
+      items: [{ name: 'Carne', quantity: 1, unitPrice: 10, conceptId: 'concepto-ajeno' }],
+    })).rejects.toThrow(NotFoundException);
+    expect(repo.update).not.toHaveBeenCalled();
+  });
+
+  it('conserva la hora si el día no cambia y usa mediodía si cambia', async () => {
+    const expense = makeExpense('ACTIVE'); // 21/09, 12:00 en Bolivia (16:00Z)
+    repo.findById.mockResolvedValue(expense);
+
+    await useCase.execute(EXPENSE_ID, TENANT, { ...DTO, expenseDate: '2026-09-21' });
+    expect(repo.update.mock.calls[0][2].expenseDate).toBe(expense.expenseDate);
+
+    await useCase.execute(EXPENSE_ID, TENANT, { ...DTO, expenseDate: '2026-09-20' });
+    expect(repo.update.mock.calls[1][2].expenseDate.toISOString()).toBe('2026-09-20T16:00:00.000Z');
+  });
+
+  it('sin el campo conserva el proveedor; con cadena vacía lo borra', async () => {
+    repo.findById.mockResolvedValue(Expense.reconstitute({ ...makeExpense('ACTIVE'), supplierName: 'Mercado', items: [] }));
+
+    await useCase.execute(EXPENSE_ID, TENANT, DTO);
+    expect(repo.update.mock.calls[0][2].supplierName).toBe('Mercado');
+
+    await useCase.execute(EXPENSE_ID, TENANT, { ...DTO, supplierName: '' });
+    expect(repo.update.mock.calls[1][2].supplierName).toBeNull();
   });
 });

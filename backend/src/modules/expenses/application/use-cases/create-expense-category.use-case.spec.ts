@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { CreateExpenseCategoryUseCase } from './create-expense-category.use-case';
 import { ExpenseCategoryRepositoryPort } from '../../domain/ports/expense-category-repository.port';
@@ -21,6 +22,7 @@ describe('CreateExpenseCategoryUseCase', () => {
     repo    = mock<ExpenseCategoryRepositoryPort>();
     useCase = new CreateExpenseCategoryUseCase(repo);
     repo.findByName.mockResolvedValue(null);
+    repo.findAll.mockResolvedValue([]);
     repo.save.mockImplementation(async (c) => c);
     repo.update.mockImplementation(async (c) => c);
   });
@@ -31,6 +33,19 @@ describe('CreateExpenseCategoryUseCase', () => {
     expect(repo.save).toHaveBeenCalledTimes(1);
     expect(result.name).toBe('Delivery');
     expect(result.isActive).toBe(true);
+  });
+
+  it('no crea más categorías al llegar al tope de activas', async () => {
+    repo.findAll.mockResolvedValue(Array.from({ length: EXPENSE_CATALOG_LIMITS.categories }, () => makeCategory(true)));
+    await expect(useCase.execute(TENANT, { name: 'Delivery' })).rejects.toThrow(ForbiddenException);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('tampoco reactiva una eliminada si ya se llegó al tope', async () => {
+    repo.findByName.mockResolvedValue(makeCategory(false));
+    repo.findAll.mockResolvedValue(Array.from({ length: EXPENSE_CATALOG_LIMITS.categories }, () => makeCategory(true)));
+    await expect(useCase.execute(TENANT, { name: 'Insumos' })).rejects.toThrow(ForbiddenException);
+    expect(repo.update).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el nombre viene vacío', async () => {

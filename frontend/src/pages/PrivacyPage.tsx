@@ -11,7 +11,7 @@ export function PrivacyPage() {
       <LegalSection title="1. Responsable del tratamiento">
         <LegalP>
           Esta Política aplica al servicio YankoPOS, operado por{' '}
-          <strong className="text-[var(--color-text-main)]">Alberto Amas Villarroel</strong>, persona natural con
+          <strong className="text-main">Alberto Amas Villarroel</strong>, persona natural con
           domicilio en Tarija, Bolivia. Para cualquier consulta sobre tus datos, puedes escribir a{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-primary-500 hover:underline">{CONTACT_EMAIL}</a>.
         </LegalP>
@@ -21,11 +21,11 @@ export function PrivacyPage() {
         </LegalP>
         <LegalList>
           <li>
-            <strong className="text-[var(--color-text-main)]">Datos del Cliente</strong> (el restaurante y su
+            <strong className="text-main">Datos del Cliente</strong> (el restaurante y su
             personal): aquí nosotros somos responsables del tratamiento.
           </li>
           <li>
-            <strong className="text-[var(--color-text-main)]">Datos de los clientes del restaurante</strong>{' '}
+            <strong className="text-main">Datos de los clientes del restaurante</strong>{' '}
             (los comensales que el Cliente registra en el sistema): aquí el Cliente es responsable, y nosotros
             actuamos como encargados. Almacenamos y procesamos esos datos por cuenta del Cliente, no con fines
             propios.
@@ -34,21 +34,21 @@ export function PrivacyPage() {
       </LegalSection>
 
       <LegalSection title="2. Qué datos recolectamos">
-        <LegalP><strong className="text-[var(--color-text-main)]">Del Cliente y su equipo:</strong></LegalP>
+        <LegalP><strong className="text-main">Del Cliente y su equipo:</strong></LegalP>
         <LegalList>
           <li>Nombre, correo electrónico y contraseña (almacenada de forma cifrada, nunca en texto plano).</li>
           <li>Rol (propietario o cajero) y sucursal asignada.</li>
           <li>Datos del negocio: nombre comercial, dirección, teléfono y logotipo, si los configuras.</li>
         </LegalList>
 
-        <LegalP className="pt-2"><strong className="text-[var(--color-text-main)]">Sobre la operación del restaurante:</strong></LegalP>
+        <LegalP className="pt-2"><strong className="text-main">Sobre la operación del restaurante:</strong></LegalP>
         <LegalList>
           <li>Pedidos, productos, precios, pagos, gastos y sesiones de caja registrados en el sistema.</li>
           <li>Datos de los clientes del restaurante que el Cliente decida registrar: nombre, teléfono, correo,
             notas y su historial de pedidos o participación en sorteos.</li>
         </LegalList>
 
-        <LegalP className="pt-2"><strong className="text-[var(--color-text-main)]">Datos técnicos:</strong></LegalP>
+        <LegalP className="pt-2"><strong className="text-main">Datos técnicos:</strong></LegalP>
         <LegalList>
           <li>Un token de sesión (JWT) guardado en el navegador para mantener tu sesión iniciada.</li>
           <li>Registros técnicos del servidor (dirección IP, fecha y hora de las solicitudes) usados para

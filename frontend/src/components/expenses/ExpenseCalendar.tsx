@@ -1,3 +1,5 @@
+import { eachDay } from '../../utils/date';
+
 interface ExpenseCalendarProps {
   from: string;
   to: string;
@@ -8,90 +10,80 @@ interface ExpenseCalendarProps {
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+/** Tope de días dibujados (unos 2 meses): un rango largo no es un calendario útil. */
+export const CALENDAR_MAX_DAYS = 62;
+
+/** "1.1k" en celular, donde no entra "Bs 1103". */
+const short = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0));
 
 /**
- * Mapa de calor diario. La intensidad usa el naranja de la marca mezclado sobre
- * la superficie del tema, así que funciona igual en claro y oscuro.
+ * Mapa de calor diario. La intensidad mezcla el naranja de la marca sobre la superficie del
+ * tema, así que funciona igual en claro y oscuro. Los 7 días de la semana entran en celular.
  */
 export function ExpenseCalendar({ from, to, byDay, selectedDay, onSelect }: ExpenseCalendarProps) {
-  const days: string[] = [];
-  const cursor = new Date(`${from}T12:00:00`);
-  const end    = new Date(`${to}T12:00:00`);
-  while (cursor <= end && days.length < 62) {
-    const year  = cursor.getFullYear();
-    const month = String(cursor.getMonth() + 1).padStart(2, '0');
-    const day   = String(cursor.getDate()).padStart(2, '0');
-    days.push(`${year}-${month}-${day}`);
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
+  const days = eachDay(from, to).slice(0, CALENDAR_MAX_DAYS);
   const max = Math.max(1, ...Object.values(byDay));
-  const firstOffset = (new Date(`${days[0] ?? from}T12:00:00`).getDay() + 6) % 7;
+  // Lunes = 0: el día de la semana del primer día se calcula en UTC, como los días de eachDay.
+  const firstOffset = (new Date(`${days[0] ?? from}T12:00:00Z`).getUTCDay() + 6) % 7;
 
   return (
-    <div className="p-4 sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-xs text-gray-500">Toca un día para ver sus movimientos.</p>
-        <div className="flex shrink-0 items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-          Menor
+    <div className="p-3 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-label text-soft">Toca un día para ver sus movimientos.</p>
+        <div className="flex items-center gap-2 text-caption text-muted">
+          Menos
           <span
             className="h-2 w-12 rounded-full sm:w-16"
-            style={{
-              background:
-                'linear-gradient(to right, var(--color-surface-2), color-mix(in oklab, var(--color-primary-600) 45%, var(--color-surface-2)), var(--color-primary-600))',
-            }}
+            style={{ background: 'linear-gradient(to right, var(--color-surface-2), color-mix(in oklab, var(--color-primary-600) 45%, var(--color-surface-2)), var(--color-primary-600))' }}
           />
-          Mayor
+          Más
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[560px]">
-          <div className="mb-2 grid grid-cols-7 gap-2">
-            {WEEKDAYS.map((label) => (
-              <div key={label} className="px-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                {label}
-              </div>
-            ))}
-          </div>
+      <div className="mb-1.5 grid grid-cols-7 gap-1 sm:gap-2">
+        {WEEKDAYS.map((label) => (
+          <div key={label} className="px-1 text-caption font-medium text-muted">{label}</div>
+        ))}
+      </div>
 
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: firstOffset }).map((_, index) => <div key={`blank-${index}`} />)}
-            {days.map((day) => {
-              const amount    = byDay[day] ?? 0;
-              const intensity = amount / max;
-              const dayNumber = Number(day.slice(-2));
-              const active    = day === selectedDay;
-              const mix       = Math.round(12 + intensity * 74);
-
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => amount > 0 && onSelect(day)}
-                  disabled={amount === 0}
-                  style={{
-                    background: amount === 0
-                      ? 'var(--color-surface-2)'
-                      : `color-mix(in oklab, var(--color-primary-600) ${mix}%, var(--color-surface-2))`,
-                  }}
-                  className={`min-h-[72px] rounded-xl border p-2 text-left transition ${
-                    active
-                      ? 'border-gray-900 ring-2 ring-primary-500/30'
-                      : 'border-[var(--border-subtle)]'
-                  } ${amount > 0 ? 'hover:-translate-y-0.5 hover:shadow-card-md' : 'cursor-default opacity-60'}`}
-                >
-                  <span className={`text-xs font-black ${intensity > 0.55 ? 'text-white' : 'text-gray-600'}`}>
-                    {dayNumber}
-                  </span>
-                  <span className={`mt-3 block text-xs font-black tabular-nums ${intensity > 0.55 ? 'text-white' : 'text-gray-700'}`}>
-                    {amount > 0 ? `Bs ${amount.toFixed(0)}` : '—'}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        {Array.from({ length: firstOffset }).map((_, i) => <div key={`blank-${i}`} />)}
+        {days.map((day) => {
+          const amount    = byDay[day] ?? 0;
+          const intensity = amount / max;
+          const active    = day === selectedDay;
+          const strong    = intensity > 0.55;
+          const mix       = Math.round(12 + intensity * 74);
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => amount > 0 && onSelect(day)}
+              disabled={amount === 0}
+              aria-label={amount > 0 ? `${Number(day.slice(-2))}: Bs ${amount.toFixed(2)}` : `${Number(day.slice(-2))}: sin gastos`}
+              aria-pressed={active}
+              style={{
+                background: amount === 0
+                  ? 'var(--color-surface-2)'
+                  : `color-mix(in oklab, var(--color-primary-600) ${mix}%, var(--color-surface-2))`,
+              }}
+              className={[
+                'flex min-h-12 flex-col justify-between rounded-control border p-1.5 text-left transition sm:min-h-[72px] sm:p-2',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
+                active ? 'border-main ring-2 ring-primary-500/40' : 'border-line',
+                amount > 0 ? 'hover:brightness-95' : 'cursor-default opacity-60',
+              ].join(' ')}
+            >
+              <span className={`text-caption font-semibold ${strong ? 'text-white' : 'text-soft'}`}>{Number(day.slice(-2))}</span>
+              {amount > 0 && (
+                <span className={`text-caption font-bold tabular-nums ${strong ? 'text-white' : 'text-main'}`}>
+                  <span className="sm:hidden">{short(amount)}</span>
+                  <span className="hidden sm:inline">Bs {amount.toFixed(0)}</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

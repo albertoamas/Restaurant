@@ -10,7 +10,7 @@ import {
 import type { BranchSeries, ChartRow } from '../../../utils/branch-series';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useChartColors } from './chartColors';
-import { formatAmountAxis, formatBsFull } from './chartFormat';
+import { formatAmountAxis, formatBsFull, formatDayTick, useChartAnimation } from './chartFormat';
 
 interface Props {
   /** Una fila por día del rango (incluidos los días sin ventas), una columna por serie. */
@@ -21,7 +21,8 @@ interface Props {
 /** Ventas diarias de cada sucursal en el período: deja ver cuál crece y cuál cae. */
 export function BranchTrendChart({ data, series }: Props) {
   const c = useChartColors();
-  const chartData = data.map((row) => ({ ...row, fecha: String(row.date).slice(5) })); // MM-DD
+  const animate = useChartAnimation();
+  const chartData = data.map((row) => ({ ...row, fecha: formatDayTick(String(row.date)) }));
 
   return (
     <ResponsiveContainer width="100%" height={240}>
@@ -50,6 +51,7 @@ export function BranchTrendChart({ data, series }: Props) {
         />
         {series.map((s) => (
           <Line
+            isAnimationActive={animate}
             key={s.key}
             type="monotone"
             dataKey={s.key}

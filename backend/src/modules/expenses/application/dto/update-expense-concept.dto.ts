@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 
 export class UpdateExpenseConceptDto {
   @IsOptional()
@@ -21,13 +21,4 @@ export class UpdateExpenseConceptDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   defaultUnitPrice?: number | null;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  sortOrder?: number;
 }

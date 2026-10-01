@@ -9,23 +9,23 @@ import {
 } from 'recharts';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useChartColors } from './chartColors';
+import { formatAmountAxis, formatBsFull, formatDayTick, useChartAnimation } from './chartFormat';
 
 interface Props {
-  /** fecha (YYYY-MM-DD) → monto gastado ese día */
+  /** Monto gastado por día (`YYYY-MM-DD`); los días sin gastos no vienen. */
   byDay: Record<string, number>;
+  /** Todos los días del período: los que no tienen gastos se dibujan en 0. */
+  days: string[];
 }
 
-export function ExpenseTrendChart({ byDay }: Props) {
+export function ExpenseTrendChart({ byDay, days }: Props) {
   const c = useChartColors();
-  const chartData = Object.entries(byDay)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, amount]) => ({
-      fecha:  date.slice(5), // MM-DD
-      Gastos: amount,
-    }));
+  const animate = useChartAnimation();
+  const chartData = days.map((day) => ({
+    fecha:  formatDayTick(day),
+    Gastos: byDay[day] ?? 0,
+  }));
 
-  const fmtAxis = (v: number | string) => `Bs ${Number(v).toFixed(0)}`;
-  const fmtFull = (v: number | string) => `Bs ${Number(v).toFixed(2)}`;
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -50,18 +50,19 @@ export function ExpenseTrendChart({ byDay }: Props) {
           tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={fmtAxis}
-          width={64}
+          tickFormatter={formatAmountAxis}
+          width={44}
         />
 
         <Tooltip
-          content={<ChartTooltip formatter={fmtFull} />}
+          content={<ChartTooltip formatter={formatBsFull} />}
           wrapperStyle={{ background: 'none', border: 'none', boxShadow: 'none', padding: 0 }}
         />
 
         <Area
           type="monotone"
           dataKey="Gastos"
+          isAnimationActive={animate}
           stroke={c.rose}
           strokeWidth={2.5}
           fill="url(#gradGastos)"

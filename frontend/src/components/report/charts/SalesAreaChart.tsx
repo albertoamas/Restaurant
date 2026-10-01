@@ -10,6 +10,7 @@ import {
 import type { DailySeriesItemDto } from '@pos/shared';
 import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useChartColors } from './chartColors';
+import { formatAmountAxis, formatBsFull, formatDayTick, useChartAnimation } from './chartFormat';
 
 interface Props {
   data: DailySeriesItemDto[];
@@ -17,13 +18,12 @@ interface Props {
 
 export function SalesAreaChart({ data }: Props) {
   const c = useChartColors();
+  const animate = useChartAnimation();
   const chartData = data.map((d) => ({
-    fecha:  d.date.slice(5), // MM-DD
+    fecha:  formatDayTick(d.date),
     Ventas: d.totalSales,
   }));
 
-  const fmtSales = (v: number | string) => `Bs ${Number(v).toFixed(0)}`;
-  const fmtFull  = (v: number | string) => `Bs ${Number(v).toFixed(2)}`;
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -48,18 +48,19 @@ export function SalesAreaChart({ data }: Props) {
           tick={{ fill: TICK_COLOR, fontSize: TICK_SIZE }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={fmtSales}
-          width={64}
+          tickFormatter={formatAmountAxis}
+          width={44}
         />
 
         <Tooltip
-          content={<ChartTooltip formatter={fmtFull} />}
+          content={<ChartTooltip formatter={formatBsFull} />}
           wrapperStyle={{ background: 'none', border: 'none', boxShadow: 'none', padding: 0 }}
         />
 
         <Area
           type="monotone"
           dataKey="Ventas"
+          isAnimationActive={animate}
           stroke={c.primary}
           strokeWidth={2.5}
           fill="url(#gradVentas)"

@@ -1,77 +1,60 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { CashSessionStatus } from '@pos/shared';
+import { CashSessionStatus, UserRole } from '@pos/shared';
 import { cashSessionApi } from '../api/cash-session.api';
 import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
 import { Button } from '../components/ui/Button';
-import { Spinner } from '../components/ui/Spinner';
+import { Badge } from '../components/ui/Badge';
+import { Card } from '../components/ui/Card';
+import { EmptyState } from '../components/ui/EmptyState';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
+import { Skeleton } from '../components/ui/Skeleton';
 import { useCashSession } from '../hooks/useCashSession';
-import { formatDate } from '../utils/date';
+import { useBranchNames } from '../hooks/useBranches';
+import { formatBoliviaDayMonth, formatBoliviaTime } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
-import { Icon } from '../components/ui/Icon';
 import { CashAmountModal } from '../components/cash/CashAmountModal';
 import { HistoryModal } from '../components/cash/HistoryModal';
+import { CashSessionRow } from '../components/cash/CashSessionRow';
+import { OpenShift, ClosedShift } from '../components/cash/CurrentShift';
+import { PickBranch } from '../components/branch/PickBranch';
 
-function diffColor(diff: number | null) {
-  if (diff === null) return 'text-gray-500';
-  if (diff > 0) return 'text-emerald-600';
-  if (diff < 0) return 'text-red-500';
-  return 'text-gray-700';
-}
-
-interface StatRowProps {
-  label: string;
-  value: string;
-  muted?: boolean;
-  bold?: boolean;
-  bordered?: boolean;
-  valueClass?: string;
-}
-
-function StatRow({ label, value, muted, bold, bordered, valueClass }: StatRowProps) {
-  return (
-    <div className={`flex justify-between items-center py-3 ${bordered ? 'border-t border-[var(--border-subtle)]' : ''}`}>
-      <span className={`text-sm ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
-      <span className={`text-sm ${bold ? 'font-heading font-bold' : 'font-medium'} ${valueClass || 'text-gray-900'}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
+/** Cierres que se ven en la página; el resto, en "Ver todos". */
+const RECENT_CLOSINGS = 5;
 
 export function CashPage() {
   const { cashEnabled } = useSettingsStore();
-  if (!cashEnabled) return <Navigate to="/pos" replace />;
-
   const { currentBranchId, user } = useAuth();
-  const isOwner = user?.role === 'OWNER';
+  const isOwner = user?.role === UserRole.OWNER;
   const { session, history, loading, reload } = useCashSession(currentBranchId);
+  const { branchName } = useBranchNames();
+  const branchLabel = branchName(currentBranchId);
   const [showOpen, setShowOpen] = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  if (!currentBranchId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400 px-6">
-        <div className="w-14 h-14 rounded-2xl bg-[var(--color-surface-2)] flex items-center justify-center mb-4">
-          <Icon name="building" size={28} strokeWidth={1.5} className="text-gray-300" />
-        </div>
-        <p className="text-sm font-semibold text-gray-500 text-center">Selecciona una sucursal</p>
-        <p className="text-xs mt-1 text-center">para ver el estado de caja</p>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return <div className="flex justify-center py-12"><Spinner /></div>;
-  }
+  if (!cashEnabled) return <Navigate to="/pos" replace />;
 
   const isOpen = session?.status === CashSessionStatus.OPEN;
   const closedSessions = history.filter((s) => s.status === CashSessionStatus.CLOSED);
   const lastClosed = closedSessions[0] ?? null;
+
+  const header = (
+    <PageHeader
+      title="Caja"
+      description={branchLabel ? `Sucursal ${branchLabel}` : undefined}
+      meta={currentBranchId && !loading && (
+        isOpen ? <Badge variant="success" dot>Abierta</Badge> : <Badge dot>Cerrada</Badge>
+      )}
+    />
+  );
+
+  if (!currentBranchId) {
+    return <PageShell>{header}<PickBranch description="Cada sucursal tiene su propia caja." /></PageShell>;
+  }
 
   const handleOpen = async (amount: number, notes?: string) => {
     try {
@@ -95,148 +78,57 @@ export function CashPage() {
     }
   };
 
+  // Los cierres muestran el esperado y la diferencia: son del dueño.
+  const showClosings = isOwner;
+
   return (
     <PageShell>
-      <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-xl p-4 sm:p-5 mb-4" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="font-heading text-xl font-black text-gray-900">Control de Caja</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Apertura, cierre y conciliación del turno actual.</p>
-          </div>
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-            isOpen
-              ? 'bg-emerald-500/12 text-emerald-600 border-emerald-500/30'
-              : 'bg-[var(--color-surface-2)] text-gray-600 border-[var(--border-subtle)]'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-400'}`} />
-            {isOpen ? 'Turno abierto' : 'Turno cerrado'}
-          </span>
-        </div>
-      </div>
+      {header}
 
-      {/* Hero status card */}
-      <div
-        className="rounded-2xl p-6 mb-4 border shadow-[0_8px_26px_oklch(0.13_0.012_260/0.08)]"
-        style={isOpen
-          ? { background: 'var(--cash-open-bg)', borderColor: 'var(--cash-open-border)' }
-          : { background: 'var(--color-surface-2)', borderColor: 'var(--border-subtle)' }
-        }
-      >
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse-dot' : 'bg-gray-300'}`} />
-              <span className={`text-sm font-bold ${isOpen ? 'text-[var(--cash-open-text)]' : 'text-gray-500'}`}>
-                {isOpen ? 'Caja abierta' : 'Caja cerrada'}
-              </span>
-            </div>
-            {isOpen && session && (
-              <p className="text-xs ml-4" style={{ color: 'var(--cash-open-text-soft)' }}>Desde {formatDate(session.openedAt)}</p>
-            )}
-          </div>
-          <div className={[
-            'w-12 h-12 rounded-xl flex items-center justify-center',
-            isOpen ? 'bg-[var(--cash-open-border)]/20' : 'bg-gray-200/60',
-          ].join(' ')}>
-            <Icon name="cash" size={24} className={isOpen ? 'text-[var(--cash-open-text)]' : 'text-gray-400'} />
-          </div>
-        </div>
-
-        {isOpen && session ? (
-          <>
-            <div className="mb-5">
-              <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cash-open-text-soft)' }}>Monto inicial</p>
-              <p className="font-heading font-black text-3xl" style={{ color: 'var(--cash-open-text)' }}>Bs {session.openingAmount.toFixed(2)}</p>
-            </div>
-            {session.notes && (
-              <p className="text-xs rounded-lg px-3 py-2 mb-4" style={{ color: 'var(--cash-open-text-soft)', background: 'oklch(from var(--cash-open-bg) l c h / 0.5)' }}>{session.notes}</p>
-            )}
-            {isOwner ? (
-              <Button variant="secondary" fullWidth onClick={() => setShowClose(true)}>
-                Cerrar caja
-              </Button>
-            ) : (
-              <p className="text-sm text-center rounded-xl px-3 py-2.5" style={{ color: 'var(--cash-open-text-soft)' }}>
-                El administrador es quien cierra el turno.
-              </p>
-            )}
-          </>
+      <div className={showClosings ? 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] items-start' : 'max-w-3xl'}>
+        {loading ? (
+          <Skeleton variant="card" />
+        ) : isOpen && session ? (
+          <OpenShift session={session} isOwner={isOwner} onClose={() => setShowClose(true)} />
         ) : (
-          <>
-            <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-              Abre la caja al inicio del turno para registrar el monto inicial de efectivo.
-            </p>
-            {isOwner ? (
-              <Button size="lg" fullWidth onClick={() => setShowOpen(true)}>
-                Abrir caja
-              </Button>
+          <ClosedShift isOwner={isOwner} onOpen={() => setShowOpen(true)} />
+        )}
+
+        {showClosings && (
+          <Card padding="none">
+            <div className="flex items-center justify-between gap-3 px-5 pt-4">
+              <h2 className="text-heading font-semibold text-main">Últimos cierres</h2>
+              {closedSessions.length > RECENT_CLOSINGS && (
+                <Button variant="ghost" size="sm" onClick={() => setShowHistory(true)}>
+                  Ver todos ({closedSessions.length})
+                </Button>
+              )}
+            </div>
+            {loading ? (
+              <div className="p-5"><Skeleton variant="rect" h="160px" /></div>
+            ) : closedSessions.length === 0 ? (
+              <EmptyState compact icon="cash" title="Todavía no hay cierres" description="Aquí verás cada cierre con lo que se contó y si cuadró." />
             ) : (
-              <p className="text-sm text-gray-400 text-center bg-[var(--color-surface-2)] rounded-xl px-3 py-2.5">
-                El administrador abre el turno al inicio del día.
-              </p>
+              <ul className="px-5 pb-2 divide-y divide-line">
+                {closedSessions.slice(0, RECENT_CLOSINGS).map((s) => <CashSessionRow key={s.id} session={s} />)}
+              </ul>
             )}
-          </>
+          </Card>
         )}
       </div>
-
-      {/* Last closing summary */}
-      {!isOpen && lastClosed && (
-        <div className="rounded-2xl border border-[var(--border-subtle)] shadow-card-md p-5" style={{ background: 'var(--color-surface-card)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Icon name="orders" size={16} strokeWidth={2} className="text-gray-400 shrink-0" />
-            <h3 className="text-sm font-bold text-gray-700">Último cierre</h3>
-            {lastClosed.closedAt && (
-              <span className="ml-auto text-xs text-gray-400">{formatDate(lastClosed.closedAt)}</span>
-            )}
-          </div>
-
-          <div className="divide-y divide-[var(--border-subtle)]">
-            <StatRow label="Monto inicial" value={`Bs ${lastClosed.openingAmount.toFixed(2)}`} />
-            <StatRow
-              label="Ventas en efectivo"
-              value={`Bs ${((lastClosed.expectedAmount ?? 0) - lastClosed.openingAmount).toFixed(2)}`}
-            />
-            <StatRow
-              label="Esperado en caja"
-              value={`Bs ${(lastClosed.expectedAmount ?? 0).toFixed(2)}`}
-              bold
-            />
-            <StatRow
-              label="Contado al cierre"
-              value={`Bs ${(lastClosed.closingAmount ?? 0).toFixed(2)}`}
-              bold
-              bordered
-            />
-            <StatRow
-              label="Diferencia"
-              value={lastClosed.difference !== null
-                ? `${lastClosed.difference >= 0 ? '+' : ''}Bs ${lastClosed.difference.toFixed(2)}`
-                : '—'}
-              bold
-              valueClass={diffColor(lastClosed.difference)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* History link */}
-      {closedSessions.length > 0 && (
-        <button
-          onClick={() => setShowHistory(true)}
-          className="w-full mt-3 text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors
-            bg-[var(--color-surface-2)] border border-[var(--border-subtle)] rounded-xl py-3 hover:border-primary-500/40 hover:bg-primary-500/8 shadow-card-md"
-        >
-          Ver historial de cierres ({closedSessions.length}) →
-        </button>
-      )}
 
       <CashAmountModal
         isOpen={showOpen}
         onClose={() => setShowOpen(false)}
         onConfirm={handleOpen}
         title="Abrir caja"
-        amountLabel="Monto inicial en efectivo"
+        amountLabel="Efectivo con el que empieza el cajón"
+        amountHint="Billetes y monedas para dar cambio."
         confirmLabel="Abrir caja"
+        suggestion={lastClosed ? {
+          amount: lastClosed.openingAmount,
+          label: `Usar Bs ${lastClosed.openingAmount.toFixed(2)}, como el turno del ${formatBoliviaDayMonth(lastClosed.openedAt)}`,
+        } : undefined}
       />
 
       <CashAmountModal
@@ -244,10 +136,10 @@ export function CashPage() {
         onClose={() => setShowClose(false)}
         onConfirm={handleClose}
         title="Cerrar caja"
-        subtitle={session ? `Abierta el ${formatDate(session.openedAt)}` : undefined}
-        amountLabel="Efectivo contado al cierre"
+        subtitle={session ? `Abierta el ${formatBoliviaDayMonth(session.openedAt)} a las ${formatBoliviaTime(session.openedAt)}` : undefined}
+        amountLabel="Efectivo contado"
+        amountHint="Cuenta el efectivo del cajón y escribe el total."
         confirmLabel="Cerrar caja"
-        defaultAmount={session ? session.openingAmount + (session.cashSales ?? 0) : undefined}
         breakdown={session ? {
           openingAmount: session.openingAmount,
           cashSales: session.cashSales ?? 0,

@@ -1,63 +1,40 @@
 import { type ButtonHTMLAttributes } from 'react';
 
+/**
+ * - primary: la acción principal de la pantalla o del modal (una por vista).
+ * - secondary: acciones secundarias y "Cancelar".
+ * - ghost: acciones terciarias sin peso visual (en barras, listas, cabeceras).
+ * - danger: acciones destructivas (eliminar, anular).
+ * - success: cobrar / confirmar un pago. Verde por convención de caja.
+ * - info: avanzar un proceso a un paso intermedio (ej.: "Iniciar preparación"). Azul.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'info';
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'emerald' | 'outline' | 'soft';
+  variant?: ButtonVariant;
+  /** sm 36 px (barras y tablas) · md 44 px (táctil, por defecto) · lg 48 px · xl 56 px (cobrar). */
   size?: 'sm' | 'md' | 'lg' | 'xl';
   fullWidth?: boolean;
   loading?: boolean;
 }
 
-const variants = {
-  primary: [
-    'bg-primary-600 text-white border border-primary-600',
-    'shadow-[0_1px_2px_oklch(0.06_0.010_38/0.3)]',
-    'hover:bg-primary-500 hover:border-primary-500',
-    'hover:shadow-[0_3px_10px_oklch(0.60_0.22_42/0.40)]',
-    'focus-visible:ring-2 focus-visible:ring-primary-500/35 focus-visible:ring-offset-1',
-  ].join(' '),
-
-  secondary: [
-    'bg-[var(--color-surface-2)] border border-[var(--border-subtle)] text-gray-700',
-    'shadow-[0_1px_2px_oklch(0.06_0.010_38/0.2)]',
-    'hover:border-[var(--border-strong)] hover:bg-[var(--color-surface-card-hover)] hover:text-gray-600',
-  ].join(' '),
-
-  danger: [
-    'bg-gradient-to-b from-red-500 to-red-600 text-white',
-    'shadow-[0_1px_3px_oklch(0.06_0.010_38/0.3),inset_0_1px_0_oklch(1_0_0/0.12)]',
-    'hover:from-red-600 hover:to-red-700',
-    'hover:shadow-[0_4px_12px_oklch(0.68_0.22_25/0.40)]',
-  ].join(' '),
-
-  ghost: [
-    'bg-transparent text-gray-500',
-    'hover:bg-[var(--color-surface-2)] hover:text-gray-700',
-  ].join(' '),
-
-  outline: [
-    'bg-transparent border border-[var(--border-subtle)] text-gray-600',
-    'hover:border-primary-500/50 hover:text-primary-400 hover:bg-primary-500/8',
-  ].join(' '),
-
-  soft: [
-    'bg-primary-500/10 text-primary-600 border border-primary-500/20',
-    'hover:bg-primary-500/18 hover:border-primary-500/35',
-  ].join(' '),
-
-  emerald: [
-    'bg-emerald-600 text-white border border-emerald-600',
-    'shadow-[0_1px_2px_oklch(0.06_0.010_38/0.3)]',
-    'hover:bg-emerald-500 hover:border-emerald-500',
-    'hover:shadow-[0_3px_10px_oklch(0.72_0.18_148/0.35)]',
-    'focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-1',
-  ].join(' '),
+const variants: Record<ButtonVariant, string> = {
+  primary:   'bg-primary-600 text-white border border-primary-600 hover:bg-primary-700 hover:border-primary-700 shadow-raised',
+  secondary: 'bg-surface-card text-main border border-line hover:bg-surface-2 hover:border-line-strong',
+  ghost:     'bg-transparent text-soft border border-transparent hover:bg-surface-2 hover:text-main',
+  // red/green-700: tonos que no cambian con el tema (las escalas de estado se aclaran en
+  // oscuro para usarse como texto, y el blanco encima dejaría de leerse).
+  danger:    'bg-red-700 text-white border border-red-700 hover:bg-red-800 hover:border-red-800 shadow-raised',
+  success:   'bg-green-700 text-white border border-green-700 hover:bg-green-800 hover:border-green-800 shadow-raised',
+  // Azul fijo (oklch) por la misma razón: sky/blue se redefinen en oscuro.
+  info:      'bg-[oklch(0.50_0.15_240)] text-white border border-[oklch(0.50_0.15_240)] hover:bg-[oklch(0.44_0.15_240)] hover:border-[oklch(0.44_0.15_240)] shadow-raised',
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm rounded-lg',
-  md: 'px-4 py-2 text-sm rounded-lg',
-  lg: 'px-6 py-3 text-base rounded-xl',
-  xl: 'px-7 py-4 text-base rounded-xl font-bold tracking-wide',
+  sm: 'min-h-9 px-3 text-label gap-1.5',
+  md: 'min-h-11 px-4 text-body gap-2',
+  lg: 'min-h-12 px-5 text-body gap-2',
+  xl: 'min-h-14 px-6 text-heading gap-2.5',
 };
 
 export function Button({
@@ -73,10 +50,13 @@ export function Button({
   return (
     <button
       className={[
-        'font-medium transition-all duration-150',
-        'active:brightness-95',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:brightness-100',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/45 focus-visible:ring-offset-2',
+        'inline-flex items-center justify-center rounded-control font-semibold',
+        'transition-[background-color,border-color,color,box-shadow] duration-150 active:brightness-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-page',
+        // Deshabilitado: neutro para todas las variantes. Un color de marca "apagado" se
+        // confunde con un botón activo (el "Cobrar" verde pálido).
+        'disabled:cursor-not-allowed disabled:shadow-none disabled:active:brightness-100',
+        'disabled:bg-surface-3 disabled:border-line disabled:text-muted',
         variants[variant],
         sizes[size],
         fullWidth ? 'w-full' : '',
@@ -86,14 +66,10 @@ export function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? (
-        <span className="flex items-center justify-center gap-2">
-          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          {children}
-        </span>
-      ) : (
-        children
+      {loading && (
+        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       )}
+      {children}
     </button>
   );
 }

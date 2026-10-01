@@ -1,7 +1,9 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { WINNER_PAUSE_MS } from '../../hooks/useRaffleDetail';
 import { playDrawTick } from '../../utils/raffle-sounds';
 import { positionLabel } from '../../utils/raffle-utils';
+import { Icon } from '../ui/Icon';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -24,31 +26,36 @@ const DECEL_DIST = Math.round((SPEED * WINNER_PAUSE_MS) / 2000);
 // In that case we stop at DECEL_DIST ahead and reveal winner via overlay fade-in.
 const SMALL_POOL_THRESHOLD = Math.floor(DECEL_DIST / ITEM_H); // ≈ 20
 
-// ─── Light-theme tokens ───────────────────────────────────────────────────────
+// ─── Colores del escenario ────────────────────────────────────────────────────
+// Fijos, no del tema: la pantalla del sorteo es siempre un escenario oscuro con la marca.
 
-const PAGE_BG   = 'oklch(0.972 0.005 255)';
-const DRUM_BG   = 'oklch(1.000 0.000 0)';
-const DRUM_EDGE = 'oklch(0.91 0.008 252)';
-const NAME_CLR  = 'oklch(0.13 0.012 260)';
-const PRI6      = 'oklch(0.47 0.17 234)';
-const PRI7      = 'oklch(0.39 0.15 236)';
-const VIO       = 'oklch(0.50 0.18 295)';
-const VIO_D     = 'oklch(0.42 0.18 295)';
-
-// ─── DrawingScreen ────────────────────────────────────────────────────────────
+const STAGE_BG   = 'oklch(0.17 0.012 45)';
+const DRUM_BG    = 'oklch(0.23 0.012 45)';
+const DRUM_FADE  = 'oklch(0.23 0.012 45 / 0.82)';
+const DRUM_EDGE  = 'oklch(0.32 0.014 45)';
+const TEXT       = 'oklch(0.96 0.008 60)';
+const TEXT_SOFT  = 'oklch(0.78 0.012 60)';
+const BRAND      = 'oklch(0.72 0.19 45)';
+/** Marca con transparencia: se completa con " <alfa>)". */
+const BRAND_A    = 'oklch(0.72 0.19 45 /';
 
 export function DrawingScreen({
   position,
   names,
   revealName,
+  raffleName,
+  prize,
 }: {
   position: number;
   names: string[];
   revealName: string | null;
+  raffleName?: string;
+  /** Premio del lugar que se sortea: se muestra en grande. */
+  prize?: string | null;
 }) {
   // pool is intentionally frozen at mount: names won't change during a single draw.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const pool = useMemo(() => (names.length > 0 ? names : ['—']), []);
+  const pool = useMemo(() => (names.length > 0 ? names : ['-']), []);
 
   // Dynamic repeat count — caps DOM nodes at ~140-300 regardless of pool size.
   const extPool = useMemo(() => {
@@ -175,42 +182,56 @@ export function DrawingScreen({
   }, [phase, applyTransform]);
 
   // ── Render ────────────────────────────────────────────────────────────────────
+  // Escenario oscuro con la marca, en ambos temas: es una pantalla de presentación (se muestra a
+  // los clientes en el local), como un show, no una vista de trabajo.
 
-  return (
+  const statusText =
+    phase === 'fast'   ? `Girando entre ${pool.length === 1 ? '1 ticket' : `${pool.length} tickets`}`
+    : phase === 'reveal' ? 'Frenando'
+    : revealName         ? 'Tenemos ganador'
+    : 'Sorteando';
+
+  // En el body: dentro de la página, un ancestro animado (transform) haría que "fixed" quede
+  // relativo a él y no cubra la pantalla completa.
+  return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-hidden select-none"
-      style={{ background: PAGE_BG }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Sorteando el ${positionLabel(position)}`}
+      className="fixed inset-0 z-[70] flex flex-col items-center justify-center overflow-hidden px-4 py-6 select-none"
+      style={{ background: STAGE_BG }}
     >
-      {/* Ambient tint — no transition (gradient transitions are CPU-painted, not GPU composited) */}
+      {/* Luz de escenario: cálida mientras gira, más intensa al encontrar ganador. Sin transición
+          (los degradados se pintan en CPU). */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
           background: stopped
-            ? 'radial-gradient(ellipse 70% 45% at 50% 50%, oklch(0.47 0.17 234 / 0.05) 0%, transparent 100%)'
-            : 'radial-gradient(ellipse 70% 45% at 50% 50%, oklch(0.50 0.18 295 / 0.04) 0%, transparent 100%)',
+            ? `radial-gradient(ellipse 60% 50% at 50% 55%, ${BRAND_A} 0.32) 0%, transparent 70%)`
+            : `radial-gradient(ellipse 60% 50% at 50% 55%, ${BRAND_A} 0.16) 0%, transparent 70%)`,
         }}
       />
 
-      {/* ── Header ── */}
-      <div className="relative z-10 text-center mb-10">
-        <p className="text-[9px] font-black uppercase tracking-[0.45em] mb-3" style={{ color: VIO_D }}>
-          Sorteo en curso
+      {/* ── Qué se sortea ── */}
+      <div className="relative z-10 mb-5 w-full max-w-md text-center sm:mb-8">
+        {raffleName && <p className="text-label font-medium" style={{ color: TEXT_SOFT }}>{raffleName}</p>}
+        <p className="mt-1 font-heading text-title font-bold sm:text-display" style={{ color: TEXT }}>
+          Sorteando el {positionLabel(position)}
         </p>
-        <div
-          className="inline-flex items-center gap-2 px-6 py-2 rounded-full transition-colors duration-700"
-          style={
-            stopped
-              ? { background: 'oklch(0.47 0.17 234 / 0.08)', border: '1px solid oklch(0.47 0.17 234 / 0.25)', color: PRI7 }
-              : { background: 'oklch(0.50 0.18 295 / 0.08)', border: '1px solid oklch(0.50 0.18 295 / 0.22)', color: VIO_D }
-          }
-        >
-          <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: stopped ? PRI6 : VIO }} />
-          <span className="text-xl font-black">{positionLabel(position)}</span>
-        </div>
+        {prize && (
+          <div
+            className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full px-4 py-2"
+            style={{ background: `${BRAND_A} 0.16)`, border: `1px solid ${BRAND_A} 0.45)` }}
+          >
+            <span className="shrink-0" style={{ color: BRAND }}><Icon name="gift" size={18} /></span>
+            <span className="truncate text-body font-semibold" style={{ color: TEXT }}>{prize}</span>
+          </div>
+        )}
       </div>
 
-      {/* ── Slot drum ── */}
-      <div className="relative z-10 w-full max-w-[290px]">
+      {/* ── Ruleta ── */}
+      {/* Margen a los lados: las flechas van por fuera de la ruleta y en celular quedaban fuera de la pantalla. */}
+      <div className="relative z-10 w-[calc(100%-3rem)] max-w-sm">
         <SideArrow side="left"  stopped={stopped} centerTop={CENTER * ITEM_H} itemHeight={ITEM_H} />
         <SideArrow side="right" stopped={stopped} centerTop={CENTER * ITEM_H} itemHeight={ITEM_H} />
 
@@ -218,46 +239,39 @@ export function DrawingScreen({
           className="relative overflow-hidden"
           style={{
             height: CONT_H,
-            borderRadius: 18,
+            borderRadius: 20,
             background: DRUM_BG,
             border: `1px solid ${DRUM_EDGE}`,
-            boxShadow: '0 2px 16px oklch(0.13 0.012 260 / 0.07)',
+            boxShadow: stopped ? `0 0 0 1px ${BRAND_A} 0.5), 0 20px 60px ${BRAND_A} 0.25)` : '0 20px 60px oklch(0 0 0 / 0.45)',
             contain: 'layout style paint',
           }}
         >
-          {/* Centre highlight — transitions only color properties (GPU), not transform */}
+          {/* Franja central: marca dónde se detiene el ganador. */}
           <div
-            className="absolute inset-x-0 pointer-events-none z-10 transition-colors duration-500"
+            className="pointer-events-none absolute inset-x-0 z-10 transition-colors duration-500"
             style={{
               top: CENTER * ITEM_H,
               height: ITEM_H,
-              borderTop:    stopped ? '2px solid oklch(0.47 0.17 234 / 0.55)' : '1px solid oklch(0.50 0.18 295 / 0.22)',
-              borderBottom: stopped ? '2px solid oklch(0.47 0.17 234 / 0.55)' : '1px solid oklch(0.50 0.18 295 / 0.22)',
-              background:   stopped ? 'oklch(0.47 0.17 234 / 0.06)' : 'oklch(0.50 0.18 295 / 0.04)',
+              borderTop:    `2px solid ${stopped ? BRAND : `${BRAND_A} 0.45)`}`,
+              borderBottom: `2px solid ${stopped ? BRAND : `${BRAND_A} 0.45)`}`,
+              background:   `${BRAND_A} ${stopped ? 0.16 : 0.08})`,
             }}
           />
 
-          {/* Scrolling list — willChange promotes to GPU compositing layer.
-              pointerEvents:none skips hit-testing on N×reps divs during mouse events. */}
+          {/* Lista que gira: capa propia en GPU y sin eventos del puntero en cientos de filas. */}
           <div ref={listRef} style={{ willChange: 'transform', pointerEvents: 'none' }}>
             {extPool.map((name, i) => (
               <div key={i} className="flex items-center justify-center px-6" style={{ height: ITEM_H }}>
-                <span
-                  className="text-center font-semibold leading-tight truncate max-w-full"
-                  style={{ fontSize: '1.1rem', color: NAME_CLR }}
-                >
+                <span className="max-w-full truncate text-center font-semibold leading-tight" style={{ fontSize: '1.15rem', color: TEXT }}>
                   {name}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Winner overlay — covers center slot with drum background and reveals winner name.
-              Always rendered; opacity transitions to 1 on stop for a smooth fade-in reveal.
-              For small pools the winner was already at center (seamless).
-              For large pools this is the primary reveal mechanism. */}
+          {/* Ganador: aparece sobre la franja central al detenerse (en pozos grandes es la revelación). */}
           <div
-            className="absolute inset-x-0 z-30 flex items-center justify-center px-6 pointer-events-none"
+            className="pointer-events-none absolute inset-x-0 z-30 flex items-center justify-center px-6"
             style={{
               top: CENTER * ITEM_H,
               height: ITEM_H,
@@ -266,54 +280,27 @@ export function DrawingScreen({
               transition: 'opacity 0.3s ease-out',
             }}
           >
-            <span
-              className="text-center font-black leading-tight truncate max-w-full font-heading"
-              style={{ fontSize: '1.6rem', color: PRI7, textShadow: '0 0 16px oklch(0.47 0.17 234 / 0.18)' }}
-            >
+            <span className="max-w-full truncate text-center font-heading font-bold leading-tight" style={{ fontSize: '1.7rem', color: BRAND }}>
               {revealName ?? ''}
             </span>
           </div>
 
-          {/* Gradient masks — fade list edges to white */}
-          <div
-            className="absolute inset-x-0 top-0 pointer-events-none z-20"
-            style={{
-              height: ITEM_H * 2.5,
-              background: `linear-gradient(to bottom, ${DRUM_BG} 0%, oklch(1.000 0.000 0 / 0.82) 52%, transparent 100%)`,
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 pointer-events-none z-20"
-            style={{
-              height: ITEM_H * 2.5,
-              background: `linear-gradient(to top, ${DRUM_BG} 0%, oklch(1.000 0.000 0 / 0.82) 52%, transparent 100%)`,
-            }}
-          />
+          {/* Bordes que se desvanecen hacia el fondo de la ruleta. */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20" style={{ height: ITEM_H * 2.5, background: `linear-gradient(to bottom, ${DRUM_BG} 0%, ${DRUM_FADE} 52%, transparent 100%)` }} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20" style={{ height: ITEM_H * 2.5, background: `linear-gradient(to top, ${DRUM_BG} 0%, ${DRUM_FADE} 52%, transparent 100%)` }} />
         </div>
       </div>
 
-      {/* ── Status ── */}
-      <div className="relative z-10 mt-8 min-h-8 flex items-center justify-center">
-        {phase === 'fast' && (
-          <div className="flex gap-2">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="w-2 h-2 rounded-full animate-bounce"
-                style={{ background: VIO, animationDelay: `${i * 140}ms` }} />
-            ))}
-          </div>
-        )}
-        {phase === 'reveal' && (
-          <p className="text-xs font-bold tracking-widest uppercase animate-pulse" style={{ color: VIO_D }}>
-            Revelando…
-          </p>
-        )}
-        {phase === 'stopped' && revealName && (
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] animate-pulse" style={{ color: PRI6 }}>
-            ¡Ganador encontrado!
-          </p>
-        )}
-      </div>
-    </div>
+      {/* ── Estado ── */}
+      <p
+        className="relative z-10 mt-5 text-body font-semibold sm:mt-8"
+        style={{ color: stopped && revealName ? BRAND : TEXT_SOFT }}
+        aria-live="polite"
+      >
+        {statusText}
+      </p>
+    </div>,
+    document.body,
   );
 }
 
@@ -324,15 +311,14 @@ function SideArrow({
 }: {
   side: 'left' | 'right'; stopped: boolean; centerTop: number; itemHeight: number;
 }) {
-  const color = stopped ? PRI6 : VIO;
+  const color = stopped ? BRAND : `${BRAND_A} 0.7)`;
   const isLeft = side === 'left';
   return (
     <div
       className="absolute flex items-center"
-      style={{ top: centerTop, height: itemHeight, [isLeft ? 'right' : 'left']: '100%', padding: '0 7px' }}
+      style={{ top: centerTop, height: itemHeight, [isLeft ? 'right' : 'left']: '100%', padding: '0 8px' }}
     >
-      <svg viewBox="0 0 10 18" style={{ width: 10, height: 18, fill: color,
-        filter: `drop-shadow(0 0 4px ${color})`, transform: isLeft ? 'none' : 'scaleX(-1)' }}>
+      <svg viewBox="0 0 10 18" style={{ width: 12, height: 22, fill: color, transform: isLeft ? 'none' : 'scaleX(-1)' }}>
         <path d="M10 9 L0 0 L0 18 Z" />
       </svg>
     </div>
