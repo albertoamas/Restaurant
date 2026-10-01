@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useSettingsStore } from '../store/settings.store';
 import { useAuth } from '../context/auth.context';
 import { Card } from '../components/ui/Card';
@@ -6,7 +6,6 @@ import { Icon, type IconName } from '../components/ui/Icon';
 import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
 import { Toggle } from '../components/ui/Toggle';
-import { SettingsLock, SETTINGS_UNLOCK_KEY } from '../components/settings/SettingsLock';
 import { ReceiptSettingsCard } from '../components/settings/ReceiptSettingsCard';
 import { OrderNumberingCard } from '../components/settings/OrderNumberingCard';
 
@@ -43,9 +42,8 @@ function SettingRow({ icon, label, description, checked, onChange }: {
 export function SettingsPage() {
   const { user } = useAuth();
   const { autoPrintKitchen, setAutoPrintKitchen, showProductImages, setShowProductImages } = useSettingsStore();
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(SETTINGS_UNLOCK_KEY) === '1');
-
-  if (!unlocked) return <SettingsLock onUnlock={() => setUnlocked(true)} />;
+  // Sin candado: la ruta ya es solo del dueño (OwnerRoute) y el backend exige su JWT con rol OWNER.
+  // Antes pedía ADMIN_SECRET, la clave del panel /admin, que un cliente nunca tiene.
 
   return (
     <PageShell>
