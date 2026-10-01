@@ -4,10 +4,11 @@ import type { BranchDto } from '@pos/shared';
 import { branchesApi } from '../api/branches.api';
 import { queryKeys } from '../lib/query-keys';
 
-export function useBranches() {
+export function useBranches(enabled = true) {
   const { data: branches = [] as BranchDto[], isPending: loading, refetch } = useQuery({
     queryKey: queryKeys.branches,
     queryFn:  () => branchesApi.getAll(),
+    enabled,
   });
   return { branches, loading, reload: refetch };
 }

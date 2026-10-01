@@ -48,6 +48,9 @@ export const queryKeys = {
 
   cashSession: (branchId: string) =>
     ['cashSession', branchId] as const,
+  /** Solo la caja abierta (ficha de sucursal); cuelga de `cashSession` y se invalida con ella. */
+  cashSessionCurrent: (branchId: string) =>
+    ['cashSession', branchId, 'current'] as const,
 
   // ── Reports ───────────────────────────────────────────────────────────────
   reportRange: (from: string, to: string, branchId?: string) =>
