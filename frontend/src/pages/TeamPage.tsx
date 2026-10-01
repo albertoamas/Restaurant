@@ -163,7 +163,7 @@ export function TeamPage() {
                   <div className={`min-w-0 flex-1 ${u.isActive ? '' : 'opacity-60'}`}>
                     <div className="flex items-center gap-2">
                       <p className="min-w-0 truncate text-body font-semibold text-main">{u.name}</p>
-                      {!u.isActive && <Badge>Inactivo</Badge>}
+                      {u.isActive ? <Badge variant="success" dot>Activo</Badge> : <Badge dot>Inactivo</Badge>}
                     </div>
                     <p className="truncate text-caption text-muted">
                       Cajero. {u.branchId ? branchName(u.branchId) ?? 'Sucursal' : 'Sin sucursal'}. {u.email}
