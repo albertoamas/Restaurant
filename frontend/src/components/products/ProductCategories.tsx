@@ -79,10 +79,13 @@ function CategoryNameModal({ category, nextOrder, onClose, onSaved }: {
  * Categorías del catálogo en el orden en que aparecen en el punto de venta. El orden se cambia
  * con subir y bajar (antes había que escribir un número de posición en cada una).
  */
-export function ProductCategories({ categories, loading, onChanged }: {
+export function ProductCategories({ categories, loading, onChanged, createOpen, onCreateClose }: {
   categories: CategoryDto[];
   loading: boolean;
   onChanged: () => void;
+  /** "Nueva categoría" vive en el encabezado de la página, a la derecha como "Nuevo producto". */
+  createOpen: boolean;
+  onCreateClose: () => void;
 }) {
   const ordered = [...categories].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'es'));
   const [form, setForm]         = useState<{ open: boolean; category: CategoryDto | null }>({ open: false, category: null });
@@ -137,13 +140,7 @@ export function ProductCategories({ categories, loading, onChanged }: {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-label text-soft">El orden de esta lista es el orden de las categorías en el punto de venta.</p>
-        <Button onClick={() => setForm({ open: true, category: null })}>
-          <Icon name="plus" size={18} />
-          Nueva categoría
-        </Button>
-      </div>
+      <p className="text-label text-soft">El orden de esta lista es el orden de las categorías en el punto de venta.</p>
 
       {loading ? (
         <Skeleton variant="card" />
@@ -181,8 +178,13 @@ export function ProductCategories({ categories, loading, onChanged }: {
         </ol>
       )}
 
-      {form.open && (
-        <CategoryNameModal category={form.category} nextOrder={nextOrder} onClose={() => setForm({ open: false, category: null })} onSaved={onChanged} />
+      {(form.open || createOpen) && (
+        <CategoryNameModal
+          category={createOpen ? null : form.category}
+          nextOrder={nextOrder}
+          onClose={() => { setForm({ open: false, category: null }); onCreateClose(); }}
+          onSaved={onChanged}
+        />
       )}
 
       <ConfirmModal

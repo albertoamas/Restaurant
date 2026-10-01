@@ -42,6 +42,7 @@ export function ProductsPage() {
   } = useProducts(true, 50);
   const { categories, loading: catsLoading, reload: reloadCategories } = useCategories();
   const [tab, setTab] = useState<'products' | 'categories'>('products');
+  const [newCategory, setNewCategory] = useState(false);
   const maxProducts = useSettingsStore((s) => s.planLimits?.maxProducts);
 
   // El plan cuenta solo los productos activos.
@@ -113,10 +114,15 @@ export function ProductsPage() {
               onChange={setTab}
               options={[{ value: 'products', label: 'Productos' }, { value: 'categories', label: 'Categorías' }]}
             />
-            {tab === 'products' && (
+            {tab === 'products' ? (
               <Button onClick={() => setForm({ open: true, product: null })} disabled={full}>
                 <Icon name="plus" size={18} />
                 Nuevo producto
+              </Button>
+            ) : (
+              <Button onClick={() => setNewCategory(true)}>
+                <Icon name="plus" size={18} />
+                Nueva categoría
               </Button>
             )}
           </>
@@ -131,7 +137,7 @@ export function ProductsPage() {
       </PageHeader>
 
       {tab === 'categories' ? (
-        <ProductCategories categories={categories} loading={catsLoading} onChanged={refresh} />
+        <ProductCategories categories={categories} loading={catsLoading} onChanged={refresh} createOpen={newCategory} onCreateClose={() => setNewCategory(false)} />
       ) : (<>
       <div className="mb-4 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row">
