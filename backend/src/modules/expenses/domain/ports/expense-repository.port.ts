@@ -57,5 +57,6 @@ export interface ExpenseRepositoryPort {
     from: Date,
     to: Date,
   ): Promise<ExpenseSummaryDto>;
-  void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void>;
+  /** Anula un gasto activo del tenant. `false` si no existe o ya estaba anulado. */
+  void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean>;
 }

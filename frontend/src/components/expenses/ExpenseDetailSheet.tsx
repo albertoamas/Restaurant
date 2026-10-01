@@ -1,4 +1,5 @@
 import type { ExpenseDto } from '@pos/shared';
+import { bs } from '../report';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
@@ -49,7 +50,7 @@ export function ExpenseDetailSheet({ expense, onClose, onEdit, onVoid }: {
         </div>
       }
     >
-      <p className="text-display font-bold text-main font-heading tabular-nums">Bs {expense.amount.toFixed(2)}</p>
+      <p className="text-display font-bold text-main font-heading tabular-nums">{bs(expense.amount)}</p>
       <dl className="mt-3 divide-y divide-line border-t border-line">
         <Row label="Categoría" value={expenseCategoryLabel(expense)} />
         <Row label="Fecha" value={`${formatWeekdayDay(day)}, ${formatBoliviaTime(expense.expenseDate)}`} />
@@ -58,7 +59,7 @@ export function ExpenseDetailSheet({ expense, onClose, onEdit, onVoid }: {
           const b = itemBreakdown(i);
           // Con un solo ítem sin cantidad, el detalle repetiría el monto de arriba.
           if (items.length === 1 && !b) return null;
-          return <Row key={i.id} label={items.length > 1 ? i.name : 'Detalle'} value={b ?? `Bs ${i.totalPrice.toFixed(2)}`} />;
+          return <Row key={i.id} label={items.length > 1 ? i.name : 'Detalle'} value={b ?? bs(i.totalPrice)} />;
         })}
         {expense.supplierName && <Row label="Proveedor" value={expense.supplierName} />}
         {expense.documentNumber && <Row label="Comprobante" value={expense.documentNumber} />}

@@ -66,6 +66,14 @@ describe('CreateExpenseConceptUseCase', () => {
     expect(repo.save).not.toHaveBeenCalled();
   });
 
+  it('lanza NotFoundException si la categoría está eliminada', async () => {
+    categoryRepo.findById.mockResolvedValue(makeCategory().withChanges({ isActive: false }));
+    await expect(
+      useCase.execute(TENANT, { categoryId: CATEGORY_ID, name: 'Carne' }),
+    ).rejects.toThrow(NotFoundException);
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
   it('lanza ConflictException si ya existe uno activo con ese nombre', async () => {
     repo.findByName.mockResolvedValue(makeConcept(true));
     await expect(

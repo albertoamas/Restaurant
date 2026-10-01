@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ExpenseSummaryDto } from '@pos/shared';
 import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
@@ -119,15 +119,10 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
     items: NewExpenseItemInput[],
   ): Promise<Expense> {
     const row = await this.prisma.$transaction(async (tx) => {
-      await tx.expenseItem.deleteMany({ where: { expenseId: id } });
-
-      if (items.length > 0) {
-        await tx.expenseItem.createMany({ data: toItemRows(id, items) });
-      }
-
-      await tx.expense.updateMany({
-        // `status` acá es defensa en profundidad: el use-case ya rechaza editar
-        // un gasto anulado, esto evita que otro caller futuro lo saltee.
+      // Primero el gasto, filtrado por tenant y estado: si no es del tenant o está anulado no se
+      // tocan sus ítems (antes se borraban por `expenseId` antes de comprobarlo).
+      // `status` es defensa en profundidad: el use-case ya rechaza editar un gasto anulado.
+      const { count } = await tx.expense.updateMany({
         where: { id, tenantId, status: 'ACTIVE' },
         data:  {
           category: patch.category,
@@ -139,6 +134,12 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
           documentNumber: patch.documentNumber,
         },
       });
+      if (count === 0) throw new NotFoundException('Gasto no encontrado');
+
+      await tx.expenseItem.deleteMany({ where: { expenseId: id } });
+      if (items.length > 0) {
+        await tx.expenseItem.createMany({ data: toItemRows(id, items) });
+      }
 
       return tx.expense.findFirstOrThrow({
         where:   { id, tenantId },
@@ -284,10 +285,11 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
     return { total, byCategory, byDay, transactionCount };
   }
 
-  async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<void> {
-    await this.prisma.expense.updateMany({
+  async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean> {
+    const { count } = await this.prisma.expense.updateMany({
       where: { id, tenantId, status: 'ACTIVE' },
       data: { status: 'VOIDED', voidedAt: new Date(), voidedBy: userId, voidReason: reason },
     });
+    return count > 0;
   }
 }

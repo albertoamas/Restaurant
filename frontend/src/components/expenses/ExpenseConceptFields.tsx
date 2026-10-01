@@ -16,9 +16,8 @@ export function parseConceptPrice(value: string): number | null {
 }
 
 /**
- * Campos de un gasto de la lista. Idénticos en el alta desde el registro y en la
- * administración. Las categorías solo se eligen aquí: crearlas o editarlas es de la pestaña
- * Categorías.
+ * Campos de un gasto de la lista (los usa `ConceptFormModal`). Las categorías solo se eligen
+ * aquí: crearlas o renombrarlas es de la pestaña Lista.
  */
 export function ExpenseConceptFields({
   value, onChange, autoFocusName = false,

@@ -27,8 +27,9 @@ export class UpdateExpenseConceptUseCase {
     const concept = await this.repo.findById(id, tenantId);
     if (!concept) throw new NotFoundException('Gasto predefinido no encontrado');
 
+    // Activa: en una categoría eliminada el gasto desaparecería de la lista sin aviso.
     const category = await this.categoryRepo.findById(dto.categoryId ?? concept.categoryId, tenantId);
-    if (!category) throw new NotFoundException('Categoría no encontrada');
+    if (!category?.isActive) throw new NotFoundException('Categoría no encontrada');
 
     let name: string | undefined;
     if (dto.name !== undefined) {
@@ -46,8 +47,6 @@ export class UpdateExpenseConceptUseCase {
         name,
         unit:             dto.unit === undefined ? undefined : (dto.unit?.trim() || null),
         defaultUnitPrice: dto.defaultUnitPrice === undefined ? undefined : (dto.defaultUnitPrice ?? null),
-        isActive:         dto.isActive,
-        sortOrder:        dto.sortOrder,
       }),
     );
     const updatedDto = toExpenseConceptDto(updated, category.name);

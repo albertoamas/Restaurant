@@ -1,5 +1,6 @@
 import type { ExpenseDto } from '@pos/shared';
 import { expenseCategoryLabel, pluralUnit } from '../../utils/expense-labels';
+import { bs } from '../report';
 
 /** Une frases con ". " sin duplicar el punto de las que ya terminan en él ("Embol S.A."). */
 export const sentences = (parts: (string | null | undefined)[]) =>
@@ -15,7 +16,7 @@ export function itemBreakdown(item: ExpenseDto['items'][number]): string | null 
   const qty = Number(item.quantity);
   if (qty === 1 && !item.unit) return null;
   const unit = item.unit ? ` ${pluralUnit(item.unit, qty)}` : '';
-  return `${fmtQty(qty)}${unit} a Bs ${item.unitPrice.toFixed(2)}`;
+  return `${fmtQty(qty)}${unit} a ${bs(item.unitPrice)}`;
 }
 
 /** Qué se gastó: los ítems, o la nota o la categoría en gastos viejos sin ítems. */

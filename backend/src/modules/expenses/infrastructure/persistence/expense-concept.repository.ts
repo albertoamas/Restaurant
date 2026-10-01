@@ -42,9 +42,6 @@ export class ExpenseConceptRepository implements ExpenseConceptRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
-  count(tenantId: string): Promise<number> {
-    return this.prisma.expenseConcept.count({ where: { tenantId } });
-  }
 
   async save(concept: ExpenseConceptEntity): Promise<ExpenseConceptEntity> {
     const row = await this.prisma.expenseConcept.create({
@@ -95,21 +92,4 @@ export class ExpenseConceptRepository implements ExpenseConceptRepositoryPort {
     });
   }
 
-  async saveMany(concepts: ExpenseConceptEntity[]): Promise<void> {
-    if (concepts.length === 0) return;
-    await this.prisma.expenseConcept.createMany({
-      data: concepts.map((c) => ({
-        id:               c.id,
-        tenantId:         c.tenantId,
-        categoryId:       c.categoryId,
-        name:             c.name,
-        unit:             c.unit,
-        defaultUnitPrice: c.defaultUnitPrice,
-        isActive:         c.isActive,
-        sortOrder:        c.sortOrder,
-        createdAt:        c.createdAt,
-      })),
-      skipDuplicates: true,
-    });
-  }
 }

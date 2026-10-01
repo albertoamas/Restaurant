@@ -7,6 +7,7 @@ import { Icon } from '../ui/Icon';
 import { Input, Select } from '../ui/Input';
 import { Skeleton } from '../ui/Skeleton';
 import { SuggestedCatalogModal } from './SuggestedCatalogModal';
+import { chipClass } from './filter-chip';
 
 interface ExpensePickerProps {
   /** Tocar un gasto de la lista: se abre el registro con su monto. */
@@ -17,13 +18,6 @@ interface ExpensePickerProps {
 
 const GRID = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
 
-function chipClass(active: boolean) {
-  return [
-    'inline-flex items-center min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
-    active ? 'border-primary-600 bg-primary-600 text-white' : 'border-line bg-surface-card text-soft hover:text-main hover:border-line-strong',
-  ].join(' ');
-}
 
 function Tile({ concept, onPick }: { concept: ExpenseConceptDto; onPick: () => void }) {
   return (

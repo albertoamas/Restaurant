@@ -13,6 +13,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Skeleton } from '../components/ui/Skeleton';
 import { PickBranch } from '../components/branch/PickBranch';
+import { bs } from '../components/report';
 import { ExpenseEditModal } from '../components/expenses/ExpenseEditModal';
 import { ExpensePicker } from '../components/expenses/ExpensePicker';
 import { QuickExpenseDialog } from '../components/expenses/QuickExpenseDialog';
@@ -27,7 +28,6 @@ import { getBoliviaDayBounds } from '../utils/timezone';
 
 type Tab = 'register' | 'movements' | 'catalog';
 
-const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 
 const TAB_HINT: Record<Tab, string> = {
   register:  'Toca el gasto y escribe el monto',
@@ -63,7 +63,8 @@ export function ExpensesPage() {
   // "Registrado hoy": pocos movimientos, se piden completos.
   const todayStr = today();
   const { start: todayFrom, end: todayTo } = getBoliviaDayBounds(todayStr);
-  const { expenses: todayExpenses, summary: todaySummary, loading: todayLoading, reload } =
+  // `invalidate` refresca todo lo de gastos: también Movimientos, aunque el socket esté caído.
+  const { expenses: todayExpenses, summary: todaySummary, loading: todayLoading, invalidate } =
     useExpenses(todayFrom, todayTo, branchParam);
 
   const changeTab = (t: Tab) => { setTab(t); if (t === 'movements') setMovementsVisited(true); };
@@ -75,7 +76,7 @@ export function ExpensesPage() {
       await expensesApi.void(voiding.id);
       toast.success('Gasto anulado. El registro se conserva en el historial.');
       setVoiding(null);
-      reload();
+      invalidate();
     } catch (err) {
       handleApiError(err, 'Error al anular el gasto');
     } finally {
@@ -145,16 +146,18 @@ export function ExpensesPage() {
         <QuickExpenseDialog
           concept={active}
           onClose={() => setActive(null)}
-          onSaved={() => { setActive(null); reload(); }}
+          onSaved={() => { setActive(null); invalidate(); }}
         />
       )}
 
-      <ConceptFormModal
-        target={creating}
-        onClose={() => setCreating(null)}
-        // Encadena directo al registro: para eso lo estaba agregando.
-        onSaved={(concept) => setActive(concept)}
-      />
+      {creating && (
+        <ConceptFormModal
+          target={creating}
+          onClose={() => setCreating(null)}
+          // Encadena directo al registro: para eso lo estaba agregando.
+          onSaved={(concept) => setActive(concept)}
+        />
+      )}
 
       <ExpenseDetailSheet
         expense={detail}
@@ -162,7 +165,7 @@ export function ExpensesPage() {
         onEdit={(e) => { setDetail(null); setEditing(e); }}
         onVoid={(e) => { setDetail(null); setVoiding(e); }}
       />
-      <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} onSaved={reload} />
+      {editing && <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} onSaved={invalidate} />}
 
       <ConfirmModal
         isOpen={voiding !== null}

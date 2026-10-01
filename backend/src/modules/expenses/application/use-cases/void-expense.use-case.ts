@@ -1,10 +1,11 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { SOCKET_EVENTS } from '@pos/shared';
 import { EXPENSE_REPOSITORY_PORT, ExpenseRepositoryPort } from '../../domain/ports/expense-repository.port';
 import { EventsService } from '../../../events/events.service';
 
+/** Anula un gasto (baja lógica): deja de contar en totales y reportes, el registro se conserva. */
 @Injectable()
-export class DeleteExpenseUseCase {
+export class VoidExpenseUseCase {
   constructor(
     @Inject(EXPENSE_REPOSITORY_PORT)
     private readonly expenseRepository: ExpenseRepositoryPort,
@@ -12,8 +13,9 @@ export class DeleteExpenseUseCase {
   ) {}
 
   async execute(id: string, tenantId: string, userId: string, reason?: string): Promise<void> {
-    await this.expenseRepository.void(id, tenantId, userId, reason?.trim() || null);
-    // Emit to all branches of the tenant — frontend reloads on any expense.deleted
+    const voided = await this.expenseRepository.void(id, tenantId, userId, reason?.trim() || null);
+    // Antes respondía 204 y avisaba a todos aunque el gasto no existiera o ya estuviera anulado.
+    if (!voided) throw new NotFoundException('Gasto no encontrado o ya anulado');
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_DELETED, { id });
   }
 }

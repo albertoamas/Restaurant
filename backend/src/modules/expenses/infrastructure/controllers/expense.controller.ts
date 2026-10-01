@@ -22,7 +22,7 @@ import { Roles } from '../../../../common/decorators/roles.decorator';
 import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { CreateExpenseUseCase } from '../../application/use-cases/create-expense.use-case';
 import { ListExpensesUseCase } from '../../application/use-cases/list-expenses.use-case';
-import { DeleteExpenseUseCase } from '../../application/use-cases/delete-expense.use-case';
+import { VoidExpenseUseCase } from '../../application/use-cases/void-expense.use-case';
 import { GetExpenseSummaryUseCase } from '../../application/use-cases/get-expense-summary.use-case';
 import { CreateExpenseCategoryUseCase } from '../../application/use-cases/create-expense-category.use-case';
 import { ListExpenseCategoriesUseCase } from '../../application/use-cases/list-expense-categories.use-case';
@@ -46,7 +46,7 @@ import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
-  if (isNaN(new Date(val).getTime())) throw new BadRequestException(`Invalid date for '${name}': ${val}`);
+  if (isNaN(new Date(val).getTime())) throw new BadRequestException(`Fecha no válida en '${name}': ${val}`);
 }
 
 @Controller('expenses')
@@ -56,7 +56,7 @@ export class ExpenseController {
   constructor(
     private readonly createExpense: CreateExpenseUseCase,
     private readonly listExpenses: ListExpensesUseCase,
-    private readonly deleteExpense: DeleteExpenseUseCase,
+    private readonly voidExpense: VoidExpenseUseCase,
     private readonly getExpenseSummary: GetExpenseSummaryUseCase,
     private readonly createExpenseCategory: CreateExpenseCategoryUseCase,
     private readonly listExpenseCategories: ListExpenseCategoriesUseCase,
@@ -154,7 +154,7 @@ export class ExpenseController {
     @Body() dto: CreateExpenseDto,
   ) {
     const branchId = user.branchId ?? dto.branchId;
-    if (!branchId) throw new BadRequestException('branchId is required');
+    if (!branchId) throw new BadRequestException('Elige la sucursal del gasto');
     return this.createExpense.execute(tenantId, branchId, user.sub, dto);
   }
 
@@ -229,6 +229,6 @@ export class ExpenseController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: VoidExpenseDto,
   ) {
-    return this.deleteExpense.execute(id, tenantId, user.sub, dto?.reason);
+    return this.voidExpense.execute(id, tenantId, user.sub, dto?.reason);
   }
 }

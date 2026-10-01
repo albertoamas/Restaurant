@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseConceptDto } from '@pos/shared';
+import { bs } from '../report';
 import { expensesApi } from '../../api/expenses.api';
 import { useAuth } from '../../context/auth.context';
 import { Modal } from '../ui/Modal';
@@ -55,7 +56,7 @@ export function QuickExpenseDialog({
         expenseDate,
         branchId: currentBranchId,
       });
-      toast.success(`${concept.name}: Bs ${total.toFixed(2)}`);
+      toast.success(`${concept.name}: ${bs(total)}`);
       onSaved();
     } catch (err) {
       handleApiError(err, 'Error al registrar el gasto');
@@ -72,7 +73,7 @@ export function QuickExpenseDialog({
       size="sm"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button type="submit" form={formId} fullWidth loading={saving} disabled={!valid}>Registrar</Button>
         </div>
       }
@@ -117,12 +118,12 @@ export function QuickExpenseDialog({
         {tracksQuantity && (
           <div className="flex items-baseline justify-between rounded-card border border-line bg-surface-2 px-4 py-3">
             <span className="text-body font-semibold text-main">Total</span>
-            <span className="text-heading font-bold text-main tabular-nums">Bs {total.toFixed(2)}</span>
+            <span className="text-heading font-bold text-main tabular-nums">{bs(total)}</span>
           </div>
         )}
 
         {showDate ? (
-          <Input type="date" label="Fecha del gasto" value={expenseDate} onChange={(e) => setDate(e.target.value)} required />
+          <Input type="date" label="Fecha del gasto" max={today()} value={expenseDate} onChange={(e) => setDate(e.target.value)} required />
         ) : (
           <div className="flex items-center justify-between gap-3 text-label">
             <span className="inline-flex items-center gap-1.5 text-soft">

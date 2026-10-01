@@ -6,38 +6,6 @@ import { expensesApi } from '../api/expenses.api';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 
-export function useExpenses(from: string, to: string, branchId?: string) {
-  const queryClient = useQueryClient();
-
-  const { data, isPending: loading, isError: error, refetch } = useQuery({
-    queryKey: queryKeys.expenses(from, to, branchId),
-    queryFn:  () =>
-      Promise.all([
-        expensesApi.getAll(from, to, branchId),
-        expensesApi.getSummary(from, to, branchId),
-      ]).then(([expenses, summary]): { expenses: ExpenseDto[]; summary: ExpenseSummaryDto } => ({
-        expenses,
-        summary,
-      })),
-  });
-
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.expensesAll });
-  }, [queryClient]);
-
-  useSocketEvent(SOCKET_EVENTS.EXPENSE_CREATED, invalidate);
-  useSocketEvent(SOCKET_EVENTS.EXPENSE_UPDATED, invalidate);
-  useSocketEvent(SOCKET_EVENTS.EXPENSE_DELETED, invalidate);
-
-  return {
-    expenses: data?.expenses ?? [],
-    summary:  data?.summary  ?? { total: 0, byCategory: {}, byDay: {}, transactionCount: 0 },
-    loading,
-    error,
-    reload: refetch,
-  };
-}
-
 const EMPTY_SUMMARY: ExpenseSummaryDto = { total: 0, byCategory: {}, byDay: {}, transactionCount: 0 };
 
 /** Cualquier cambio de gastos (en este u otro equipo) invalida todo lo que cuelga de 'expenses'. */
@@ -50,6 +18,27 @@ function useExpenseEventsSync() {
   useSocketEvent(SOCKET_EVENTS.EXPENSE_UPDATED, invalidate);
   useSocketEvent(SOCKET_EVENTS.EXPENSE_DELETED, invalidate);
   return invalidate;
+}
+
+/**
+ * Gastos de un período completo, con su resumen (el bloque "Registrado hoy"). `invalidate` refresca
+ * todo lo de gastos (también Movimientos), no solo esta consulta.
+ */
+export function useExpenses(from: string, to: string, branchId?: string) {
+  const invalidate = useExpenseEventsSync();
+  const { data, isPending: loading, isError: error } = useQuery({
+    queryKey: queryKeys.expenses(from, to, branchId),
+    queryFn:  () =>
+      Promise.all([expensesApi.getAll(from, to, branchId), expensesApi.getSummary(from, to, branchId)])
+        .then(([expenses, summary]): { expenses: ExpenseDto[]; summary: ExpenseSummaryDto } => ({ expenses, summary })),
+  });
+  return {
+    expenses: data?.expenses ?? [],
+    summary:  data?.summary ?? EMPTY_SUMMARY,
+    loading,
+    error,
+    invalidate,
+  };
 }
 
 /** Totales del período completo (no de lo cargado en la lista): cifras, categorías y calendario. */

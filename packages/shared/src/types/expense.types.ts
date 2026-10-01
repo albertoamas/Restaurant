@@ -35,7 +35,6 @@ export interface CreateExpenseConceptRequest {
   name: string;
   unit?: string;
   defaultUnitPrice?: number | null;
-  sortOrder?: number;
 }
 
 export interface UpdateExpenseConceptRequest {
@@ -43,8 +42,6 @@ export interface UpdateExpenseConceptRequest {
   name?: string;
   unit?: string | null;
   defaultUnitPrice?: number | null;
-  isActive?: boolean;
-  sortOrder?: number;
 }
 
 export interface ExpenseItemDto {

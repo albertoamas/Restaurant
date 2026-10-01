@@ -1,26 +1,23 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseCategoryDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
-import { useExpenseCategories, useExpenseConcepts } from '../../hooks/useExpenses';
+import { useExpenseConcepts } from '../../hooks/useExpenses';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { handleApiError } from '../../utils/api-error';
 
-/** Crear una categoría (`category` null) o renombrar una existente. */
-export function CategoryFormModal({ isOpen, category, onClose }: {
-  isOpen: boolean;
+/** Crear una categoría (`category` null) o renombrar una existente. Se monta al abrir. */
+export function CategoryFormModal({ category, onClose }: {
   category: ExpenseCategoryDto | null;
   onClose: () => void;
 }) {
   const formId = useId();
-  const { reload } = useExpenseCategories();
+  // Refresca categorías y gastos juntos (cada gasto lleva el nombre de su categoría).
   const { invalidate } = useExpenseConcepts();
-  const [name, setName]     = useState('');
+  const [name, setName]     = useState(category?.name ?? '');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => { if (isOpen) setName(category?.name ?? ''); }, [isOpen, category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +28,6 @@ export function CategoryFormModal({ isOpen, category, onClose }: {
       if (category) await expensesApi.updateCategory(category.id, { name: value });
       else          await expensesApi.createCategory({ name: value });
       toast.success(category ? 'Categoría renombrada' : `Categoría "${value}" creada`);
-      await reload();
       invalidate();
       onClose();
     } catch (err) {
@@ -43,13 +39,13 @@ export function CategoryFormModal({ isOpen, category, onClose }: {
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={category ? `Renombrar "${category.name}"` : 'Nueva categoría'}
       size="sm"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button type="submit" form={formId} fullWidth loading={saving} disabled={!name.trim()}>
             {category ? 'Guardar' : 'Crear categoría'}
           </Button>

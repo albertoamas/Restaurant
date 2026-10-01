@@ -8,8 +8,9 @@ import { Icon } from '../ui/Icon';
 import { Input, Select } from '../ui/Input';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Skeleton } from '../ui/Skeleton';
-import { Kpi } from '../report';
-import { ExpenseCalendar } from './ExpenseCalendar';
+import { Kpi, bs, share } from '../report';
+import { chipClass } from './filter-chip';
+import { CALENDAR_MAX_DAYS, ExpenseCalendar } from './ExpenseCalendar';
 import { ExpenseList } from './ExpenseList';
 import { eachDay, formatDayRange, mondayOf, today } from '../../utils/date';
 import { getBoliviaDayBounds } from '../../utils/timezone';
@@ -17,17 +18,12 @@ import { getBoliviaDayBounds } from '../../utils/timezone';
 type Period = 'today' | 'week' | 'month' | 'custom';
 type View = 'list' | 'calendar';
 
-/** Días que el calendario puede dibujar con sentido (unos 2 meses). */
-const CALENDAR_MAX_DAYS = 62;
-
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'today',  label: 'Hoy' },
   { value: 'week',   label: 'Esta semana' },
   { value: 'month',  label: 'Este mes' },
   { value: 'custom', label: 'Rango' },
 ];
-
-const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 
 function lastDayOfMonth(day: string): string {
   const [y, m] = day.split('-').map(Number);
@@ -43,13 +39,6 @@ function getRange(period: Period, customFrom: string, customTo: string) {
   return { from: customFrom, to: customTo };
 }
 
-function chipClass(active: boolean) {
-  return [
-    'inline-flex shrink-0 items-center gap-1.5 min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
-    active ? 'border-primary-600 bg-primary-600 text-white' : 'border-line bg-surface-card text-soft hover:text-main hover:border-line-strong',
-  ].join(' ');
-}
 
 /**
  * Revisar los gastos de un período: cifras del período completo, filtros que se aplican en el
@@ -106,7 +95,7 @@ export function ExpenseMovements({ branchId, onOpen }: { branchId?: string; onOp
         <Kpi
           label="Categoría con más gasto"
           value={top ? top[0] : '-'}
-          sub={top ? `${bs(top[1])}, ${Math.round((top[1] / summary.total) * 100)}% del total` : undefined}
+          sub={top ? `${bs(top[1])}, ${Math.round(share(top[1], summary.total))}% del total` : undefined}
         />
       </div>
 

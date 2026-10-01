@@ -1,6 +1,7 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseDto } from '@pos/shared';
+import { bs } from '../report';
 import { expensesApi } from '../../api/expenses.api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -8,6 +9,7 @@ import { Icon } from '../ui/Icon';
 import { Input } from '../ui/Input';
 import { handleApiError } from '../../utils/api-error';
 import { toBoliviaDateString } from '../../utils/timezone';
+import { today } from '../../utils/date';
 import { expenseCategoryLabel } from '../../utils/expense-labels';
 
 /**
@@ -18,46 +20,30 @@ import { expenseCategoryLabel } from '../../utils/expense-labels';
 export function ExpenseEditModal({
   expense, onClose, onSaved,
 }: {
-  expense: ExpenseDto | null;
+  expense: ExpenseDto;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [quantity, setQuantity]   = useState('1');
-  const [amount, setAmount]       = useState('');
-  const [expenseDate, setDate]    = useState('');
-  const [notes, setNotes]         = useState('');
-  const [supplierName, setSupplier]   = useState('');
-  const [documentNumber, setDocument] = useState('');
-  const [showExtra, setShowExtra] = useState(false);
+  const first = expense.items[0];
+  const rest  = expense.items.slice(1);
+
+  // Se monta al abrir: el estado nace del gasto, sin copiarlo después con un efecto.
+  const [quantity, setQuantity]   = useState(first ? String(first.quantity) : '1');
+  const [amount, setAmount]       = useState(String(first ? (first.unit ? first.unitPrice : first.totalPrice) : expense.amount));
+  const [expenseDate, setDate]    = useState(() => toBoliviaDateString(new Date(expense.expenseDate)));
+  const [notes, setNotes]         = useState(expense.description ?? '');
+  const [supplierName, setSupplier]   = useState(expense.supplierName ?? '');
+  const [documentNumber, setDocument] = useState(expense.documentNumber ?? '');
+  const [showExtra, setShowExtra] = useState(!!(expense.supplierName || expense.documentNumber));
   const [saving, setSaving]       = useState(false);
   const formId = useId();
 
-  const first = expense?.items[0];
-  const rest  = expense?.items.slice(1) ?? [];
   const unit  = first?.unit ?? '';
   const tracksQuantity = unit.length > 0;
 
   const qty   = parseFloat(quantity) || 0;
   const price = parseFloat(amount)   || 0;
   const total = tracksQuantity ? Math.round(qty * price * 100) / 100 : price;
-
-  useEffect(() => {
-    if (!expense) return;
-    if (first) {
-      setQuantity(String(first.quantity));
-      setAmount(first.unit ? String(first.unitPrice) : String(first.totalPrice));
-    } else {
-      setQuantity('1');
-      setAmount(String(expense.amount));
-    }
-    setDate(toBoliviaDateString(new Date(expense.expenseDate)));
-    setNotes(expense.description ?? '');
-    setSupplier(expense.supplierName ?? '');
-    setDocument(expense.documentNumber ?? '');
-    setShowExtra(!!(expense.supplierName || expense.documentNumber));
-  }, [expense]);
-
-  if (!expense) return null;
 
   const label = first?.name ?? expense.description ?? 'Gasto';
   const categoryName = first?.categoryName ?? expenseCategoryLabel(expense);
@@ -90,10 +76,12 @@ export function ExpenseEditModal({
     try {
       await expensesApi.update(expense.id, {
         items: [mainItem, ...legacyItems],
-        description:    notes.trim() || undefined,
+        // Cadena vacía = borrar. Con `undefined` el servidor conserva el valor anterior, así que
+        // vaciar el proveedor o el comprobante no tenía efecto.
+        description:    notes.trim(),
         expenseDate,
-        supplierName:   supplierName.trim() || undefined,
-        documentNumber: documentNumber.trim() || undefined,
+        supplierName:   supplierName.trim(),
+        documentNumber: documentNumber.trim(),
       });
       toast.success('Gasto actualizado');
       onSaved();
@@ -113,7 +101,7 @@ export function ExpenseEditModal({
       size="sm"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button type="submit" form={formId} fullWidth loading={saving}>Guardar cambios</Button>
         </div>
       }
@@ -165,11 +153,11 @@ export function ExpenseEditModal({
         {tracksQuantity && (
           <div className="flex items-baseline justify-between rounded-card border border-line bg-surface-2 px-4 py-3">
             <span className="text-body font-semibold text-main">Total</span>
-            <span className="text-heading font-bold text-main tabular-nums">Bs {total.toFixed(2)}</span>
+            <span className="text-heading font-bold text-main tabular-nums">{bs(total)}</span>
           </div>
         )}
 
-        <Input type="date" label="Fecha del gasto" required value={expenseDate} onChange={(e) => setDate(e.target.value)} />
+        <Input type="date" label="Fecha del gasto" required max={today()} value={expenseDate} onChange={(e) => setDate(e.target.value)} />
 
         <Input
           label="Nota (opcional)"

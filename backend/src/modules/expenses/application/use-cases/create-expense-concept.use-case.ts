@@ -28,8 +28,9 @@ export class CreateExpenseConceptUseCase {
     const name = dto.name.trim();
     if (!name) throw new BadRequestException('El nombre del gasto predefinido es obligatorio');
 
+    // Activa: en una categoría eliminada el gasto no aparecería en la lista.
     const category = await this.categoryRepo.findById(dto.categoryId, tenantId);
-    if (!category) throw new NotFoundException('Categoría no encontrada');
+    if (!category?.isActive) throw new NotFoundException('Categoría no encontrada');
 
     const existing = await this.repo.findByName(tenantId, name);
     // Crear o reactivar suma un gasto activo a la lista: ambos respetan el tope.
@@ -48,7 +49,7 @@ export class CreateExpenseConceptUseCase {
         throw new ConflictException(`Ya existe un gasto predefinido llamado "${name}"`);
       }
       // `undefined` = el caller no mandó el campo → se conserva el valor previo,
-      // igual que ya hace `sortOrder` acá abajo y que `UpdateExpenseConceptUseCase`.
+      // como hace `UpdateExpenseConceptUseCase`.
       // Sin esto, revivir un concepto sin mandar unidad/precio lo convertía en
       // silencio de "gasto por cantidad" a "gasto de monto libre".
       const revived = await this.repo.update(
@@ -58,7 +59,6 @@ export class CreateExpenseConceptUseCase {
           unit:             dto.unit === undefined ? undefined : (dto.unit.trim() || null),
           defaultUnitPrice: dto.defaultUnitPrice === undefined ? undefined : (dto.defaultUnitPrice ?? null),
           isActive:         true,
-          sortOrder:        dto.sortOrder ?? existing.sortOrder,
         }),
       );
       const revivedDto = toExpenseConceptDto(revived, category.name);
@@ -73,7 +73,7 @@ export class CreateExpenseConceptUseCase {
         name,
         unit:             dto.unit?.trim() || null,
         defaultUnitPrice: dto.defaultUnitPrice ?? null,
-        sortOrder:        dto.sortOrder ?? 0,
+        sortOrder:        0,
       }),
     );
     const createdDto = toExpenseConceptDto(created, category.name);

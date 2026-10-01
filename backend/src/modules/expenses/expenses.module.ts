@@ -12,7 +12,8 @@ import { ExpenseConceptRepository } from './infrastructure/persistence/expense-c
 import { ExpenseController } from './infrastructure/controllers/expense.controller';
 import { CreateExpenseUseCase } from './application/use-cases/create-expense.use-case';
 import { ListExpensesUseCase } from './application/use-cases/list-expenses.use-case';
-import { DeleteExpenseUseCase } from './application/use-cases/delete-expense.use-case';
+import { VoidExpenseUseCase } from './application/use-cases/void-expense.use-case';
+import { ExpenseItemsService } from './application/services/expense-items.service';
 import { GetExpenseSummaryUseCase } from './application/use-cases/get-expense-summary.use-case';
 import { CreateExpenseCategoryUseCase } from './application/use-cases/create-expense-category.use-case';
 import { ListExpenseCategoriesUseCase } from './application/use-cases/list-expense-categories.use-case';
@@ -34,7 +35,8 @@ import { LoadSuggestedExpenseCatalogUseCase } from './application/use-cases/load
     { provide: EXPENSE_CONCEPT_REPOSITORY_PORT,  useClass: ExpenseConceptRepository },
     CreateExpenseUseCase,
     ListExpensesUseCase,
-    DeleteExpenseUseCase,
+    VoidExpenseUseCase,
+    ExpenseItemsService,
     GetExpenseSummaryUseCase,
     CreateExpenseCategoryUseCase,
     ListExpenseCategoriesUseCase,

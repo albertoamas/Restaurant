@@ -1,4 +1,5 @@
 import type { ExpenseDto } from '@pos/shared';
+import { bs } from '../report';
 import { Icon } from '../ui/Icon';
 import { formatBoliviaTime, formatWeekdayDay } from '../../utils/date';
 import { toBoliviaDateString } from '../../utils/timezone';
@@ -48,7 +49,7 @@ function Row({ expense, onOpen }: { expense: ExpenseDto; onOpen: () => void }) {
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline justify-between gap-3">
             <span className="min-w-0 truncate text-body font-semibold text-main">{expenseTitle(expense)}</span>
-            <span className="shrink-0 text-body font-bold text-main tabular-nums">Bs {expense.amount.toFixed(2)}</span>
+            <span className="shrink-0 text-body font-bold text-main tabular-nums">{bs(expense.amount)}</span>
           </span>
           <span className="mt-0.5 block truncate text-caption text-soft">
             {/* En celular la hora va aquí: su columna le quitaba espacio al nombre. */}
@@ -86,7 +87,7 @@ export function ExpenseList({ expenses, onOpen, grouped = false, byDay }: Expens
         <section key={g.day} aria-label={formatWeekdayDay(g.day)}>
           <h3 className="flex items-baseline justify-between gap-3 border-y border-line bg-surface-2 px-4 py-2 text-label font-semibold text-main sm:px-5">
             <span>{formatWeekdayDay(g.day)}</span>
-            <span className="tabular-nums">Bs {(byDay?.[g.day] ?? g.items.reduce((n, e) => n + e.amount, 0)).toFixed(2)}</span>
+            <span className="tabular-nums">{bs(byDay?.[g.day] ?? g.items.reduce((n, e) => n + e.amount, 0))}</span>
           </h3>
           <ul className="divide-y divide-line">
             {g.items.map((e) => <Row key={e.id} expense={e} onOpen={() => onOpen(e)} />)}

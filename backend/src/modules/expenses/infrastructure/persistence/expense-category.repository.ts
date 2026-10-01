@@ -37,22 +37,6 @@ export class ExpenseCategoryRepository implements ExpenseCategoryRepositoryPort 
     return toDomain(row);
   }
 
-  async saveMany(categories: ExpenseCategoryEntity[]): Promise<void> {
-    if (categories.length === 0) return;
-    await this.prisma.expenseCategory.createMany({
-      data: categories.map((c) => ({
-        id:            c.id,
-        tenantId:      c.tenantId,
-        name:          c.name,
-        icon:          c.icon,
-        isActive:      c.isActive,
-        trackQuantity: c.trackQuantity,
-        sortOrder:     c.sortOrder,
-        createdAt:     c.createdAt,
-      })),
-      skipDuplicates: true,
-    });
-  }
 
   async update(category: ExpenseCategoryEntity): Promise<ExpenseCategoryEntity> {
     // `updateMany` + relectura en vez de `update`: Prisma exige un `where` único

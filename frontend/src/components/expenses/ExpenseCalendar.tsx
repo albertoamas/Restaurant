@@ -10,8 +10,8 @@ interface ExpenseCalendarProps {
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-/** Tope de días dibujados: un rango largo no es un calendario útil. */
-const MAX_DAYS = 62;
+/** Tope de días dibujados (unos 2 meses): un rango largo no es un calendario útil. */
+export const CALENDAR_MAX_DAYS = 62;
 
 /** "1.1k" en celular, donde no entra "Bs 1103". */
 const short = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0));
@@ -21,7 +21,7 @@ const short = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixe
  * tema, así que funciona igual en claro y oscuro. Los 7 días de la semana entran en celular.
  */
 export function ExpenseCalendar({ from, to, byDay, selectedDay, onSelect }: ExpenseCalendarProps) {
-  const days = eachDay(from, to).slice(0, MAX_DAYS);
+  const days = eachDay(from, to).slice(0, CALENDAR_MAX_DAYS);
   const max = Math.max(1, ...Object.values(byDay));
   // Lunes = 0: el día de la semana del primer día se calcula en UTC, como los días de eachDay.
   const firstOffset = (new Date(`${days[0] ?? from}T12:00:00Z`).getUTCDay() + 6) % 7;

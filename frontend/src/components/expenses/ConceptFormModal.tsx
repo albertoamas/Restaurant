@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
@@ -17,32 +17,28 @@ export type ConceptFormTarget =
  * Único formulario de un gasto de la lista, para crear y para editar. Lo usan la pestaña Lista y
  * Registrar (cuando la búsqueda no encuentra el gasto: se agrega y se registra enseguida).
  */
+function initialDraft(target: ConceptFormTarget): ConceptDraft {
+  if (target.mode === 'create') return { ...EMPTY_CONCEPT, name: target.name ?? '', categoryId: target.categoryId ?? '' };
+  const c = target.concept;
+  return {
+    categoryId:       c.categoryId,
+    name:             c.name,
+    unit:             c.unit ?? '',
+    defaultUnitPrice: c.defaultUnitPrice ? String(c.defaultUnitPrice) : '',
+  };
+}
+
 export function ConceptFormModal({ target, onClose, onSaved }: {
-  target: ConceptFormTarget | null;
+  target: ConceptFormTarget;
   onClose: () => void;
   onSaved?: (concept: ExpenseConceptDto) => void;
 }) {
   const formId = useId();
   const { invalidate } = useExpenseConcepts();
-  const [draft, setDraft]   = useState<ConceptDraft>(EMPTY_CONCEPT);
+  // Se monta al abrir: el borrador nace del destino, sin copiarlo después con un efecto.
+  const [draft, setDraft]   = useState(() => initialDraft(target));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!target) return;
-    if (target.mode === 'edit') {
-      const c = target.concept;
-      setDraft({
-        categoryId:       c.categoryId,
-        name:             c.name,
-        unit:             c.unit ?? '',
-        defaultUnitPrice: c.defaultUnitPrice ? String(c.defaultUnitPrice) : '',
-      });
-    } else {
-      setDraft({ ...EMPTY_CONCEPT, name: target.name ?? '', categoryId: target.categoryId ?? '' });
-    }
-  }, [target]);
-
-  if (!target) return null;
   const editing = target.mode === 'edit';
   const valid = draft.categoryId !== '' && draft.name.trim() !== '';
 
@@ -85,7 +81,7 @@ export function ConceptFormModal({ target, onClose, onSaved }: {
       size="lg"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button type="submit" form={formId} fullWidth loading={saving} disabled={!valid}>{submitLabel}</Button>
         </div>
       }
@@ -96,7 +92,7 @@ export function ConceptFormModal({ target, onClose, onSaved }: {
             ? 'Los cambios valen para los próximos registros. Lo ya registrado no cambia.'
             : 'Queda en tu lista para registrarlo con un toque la próxima vez.'}
         </p>
-        <ExpenseConceptFields value={draft} onChange={setDraft} autoFocusName={!editing && !(target.name)} />
+        <ExpenseConceptFields value={draft} onChange={setDraft} autoFocusName={target.mode === 'create' && !target.name} />
       </form>
     </Modal>
   );

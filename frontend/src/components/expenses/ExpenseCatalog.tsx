@@ -28,11 +28,12 @@ const conceptDetail = (c: ExpenseConceptDto) =>
  * categorías se administran desde el encabezado de su grupo. Aquí no se registra nada.
  */
 export function ExpenseCatalog() {
-  const { categories, loading: catLoading, reload } = useExpenseCategories();
+  const { categories, loading: catLoading } = useExpenseCategories();
   const { concepts, loading, invalidate } = useExpenseConcepts();
   const [query, setQuery]               = useState('');
   const [conceptForm, setConceptForm]   = useState<ConceptFormTarget | null>(null);
-  const [categoryForm, setCategoryForm] = useState<{ open: boolean; category: ExpenseCategoryDto | null }>({ open: false, category: null });
+  /** `null`: cerrado. `{ category: null }`: categoría nueva. */
+  const [categoryForm, setCategoryForm] = useState<{ category: ExpenseCategoryDto | null } | null>(null);
   const [removing, setRemoving]         = useState<Removing | null>(null);
   const [busy, setBusy]                 = useState(false);
   const [suggested, setSuggested]       = useState(false);
@@ -74,7 +75,6 @@ export function ExpenseCatalog() {
       } else {
         await expensesApi.deleteCategory(removing.category.id);
         toast.success(`Categoría "${removing.category.name}" eliminada`);
-        await reload();
       }
       invalidate();
       setRemoving(null);
@@ -98,7 +98,7 @@ export function ExpenseCatalog() {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1 sm:flex-none" disabled={categoriesFull} onClick={() => setCategoryForm({ open: true, category: null })}>
+          <Button variant="secondary" className="flex-1 sm:flex-none" disabled={categoriesFull} onClick={() => setCategoryForm({ category: null })}>
             <Icon name="plus" size={18} />
             <span className="sm:hidden">Categoría</span>
             <span className="hidden sm:inline">Nueva categoría</span>
@@ -167,7 +167,7 @@ export function ExpenseCatalog() {
                   label={`Más acciones de la categoría ${category.name}`}
                   items={[
                     ...(conceptsFull ? [] : [{ label: 'Agregar gasto aquí', icon: 'plus' as const, onSelect: () => setConceptForm({ mode: 'create', categoryId: category.id }) }]),
-                    { label: 'Renombrar', icon: 'edit', onSelect: () => setCategoryForm({ open: true, category }) },
+                    { label: 'Renombrar', icon: 'edit', onSelect: () => setCategoryForm({ category }) },
                     { label: 'Eliminar categoría', icon: 'trash', danger: true, onSelect: () => setRemoving({ kind: 'category', category, count: countIn(category.id) }) },
                   ]}
                 />
@@ -204,12 +204,8 @@ export function ExpenseCatalog() {
         </div>
       )}
 
-      <ConceptFormModal target={conceptForm} onClose={() => setConceptForm(null)} />
-      <CategoryFormModal
-        isOpen={categoryForm.open}
-        category={categoryForm.category}
-        onClose={() => setCategoryForm({ open: false, category: null })}
-      />
+      {conceptForm && <ConceptFormModal target={conceptForm} onClose={() => setConceptForm(null)} />}
+      {categoryForm && <CategoryFormModal category={categoryForm.category} onClose={() => setCategoryForm(null)} />}
       {suggested && <SuggestedCatalogModal onClose={() => setSuggested(false)} />}
 
       <ConfirmModal
