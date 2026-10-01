@@ -28,6 +28,12 @@ export const expensesApi = {
   deleteCategory: (id: string) =>
     client.delete(`/api/v1/expenses/categories/${id}`).then((r) => r.data),
 
+  /** Crea las categorías elegidas del catálogo sugerido, con sus gastos. */
+  loadSuggestedCatalog: (categories: string[]) =>
+    client
+      .post<{ categories: number; concepts: number }>('/api/v1/expenses/catalog/suggested', { categories })
+      .then((r) => r.data),
+
   // ── Gastos predefinidos ────────────────────────────────────────
 
   getConcepts: () =>

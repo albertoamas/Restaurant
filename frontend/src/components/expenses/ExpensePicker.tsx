@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
 import type { ExpenseConceptDto } from '@pos/shared';
-import { useExpenseConcepts } from '../../hooks/useExpenses';
+import { useExpenseCategories, useExpenseConcepts } from '../../hooks/useExpenses';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Input, Select } from '../ui/Input';
 import { Skeleton } from '../ui/Skeleton';
+import { SuggestedCatalogModal } from './SuggestedCatalogModal';
 
 interface ExpensePickerProps {
   /** Tocar un gasto de la lista: se abre el registro con su monto. */
@@ -46,6 +47,10 @@ function Tile({ concept, onPick }: { concept: ExpenseConceptDto; onPick: () => v
  */
 export function ExpensePicker({ onPick, onAdd }: ExpensePickerProps) {
   const { concepts, loading } = useExpenseConcepts();
+  const { categories: allCategories, loading: catLoading } = useExpenseCategories();
+  const [suggested, setSuggested] = useState(false);
+  // Sin categorías no se puede agregar un gasto (el formulario pide una): se ofrece el catálogo sugerido.
+  const noCategories = !catLoading && allCategories.length === 0;
   const [query, setQuery]       = useState('');
   const [category, setCategory] = useState('');
   const q = query.trim();
@@ -123,11 +128,19 @@ export function ExpensePicker({ onPick, onAdd }: ExpensePickerProps) {
             {concepts.length === 0 ? 'Tu lista de gastos está vacía' : q ? `"${q}" no está en tu lista` : 'Ningún gasto en esta categoría'}
           </p>
           <p className="text-label text-soft">
-            {full
+            {noCategories
+              ? 'Empieza con el catálogo sugerido o crea tus categorías en la pestaña Lista.'
+              : full
               ? `Tu lista llegó al máximo de ${EXPENSE_CATALOG_LIMITS.concepts} gastos. Quita alguno en la pestaña Lista para agregar este.`
               : q || concepts.length === 0 ? 'Agrégalo y lo registras enseguida.' : 'Elige otra categoría o agrega gastos en la pestaña Lista.'}
           </p>
-          {!full && (q || concepts.length === 0) && (
+          {noCategories && (
+            <Button onClick={() => setSuggested(true)}>
+              <Icon name="plus" size={18} />
+              Ver catálogo sugerido
+            </Button>
+          )}
+          {!noCategories && !full && (q || concepts.length === 0) && (
             <Button onClick={() => onAdd(q)}>
               <Icon name="plus" size={18} />
               {q ? `Agregar "${q}" y registrar` : 'Agregar un gasto'}
@@ -163,6 +176,8 @@ export function ExpensePicker({ onPick, onAdd }: ExpensePickerProps) {
           {visible.map((c) => <Tile key={c.id} concept={c} onPick={() => onPick(c)} />)}
         </ul>
       )}
+
+      {suggested && <SuggestedCatalogModal onClose={() => setSuggested(false)} />}
     </div>
   );
 }

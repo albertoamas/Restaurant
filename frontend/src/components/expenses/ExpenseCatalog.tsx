@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { EXPENSE_CATALOG_LIMITS } from '@pos/shared';
+import { EXPENSE_CATALOG_LIMITS, SUGGESTED_EXPENSE_CATALOG } from '@pos/shared';
 import type { ExpenseCategoryDto, ExpenseConceptDto } from '@pos/shared';
 import { expensesApi } from '../../api/expenses.api';
 import { useExpenseCategories, useExpenseConcepts } from '../../hooks/useExpenses';
@@ -13,6 +13,7 @@ import { Input } from '../ui/Input';
 import { Skeleton } from '../ui/Skeleton';
 import { ConceptFormModal, type ConceptFormTarget } from './ConceptFormModal';
 import { CategoryFormModal } from './CategoryFormModal';
+import { SuggestedCatalogModal } from './SuggestedCatalogModal';
 import { handleApiError } from '../../utils/api-error';
 
 type Removing =
@@ -34,6 +35,7 @@ export function ExpenseCatalog() {
   const [categoryForm, setCategoryForm] = useState<{ open: boolean; category: ExpenseCategoryDto | null }>({ open: false, category: null });
   const [removing, setRemoving]         = useState<Removing | null>(null);
   const [busy, setBusy]                 = useState(false);
+  const [suggested, setSuggested]       = useState(false);
 
   const q = query.trim().toLowerCase();
   const groups = useMemo(() => {
@@ -55,6 +57,10 @@ export function ExpenseCatalog() {
   // Topes de la lista (el servidor también los aplica): al llegar, crear se deshabilita y se explica.
   const conceptsFull   = concepts.length >= EXPENSE_CATALOG_LIMITS.concepts;
   const categoriesFull = categories.length >= EXPENSE_CATALOG_LIMITS.categories;
+
+  // Categorías sugeridas que todavía no tiene: se pueden sumar después, no solo con la lista vacía.
+  const have = new Set(categories.map((c) => c.name.toLowerCase()));
+  const suggestionsLeft = SUGGESTED_EXPENSE_CATALOG.some((g) => !have.has(g.name.toLowerCase()));
 
   const countIn = (categoryId: string) => concepts.filter((c) => c.categoryId === categoryId).length;
 
@@ -108,9 +114,14 @@ export function ExpenseCatalog() {
         <p className="text-label text-soft">
           Aquí defines qué gastos existen. Cambiar o quitar uno no afecta lo ya registrado.
         </p>
-        <p className="text-label text-muted tabular-nums">
-          {concepts.length} de {EXPENSE_CATALOG_LIMITS.concepts} gastos. {categories.length} de {EXPENSE_CATALOG_LIMITS.categories} categorías.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <p className="text-label text-muted tabular-nums">
+            {concepts.length} de {EXPENSE_CATALOG_LIMITS.concepts} gastos. {categories.length} de {EXPENSE_CATALOG_LIMITS.categories} categorías.
+          </p>
+          {categories.length > 0 && suggestionsLeft && !categoriesFull && (
+            <Button variant="ghost" size="sm" onClick={() => setSuggested(true)}>Agregar del catálogo sugerido</Button>
+          )}
+        </div>
         {(conceptsFull || categoriesFull) && (
           <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
             <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
@@ -129,7 +140,15 @@ export function ExpenseCatalog() {
         <EmptyState
           icon="receipt"
           title={q ? `Nada con "${query.trim()}" en tu lista` : 'Tu lista está vacía'}
-          description={q ? 'Prueba con otro nombre o agrégalo como gasto nuevo.' : 'Crea una categoría y agrega los gastos que registras seguido.'}
+          description={q
+            ? 'Prueba con otro nombre o agrégalo como gasto nuevo.'
+            : 'Empieza con el catálogo sugerido (eliges qué categorías) o crea las tuyas desde cero.'}
+          action={q ? undefined : (
+            <Button onClick={() => setSuggested(true)}>
+              <Icon name="plus" size={18} />
+              Ver catálogo sugerido
+            </Button>
+          )}
         />
       ) : (
         // En columnas y no en grilla: con alturas distintas, la grilla dejaba huecos debajo de
@@ -191,6 +210,8 @@ export function ExpenseCatalog() {
         category={categoryForm.category}
         onClose={() => setCategoryForm({ open: false, category: null })}
       />
+      {suggested && <SuggestedCatalogModal onClose={() => setSuggested(false)} />}
+
       <ConfirmModal
         isOpen={removing !== null}
         onClose={() => setRemoving(null)}

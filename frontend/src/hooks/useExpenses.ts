@@ -92,8 +92,8 @@ export function useExpenseMovements(params: { from: string; to: string; branchId
 
 /**
  * Invalida el catálogo de gastos (categorías + conceptos) ante cualquier cambio
- * hecho desde otro dispositivo. Las dos listas van juntas porque el catálogo
- * auto-siembra categorías la primera vez.
+ * hecho desde otro dispositivo. Las dos listas van juntas porque cargar el catálogo
+ * sugerido crea categorías y gastos a la vez.
  */
 function useExpenseCatalogSync() {
   const queryClient = useQueryClient();

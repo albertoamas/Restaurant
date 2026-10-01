@@ -40,6 +40,8 @@ import { UpdateExpenseConceptUseCase } from '../../application/use-cases/update-
 import { DeleteExpenseConceptUseCase } from '../../application/use-cases/delete-expense-concept.use-case';
 import { CreateExpenseConceptDto } from '../../application/dto/create-expense-concept.dto';
 import { UpdateExpenseConceptDto } from '../../application/dto/update-expense-concept.dto';
+import { LoadSuggestedCatalogDto } from '../../application/dto/load-suggested-catalog.dto';
+import { LoadSuggestedExpenseCatalogUseCase } from '../../application/use-cases/load-suggested-expense-catalog.use-case';
 import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
 
 function validateISODate(val: string | undefined, name: string): void {
@@ -65,6 +67,7 @@ export class ExpenseController {
     private readonly createExpenseConcept: CreateExpenseConceptUseCase,
     private readonly updateExpenseConcept: UpdateExpenseConceptUseCase,
     private readonly deleteExpenseConcept: DeleteExpenseConceptUseCase,
+    private readonly loadSuggestedCatalog: LoadSuggestedExpenseCatalogUseCase,
   ) {}
 
   // ── Expense categories ──────────────────────────────────────────
@@ -98,6 +101,15 @@ export class ExpenseController {
     @CurrentTenant() tenantId: string,
   ) {
     return this.deleteExpenseCategory.execute(id, tenantId);
+  }
+
+  /** Carga las categorías elegidas del catálogo sugerido, con sus gastos. */
+  @Post('catalog/suggested')
+  loadSuggested(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: LoadSuggestedCatalogDto,
+  ) {
+    return this.loadSuggestedCatalog.execute(tenantId, dto.categories);
   }
 
   // ── Gastos predefinidos (conceptos) ─────────────────────────────

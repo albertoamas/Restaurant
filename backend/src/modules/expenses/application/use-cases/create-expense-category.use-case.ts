@@ -5,14 +5,6 @@ import { EXPENSE_CATEGORY_REPOSITORY_PORT, ExpenseCategoryRepositoryPort } from 
 import { EventsService } from '../../../events/events.service';
 import { CreateExpenseCategoryDto } from '../dto/create-expense-category.dto';
 
-const DEFAULT_CATEGORIES: { name: string; icon: string; trackQuantity: boolean; sortOrder: number }[] = [
-  { name: 'Insumos',    icon: '🧂', trackQuantity: true,  sortOrder: 10 },
-  { name: 'Personal',   icon: '👤', trackQuantity: false, sortOrder: 20 },
-  { name: 'Servicios',  icon: '💡', trackQuantity: false, sortOrder: 30 },
-  { name: 'Transporte', icon: '🚗', trackQuantity: false, sortOrder: 40 },
-  { name: 'Otro',       icon: '📋', trackQuantity: false, sortOrder: 99 },
-];
-
 @Injectable()
 export class CreateExpenseCategoryUseCase {
   constructor(
@@ -68,25 +60,5 @@ export class CreateExpenseCategoryUseCase {
         `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.categories} categorías de gasto. Elimina las que ya no uses para crear otra.`,
       );
     }
-  }
-
-  /**
-   * Siembra las categorías base la primera vez. Alta masiva idempotente: si dos
-   * requests del mismo tenant entran a la vez, el segundo ignora los duplicados
-   * en vez de chocar contra el único (tenant, name).
-   */
-  async seedDefaults(tenantId: string): Promise<ExpenseCategoryEntity[]> {
-    await this.repo.saveMany(
-      DEFAULT_CATEGORIES.map((def) => ExpenseCategoryEntity.create({
-        tenantId,
-        name:          def.name,
-        icon:          def.icon,
-        trackQuantity: def.trackQuantity,
-        sortOrder:     def.sortOrder,
-      })),
-    );
-    // Relectura: con `skipDuplicates` las filas que quedaron pueden ser las del
-    // request que ganó la carrera, con otros ids que los recién generados.
-    return this.repo.findAll(tenantId);
   }
 }
