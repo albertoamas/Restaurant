@@ -10,6 +10,8 @@ export const queryKeys = {
   raffleDetail: (id: string) =>
     ['raffles', id] as const,
 
+  /** Productos activos (lo que cuenta el límite del plan). Bajo 'products': se invalida con el resto. */
+  productsActiveCount: ['products', 'activeCount'] as const,
   products: (p: { q: string; categoryId?: string; page: number; includeInactive: boolean; pageSize: number }) =>
     ['products', p] as const,
 

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
+import toast from 'react-hot-toast';
 import type { ProductDto, CreateProductRequest, CategoryDto } from '@pos/shared';
 import { productsApi } from '../../api/products.api';
 import { uploadsApi } from '../../api/uploads.api';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import { Input, Select } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/Icon';
 import { handleApiError } from '../../utils/api-error';
@@ -12,30 +13,29 @@ interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
-  onDeleted?: () => void;
+  /** Pide eliminar el producto (la confirmación vive en la página). */
+  onDelete?: (product: ProductDto) => void;
   product: ProductDto | null;
   categories: CategoryDto[];
 }
 
 const EMPTY_FORM = { name: '', price: '', categoryId: '', imageUrl: '' };
 
-export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product, categories }: ProductFormModalProps) {
+/** Crear o editar un producto: nombre, precio, categoría y foto. */
+export function ProductFormModal({ isOpen, onClose, onSaved, onDelete, product, categories }: ProductFormModalProps) {
+  const formId = useId();
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     if (product) {
-      setForm({
-        name: product.name,
-        price: String(product.price),
-        categoryId: product.categoryId,
-        imageUrl: product.imageUrl ?? '',
-      });
+      // La categoría pudo haberse eliminado: entonces se pide elegir otra.
+      const stillExists = categories.some((c) => c.id === product.categoryId);
+      setForm({ name: product.name, price: String(product.price), categoryId: stillExists ? product.categoryId : '', imageUrl: product.imageUrl ?? '' });
       setImagePreview(product.imageUrl ?? '');
     } else {
       setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || '' });
@@ -58,173 +58,109 @@ export function ProductFormModal({ isOpen, onClose, onSaved, onDeleted, product,
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const valid = form.name.trim() !== '' && form.price !== '' && Number(form.price) >= 0 && form.categoryId !== '';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUploading(true);
+    if (!valid) return;
+    setSaving(true);
     try {
       let finalImageUrl: string | null | undefined = form.imageUrl || null;
-      if (imageFile) {
-        finalImageUrl = await uploadsApi.image(imageFile);
-      }
-
-      const data = {
-        name: form.name,
-        price: parseFloat(form.price),
-        categoryId: form.categoryId,
-        imageUrl: finalImageUrl,
-      };
-
-      if (product) {
-        await productsApi.update(product.id, data);
-      } else {
-        await productsApi.create(data as CreateProductRequest);
-      }
+      if (imageFile) finalImageUrl = await uploadsApi.image(imageFile);
+      const data = { name: form.name.trim(), price: parseFloat(form.price), categoryId: form.categoryId, imageUrl: finalImageUrl };
+      if (product) await productsApi.update(product.id, data);
+      else         await productsApi.create(data as CreateProductRequest);
+      toast.success(product ? 'Producto actualizado' : `${data.name} agregado al catálogo`);
       onSaved();
       onClose();
     } catch (err) {
-      handleApiError(err);
+      handleApiError(err, product ? 'Error al guardar el producto' : 'Error al crear el producto');
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!product) return;
-    setDeleting(true);
-    try {
-      await productsApi.delete(product.id);
-      onDeleted?.();
-      onClose();
-    } catch (err) {
-      handleApiError(err, 'Error al eliminar');
-      setDeleting(false);
-      setConfirmDelete(false);
+      setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={product ? 'Editar Producto' : 'Nuevo Producto'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre"
-          placeholder="Ej: Hamburguesa Clásica"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <Input
-          label="Precio"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          required
-          leftAddon={<span className="text-gray-400 text-sm font-medium">Bs</span>}
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Categoría</label>
-          <select
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={product ? `Editar ${product.name}` : 'Nuevo producto'}
+      footer={
+        <div className="flex gap-3">
+          {product && onDelete && (
+            <Button type="button" variant="ghost" onClick={() => onDelete(product)} disabled={saving} aria-label={`Eliminar ${product.name}`} title="Eliminar producto">
+              <Icon name="trash" size={18} />
+            </Button>
+          )}
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button type="submit" form={formId} fullWidth loading={saving} disabled={!valid}>
+            {product ? 'Guardar cambios' : 'Crear producto'}
+          </Button>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+        <Input label="Nombre" autoFocus={!product} placeholder="Ej.: hamburguesa clásica" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            label="Precio"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            leftAddon="Bs"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            required
+          />
+          <Select
+            label="Categoría"
             value={form.categoryId}
             onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+            error={product && form.categoryId === '' ? 'Su categoría se eliminó: elige otra' : undefined}
             required
-            className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface-card text-gray-700
-              focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500
-              transition-[border-color,box-shadow]"
           >
-            <option value="">Selecciona...</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+            <option value="">Elige una categoría</option>
+            {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+          </Select>
         </div>
 
-        {/* Image upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Imagen <span className="text-gray-400 font-normal text-xs">(opcional)</span>
-          </label>
-
+          <p className="mb-1.5 text-label font-medium text-soft">Foto (opcional)</p>
           {imagePreview ? (
-            <div className="relative w-full h-36 rounded-xl overflow-hidden border border-line">
-              <img src={imagePreview} alt="Vista previa" className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                aria-label="Quitar imagen"
-                className="absolute top-2 right-2 bg-white/10 rounded-full p-1.5 hover:bg-red-500/15 transition-colors border border-white/10"
-              >
-                <Icon name="x" size={14} strokeWidth={2} className="text-red-500" />
-              </button>
+            <div className="flex items-center gap-3">
+              <img src={imagePreview} alt="Vista previa de la foto" className="h-24 w-24 rounded-control border border-line object-cover" />
+              <div className="flex flex-col gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Icon name="photo" size={16} />
+                  Cambiar foto
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage}>
+                  <Icon name="x" size={16} />
+                  Quitar foto
+                </Button>
+              </div>
             </div>
           ) : (
             <label
               htmlFor="product-image-input"
-              className="flex flex-col items-center justify-center gap-2 w-full h-28 border-2 border-dashed border-line
-                rounded-xl hover:border-primary-400 hover:bg-primary-500/8 transition-colors text-gray-400 hover:text-primary-500 cursor-pointer"
+              className="flex min-h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-control border-2 border-dashed border-line-strong px-4 py-4 text-center text-soft transition-colors hover:border-primary-500/60 hover:text-main"
             >
-              <Icon name="photo" size={28} strokeWidth={1.5} />
-              <span className="text-sm font-semibold">Haz clic para subir imagen</span>
-              <span className="text-xs text-gray-400">JPG, PNG, WEBP o GIF, hasta 10 MB</span>
+              <Icon name="photo" size={24} />
+              <span className="text-body font-semibold">Subir una foto</span>
+              <span className="text-caption text-muted">JPG, PNG, WEBP o GIF, hasta 10 MB. Sin foto se muestra la inicial.</span>
             </label>
           )}
-
           <input
             id="product-image-input"
             ref={fileInputRef}
-            type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
             onChange={handleFileChange}
           />
         </div>
-
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={deleting}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={uploading} disabled={deleting}>
-            {product ? 'Guardar Cambios' : 'Crear Producto'}
-          </Button>
-        </div>
-
-        {/* Delete zone — only shown when editing */}
-        {product && (
-          <div className="pt-2 border-t border-line mt-1">
-            {!confirmDelete ? (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                disabled={uploading || deleting}
-                className="w-full text-[13px] font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl py-2 transition-colors disabled:opacity-40"
-              >
-                Eliminar producto
-              </button>
-            ) : (
-              <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3">
-                <p className="text-[13px] font-semibold text-red-700 dark:text-red-400 mb-2 text-center">
-                  ¿Eliminar <span className="font-black">{product.name}</span>?
-                </p>
-                <p className="text-[11px] text-red-500/80 text-center mb-3">Esta acción no se puede deshacer.</p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    disabled={deleting}
-                    className="flex-1 text-[13px] font-semibold text-gray-600 bg-white dark:bg-white/10 border border-line rounded-xl py-2 hover:bg-gray-50 transition-colors disabled:opacity-40"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex-1 text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl py-2 transition-colors disabled:opacity-60"
-                  >
-                    {deleting ? 'Eliminando…' : 'Sí, eliminar'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </form>
     </Modal>
   );
