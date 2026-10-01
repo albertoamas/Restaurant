@@ -23,7 +23,8 @@ import { buildCategoryTones } from '../utils/category-tone';
 import { handleApiError } from '../utils/api-error';
 import { ProductFormModal } from '../components/products/ProductFormModal';
 import { ProductThumb } from '../components/products/ProductThumb';
-import { CategoryManagerModal } from '../components/products/CategoryManagerModal';
+import { ProductCategories } from '../components/products/ProductCategories';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
 
 function chipClass(active: boolean) {
   return [
@@ -39,7 +40,8 @@ export function ProductsPage() {
     total, page, totalPages, setPage,
     q, setQ, categoryId, setCategoryId,
   } = useProducts(true, 50);
-  const { categories, reload: reloadCategories } = useCategories();
+  const { categories, loading: catsLoading, reload: reloadCategories } = useCategories();
+  const [tab, setTab] = useState<'products' | 'categories'>('products');
   const maxProducts = useSettingsStore((s) => s.planLimits?.maxProducts);
 
   // El plan cuenta solo los productos activos.
@@ -55,7 +57,6 @@ export function ProductsPage() {
   useEffect(() => { setQ(debounced); }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [form, setForm]           = useState<{ open: boolean; product: ProductDto | null }>({ open: false, product: null });
-  const [showCatModal, setShowCatModal] = useState(false);
   const [deactivating, setDeactivating] = useState<ProductDto | null>(null);
   const [deleting, setDeleting]   = useState<ProductDto | null>(null);
   const [busy, setBusy]           = useState(false);
@@ -106,15 +107,22 @@ export function ProductsPage() {
         description={limited ? `${activeCount} de ${maxProducts} productos activos de tu plan.` : `${activeCount} productos activos.`}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setShowCatModal(true)}>Categorías</Button>
-            <Button onClick={() => setForm({ open: true, product: null })} disabled={full}>
-              <Icon name="plus" size={18} />
-              Nuevo producto
-            </Button>
+            <SegmentedControl
+              label="Sección del catálogo"
+              value={tab}
+              onChange={setTab}
+              options={[{ value: 'products', label: 'Productos' }, { value: 'categories', label: 'Categorías' }]}
+            />
+            {tab === 'products' && (
+              <Button onClick={() => setForm({ open: true, product: null })} disabled={full}>
+                <Icon name="plus" size={18} />
+                Nuevo producto
+              </Button>
+            )}
           </>
         }
       >
-        {full && (
+        {tab === 'products' && full && (
           <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
             <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
             Llegaste al máximo de {maxProducts} productos activos de tu plan. Desactiva los que ya no vendes para agregar otros.
@@ -122,6 +130,9 @@ export function ProductsPage() {
         )}
       </PageHeader>
 
+      {tab === 'categories' ? (
+        <ProductCategories categories={categories} loading={catsLoading} onChanged={refresh} />
+      ) : (<>
       <div className="mb-4 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex-1">
@@ -216,6 +227,8 @@ export function ProductsPage() {
         </section>
       )}
 
+      </>)}
+
       <ProductFormModal
         isOpen={form.open}
         onClose={() => setForm({ open: false, product: null })}
@@ -225,7 +238,6 @@ export function ProductsPage() {
         categories={categories}
       />
 
-      <CategoryManagerModal isOpen={showCatModal} onClose={() => setShowCatModal(false)} categories={categories} onSaved={refresh} />
 
       <ConfirmModal
         isOpen={deactivating !== null}

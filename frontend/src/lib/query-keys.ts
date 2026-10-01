@@ -12,6 +12,7 @@ export const queryKeys = {
 
   /** Productos activos (lo que cuenta el límite del plan). Bajo 'products': se invalida con el resto. */
   productsActiveCount: ['products', 'activeCount'] as const,
+  productsCountByCategory: (categoryIds: string[]) => ['products', 'countByCategory', categoryIds] as const,
   products: (p: { q: string; categoryId?: string; page: number; includeInactive: boolean; pageSize: number }) =>
     ['products', p] as const,
 
