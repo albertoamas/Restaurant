@@ -203,6 +203,8 @@ function RaffleDetailContent({ id }: { id: string }) {
           position={drawingPosition}
           names={availableTickets.map((t) => t.customer.name)}
           revealName={pendingWinnerName}
+          raffleName={raffle.name}
+          prize={raffle.prizes.find((p) => p.position === drawingPosition)?.prizeDescription}
         />
       )}
 
