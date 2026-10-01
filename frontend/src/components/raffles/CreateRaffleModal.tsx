@@ -1,20 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Input, Select, Textarea } from '../ui/Input';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { rafflesApi } from '../../api/raffles.api';
 import { productsApi } from '../../api/products.api';
 import { handleApiError } from '../../utils/api-error';
 import type { RaffleDto, ProductDto, RaffleTicketMode } from '@pos/shared';
 
-const inputCls = 'w-full text-sm border border-line rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-surface-card text-gray-700 transition-[border-color,box-shadow]';
-const labelCls = 'text-xs font-semibold text-gray-600 mb-1.5 block';
-
-function ordinalLabel(n: number): string {
-  if (n === 1) return '1er lugar';
-  if (n === 2) return '2do lugar';
-  if (n === 3) return '3er lugar';
-  return `${n}° lugar`;
-}
+import { positionLabel } from '../../utils/raffle-utils';
 
 export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void; onCreated: (r: RaffleDto) => void }) {
   const [ticketMode, setTicketMode] = useState<RaffleTicketMode>('PRODUCT_MATCH');
@@ -26,6 +20,7 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
   const [prizes, setPrizes] = useState<string[]>(['']);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [saving, setSaving] = useState(false);
+  const formId = useId();
 
   useEffect(() => {
     productsApi.getAll({ includeInactive: false, limit: 200 })
@@ -64,7 +59,8 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
     prizes.length === numberOfWinners &&
     prizes.every((p) => p.trim() !== '');
 
-  async function handleSubmit() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!isValid) return;
     setSaving(true);
     try {
@@ -86,137 +82,88 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
     }
   }
 
+  const prizeHint = ['Ej.: celular', 'Ej.: cena para dos', 'Ej.: vale de consumo'];
+
   return (
-    <Modal isOpen onClose={onClose} title="Nuevo Sorteo" size="sm">
-      <div className="space-y-3.5">
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Nuevo sorteo"
+      size="md"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button type="submit" form={formId} fullWidth loading={saving} disabled={!isValid}>Crear sorteo</Button>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-5">
+        <Input label="Nombre del sorteo" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Sorteo de Navidad" required />
+
         <div>
-          <label className={labelCls}>Nombre del sorteo *</label>
-          <input
-            autoFocus
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej: Sorteo de Navidad"
-            className={inputCls}
+          <p className="mb-1.5 text-label font-medium text-soft">Cómo se gana un ticket</p>
+          <SegmentedControl
+            label="Cómo se gana un ticket"
+            fullWidth
+            value={ticketMode}
+            onChange={handleModeChange}
+            options={[
+              { value: 'PRODUCT_MATCH', label: 'Comprando un producto' },
+              { value: 'SPENDING_THRESHOLD', label: 'Por monto consumido' },
+            ]}
           />
         </div>
 
-        {/* Toggle de modo */}
-        <div>
-          <label className={labelCls}>Tipo de sorteo *</label>
-          <div className="flex gap-0.5 bg-surface-2 rounded-xl p-1">
-            <button
-              type="button"
-              onClick={() => handleModeChange('PRODUCT_MATCH')}
-              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-[9px] transition-all duration-150 ${
-                ticketMode === 'PRODUCT_MATCH'
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Por producto
-            </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange('SPENDING_THRESHOLD')}
-              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-[9px] transition-all duration-150 ${
-                ticketMode === 'SPENDING_THRESHOLD'
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Por monto acumulado
-            </button>
-          </div>
-        </div>
-
-        {/* Campos condicionales por modo */}
         {ticketMode === 'PRODUCT_MATCH' ? (
-          <div>
-            <label className={labelCls}>Producto que activa el sorteo *</label>
-            <select value={productId} onChange={(e) => setProductId(e.target.value)} className={inputCls}>
-              <option value="">Seleccionar producto</option>
-              {products.filter((p) => p.isActive).map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
-              Cada pedido con este producto y un cliente asignado genera un ticket automáticamente.
-            </p>
-          </div>
+          <Select
+            label="Producto del sorteo"
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            hint="Cada pedido con este producto y un cliente asignado le da un ticket a ese cliente."
+          >
+            <option value="">Elige un producto</option>
+            {products.filter((p) => p.isActive).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </Select>
         ) : (
-          <div>
-            <label className={labelCls}>Umbral de gasto *</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 whitespace-nowrap">Cada</span>
-              <input
-                type="number"
-                min={1}
-                value={spendingThreshold}
-                onChange={(e) => setSpendingThreshold(Math.max(1, Number(e.target.value)))}
-                className={`${inputCls} text-center`}
-              />
-              <span className="text-sm text-gray-500 whitespace-nowrap">Bs = 1 ticket</span>
-            </div>
-            <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
-              El cliente acumula gasto en el local. Al superar el umbral, recibe un ticket automáticamente.
-            </p>
-          </div>
+          <Input
+            label="Un ticket cada"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            leftAddon="Bs"
+            value={spendingThreshold}
+            onChange={(e) => setSpendingThreshold(Math.max(1, Number(e.target.value)))}
+            hint="El consumo de cada cliente se acumula; cada vez que pasa este monto, recibe un ticket."
+          />
         )}
 
-        <div>
-          <label className={labelCls}>Número de ganadores *</label>
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={numberOfWinners}
-            onChange={(e) => handleWinnersChange(Number(e.target.value))}
-            className={inputCls}
-          />
-          <p className="text-[11px] text-gray-400 mt-1.5">
-            Define cuántos lugares se sortearán (del último al primero).
-          </p>
-        </div>
+        <Input
+          label="Cuántos ganadores"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={10}
+          value={numberOfWinners}
+          onChange={(e) => handleWinnersChange(Number(e.target.value))}
+          hint="Hasta 10. Se sortean del último lugar al primero."
+        />
 
-        <div>
-          <label className={labelCls}>Premios por posición *</label>
-          <div className="space-y-2">
-            {prizes.map((prize, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-gray-400 w-16 shrink-0 text-right">
-                  {ordinalLabel(i + 1)}
-                </span>
-                <input
-                  type="text"
-                  value={prize}
-                  onChange={(e) => handlePrizeChange(i, e.target.value)}
-                  placeholder={i === 0 ? 'Ej: Celular Samsung' : i === 1 ? 'Ej: Televisor 55"' : 'Ej: Bicicleta'}
-                  className={inputCls}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        <fieldset className="space-y-2">
+          <legend className="mb-1.5 text-label font-medium text-soft">Premio de cada lugar</legend>
+          {prizes.map((prize, i) => (
+            <Input
+              key={i}
+              aria-label={`Premio del ${positionLabel(i + 1)}`}
+              leftAddon={<span className="w-16 text-label">{positionLabel(i + 1)}</span>}
+              value={prize}
+              onChange={(e) => handlePrizeChange(i, e.target.value)}
+              placeholder={prizeHint[i] ?? 'Ej.: premio sorpresa'}
+            />
+          ))}
+        </fieldset>
 
-        <div>
-          <label className={labelCls}>Descripción</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Detalles adicionales..."
-            rows={2}
-            className={`${inputCls} resize-none`}
-          />
-        </div>
-
-        <div className="flex gap-2 pt-1">
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" fullWidth onClick={handleSubmit} loading={saving} disabled={!isValid}>
-            Crear sorteo
-          </Button>
-        </div>
-      </div>
+        <Textarea label="Descripción (opcional)" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Bases o detalles para tus clientes" />
+      </form>
     </Modal>
   );
 }

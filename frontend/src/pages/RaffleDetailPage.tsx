@@ -1,104 +1,28 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import type { RaffleStatus } from '@pos/shared';
 import { useAuth } from '../context/auth.context';
 import { useSettingsStore } from '../store/settings.store';
-import { ParticipantsList } from '../components/raffles/ParticipantsModal';
+import { ActionMenu, type ActionMenuItem } from '../components/ui/ActionMenu';
 import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
-import { Spinner } from '../components/ui/Spinner';
-import type { RaffleStatus } from '@pos/shared';
+import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Kpi } from '../components/report';
+import { ParticipantsList } from '../components/raffles/ParticipantsModal';
 import { StatusBadge } from '../components/raffles/StatusBadge';
-import { IconTicket, IconPackage, IconDice, IconCoins } from '../components/raffles/RaffleIcons';
+import { ticketRule } from '../components/raffles/RaffleCard';
 import { WinnerModal } from '../components/raffles/WinnerModal';
 import { DrawingScreen } from '../components/raffles/DrawingScreen';
-import { useRaffleDetail, type BusyState } from '../hooks/useRaffleDetail';
-import { positionLabel } from '../utils/raffle-utils';
-import { downloadExcelSheets } from '../utils/excel';
 import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
 import { PrizesSection } from '../components/raffles/PrizesSection';
-
-// ─── Confirm draw ─────────────────────────────────────────────────────────────
-
-function ConfirmDrawModal({
-  nextPosition, raffleName, availableTickets, onConfirm, onCancel, loading,
-}: {
-  nextPosition: number; raffleName: string; availableTickets: number;
-  onConfirm: () => void; onCancel: () => void; loading: boolean;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative rounded-2xl shadow-2xl border border-line w-full max-w-sm p-6 space-y-4" style={{ background: 'var(--color-surface-card)' }}>
-        <h3 className="text-base font-bold text-gray-900">
-          Sortear {positionLabel(nextPosition)}
-        </h3>
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-          <p className="text-sm font-semibold text-amber-900 mb-1.5">Esta acción no se puede deshacer</p>
-          <p className="text-xs text-amber-700 leading-relaxed">
-            Se sorteará el <strong>{positionLabel(nextPosition)}</strong> del sorteo{' '}
-            <strong>"{raffleName}"</strong> entre los{' '}
-            <strong>{availableTickets} tickets disponibles</strong> en el ánfora.
-          </p>
-        </div>
-        <div className="flex gap-2 pt-1">
-          <Button variant="secondary" onClick={onCancel} disabled={loading}>Cancelar</Button>
-          <Button variant="primary" fullWidth onClick={onConfirm} loading={loading}>
-            <span className="flex items-center justify-center gap-2">
-              <IconDice className="w-4 h-4" />
-              Sortear ahora
-            </span>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Delete confirm dialog ────────────────────────────────────────────────────
-
-function DeleteRaffleDialog({
-  raffleName, busy, deleted, onConfirm, onCancel,
-}: {
-  raffleName: string; busy: BusyState; deleted: boolean;
-  onConfirm: () => void; onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative rounded-2xl shadow-2xl border border-line w-full max-w-sm p-6 flex flex-col gap-4" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-            <Icon name="warning" size={20} strokeWidth={2} className="text-red-600" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900">¿Eliminar sorteo?</h3>
-            <p className="text-xs text-gray-500 mt-0.5">"{raffleName}"</p>
-          </div>
-        </div>
-        <p className="text-xs text-gray-600 leading-relaxed">
-          Se eliminarán todos los tickets y acumulados asociados. Esta acción no se puede deshacer.
-        </p>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onCancel}
-            className="text-sm text-gray-600 hover:text-gray-800 px-4 py-2 rounded-xl hover:bg-surface-2 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={busy === 'delete' || deleted}
-            className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-          >
-            {busy === 'delete' ? 'Eliminando…' : 'Sí, eliminar'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
+import { useRaffleDetail } from '../hooks/useRaffleDetail';
+import { positionLabel } from '../utils/raffle-utils';
+import { downloadExcelSheets } from '../utils/excel';
 
 export function RaffleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -116,7 +40,7 @@ function RaffleDetailContent({ id }: { id: string }) {
   const [editOpen, setEditOpen] = useState(false);
 
   const {
-    raffle, setRaffle, loading, error, busy, deleted,
+    raffle, setRaffle, loading, error, busy,
     showConfirm, setShowConfirm,
     deleteConfirm, setDeleteConfirm,
     drawingPosition, pendingWinnerName,
@@ -129,11 +53,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
   const { user } = useAuth();
   const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();
-  const business = {
-    name:    user?.tenantName ?? '',
-    address: businessAddress || undefined,
-    phone:   businessPhone   || undefined,
-  };
+  const business = { name: user?.tenantName ?? '', address: businessAddress || undefined, phone: businessPhone || undefined };
   const ticketPrintSettings = {
     businessName:    user?.tenantName ?? '',
     businessAddress: businessAddress || undefined,
@@ -141,225 +61,142 @@ function RaffleDetailContent({ id }: { id: string }) {
     receiptSlogan:   receiptSlogan   || undefined,
   };
 
-  const isSpending = raffle?.ticketMode === 'SPENDING_THRESHOLD';
-  const participantCount = isSpending ? (raffle?.spendings.length ?? 0) : (raffle?.tickets.length ?? 0);
+  const back = (
+    <Button variant="ghost" size="sm" className="mb-2 -ml-2" onClick={goBack} disabled={!!busy}>
+      <Icon name="chevron-left" size={16} />
+      Sorteos
+    </Button>
+  );
+
+  if (loading) {
+    return <PageShell>{back}<div className="space-y-4"><Skeleton variant="card" /><Skeleton variant="card" /></div></PageShell>;
+  }
+  if (error || !raffle) {
+    return (
+      <PageShell>
+        {back}
+        <EmptyState
+          icon="ticket"
+          title="No se pudo abrir el sorteo"
+          description="Puede que lo hayan eliminado o que no tengas acceso."
+          action={<Button variant="secondary" onClick={goBack}>Volver a Sorteos</Button>}
+        />
+      </PageShell>
+    );
+  }
+
+  const next = raffle.nextPositionToDraw;
+  const participantCount = new Set(raffle.tickets.map((t) => t.customerId)).size;
+  const voiding = raffle.winners.find((w) => w.id === voidConfirmId) ?? null;
+
+  const exportWinners = () => {
+    const rows = raffle.winners.filter((w) => !w.voided).sort((a, b) => a.position - b.position);
+    downloadExcelSheets(`ganadores-${raffle.name}`, [{
+      title: 'Ganadores',
+      headers: ['Lugar', 'Nombre', 'Teléfono', 'Ticket', 'Fecha del sorteo', 'Premio'],
+      rows: rows.map((w) => [
+        positionLabel(w.position), w.customer.name, w.customer.phone ?? '-', String(w.ticketNumber),
+        new Date(w.drawnAt).toLocaleDateString('es-BO'), w.prizeDescription ?? '-',
+      ]),
+    }]);
+  };
+
+  const menu: ActionMenuItem[] = [
+    { label: 'Editar sorteo', icon: 'edit', onSelect: () => setEditOpen(true) },
+    ...(isActive ? [{ label: 'Cerrar sorteo', icon: 'lock' as const, onSelect: () => { void handleClose(); } }] : []),
+    ...(isReopenable ? [{ label: 'Reabrir sorteo', icon: 'refresh' as const, onSelect: () => { void handleReopen(); } }] : []),
+    ...(activeWinnersCount > 0 ? [{ label: 'Exportar ganadores', icon: 'download' as const, onSelect: exportWinners }] : []),
+    ...(isDeletable ? [{ label: 'Eliminar sorteo', icon: 'trash' as const, danger: true, onSelect: () => setDeleteConfirm(true) }] : []),
+  ];
 
   return (
-    <>
-      <div className="p-4 lg:p-6 animate-slide">
-
-        {/* ── Navegación — Fix 5: deshabilitado durante operaciones ───────── */}
-        <button
-          onClick={goBack}
-          disabled={!!busy}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5 group transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Icon name="chevron-left" size={16} strokeWidth={2} className="group-hover:-translate-x-0.5 transition-transform" />
-          Volver a Sorteos
-        </button>
-
-        {/* Fix 3: lógica tristate — loading / error / contenido */}
-        {loading ? (
-          <div className="flex justify-center py-20"><Spinner /></div>
-        ) : error || !raffle ? (
-          <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-center">
-            <p className="text-sm font-semibold text-red-700 mb-1">No se pudo cargar el sorteo</p>
-            <p className="text-xs text-red-500 mb-4">Es posible que haya sido eliminado o no tengas acceso.</p>
-            <button
-              onClick={goBack}
-              className="text-sm font-medium text-red-600 hover:text-red-800 underline underline-offset-2"
-            >
-              Volver a Sorteos
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-5">
-
-            {/* ── Encabezado de la página ──────────────────────────────────── */}
-            <div className="rounded-2xl border border-line shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <h1 className="text-2xl font-black text-gray-900 font-heading leading-tight">
-                    {raffle.name}
-                  </h1>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {raffle.ticketMode === 'PRODUCT_MATCH' ? 'Por compra de producto' : `Cada ${raffle.spendingThreshold} Bs acumulados`}, {raffle.ticketCount} ticket{raffle.ticketCount !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setEditOpen(true)}
-                    disabled={!!busy}
-                    className="text-gray-300 hover:text-violet-500 transition-colors p-1.5 rounded-lg hover:bg-violet-50 disabled:opacity-40"
-                    title="Editar sorteo"
-                  >
-                    <Icon name="edit" size={16} strokeWidth={2} />
-                  </button>
-                  {isDeletable && (
-                    <button
-                      onClick={() => setDeleteConfirm(true)}
-                      disabled={!!busy}
-                      className="text-gray-300 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-50 disabled:opacity-40"
-                      title="Eliminar sorteo"
-                    >
-                      <Icon name="trash" size={16} strokeWidth={2} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <StatusBadge status={raffle.status as RaffleStatus} />
-
-                {isSpending ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full font-medium">
-                    <IconCoins className="w-3 h-3 text-amber-500" />
-                    Cada {raffle.spendingThreshold} Bs = 1 ticket
-                  </span>
-                ) : raffle.productName ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-surface-2 px-2.5 py-1 rounded-full">
-                    <IconPackage className="w-3 h-3 text-gray-400" />
-                    {raffle.productName}
-                  </span>
-                ) : null}
-
-                <span className="ml-auto text-xs text-gray-400 font-medium tabular-nums">
-                  {activeWinnersCount} / {raffle.numberOfWinners} sorteados
-                </span>
-              </div>
-
-              {raffle.description && (
-                <p className="text-sm text-gray-500 leading-relaxed mt-3">{raffle.description}</p>
-              )}
-            </div>
-
-            {/* ── Premios ──────────────────────────────────────────────────── */}
-            <PrizesSection
-              prizes={raffle.prizes}
-              winners={raffle.winners}
-              raffleName={raffle.name}
-              canVoid={canVoid}
-              busy={busy}
-              voidConfirmId={voidConfirmId}
-              onVoidRequest={setVoidConfirmId}
-              onVoidConfirm={handleVoidWinner}
-              onVoidCancel={() => setVoidConfirmId(null)}
-              business={business}
-            />
-
-            {/* ── Stats ────────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-line shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
-                <p className="text-[11px] text-gray-400 font-medium mb-1">
-                  {isDrawable && !isActive ? 'Tickets disponibles' : 'Tickets en ánfora'}
-                </p>
-                <div className="flex items-end gap-1.5">
-                  <span className="font-heading font-black text-3xl text-gray-900 leading-none">
-                    {availableTickets.length}
-                  </span>
-                  {raffle.ticketCount !== availableTickets.length && (
-                    <span className="text-sm text-gray-400 mb-0.5">/ {raffle.ticketCount}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 mt-1.5">
-                  <IconTicket className="w-3 h-3 text-gray-300" />
-                  <span className="text-[10px] text-gray-400">total emitidos</span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-line shadow-card-xl px-5 py-4" style={{ background: 'var(--color-surface-card)' }}>
-                <p className="text-[11px] text-gray-400 font-medium mb-1">
-                  {isSpending ? 'Clientes' : 'Participantes'}
-                </p>
-                <span className="font-heading font-black text-3xl text-gray-900 leading-none">
-                  {participantCount}
-                </span>
-              </div>
-            </div>
-
-            {/* ── Participantes (inline) ────────────────────────────────────── */}
-            <section className="rounded-2xl border border-line shadow-card-xl p-5" style={{ background: 'var(--color-surface-card)' }}>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                {isSpending ? 'Clientes y acumulados' : 'Participantes'}
-              </p>
-              <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} />
-            </section>
-
-            {/* ── Acciones ─────────────────────────────────────────────────── */}
-            {(isActive || isReopenable || isDrawable || activeWinnersCount > 0) && (
-              <div className="rounded-2xl border border-line shadow-card-xl p-5 space-y-3" style={{ background: 'var(--color-surface-card)' }}>
-                {isDrawable && raffle.nextPositionToDraw !== null && (
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    onClick={() => setShowConfirm(true)}
-                    disabled={!!busy || availableTickets.length === 0}
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <IconDice className="w-4 h-4" />
-                      Sortear {positionLabel(raffle.nextPositionToDraw)}
-                    </span>
-                  </Button>
-                )}
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {isActive && (
-                    <Button variant="secondary" size="sm" onClick={handleClose}
-                      loading={busy === 'close'} disabled={!!busy}>
-                      Cerrar sorteo
-                    </Button>
-                  )}
-                  {isReopenable && (
-                    <Button variant="secondary" size="sm" onClick={handleReopen}
-                      loading={busy === 'reopen'} disabled={!!busy}>
-                      Reabrir sorteo
-                    </Button>
-                  )}
-                  {activeWinnersCount > 0 && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        const activeWinners = raffle.winners
-                          .filter((w) => !w.voided)
-                          .sort((a, b) => a.position - b.position);
-                        downloadExcelSheets(`ganadores-${raffle.name}`, [{
-                          title: 'Ganadores',
-                          headers: ['Posición', 'Nombre', 'Teléfono', 'Nro. Ticket', 'Fecha sorteo', 'Premio'],
-                          rows: activeWinners.map((w) => [
-                            positionLabel(w.position),
-                            w.customer.name,
-                            w.customer.phone ?? '-',
-                            String(w.ticketNumber),
-                            new Date(w.drawnAt).toLocaleDateString('es-BO'),
-                            w.prizeDescription ?? '-',
-                          ]),
-                        }]);
-                      }}
-                    >
-                      Exportar ganadores
-                    </Button>
-                  )}
-                </div>
-              </div>
+    <PageShell>
+      {back}
+      <PageHeader
+        title={raffle.name}
+        meta={<StatusBadge status={raffle.status as RaffleStatus} />}
+        description={ticketRule(raffle)}
+        actions={
+          <>
+            {isDrawable && next !== null && (
+              <Button onClick={() => setShowConfirm(true)} disabled={!!busy || availableTickets.length === 0}>
+                <Icon name="star" size={18} />
+                Sortear el {positionLabel(next)}
+              </Button>
             )}
-
-          </div>
+            <ActionMenu label="Más acciones del sorteo" items={menu} />
+          </>
+        }
+      >
+        {raffle.description && <p className="text-body text-soft">{raffle.description}</p>}
+        {isDrawable && next !== null && availableTickets.length === 0 && (
+          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Para sortear hace falta al menos un ticket en el ánfora.</p>
         )}
+      </PageHeader>
+
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Kpi
+          label="Tickets en el ánfora"
+          value={String(availableTickets.length)}
+          sub={raffle.ticketCount !== availableTickets.length ? `De ${raffle.ticketCount} emitidos` : undefined}
+        />
+        <Kpi label="Participantes" value={String(participantCount)} />
+        <div className="max-sm:col-span-2"><Kpi label="Sorteados" value={`${activeWinnersCount} de ${raffle.numberOfWinners}`} /></div>
       </div>
 
-      {/* ── Overlays (se montan sobre la página igual que sobre el modal) ─── */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <Card padding="none">
+          <h2 className="px-4 pt-4 pb-2 text-heading font-semibold text-main sm:px-5">Premios</h2>
+          <PrizesSection
+            prizes={raffle.prizes}
+            winners={raffle.winners}
+            raffleName={raffle.name}
+            canVoid={canVoid}
+            onVoid={(w) => setVoidConfirmId(w.id)}
+            business={business}
+          />
+        </Card>
 
-      {showConfirm && raffle?.nextPositionToDraw !== null && raffle && (
-        <ConfirmDrawModal
-          nextPosition={raffle.nextPositionToDraw!}
-          raffleName={raffle.name}
-          availableTickets={availableTickets.length}
-          onConfirm={handleDraw}
-          onCancel={() => setShowConfirm(false)}
-          loading={busy === 'draw'}
-        />
-      )}
+        <Card padding="none">
+          <h2 className="px-4 pt-4 pb-3 text-heading font-semibold text-main sm:px-5">Participantes</h2>
+          <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} />
+        </Card>
+      </div>
+
+      <ConfirmModal
+        isOpen={showConfirm && next !== null}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDraw}
+        loading={busy === 'draw'}
+        title={next !== null ? `Sortear el ${positionLabel(next)}` : 'Sortear'}
+        message={`Sale un ganador entre los ${availableTickets.length} tickets del ánfora. El resultado queda registrado y no se puede repetir.`}
+        confirmLabel="Sortear ahora"
+        cancelLabel="Volver"
+      />
+
+      <ConfirmModal
+        isOpen={voiding !== null}
+        onClose={() => setVoidConfirmId(null)}
+        onConfirm={() => { if (voiding) void handleVoidWinner(voiding.id); }}
+        loading={!!busy && busy.startsWith('void-')}
+        variant="danger"
+        title={voiding ? `Anular a ${voiding.customer.name}` : 'Anular ganador'}
+        message={voiding ? `El ${positionLabel(voiding.position)} queda sin ganador y se puede volver a sortear.` : ''}
+        confirmLabel="Anular ganador"
+        cancelLabel="Volver"
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        loading={busy === 'delete'}
+        variant="danger"
+        title={`Eliminar "${raffle.name}"`}
+        message="Se eliminan también sus tickets y los consumos acumulados. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar sorteo"
+        cancelLabel="Volver"
+      />
 
       {drawingPosition !== null && (
         <DrawingScreen
@@ -369,27 +206,11 @@ function RaffleDetailContent({ id }: { id: string }) {
         />
       )}
 
-      {drawnWinner && raffle && (
-        <WinnerModal raffleName={raffle.name} winner={drawnWinner} onClose={() => setDrawnWinner(null)} />
-      )}
+      {drawnWinner && <WinnerModal raffleName={raffle.name} winner={drawnWinner} onClose={() => setDrawnWinner(null)} />}
 
-      {editOpen && raffle && (
-        <EditRaffleModal
-          raffle={raffle}
-          onClose={() => setEditOpen(false)}
-          onUpdated={(updated) => setRaffle(updated)}
-        />
+      {editOpen && (
+        <EditRaffleModal raffle={raffle} onClose={() => setEditOpen(false)} onUpdated={(updated) => setRaffle(updated)} />
       )}
-
-      {deleteConfirm && raffle && (
-        <DeleteRaffleDialog
-          raffleName={raffle.name}
-          busy={busy}
-          deleted={deleted}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirm(false)}
-        />
-      )}
-    </>
+    </PageShell>
   );
 }

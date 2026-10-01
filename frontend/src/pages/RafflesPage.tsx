@@ -1,77 +1,87 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import type { RaffleDto } from '@pos/shared';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
-import { Spinner } from '../components/ui/Spinner';
+import { PageHeader } from '../components/ui/PageHeader';
+import { PageShell } from '../components/ui/PageShell';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
 import { useRaffles } from '../hooks/useRaffles';
 import { RaffleCard } from '../components/raffles/RaffleCard';
 import { CreateRaffleModal } from '../components/raffles/CreateRaffleModal';
-import type { RaffleDto } from '@pos/shared';
 import { queryKeys } from '../lib/query-keys';
 
-function EmptyState({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-surface-2 border border-line flex items-center justify-center mx-auto mb-4">
-        <Icon name="ticket" size={32} strokeWidth={1.5} className="text-gray-400" />
-      </div>
-      <h3 className="text-base font-bold font-heading text-gray-700 mb-1">Sin sorteos aún</h3>
-      <p className="text-sm text-gray-400 max-w-xs mb-6 leading-relaxed">
-        Crea un sorteo, asígnale un producto y los tickets se generarán automáticamente con cada pedido.
-      </p>
-      <Button variant="primary" onClick={onCreate}>+ Crear primer sorteo</Button>
-    </div>
-  );
-}
+type Filter = 'open' | 'done';
+const isDone = (r: RaffleDto) => r.status === 'DRAWN';
 
 export function RafflesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { raffles, loading } = useRaffles();
   const [showCreate, setShowCreate] = useState(false);
+  const [filter, setFilter] = useState<Filter>('open');
 
   function handleCreated(raffle: RaffleDto) {
     queryClient.invalidateQueries({ queryKey: queryKeys.raffles });
     navigate(`/raffles/${raffle.id}`);
   }
 
-  const activeCount = raffles.filter((r) => r.status === 'ACTIVE' || r.status === 'DRAWING').length;
+  const open = raffles.filter((r) => !isDone(r));
+  const done = raffles.filter(isDone);
+  const visible = filter === 'open' ? open : done;
 
   return (
-    <div className="p-4 lg:p-6 animate-slide">
-      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-5" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 font-heading">Sorteos</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {raffles.length} sorteo{raffles.length !== 1 ? 's' : ''}
-              {activeCount > 0 && (
-                <span className="text-emerald-600 font-semibold">
-                  , {activeCount} activo{activeCount !== 1 ? 's' : ''}
-                </span>
-              )}
-            </p>
-          </div>
-          <Button variant="primary" onClick={() => setShowCreate(true)}>+ Nuevo sorteo</Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Sorteos"
+        description="Tus clientes ganan tickets al comprar; aquí los sorteas entre ellos."
+        actions={
+          <Button onClick={() => setShowCreate(true)}>
+            <Icon name="plus" size={18} />
+            Nuevo sorteo
+          </Button>
+        }
+      >
+        {raffles.length > 0 && (
+          <SegmentedControl
+            label="Qué sorteos ver"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'open', label: 'En curso', count: open.length },
+              { value: 'done', label: 'Terminados', count: done.length },
+            ]}
+          />
+        )}
+      </PageHeader>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Spinner /></div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : raffles.length === 0 ? (
-        <EmptyState onCreate={() => setShowCreate(true)} />
+        <EmptyState
+          icon="ticket"
+          title="Todavía no tienes sorteos"
+          description="Crea uno, elige cómo se ganan los tickets y se generan solos con cada pedido."
+          action={<Button onClick={() => setShowCreate(true)}>Crear el primer sorteo</Button>}
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon="ticket"
+          title={filter === 'open' ? 'No hay sorteos en curso' : 'Todavía no terminó ningún sorteo'}
+          description={filter === 'open' ? 'Crea uno nuevo o revisa los terminados.' : 'Cuando sortees todos los lugares de un sorteo, aparece aquí.'}
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {raffles.map((raffle) => (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((raffle) => (
             <RaffleCard key={raffle.id} raffle={raffle} onClick={() => navigate(`/raffles/${raffle.id}`)} />
           ))}
         </div>
       )}
 
-      {showCreate && (
-        <CreateRaffleModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
-      )}
-    </div>
+      {showCreate && <CreateRaffleModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />}
+    </PageShell>
   );
 }
