@@ -1,378 +1,215 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { handleApiError } from '../utils/api-error';
-import { usersApi, type UserDto, type CreateCashierRequest, type UpdateCashierRequest } from '../api/users.api';
-import type { BranchDto } from '@pos/shared';
-import { UserRole } from '@pos/shared';
+import { UserRole, isUnlimited } from '@pos/shared';
+import { usersApi, type UserDto } from '../api/users.api';
 import { Badge } from '../components/ui/Badge';
-import { Toggle } from '../components/ui/Toggle';
-import { Skeleton } from '../components/ui/Skeleton';
 import { Button } from '../components/ui/Button';
-import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Icon } from '../components/ui/Icon';
+import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
-import { Input } from '../components/ui/Input';
+import { Skeleton } from '../components/ui/Skeleton';
+import { CashierSheet } from '../components/team/CashierSheet';
+import { CashierFormModal, ResetPasswordModal } from '../components/team/CashierForms';
 import { useUsers } from '../hooks/useUsers';
-import { useBranches } from '../hooks/useBranches';
+import { useBranches, useBranchNames } from '../hooks/useBranches';
+import { useSettingsStore } from '../store/settings.store';
 import { queryKeys } from '../lib/query-keys';
+import { handleApiError } from '../utils/api-error';
 
-const ROLE_LABEL: Record<string, string> = { OWNER: 'Dueño', CASHIER: 'Cajero' };
-
-function UserAvatar({ name }: { name: string }) {
-  const initial = name.trim().charAt(0).toUpperCase();
+function Initial({ name, owner = false }: { name: string; owner?: boolean }) {
   return (
-    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-[0_2px_6px_oklch(0.60_0.22_42/0.35)]"
-      style={{ background: 'linear-gradient(135deg, oklch(0.68 0.20 42), oklch(0.55 0.22 40))' }}>
-      <span className="text-sm font-bold text-white">{initial}</span>
-    </div>
+    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-heading text-body font-bold ${
+      owner ? 'bg-primary-500/15 text-primary-700 dark:text-primary-400' : 'bg-surface-2 text-soft border border-line'
+    }`}>
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
   );
 }
 
+type Pending =
+  | { kind: 'branch'; user: UserDto; branchId: string | null }
+  | { kind: 'toggle'; user: UserDto };
+
 export function TeamPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { users, loading: usersLoading } = useUsers();
   const { branches, loading: branchesLoading } = useBranches();
+  const { branchName } = useBranchNames();
+  const maxCashiers = useSettingsStore((s) => s.planLimits?.maxCashiers);
   const loading = usersLoading || branchesLoading;
   const activeBranches = branches.filter((b) => b.isActive);
 
-  const [showModal, setShowModal] = useState(false);
-  const [editUser, setEditUser] = useState<UserDto | null>(null);
-  const [resetPwUser, setResetPwUser] = useState<UserDto | null>(null);
+  const owners   = users.filter((u) => u.role === UserRole.OWNER);
+  const cashiers = users.filter((u) => u.role !== UserRole.OWNER)
+    .sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name, 'es'));
+  // El plan cuenta solo los cajeros activos.
+  const activeCashiers = cashiers.filter((u) => u.isActive).length;
+  const limited = maxCashiers !== undefined && !isUnlimited(maxCashiers);
+  const full = limited && activeCashiers >= (maxCashiers as number);
 
-  const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: queryKeys.users });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [form, setForm]             = useState<{ open: boolean; user: UserDto | null }>({ open: false, user: null });
+  const [passwordFor, setPasswordFor] = useState<UserDto | null>(null);
+  const [pending, setPending]       = useState<Pending | null>(null);
+  const [busy, setBusy]             = useState(false);
+  const selected = cashiers.find((u) => u.id === selectedId) ?? null;
 
-  const handleToggle = async (user: UserDto) => {
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.users });
+
+  const confirmPending = async () => {
+    if (!pending) return;
+    setBusy(true);
     try {
-      const updated = await usersApi.toggle(user.id);
-      toast.success(updated.isActive ? 'Usuario activado' : 'Usuario desactivado');
-      invalidateUsers();
+      if (pending.kind === 'branch') {
+        await usersApi.updateBranch(pending.user.id, pending.branchId);
+        toast.success(`${pending.user.name} ahora vende en ${branchName(pending.branchId) ?? 'ninguna sucursal'}`);
+      } else {
+        const updated = await usersApi.toggle(pending.user.id);
+        toast.success(updated.isActive ? `${pending.user.name} puede volver a iniciar sesión` : `${pending.user.name} ya no puede iniciar sesión`);
+      }
+      setPending(null);
+      invalidate();
     } catch (err) {
-      handleApiError(err, 'Error al actualizar usuario');
+      handleApiError(err, 'Error al actualizar el cajero');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleBranchChange = async (user: UserDto, branchId: string | null) => {
+  const saveCashier = async (data: { name: string; email: string; password?: string; branchId?: string }) => {
     try {
-      await usersApi.updateBranch(user.id, branchId);
-      toast.success('Sucursal actualizada');
-      invalidateUsers();
+      if (form.user) {
+        await usersApi.update(form.user.id, { name: data.name, email: data.email });
+        toast.success('Cajero actualizado');
+      } else {
+        await usersApi.create({ name: data.name, email: data.email, password: data.password ?? '', branchId: data.branchId });
+        toast.success(`${data.name} agregado al equipo`);
+      }
+      setForm({ open: false, user: null });
+      invalidate();
     } catch (err) {
-      handleApiError(err, 'Error al actualizar sucursal');
+      handleApiError(err, form.user ? 'Error al actualizar el cajero' : 'Error al crear el cajero');
     }
   };
 
-  const handleCreate = async (data: CreateCashierRequest) => {
-    await usersApi.create(data);
-    setShowModal(false);
-    toast.success('Cajero creado');
-    invalidateUsers();
-  };
-
-  const handleEdit = async (data: UpdateCashierRequest) => {
-    if (!editUser) return;
+  const resetPassword = async (newPassword: string) => {
+    if (!passwordFor) return;
     try {
-      await usersApi.update(editUser.id, data);
-      setEditUser(null);
-      toast.success('Cajero actualizado');
-      invalidateUsers();
+      await usersApi.resetPassword(passwordFor.id, newPassword);
+      toast.success(`Contraseña de ${passwordFor.name} cambiada`);
+      setPasswordFor(null);
     } catch (err) {
-      handleApiError(err, 'Error al actualizar cajero');
+      handleApiError(err, 'Error al cambiar la contraseña');
     }
   };
 
-  const handleResetPassword = async (newPassword: string) => {
-    if (!resetPwUser) return;
-    try {
-      await usersApi.resetPassword(resetPwUser.id, newPassword);
-      setResetPwUser(null);
-      toast.success('Contraseña reseteada');
-    } catch (err) {
-      handleApiError(err, 'Error al resetear contraseña');
-    }
-  };
+  const pendingTitle = !pending ? ''
+    : pending.kind === 'branch' ? `Mover a ${pending.user.name} a ${branchName(pending.branchId) ?? 'sin sucursal'}`
+    : pending.user.isActive ? `Desactivar a ${pending.user.name}` : `Activar a ${pending.user.name}`;
+  const pendingMessage = !pending ? ''
+    : pending.kind === 'branch'
+      ? (pending.branchId ? 'Desde su próximo pedido vende y cobra en esa sucursal, aunque esté en pleno turno.' : 'No podrá vender hasta que le asignes una sucursal.')
+    : pending.user.isActive ? 'No podrá iniciar sesión ni vender. Sus ventas pasadas se conservan y puedes volver a activarlo.'
+    : 'Puede volver a iniciar sesión con su contraseña.';
 
   return (
     <PageShell>
-      <div className="rounded-2xl border border-line shadow-card-xl p-4 sm:p-5 mb-6" style={{ background: 'var(--color-surface-card)' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="font-heading text-xl sm:text-2xl font-black text-gray-900">Equipo y Roles</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Gestiona cajeros, estado de cuenta y sucursal asignada.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 border border-primary-500/20 text-primary-600 whitespace-nowrap">
-              {users.length} usuarios
-            </span>
-            <Button onClick={() => setShowModal(true)} className="whitespace-nowrap">+ Agregar cajero</Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Equipo"
+        description={limited ? `${activeCashiers} de ${maxCashiers} cajeros activos de tu plan.` : `${activeCashiers} cajeros activos.`}
+        actions={
+          <Button onClick={() => setForm({ open: true, user: null })} disabled={full}>
+            <Icon name="plus" size={18} />
+            Nuevo cajero
+          </Button>
+        }
+      >
+        {full && (
+          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
+            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
+            Llegaste al máximo de {maxCashiers} cajeros activos de tu plan. Desactiva a quien ya no trabaja para agregar a otro.
+          </p>
+        )}
+      </PageHeader>
 
       {loading ? (
-        <div className="space-y-3">
-          <Skeleton variant="card" />
-          <Skeleton variant="card" />
-          <Skeleton variant="card" />
-        </div>
+        <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
       ) : (
-        <div className="rounded-2xl border border-line shadow-card-md divide-y divide-line overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 py-4 gap-3 transition-colors hover:bg-surface-2 ${
-                !user.isActive && user.role !== UserRole.OWNER ? 'opacity-60' : ''
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <UserAvatar name={user.name} />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+        <section className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+          <ul className="divide-y divide-line">
+            {owners.map((u) => (
+              <li key={u.id} className="flex items-center gap-3 px-4 py-3">
+                <Initial name={u.name} owner />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body font-semibold text-main">{u.name}</p>
+                  <p className="truncate text-caption text-muted">Dueño. {u.email}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 sm:shrink-0">
-                <Badge variant={user.role === UserRole.OWNER ? 'info' : 'neutral'} dot>
-                  {ROLE_LABEL[user.role]}
-                </Badge>
-                {user.role !== 'OWNER' && activeBranches.length > 0 && (
-                  <select
-                    value={user.branchId ?? ''}
-                    onChange={(e) => handleBranchChange(user, e.target.value || null)}
-                    className="text-xs border border-line rounded-lg px-2 py-1.5 text-gray-700
-                      focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50
-                      max-w-[140px] transition-[border-color,box-shadow] bg-surface-card"
-                  >
-                    <option value="">Sin sucursal</option>
-                    {activeBranches.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                )}
-                {user.role !== 'OWNER' && (
-                  <>
-                    <button
-                      onClick={() => setEditUser(user)}
-                      title="Editar cajero"
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setResetPwUser(user)}
-                      title="Resetear contraseña"
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
-                      </svg>
-                    </button>
-                    <Toggle checked={user.isActive} onChange={() => handleToggle(user)} />
-                  </>
-                )}
-              </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/account')}>Mi cuenta</Button>
+              </li>
+            ))}
+            {cashiers.map((u) => (
+              <li key={u.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(u.id)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:outline-none focus-visible:bg-surface-2"
+                >
+                  <Initial name={u.name} />
+                  <div className={`min-w-0 flex-1 ${u.isActive ? '' : 'opacity-60'}`}>
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 truncate text-body font-semibold text-main">{u.name}</p>
+                      {!u.isActive && <Badge>Inactivo</Badge>}
+                    </div>
+                    <p className="truncate text-caption text-muted">
+                      Cajero. {u.branchId ? branchName(u.branchId) ?? 'Sucursal' : 'Sin sucursal'}. {u.email}
+                    </p>
+                  </div>
+                  <Icon name="chevron-right" size={16} className="shrink-0 text-muted" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {cashiers.length === 0 && (
+            <div className="border-t border-line">
+              <EmptyState compact icon="team" title="Todavía no tienes cajeros" description="Crea uno para que venda con su propia cuenta." />
             </div>
-          ))}
-        </div>
+          )}
+        </section>
       )}
 
-      <CreateCashierModal
-        isOpen={showModal}
-        branches={activeBranches}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleCreate}
+      {selected && (
+        <CashierSheet
+          user={selected}
+          branches={activeBranches}
+          onClose={() => setSelectedId(null)}
+          onBranch={(branchId) => { if (branchId !== selected.branchId) setPending({ kind: 'branch', user: selected, branchId }); }}
+          onEdit={() => { setForm({ open: true, user: selected }); setSelectedId(null); }}
+          onPassword={() => { setPasswordFor(selected); setSelectedId(null); }}
+          onToggle={() => setPending({ kind: 'toggle', user: selected })}
+        />
+      )}
+
+      {form.open && (
+        <CashierFormModal user={form.user} branches={activeBranches} onClose={() => setForm({ open: false, user: null })} onSubmit={saveCashier} />
+      )}
+      {passwordFor && <ResetPasswordModal user={passwordFor} onClose={() => setPasswordFor(null)} onSubmit={resetPassword} />}
+
+      <ConfirmModal
+        isOpen={pending !== null}
+        onClose={() => setPending(null)}
+        onConfirm={confirmPending}
+        loading={busy}
+        variant={pending?.kind === 'toggle' && pending.user.isActive ? 'danger' : 'primary'}
+        title={pendingTitle}
+        message={pendingMessage}
+        confirmLabel={pending?.kind === 'branch' ? 'Mover' : pending?.user.isActive ? 'Desactivar' : 'Activar'}
+        cancelLabel="Volver"
       />
-
-      {editUser && (
-        <EditCashierModal
-          user={editUser}
-          onClose={() => setEditUser(null)}
-          onSubmit={handleEdit}
-        />
-      )}
-
-      {resetPwUser && (
-        <ResetPasswordModal
-          userName={resetPwUser.name}
-          onClose={() => setResetPwUser(null)}
-          onSubmit={handleResetPassword}
-        />
-      )}
     </PageShell>
-  );
-}
-
-function EditCashierModal({
-  user, onClose, onSubmit,
-}: {
-  user: UserDto;
-  onClose: () => void;
-  onSubmit: (data: UpdateCashierRequest) => Promise<void>;
-}) {
-  const [form, setForm] = useState({ name: user.name, email: user.email });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await onSubmit({ name: form.name.trim(), email: form.email.trim() });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen onClose={onClose} title="Editar cajero">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nombre completo"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-          minLength={2}
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={loading}>Guardar cambios</Button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function ResetPasswordModal({
-  userName, onClose, onSubmit,
-}: {
-  userName: string;
-  onClose: () => void;
-  onSubmit: (newPassword: string) => Promise<void>;
-}) {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (newPassword !== confirm) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-    setLoading(true);
-    try {
-      await onSubmit(newPassword);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen onClose={onClose} title={`Resetear contraseña de ${userName}`}>
-      <p className="text-sm text-gray-500 mb-4">
-        Asigna una nueva contraseña temporal. Comunícala al cajero por el canal que prefieras.
-      </p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nueva contraseña"
-          type="password"
-          value={newPassword}
-          onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
-          minLength={6}
-          required
-          autoFocus
-        />
-        <Input
-          label="Confirmar contraseña"
-          type="password"
-          value={confirm}
-          onChange={(e) => { setConfirm(e.target.value); setError(''); }}
-          minLength={6}
-          required
-        />
-        {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={loading}>Resetear contraseña</Button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function CreateCashierModal({
-  isOpen, branches, onClose, onSubmit,
-}: {
-  isOpen: boolean;
-  branches: BranchDto[];
-  onClose: () => void;
-  onSubmit: (data: CreateCashierRequest) => Promise<void>;
-}) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', branchId: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const payload: CreateCashierRequest = {
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        branchId: form.branchId || undefined,
-      };
-      await onSubmit(payload);
-      setForm({ name: '', email: '', password: '', branchId: '' });
-    } catch (err) {
-      handleApiError(err, 'Error al crear cajero');
-      setError('Error al crear cajero');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Agregar Cajero">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-        <Input label="Contraseña" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-        {branches.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Sucursal asignada
-              <span className="ml-1 text-xs font-normal text-gray-400">(puede asignarse después)</span>
-            </label>
-            <select
-              value={form.branchId}
-              onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-              className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface-card text-gray-700
-                focus:outline-none focus:ring-[3px] focus:ring-primary-500/20 focus:border-primary-500/50 transition-[border-color,box-shadow]"
-            >
-              <option value="">Sin sucursal</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-        <div className="flex gap-3 pt-1">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
-          <Button type="submit" fullWidth loading={loading}>Crear cajero</Button>
-        </div>
-      </form>
-    </Modal>
   );
 }
