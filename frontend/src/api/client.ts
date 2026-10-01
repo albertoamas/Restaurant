@@ -18,7 +18,10 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     const isLoginEndpoint = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && !isLoginEndpoint) {
+    // `/admin/*` se autentica con `x-admin-key`, no con el JWT: su 401 es "clave incorrecta",
+    // no una sesión vencida. Cerrar la sesión ahí sacaba al dueño al probar la clave en Configuración.
+    const isAdminEndpoint = error.config?.url?.includes('/api/v1/admin/');
+    if (error.response?.status === 401 && !isLoginEndpoint && !isAdminEndpoint) {
       clearToken();
       window.location.href = '/login';
     }
