@@ -1,5 +1,5 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@pos/shared';
+import { SOCKET_EVENTS, UserRole } from '@pos/shared';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { ActiveSessionService } from '../services/active-session.service';
@@ -35,5 +35,7 @@ export class UpdateUserBranchUseCase {
     // La nueva sucursal rige ya para la API y para el tiempo real, sin re-login.
     this.activeSession.forgetUser(targetUserId);
     await this.eventsService.moveUserToBranch(tenantId, targetUserId, branchId);
+    // Su pantalla relee la sesión: sin sucursal ve el aviso al instante, sin recargar.
+    this.eventsService.emitToUser(targetUserId, SOCKET_EVENTS.USER_SESSION_UPDATED, {});
   }
 }

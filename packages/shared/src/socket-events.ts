@@ -4,7 +4,7 @@
  *
  * Adding a new event:
  *   1. Add the entry below.
- *   2. Emit it from the backend use case via `eventsService.emitToTenant(tenantId, SOCKET_EVENTS.X, payload)`.
+ *   2. Emit it from the backend use case via `EventsService` (emitToTenant / emitToBranch / emitToOwners / emitToUser, según quién puede verlo).
  *   3. Subscribe to it from the frontend via `useSocketEvent(SOCKET_EVENTS.X, handler)`.
  */
 export const SOCKET_EVENTS = {
@@ -47,6 +47,9 @@ export const SOCKET_EVENTS = {
   RAFFLE_UPDATED:       'raffle.updated',
   RAFFLE_DELETED:       'raffle.deleted',
   RAFFLE_TICKET_ADDED:  'raffle.ticket_added',
+
+  // Sesión de un usuario (solo a sus sockets): cambió su sucursal; el cliente relee /auth/me.
+  USER_SESSION_UPDATED: 'user.session_updated',
 
   // Tenant settings (broadcast)
   TENANT_MODULES_UPDATED: 'tenant.modules.updated',

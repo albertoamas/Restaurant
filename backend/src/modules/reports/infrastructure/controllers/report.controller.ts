@@ -19,6 +19,7 @@ import { GetTopCategoriesUseCase } from '../../application/use-cases/get-top-cat
 import { GetByHourUseCase } from '../../application/use-cases/get-by-hour.use-case';
 import { GetCashSessionsReportUseCase } from '../../application/use-cases/get-cash-sessions-report.use-case';
 import { GetByDayHourUseCase } from '../../application/use-cases/get-by-day-hour.use-case';
+import { scopedBranchId } from '../../../../common/utils/branch-scope';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
@@ -67,7 +68,7 @@ export class ReportController {
   ) {
     validateISODate(from, 'from');
     validateISODate(to, 'to');
-    const effectiveBranchId = user.branchId ?? branchId ?? null;
+    const effectiveBranchId = scopedBranchId(user, branchId) ?? null;
     // Un cajero ve su rendición: los pedidos que tomó él, no los de toda la sucursal.
     const createdBy = user.role === UserRole.CASHIER ? user.sub : undefined;
     return this.getReportByRangeUseCase.execute(tenantId, effectiveBranchId, from, to, createdBy);

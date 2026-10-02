@@ -87,6 +87,11 @@ escriba datos de sucursal la valida primero** con `BranchAccessService`
 
 Un `branchId` sin validar deja pedidos o gastos huérfanos que no aparecen en ningún reporte.
 
+En los controllers, la sucursal de la petición sale de `scopedBranchId(user, pedida)` y el acceso
+a un registro se valida con `assertBranchAccess` (`common/utils/branch-scope.ts`): el dueño elige,
+el cajero usa **solo** la suya y sin sucursal recibe 403. Nunca `user.branchId ?? dto.branchId`:
+le dejaba a un cajero sin sucursal operar en cualquiera.
+
 `JwtStrategy` (vía `ActiveSessionService`) resuelve el `branchId` **desde la BD** (caché 60 s), no del token: reasignar un
 cajero surte efecto sin re-login. `ToggleBranchUseCase` lee lo que necesita por `BranchUsagePort`,
 propio de `BranchModule` — inyectar los puertos de usuarios o caja crearía una dependencia

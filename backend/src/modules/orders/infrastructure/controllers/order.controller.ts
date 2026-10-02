@@ -16,6 +16,7 @@ import { OrderStatus, UserRole } from '@pos/shared';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
+import { assertBranchAccess, scopedBranchId } from '../../../../common/utils/branch-scope';
 import { ModuleGuard } from '../../../../common/guards/module.guard';
 import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
 import {
@@ -58,11 +59,8 @@ export class OrderController {
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateOrderDto,
   ) {
-    // CASHIER uses their fixed JWT branchId; OWNER passes branchId in the request body
-    const branchId = user.branchId ?? dto.branchId;
-    if (!branchId) {
-      throw new BadRequestException('branchId is required. Select a branch before creating an order.');
-    }
+    const branchId = scopedBranchId(user, dto.branchId);
+    if (!branchId) throw new BadRequestException('Selecciona una sucursal primero');
     return this.createOrderUseCase.execute(tenantId, branchId, user.sub, user.role, dto);
   }
 
@@ -80,8 +78,7 @@ export class OrderController {
     @Query('page') pageStr?: string,
     @Query('limit') limitStr?: string,
   ) {
-    // Cashiers can only see their own branch; owners can filter or see all
-    const effectiveBranchId = user.branchId ?? branchId;
+    const effectiveBranchId = scopedBranchId(user, branchId);
     const page  = pageStr  ? Number(pageStr)  : undefined;
     const limit = limitStr ? Number(limitStr) : undefined;
     return this.listOrdersUseCase.execute(tenantId, { date, from, to, status, branchId: effectiveBranchId, customerId, q, page, limit });
@@ -94,9 +91,7 @@ export class OrderController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.getOrderUseCase.execute(id, tenantId).then((order) => {
-      if (user.branchId && order.branchId !== user.branchId) {
-        throw new ForbiddenException('No tienes permisos para ver pedidos de otra sucursal');
-      }
+      assertBranchAccess(user, order.branchId, 'ver');
       return order;
     });
   }
@@ -109,9 +104,7 @@ export class OrderController {
     @Body() dto: RegisterOrderPaymentDto,
   ) {
     return this.getOrderUseCase.execute(id, tenantId).then((order) => {
-      if (user.branchId && order.branchId !== user.branchId) {
-        throw new ForbiddenException('No tienes permisos para cobrar pedidos de otra sucursal');
-      }
+      assertBranchAccess(user, order.branchId, 'cobrar');
       return this.registerOrderPaymentUseCase.execute(tenantId, id, user.role, dto);
     });
   }
@@ -124,9 +117,7 @@ export class OrderController {
     @Body() dto: AddOrderItemsDto,
   ) {
     return this.getOrderUseCase.execute(id, tenantId).then((order) => {
-      if (user.branchId && order.branchId !== user.branchId) {
-        throw new ForbiddenException('No tienes permisos para modificar pedidos de otra sucursal');
-      }
+      assertBranchAccess(user, order.branchId, 'modificar');
       return this.addOrderItemsUseCase.execute(tenantId, id, user.role, dto);
     });
   }
@@ -139,9 +130,7 @@ export class OrderController {
     @Body() dto: EditOrderDto,
   ) {
     return this.getOrderUseCase.execute(id, tenantId).then(async (order) => {
-      if (user.branchId && order.branchId !== user.branchId) {
-        throw new ForbiddenException('No tienes permisos para editar pedidos de otra sucursal');
-      }
+      assertBranchAccess(user, order.branchId, 'editar');
 
       if (
         order.status === OrderStatus.DELIVERED &&
@@ -162,9 +151,7 @@ export class OrderController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     return this.getOrderUseCase.execute(id, tenantId).then(async (order) => {
-      if (user.branchId && order.branchId !== user.branchId) {
-        throw new ForbiddenException('No tienes permisos para actualizar pedidos de otra sucursal');
-      }
+      assertBranchAccess(user, order.branchId, 'actualizar');
 
       if (
         dto.status === OrderStatus.CANCELLED &&

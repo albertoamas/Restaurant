@@ -41,6 +41,11 @@ export class EventsService {
     this.server?.to(EventsService.ownersRoom(tenantId)).emit(event, data);
   }
 
+  /** Solo a los sockets de una persona. */
+  emitToUser(userId: string, event: string, data: unknown) {
+    this.server?.to(EventsService.userRoom(userId)).emit(event, data);
+  }
+
   /** Cambia de sala de sucursal los sockets abiertos de un usuario reasignado. */
   async moveUserToBranch(tenantId: string, userId: string, branchId: string | null) {
     if (!this.server) return;

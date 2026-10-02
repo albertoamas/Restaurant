@@ -52,6 +52,7 @@ describe('UpdateUserBranchUseCase', () => {
     await useCase.execute(USER_ID, TENANT_ID, BRANCH_ID);
     expect(activeSession.forgetUser).toHaveBeenCalledWith(USER_ID);
     expect(events.moveUserToBranch).toHaveBeenCalledWith(TENANT_ID, USER_ID, BRANCH_ID);
+    expect(events.emitToUser).toHaveBeenCalledWith(USER_ID, 'user.session_updated', {});
   });
 
   it('lanza NotFoundException si el usuario no existe en el tenant', async () => {
