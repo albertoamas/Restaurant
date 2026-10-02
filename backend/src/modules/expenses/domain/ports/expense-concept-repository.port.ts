@@ -8,7 +8,7 @@ export interface ExpenseConceptRepositoryPort {
 
   findById(id: string, tenantId: string): Promise<ExpenseConceptEntity | null>;
 
-  /** Búsqueda case-insensitive incluyendo inactivos — protege el índice único (tenant, name). */
+  /** Case-insensitive, incluye eliminados; devuelve primero el activo si lo hay. */
   findByName(tenantId: string, name: string): Promise<ExpenseConceptEntity | null>;
 
   save(concept: ExpenseConceptEntity): Promise<ExpenseConceptEntity>;

@@ -7,7 +7,7 @@ export interface ExpenseCategoryRepositoryPort {
   update(category: ExpenseCategoryEntity): Promise<ExpenseCategoryEntity>;
   findAll(tenantId: string): Promise<ExpenseCategoryEntity[]>;
   findById(id: string, tenantId: string): Promise<ExpenseCategoryEntity | null>;
-  /** Case-insensitive incluyendo desactivadas — protege el único (tenant, name). */
+  /** Case-insensitive, incluye eliminadas; devuelve primero la activa si la hay. */
   findByName(tenantId: string, name: string): Promise<ExpenseCategoryEntity | null>;
   /** Baja lógica de la categoría y de sus gastos predefinidos. */
   delete(id: string, tenantId: string): Promise<void>;

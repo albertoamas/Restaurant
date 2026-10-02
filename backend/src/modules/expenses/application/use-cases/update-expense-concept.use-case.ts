@@ -36,7 +36,8 @@ export class UpdateExpenseConceptUseCase {
       name = dto.name.trim();
       if (!name) throw new BadRequestException('El nombre del gasto predefinido es obligatorio');
       const clash = await this.repo.findByName(tenantId, name);
-      if (clash && clash.id !== id) {
+      // Un gasto eliminado no ocupa su nombre (índice único parcial, solo activos).
+      if (clash?.isActive && clash.id !== id) {
         throw new ConflictException(`Ya existe un gasto predefinido llamado "${name}"`);
       }
     }

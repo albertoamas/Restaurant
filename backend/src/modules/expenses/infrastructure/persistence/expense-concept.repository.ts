@@ -37,7 +37,9 @@ export class ExpenseConceptRepository implements ExpenseConceptRepositoryPort {
 
   async findByName(tenantId: string, name: string): Promise<ExpenseConceptEntity | null> {
     const row = await this.prisma.expenseConcept.findFirst({
-      where: { tenantId, name: { equals: name, mode: 'insensitive' } },
+      where:   { tenantId, name: { equals: name, mode: 'insensitive' } },
+      // El activo primero: el nombre es único solo entre activos, y los eliminados pueden repetirlo.
+      orderBy: { isActive: 'desc' },
     });
     return row ? toDomain(row) : null;
   }

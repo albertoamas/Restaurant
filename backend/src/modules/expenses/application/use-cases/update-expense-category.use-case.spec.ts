@@ -62,4 +62,18 @@ describe('UpdateExpenseCategoryUseCase', () => {
     await expect(useCase.execute(same.id, TENANT, { name: 'Insumos' })).resolves.toBeDefined();
     expect(repo.update).toHaveBeenCalledTimes(1);
   });
+
+  it('permite renombrar al nombre de una categoría eliminada', async () => {
+    repo.findByName.mockResolvedValue(
+      ExpenseCategoryEntity.reconstitute({
+        id: 'eliminada', tenantId: TENANT, name: 'Operativos', icon: null,
+        isActive: false, trackQuantity: false, sortOrder: 0, createdAt: new Date(),
+      }),
+    );
+
+    const result = await useCase.execute('c1', TENANT, { name: 'Operativos' });
+
+    expect(result.name).toBe('Operativos');
+    expect(repo.update).toHaveBeenCalledTimes(1);
+  });
 });

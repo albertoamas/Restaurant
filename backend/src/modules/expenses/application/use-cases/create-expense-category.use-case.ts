@@ -22,8 +22,8 @@ export class CreateExpenseCategoryUseCase {
     // Crear o reactivar suma una categoría activa: ambas respetan el tope.
     if (!existing?.isActive) await this.assertBelowLimit(tenantId);
     if (existing) {
-      // El índice único (tenant, name) también cubre las desactivadas: se
-      // reactiva en vez de fallar, para que borrar y volver a crear funcione.
+      // Si hay una eliminada con ese nombre se reactiva (conserva su id y su historial) en
+      // vez de crear otra.
       if (existing.isActive) {
         throw new ConflictException(`Ya existe una categoría con el nombre "${name}"`);
       }
