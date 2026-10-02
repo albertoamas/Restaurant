@@ -238,7 +238,7 @@ export function LandingPage() {
 
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="mx-auto max-w-[560px] text-center lg:mx-0 lg:text-left animate-fade">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-label font-semibold text-primary-700 dark:text-primary-300">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-label font-semibold text-primary-700 dark:text-primary-400">
               <span className="h-1.5 w-1.5 rounded-full bg-primary-600" aria-hidden />
               Para restaurantes, cafeterías y comida rápida
             </p>

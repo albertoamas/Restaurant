@@ -74,7 +74,7 @@ export function CashierAccountPage() {
         <div className="space-y-4">
           <Card>
             <div className="flex items-center gap-4">
-              <span className="w-14 h-14 shrink-0 rounded-full bg-primary-500/12 border border-primary-500/25 flex items-center justify-center text-title font-bold text-primary-700 dark:text-primary-300">
+              <span className="w-14 h-14 shrink-0 rounded-full bg-primary-500/12 border border-primary-500/25 flex items-center justify-center text-title font-bold text-primary-700 dark:text-primary-400">
                 {initial}
               </span>
               <div className="min-w-0">

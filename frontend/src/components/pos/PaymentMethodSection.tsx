@@ -18,7 +18,7 @@ export const optionClass = (active: boolean) => [
   'flex flex-col items-center justify-center gap-1.5 rounded-card border-2 text-center transition-colors duration-150',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
   active
-    ? 'border-primary-500 bg-primary-500/10 text-primary-800 dark:text-primary-300'
+    ? 'border-primary-500 bg-primary-500/10 text-primary-800 dark:bg-primary-500/15 dark:text-main'
     : 'border-line bg-surface-card text-soft hover:border-line-strong hover:text-main',
 ].join(' ');
 

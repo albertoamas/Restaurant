@@ -104,7 +104,7 @@ export function PosPage() {
           {user?.role === 'OWNER' && !currentBranchId && (
             <div role="alert" className="flex items-start gap-2.5 rounded-card border border-amber-500/40 bg-amber-500/12 px-4 py-3">
               <Icon name="warning" size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-              <p className="text-label text-amber-900 dark:text-amber-200">
+              <p className="text-label text-amber-900 dark:text-amber-300">
                 Estás viendo <strong>todas las sucursales</strong>. Elige una en el menú para poder cobrar.
               </p>
             </div>
