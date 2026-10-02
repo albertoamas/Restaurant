@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { printReceipt } from '../../utils/print';
 import { orderTypeLabels } from '../../utils/order';
 import { useReceiptSettings } from '../../hooks/useReceiptSettings';
+import { bs } from '../../utils/money';
 
 interface Props {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = 'Pedido crea
           Pedido <span className="font-semibold text-main">#{order.orderNumber}</span>, {orderTypeLabels[order.type]}
         </p>
         <p className="text-display font-bold text-main font-heading mt-1">
-          Bs {Number(order.total).toFixed(2)}
+          {bs(Number(order.total))}
         </p>
         <p className="mt-3 inline-flex items-center gap-1.5 text-label text-soft">
           <Icon name="flame" size={15} className="text-muted" />

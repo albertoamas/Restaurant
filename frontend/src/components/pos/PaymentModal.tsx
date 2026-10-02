@@ -8,6 +8,7 @@ import { CustomerPicker } from './CustomerPicker';
 import { PaymentMethodSection, optionClass } from './PaymentMethodSection';
 import { usePaymentSelection, type PaymentEntry } from './usePaymentSelection';
 import { useCartStore } from '../../store/cart.store';
+import { bs } from '../../utils/money';
 
 export type CustomerPayload = { customerId?: string; createCustomer?: CreateCustomerRequest } | null;
 export type { PaymentEntry };
@@ -125,7 +126,7 @@ export function PaymentModal({ isOpen, onClose, total, onConfirm, onDeferPayment
         <div className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-label font-semibold text-soft">Total</span>
-            <span className="text-display font-bold text-main font-heading">Bs {total.toFixed(2)}</span>
+            <span className="text-display font-bold text-main font-heading">{bs(total)}</span>
           </div>
           <div className={`grid gap-2 ${onDeferPayment ? 'sm:grid-cols-[1fr_auto]' : ''}`}>
             <Button variant="success" size="xl" fullWidth onClick={handleConfirm} disabled={!canConfirm} loading={loading}>

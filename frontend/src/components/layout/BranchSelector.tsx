@@ -15,7 +15,7 @@ import { Icon } from '../ui/Icon';
 import type { BranchDto } from '@pos/shared';
 
 /** `currentBranchId === null` significa "ver todas las sucursales juntas". */
-export const ALL_BRANCHES_LABEL = 'Todas las sucursales';
+const ALL_BRANCHES_LABEL = 'Todas las sucursales';
 
 interface BranchSelectorProps {
   branches: BranchDto[];

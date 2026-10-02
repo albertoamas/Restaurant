@@ -13,13 +13,6 @@ export function formatDate(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function elapsed(createdAt: string): string {
-  const diff = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  const m = Math.floor(diff / 60);
-  const s = diff % 60;
-  return `${m}m ${s}s`;
-}
 
 /** Minutos enteros entre dos momentos (nunca negativos). */
 export function minutesBetween(from: string, to: string | number = Date.now()): number {
@@ -49,13 +42,6 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   return m < 1 ? 'Hace un momento' : `Hace ${durationLabel(m)}`;
 }
 
-export function elapsedBetween(from: string, to: string): string {
-  const diff = Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 1000);
-  if (diff < 60) return `${diff}s`;
-  const m = Math.floor(diff / 60);
-  const s = diff % 60;
-  return `${m}m ${s}s`;
-}
 
 /**
  * Días calendario entre dos fechas `YYYY-MM-DD`, ambas incluidas. Las entradas

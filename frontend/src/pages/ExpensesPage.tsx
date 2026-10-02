@@ -13,7 +13,7 @@ import { PageShell } from '../components/ui/PageShell';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Skeleton } from '../components/ui/Skeleton';
 import { PickBranch } from '../components/branch/PickBranch';
-import { bs } from '../components/report';
+import { bs } from '../utils/money';
 import { ExpenseEditModal } from '../components/expenses/ExpenseEditModal';
 import { ExpensePicker } from '../components/expenses/ExpensePicker';
 import { QuickExpenseDialog } from '../components/expenses/QuickExpenseDialog';

@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { SaasPlan, isUnlimited } from '@pos/shared';
 import {
@@ -6,17 +6,17 @@ import {
 } from '../../api/admin.api';
 import { ActionList, ActionRow, SheetSection } from '../ui/ActionRow';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { Icon } from '../ui/Icon';
 import { Modal } from '../ui/Modal';
-import { PasswordInput } from '../ui/PasswordInput';
 import { Skeleton } from '../ui/Skeleton';
 import { Toggle } from '../ui/Toggle';
 import { MODULE_DEFS, PLAN_ORDER, PlanBadge, limitLabel, planModules, storageLabel } from './PlanBadge';
 import { handleApiError } from '../../utils/api-error';
 import { formatBoliviaDayMonth } from '../../utils/date';
-import { MIN_PASSWORD_LENGTH } from '../../utils/password-form';
+import { Notice } from '../ui/Notice';
+import { Avatar } from '../ui/Avatar';
+import { NewPasswordModal } from '../ui/NewPasswordModal';
 
 function Usage({ label, used, max, format = limitLabel }: { label: string; used: number; max: number; format?: (n: number) => string }) {
   const over = !isUnlimited(max) && used >= max;
@@ -52,47 +52,6 @@ function moduleChanges(from: PlanDto, to: PlanDto) {
   return { lost, gained };
 }
 
-function OwnerPasswordModal({ ownerName, onClose, onSubmit }: {
-  ownerName: string; onClose: () => void; onSubmit: (password: string) => Promise<void>;
-}) {
-  const formId = useId();
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm]   = useState('');
-  const [saving, setSaving]     = useState(false);
-  const short = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
-  const mismatch = confirm.length > 0 && confirm !== password;
-  const valid = password.length >= MIN_PASSWORD_LENGTH && confirm === password;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!valid) return;
-    setSaving(true);
-    try { await onSubmit(password); } finally { setSaving(false); }
-  };
-
-  return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      title={`Nueva contraseña para ${ownerName}`}
-      size="sm"
-      footer={
-        <div className="flex gap-3">
-          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button type="submit" form={formId} fullWidth loading={saving} disabled={!valid}>Cambiar contraseña</Button>
-        </div>
-      }
-    >
-      <form id={formId} onSubmit={submit} className="space-y-4">
-        <p className="text-label text-soft">La anterior deja de funcionar. Compártele la nueva al dueño por un medio seguro.</p>
-        <PasswordInput label="Contraseña nueva" autoComplete="new-password" value={password} onChange={setPassword}
-          error={short ? `Debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` : undefined} hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres.`} />
-        <PasswordInput label="Repite la contraseña" autoComplete="new-password" value={confirm} onChange={setConfirm}
-          error={mismatch ? 'Las contraseñas no coinciden' : undefined} />
-      </form>
-    </Modal>
-  );
-}
 
 /**
  * Ficha de un negocio: uso del plan, chequeo de alta, plan (con confirmación), módulos con su
@@ -195,9 +154,7 @@ export function TenantSheet({ tenant, plans, onClose, onChange, onToggleActive }
     <Modal isOpen onClose={onClose} title="Negocio" size="lg">
       <div className="space-y-6">
         <div className="flex items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card border border-line bg-surface-2 font-heading text-title font-bold text-soft">
-            {tenant.name.trim().charAt(0).toUpperCase()}
-          </span>
+          <Avatar name={tenant.name} size="lg" square />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="min-w-0 truncate text-heading font-semibold text-main">{tenant.name}</p>
@@ -276,13 +233,13 @@ export function TenantSheet({ tenant, plans, onClose, onChange, onToggleActive }
             })}
           </div>
           {excess.length > 0 && (
-            <div className="mt-3 rounded-control border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-label text-amber-800 dark:text-amber-300">
+            <Notice className="mt-3">
               <p className="font-semibold">Quedó por encima de su plan nuevo</p>
               <ul className="mt-1 space-y-0.5">
                 {excess.map((e) => <li key={e.resource}>Tiene {e.current} {e.resource} y el plan permite {e.max}.</li>)}
               </ul>
               <p className="mt-1">No se desactivó nada: conserva sus datos y no podrá crear más hasta volver al límite.</p>
-            </div>
+            </Notice>
           )}
         </SheetSection>
 
@@ -342,7 +299,7 @@ export function TenantSheet({ tenant, plans, onClose, onChange, onToggleActive }
       />
 
       {passwordOpen && tenant.owner && (
-        <OwnerPasswordModal ownerName={tenant.owner.name} onClose={() => setPasswordOpen(false)} onSubmit={resetPassword} />
+        <NewPasswordModal name={tenant.owner.name} onClose={() => setPasswordOpen(false)} onSubmit={resetPassword} />
       )}
     </Modal>
   );

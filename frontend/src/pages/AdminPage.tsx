@@ -15,9 +15,11 @@ import { PlansSection } from '../components/admin/PlansSection';
 import { TenantFormModal } from '../components/admin/TenantFormModal';
 import { TenantSheet } from '../components/admin/TenantSheet';
 import { PlanBadge } from '../components/admin/PlanBadge';
-import { useTheme } from '../hooks/useTheme';
 import { handleApiError } from '../utils/api-error';
 import { formatBoliviaDateShort } from '../utils/date';
+import { BrandLogo } from '../components/ui/BrandLogo';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { Avatar } from '../components/ui/Avatar';
 
 type Tab = 'tenants' | 'plans';
 
@@ -38,7 +40,6 @@ function attention(t: TenantRow, plan: PlanDto | undefined): string | null {
 }
 
 export function AdminPage() {
-  const { theme, toggle: toggleTheme } = useTheme();
   const [authenticated, setAuthenticated] = useState(adminApi.hasKey());
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState('');
@@ -153,24 +154,9 @@ export function AdminPage() {
     <div className="min-h-dvh bg-surface-page">
       <header className="sticky top-0 z-20 border-b border-line bg-surface-page/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
-              <Icon name="cart" size={18} strokeWidth={2} />
-            </span>
-            <span className="truncate font-heading text-heading font-bold text-main">
-              Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
-              <span className="ml-2 hidden text-body font-medium text-soft sm:inline">Administración</span>
-            </span>
-          </div>
+          <BrandLogo suffix={<span className="ml-2 hidden font-sans text-body font-medium text-soft sm:inline">Administración</span>} />
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'}
-              className="flex h-10 w-10 items-center justify-center rounded-control text-soft transition-colors hover:bg-surface-2 hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60"
-            >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-            </button>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <Icon name="logout" size={16} />
               Salir
@@ -240,11 +226,7 @@ export function AdminPage() {
                           onClick={() => setSelectedId(t.id)}
                           className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
                         >
-                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-line font-heading text-body font-bold ${
-                            t.isActive ? 'bg-primary-500/10 text-primary-700 dark:text-primary-400' : 'bg-surface-2 text-muted'
-                          }`}>
-                            {t.name.trim().charAt(0).toUpperCase()}
-                          </span>
+                          <Avatar name={t.name} square tone={t.isActive ? 'brand' : 'muted'} />
                           <span className={`min-w-0 flex-1 ${t.isActive ? '' : 'opacity-60'}`}>
                             <span className="flex flex-wrap items-center gap-2">
                               <span className="min-w-0 truncate text-body font-semibold text-main">{t.name}</span>

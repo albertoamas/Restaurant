@@ -3,6 +3,7 @@ import { Badge } from '../ui/Badge';
 import { formatBoliviaDateShort, formatBoliviaTime } from '../../utils/date';
 import { toBoliviaDateString } from '../../utils/timezone';
 import { cashResult } from './cash-result';
+import { bs } from '../../utils/money';
 
 /** "08:00 a. m. a 11:27 p. m."; si cerró otro día, también la fecha del cierre. */
 function shiftHours(s: CashSessionDto): string {
@@ -18,7 +19,7 @@ function Figure({ label, value, strong = false }: { label: string; value: number
     <div>
       <dt className="text-caption text-muted">{label}</dt>
       <dd className={`text-label tabular-nums ${strong ? 'font-semibold text-main' : 'text-soft'}`}>
-        {value === null ? '-' : `Bs ${value.toFixed(2)}`}
+        {value === null ? '-' : bs(value)}
       </dd>
     </div>
   );

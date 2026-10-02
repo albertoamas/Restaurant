@@ -2,21 +2,13 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { isUnlimited, SaasPlan, type PlanDto } from '@pos/shared';
 import { usePlans } from '../hooks/usePlans';
-import { useTheme } from '../hooks/useTheme';
 import { buttonClasses } from '../components/ui/Button';
 import { Icon, type IconName } from '../components/ui/Icon';
 import { Skeleton } from '../components/ui/Skeleton';
 import landingPosImage from '../assets/landing-pos.jpg';
-
-/* ─── Contacto ──────────────────────────────────────────── */
-
-/** No hay registro público: todo interesado llega por WhatsApp con el mensaje ya escrito. */
-const WHATSAPP_NUMBER = '59174526068';
-const CONTACT_EMAIL   = 'albertoamasv@gmail.com';
-
-function whatsappUrl(message: string): string {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-}
+import { BrandLogo } from '../components/ui/BrandLogo';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { CONTACT_EMAIL, WHATSAPP_DISPLAY, whatsappUrl } from '../contact';
 
 const DEMO_MESSAGE = 'Hola, quiero una demo de YankoPOS para mi negocio.';
 
@@ -84,18 +76,6 @@ function planLines(plan: PlanDto): { text: string; included: boolean }[] {
 
 /* ─── Piezas ────────────────────────────────────────────── */
 
-function Logo() {
-  return (
-    <span className="inline-flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
-        <Icon name="cart" size={18} strokeWidth={2} />
-      </span>
-      <span className="font-heading text-heading font-bold text-main">
-        Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
-      </span>
-    </span>
-  );
-}
 
 function SectionTitle({ eyebrow, title, desc, center = false }: { eyebrow: string; title: string; desc?: string; center?: boolean }) {
   return (
@@ -203,26 +183,18 @@ const footerLink = 'text-label text-soft transition-colors hover:text-main';
 /* ─── Página ────────────────────────────────────────────── */
 
 export function LandingPage() {
-  const { theme, toggle: toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface-page text-main selection:bg-primary-500/30">
       <header className="sticky top-0 z-50 border-b border-line bg-surface-page/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6">
           <Link to="/" aria-label="YankoPOS, inicio" className="rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60">
-            <Logo />
+            <BrandLogo />
           </Link>
           <nav aria-label="Principal" className="flex items-center gap-1 sm:gap-3">
             <a href="#features" className={`${navLink} hidden md:inline-flex`}>Características</a>
             <a href="#pricing" className={navLink}>Precios</a>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'}
-              className="flex h-10 w-10 items-center justify-center rounded-control text-soft transition-colors hover:bg-surface-2 hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60"
-            >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-            </button>
+            <ThemeToggle />
             <Link to="/login" className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'whitespace-nowrap' })}>
               <span className="sm:hidden">Entrar</span>
               <span className="hidden sm:inline">Iniciar sesión</span>
@@ -363,7 +335,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4 lg:grid-cols-12">
             <div className="col-span-2 sm:col-span-4 lg:col-span-5">
-              <Logo />
+              <BrandLogo />
               <p className="mt-4 max-w-[320px] text-label text-muted">
                 Sistema de ventas para restaurantes y negocios de comida de Bolivia. Pedidos, cocina, caja y reportes en un solo lugar.
               </p>
@@ -388,7 +360,7 @@ export function LandingPage() {
               <ul className="space-y-2.5">
                 <li>
                   <a href={whatsappUrl(DEMO_MESSAGE)} target="_blank" rel="noopener noreferrer" className={footerLink}>
-                    WhatsApp: +591 74526068
+                    WhatsApp: {WHATSAPP_DISPLAY}
                   </a>
                 </li>
                 <li><a href={`mailto:${CONTACT_EMAIL}`} className={footerLink}>{CONTACT_EMAIL}</a></li>

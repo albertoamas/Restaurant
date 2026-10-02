@@ -1,4 +1,4 @@
-/** Chip de filtro por categoría (Registrar y Movimientos). */
+/** Chip de filtro por categoría (Gastos y Productos). */
 export function chipClass(active: boolean) {
   return [
     'inline-flex shrink-0 items-center gap-1.5 min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors',

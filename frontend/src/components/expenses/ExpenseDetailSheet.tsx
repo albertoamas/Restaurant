@@ -1,5 +1,5 @@
 import type { ExpenseDto } from '@pos/shared';
-import { bs } from '../report';
+import { bs } from '../../utils/money';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';

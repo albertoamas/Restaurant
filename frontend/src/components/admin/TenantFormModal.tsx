@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { PasswordInput } from '../ui/PasswordInput';
-import { MIN_PASSWORD_LENGTH } from '../../utils/password-form';
+import { MIN_PASSWORD_LENGTH, newPasswordErrors } from '../../utils/password-form';
 
 const EMPTY: CreateTenantPayload = { businessName: '', ownerName: '', email: '', password: '', branchName: '' };
 
@@ -68,7 +68,7 @@ export function TenantFormModal({ onClose, onSubmit }: {
           autoComplete="new-password"
           value={form.password}
           onChange={set('password')}
-          error={form.password && form.password.length < MIN_PASSWORD_LENGTH ? `Debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` : undefined}
+          error={newPasswordErrors(form.password).errors.password}
           hint="Compártela con el dueño; puede cambiarla en Mi cuenta."
         />
         <Input label="Primera sucursal (opcional)" value={form.branchName ?? ''} onChange={(e) => set('branchName')(e.target.value)} placeholder="Si lo dejas vacío: Principal" maxLength={100} />

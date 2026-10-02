@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { bs } from '../../../utils/money';
 
 /**
  * Monto para las marcas del eje: "30k" en vez de "Bs 30000". Con el prefijo y
@@ -15,7 +16,7 @@ export function formatAmountAxis(v: number | string): string {
 
 /** Monto exacto para tooltips. */
 export function formatBsFull(v: number | string): string {
-  return `Bs ${Number(v).toFixed(2)}`;
+  return bs(Number(v));
 }
 
 /** Día `YYYY-MM-DD` para el eje X: "15 sept". Se lee sin conocer el formato ISO. */

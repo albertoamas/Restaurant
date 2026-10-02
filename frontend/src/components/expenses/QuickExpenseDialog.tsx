@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseConceptDto } from '@pos/shared';
-import { bs } from '../report';
+import { bs } from '../../utils/money';
 import { expensesApi } from '../../api/expenses.api';
 import { useAuth } from '../../context/auth.context';
 import { Modal } from '../ui/Modal';

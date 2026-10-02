@@ -15,13 +15,15 @@ import { ConceptFormModal, type ConceptFormTarget } from './ConceptFormModal';
 import { CategoryFormModal } from './CategoryFormModal';
 import { SuggestedCatalogModal } from './SuggestedCatalogModal';
 import { handleApiError } from '../../utils/api-error';
+import { Notice } from '../ui/Notice';
+import { bs } from '../../utils/money';
 
 type Removing =
   | { kind: 'concept'; concept: ExpenseConceptDto }
   | { kind: 'category'; category: ExpenseCategoryDto; count: number };
 
 const conceptDetail = (c: ExpenseConceptDto) =>
-  `${c.unit ? `Por ${c.unit}` : 'Monto libre'}${c.defaultUnitPrice ? `, habitual Bs ${c.defaultUnitPrice.toFixed(2)}` : ''}`;
+  `${c.unit ? `Por ${c.unit}` : 'Monto libre'}${c.defaultUnitPrice ? `, habitual ${bs(c.defaultUnitPrice)}` : ''}`;
 
 /**
  * La lista de gastos, a pantalla completa: qué gastos existen, agrupados por su categoría. Las
@@ -123,14 +125,13 @@ export function ExpenseCatalog() {
           )}
         </div>
         {(conceptsFull || categoriesFull) && (
-          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
-            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
+          <Notice>
             {conceptsFull && categoriesFull
               ? 'Llegaste al máximo de gastos y de categorías. Quita los que ya no uses para agregar otros.'
               : conceptsFull
                 ? `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.concepts} gastos. Quita los que ya no uses para agregar otros.`
                 : `Llegaste al máximo de ${EXPENSE_CATALOG_LIMITS.categories} categorías. Elimina las que ya no uses para crear otra.`}
-          </p>
+          </Notice>
         )}
       </div>
 

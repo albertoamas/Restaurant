@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -25,11 +25,6 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
   const [prizes, setPrizes] = useState(raffle.prizes.map((p) => ({ ...p })));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setName(raffle.name);
-    setDescription(raffle.description ?? '');
-    setPrizes(raffle.prizes.map((p) => ({ ...p })));
-  }, [raffle.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nameChanged        = name.trim() !== raffle.name;
   const descriptionChanged = description.trim() !== (raffle.description ?? '');

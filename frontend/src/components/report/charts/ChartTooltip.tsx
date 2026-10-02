@@ -21,7 +21,7 @@ export function ChartTooltip({ active, payload, label, formatter }: Props) {
         border:       '1px solid var(--border-strong)',
         borderRadius: '12px',
         padding:      '10px 14px',
-        boxShadow:    'var(--shadow-card-lg)',
+        boxShadow:    'var(--shadow-floating)',
       }}
     >
       {label && (

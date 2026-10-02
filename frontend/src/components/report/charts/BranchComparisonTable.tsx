@@ -1,4 +1,5 @@
 import type { BranchReportDto } from '@pos/shared';
+import { bs } from '../../../utils/money';
 
 interface Props {
   data: BranchReportDto[];
@@ -26,7 +27,7 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
   );
   const totalTicket = totals.orderCount > 0 ? totals.totalSales / totals.orderCount : 0;
 
-  const signed = (n: number) => `${n < 0 ? '-' : ''}Bs ${Math.abs(n).toFixed(2)}`;
+  const signed = (n: number) => `${n < 0 ? '-' : ''}${bs(Math.abs(n))}`;
   const profitColor = (n: number) => (n >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300');
 
   return (
@@ -60,17 +61,17 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
                   </span>
                 </td>
                 <td className="py-2.5 pr-3 text-right font-semibold text-main tabular-nums">
-                  Bs {b.totalSales.toFixed(2)}
+                  {bs(b.totalSales)}
                 </td>
                 <td className="py-2.5 pr-3 text-right text-soft tabular-nums">
-                  Bs {b.totalExpenses.toFixed(2)}
+                  {bs(b.totalExpenses)}
                 </td>
                 <td className={`py-2.5 pr-3 text-right font-bold tabular-nums ${profitColor(b.netProfit)}`}>
                   {signed(b.netProfit)}
                 </td>
                 <td className="py-2.5 pr-3 text-right text-soft tabular-nums">{b.orderCount}</td>
                 <td className="py-2.5 pr-1 text-right text-soft tabular-nums">
-                  Bs {b.averageTicket.toFixed(2)}
+                  {bs(b.averageTicket)}
                 </td>
               </tr>
             );
@@ -80,16 +81,16 @@ export function BranchComparisonTable({ data, colorFor }: Props) {
           <tr className="border-t-2 border-line-strong">
             <td className="pt-2.5 pl-1 pr-3 font-semibold text-main">Total</td>
             <td className="pt-2.5 pr-3 text-right font-bold text-main tabular-nums">
-              Bs {totals.totalSales.toFixed(2)}
+              {bs(totals.totalSales)}
             </td>
             <td className="pt-2.5 pr-3 text-right font-bold text-soft tabular-nums">
-              Bs {totals.totalExpenses.toFixed(2)}
+              {bs(totals.totalExpenses)}
             </td>
-            <td className={`pt-2.5 pr-3 text-right font-black tabular-nums ${profitColor(totals.netProfit)}`}>
+            <td className={`pt-2.5 pr-3 text-right font-bold tabular-nums ${profitColor(totals.netProfit)}`}>
               {signed(totals.netProfit)}
             </td>
             <td className="pt-2.5 pr-3 text-right text-main tabular-nums">{totals.orderCount}</td>
-            <td className="pt-2.5 pr-1 text-right text-main tabular-nums">Bs {totalTicket.toFixed(2)}</td>
+            <td className="pt-2.5 pr-1 text-right text-main tabular-nums">{bs(totalTicket)}</td>
           </tr>
         </tfoot>
       </table>

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { CategoryDto, ProductDto } from '@pos/shared';
 import { EmptyState } from '../ui/EmptyState';
 import { buildCategoryTones, productInitial } from '../../utils/category-tone';
+import { bs } from '../../utils/money';
 
 interface Props {
   products: ProductDto[];
@@ -59,7 +60,7 @@ function ProductCard({
       <div className="flex flex-1 flex-col justify-between gap-1 p-3">
         <span className="text-body font-semibold text-main leading-snug line-clamp-2">{product.name}</span>
         <span className="text-body font-bold text-primary-700 dark:text-primary-400">
-          Bs {product.price.toFixed(2)}
+          {bs(product.price)}
         </span>
       </div>
 

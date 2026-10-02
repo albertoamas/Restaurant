@@ -217,11 +217,8 @@
   --color-gray-800: oklch(0.265 0.008 42);
   --color-gray-900: oklch(0.165 0.008 40);
 
-  /* Shadows — var() references so utilities update with theme */
-  --shadow-card-xl: var(--_shadow-xl);
-  --shadow-card-lg: var(--_shadow-lg);
-  --shadow-card-md: var(--_shadow-md);
-  /* Elevación por rol: tarjeta en reposo, elemento flotante (menú), superposición (modal). */
+  /* Elevación por rol: tarjeta en reposo, elemento flotante (menú), superposición (modal).
+     Referencian variables para seguir al tema. */
   --shadow-raised:   var(--_shadow-md);
   --shadow-floating: var(--_shadow-lg);
   --shadow-overlay:  var(--_shadow-xl);
@@ -281,19 +278,9 @@
   to   { opacity: 1; transform: none; }
 }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1;   transform: scale(1);    }
-  50%       { opacity: 0.5; transform: scale(1.25); }
-}
-
 @keyframes success-check {
   from { stroke-dashoffset: 50; opacity: 0; }
   to   { stroke-dashoffset: 0;  opacity: 1; }
-}
-
-@keyframes confetti-fall {
-  0%   { transform: translateY(0) rotate(0deg);       opacity: 1; }
-  100% { transform: translateY(-60px) rotate(180deg); opacity: 0; }
 }
 
 @keyframes shimmer {
@@ -322,10 +309,6 @@
   animation: var(--animate-slide-down);
 }
 
-@utility animate-pulse-dot {
-  animation: pulse-dot 1.8s ease-in-out infinite;
-}
-
 @utility animate-success-check {
   animation: success-check 0.5s ease-out 0.15s both;
   stroke-dasharray: 50;
@@ -347,22 +330,11 @@
   box-shadow: var(--shadow-card);
 }
 
-@utility surface-panel {
-  background: var(--color-surface-2);
-  border: 1px solid var(--border-subtle);
-}
-
 /* Desplazamiento horizontal sin barra visible (filas de chips en táctil). */
 @utility scrollbar-hide {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
-
-/* Stagger delays for list animations */
-@utility stagger-1 { animation-delay: 60ms;  }
-@utility stagger-2 { animation-delay: 120ms; }
-@utility stagger-3 { animation-delay: 180ms; }
-@utility stagger-4 { animation-delay: 240ms; }
 
 /* ─── Base ───────────────────────────────────────────────── */
 @layer base {

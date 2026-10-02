@@ -7,6 +7,7 @@ import { Badge } from '../ui/Badge';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { OrderActionsMenu } from './OrderActionsMenu';
 import { paymentSummary } from './OrderCard';
+import { bs } from '../../utils/money';
 
 function formatDateCell(iso: string): { date: string; time: string } {
   const d = new Date(iso);
@@ -72,7 +73,7 @@ export function OrderHistoryTable({ orders, onPayOrder, onEdit, onStatusChange }
                 </p>
                 <p className="mt-1 text-label text-soft truncate">{itemsSummary(o.items)}</p>
                 <div className="mt-2 flex items-center gap-3">
-                  <span className="text-body font-bold text-main">Bs {o.total.toFixed(2)}</span>
+                  <span className="text-body font-bold text-main">{bs(o.total)}</span>
                   <Payment order={o} />
                 </div>
               </div>
@@ -115,7 +116,7 @@ export function OrderHistoryTable({ orders, onPayOrder, onEdit, onStatusChange }
                   <td className="px-3 py-3 hidden xl:table-cell">
                     <span className="block max-w-56 truncate text-label text-soft">{itemsSummary(o.items)}</span>
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-right text-body font-bold text-main">Bs {o.total.toFixed(2)}</td>
+                  <td className="px-3 py-3 whitespace-nowrap text-right text-body font-bold text-main">{bs(o.total)}</td>
                   <td className="px-3 py-3 whitespace-nowrap"><OrderStatusBadge status={o.status} /></td>
                   <td className="px-3 py-3 min-w-28"><Payment order={o} /></td>
                   <td className="pl-2 pr-4 py-2 text-right">{menu(o)}</td>

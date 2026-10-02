@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react';
 import { Card } from '../ui/Card';
+import { bs } from '../../utils/money';
 
 /* ── Kpi ──────────────────────────────────────────────────────────────────── */
 
@@ -83,8 +84,8 @@ export function BreakdownRow({ label, value, pct, color }: {
 /** Porcentaje de una parte sobre un total (0 si el total es 0). */
 export const share = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
 
-/** Monto con dos decimales, como en el resto de la app. */
-export const bs = (n: number) => `Bs ${n.toFixed(2)}`;
+/** Monto en bolivianos: el de utils/money, re-exportado para quien usa el kit de reportes. */
+export { bs };
 
 /* ── RankRow ──────────────────────────────────────────────────────────────── */
 

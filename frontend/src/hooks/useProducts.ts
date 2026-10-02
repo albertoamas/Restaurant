@@ -23,7 +23,7 @@ export function useProducts(includeInactive = false, pageSize = 500) {
   });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.productsAll });
   }, [queryClient]);
 
   useSocketEvent(SOCKET_EVENTS.PRODUCT_CREATED, invalidate);

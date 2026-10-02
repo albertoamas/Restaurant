@@ -4,6 +4,7 @@ import { Badge } from '../ui/Badge';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { cashResult } from './cash-result';
+import { bs } from '../../utils/money';
 
 interface Breakdown {
   openingAmount: number;
@@ -81,15 +82,15 @@ export function CashAmountModal({
           <dl className="rounded-card bg-surface-2 border border-line px-4 py-3 space-y-2">
             <div className="flex justify-between text-label">
               <dt className="text-soft">Monto inicial</dt>
-              <dd className="text-main tabular-nums">Bs {breakdown.openingAmount.toFixed(2)}</dd>
+              <dd className="text-main tabular-nums">{bs(breakdown.openingAmount)}</dd>
             </div>
             <div className="flex justify-between text-label">
               <dt className="text-soft">Ventas en efectivo</dt>
-              <dd className="text-main tabular-nums">Bs {breakdown.cashSales.toFixed(2)}</dd>
+              <dd className="text-main tabular-nums">{bs(breakdown.cashSales)}</dd>
             </div>
             <div className="flex justify-between items-baseline pt-2 border-t border-line">
               <dt className="text-body font-semibold text-main">Esperado en caja</dt>
-              <dd className="text-heading font-bold text-main tabular-nums">Bs {breakdown.expectedAmount.toFixed(2)}</dd>
+              <dd className="text-heading font-bold text-main tabular-nums">{bs(breakdown.expectedAmount)}</dd>
             </div>
           </dl>
         )}

@@ -21,6 +21,7 @@ import { HistoryModal } from '../components/cash/HistoryModal';
 import { CashSessionRow } from '../components/cash/CashSessionRow';
 import { OpenShift, ClosedShift } from '../components/cash/CurrentShift';
 import { PickBranch } from '../components/branch/PickBranch';
+import { bs } from '../utils/money';
 
 /** Cierres que se ven en la página; el resto, en "Ver todos". */
 const RECENT_CLOSINGS = 5;
@@ -127,7 +128,7 @@ export function CashPage() {
         confirmLabel="Abrir caja"
         suggestion={lastClosed ? {
           amount: lastClosed.openingAmount,
-          label: `Usar Bs ${lastClosed.openingAmount.toFixed(2)}, como el turno del ${formatBoliviaDayMonth(lastClosed.openedAt)}`,
+          label: `Usar ${bs(lastClosed.openingAmount)}, como el turno del ${formatBoliviaDayMonth(lastClosed.openedAt)}`,
         } : undefined}
       />
 

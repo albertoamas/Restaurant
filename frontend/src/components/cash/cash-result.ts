@@ -1,3 +1,4 @@
+import { bs } from '../../utils/money';
 /** Tolerancia de redondeo: una diferencia menor a medio centavo es "Cuadra". */
 const EPSILON = 0.005;
 
@@ -9,7 +10,7 @@ export type CashResultTone = 'success' | 'warning' | 'error';
  */
 export function cashResult(difference: number, live = false): { label: string; tone: CashResultTone } {
   if (Math.abs(difference) < EPSILON) return { label: 'Cuadra', tone: 'success' };
-  const amount = `Bs ${Math.abs(difference).toFixed(2)}`;
+  const amount = bs(Math.abs(difference));
   return difference > 0
     ? { label: `${live ? 'Sobran' : 'Sobró'} ${amount}`, tone: 'warning' }
     : { label: `${live ? 'Faltan' : 'Faltó'} ${amount}`, tone: 'error' };

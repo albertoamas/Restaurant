@@ -1,4 +1,5 @@
 import { eachDay } from '../../utils/date';
+import { bs } from '../../utils/money';
 
 interface ExpenseCalendarProps {
   from: string;
@@ -60,7 +61,7 @@ export function ExpenseCalendar({ from, to, byDay, selectedDay, onSelect }: Expe
               type="button"
               onClick={() => amount > 0 && onSelect(day)}
               disabled={amount === 0}
-              aria-label={amount > 0 ? `${Number(day.slice(-2))}: Bs ${amount.toFixed(2)}` : `${Number(day.slice(-2))}: sin gastos`}
+              aria-label={amount > 0 ? `${Number(day.slice(-2))}: ${bs(amount)}` : `${Number(day.slice(-2))}: sin gastos`}
               aria-pressed={active}
               style={{
                 background: amount === 0

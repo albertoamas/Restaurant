@@ -25,14 +25,10 @@ import { ProductFormModal } from '../components/products/ProductFormModal';
 import { ProductThumb } from '../components/products/ProductThumb';
 import { ProductCategories } from '../components/products/ProductCategories';
 import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { chipClass } from '../components/ui/filter-chip';
+import { Notice } from '../components/ui/Notice';
+import { bs } from '../utils/money';
 
-function chipClass(active: boolean) {
-  return [
-    'inline-flex items-center min-h-9 rounded-full border px-3.5 text-label font-semibold whitespace-nowrap transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60',
-    active ? 'border-primary-600 bg-primary-600 text-white' : 'border-line bg-surface-card text-soft hover:text-main hover:border-line-strong',
-  ].join(' ');
-}
 
 export function ProductsPage() {
   const {
@@ -129,10 +125,7 @@ export function ProductsPage() {
         }
       >
         {tab === 'products' && full && (
-          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
-            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
-            Llegaste al máximo de {maxProducts} productos activos de tu plan. Desactiva los que ya no vendes para agregar otros.
-          </p>
+          <Notice>Llegaste al máximo de {maxProducts} productos activos de tu plan. Desactiva los que ya no vendes para agregar otros.</Notice>
         )}
       </PageHeader>
 
@@ -202,7 +195,7 @@ export function ProductsPage() {
                         {cat ?? 'Sin categoría: edítalo para asignarle una'}
                       </span>
                     </span>
-                    <span className="shrink-0 text-body font-bold text-main tabular-nums">Bs {p.price.toFixed(2)}</span>
+                    <span className="shrink-0 text-body font-bold text-main tabular-nums">{bs(p.price)}</span>
                   </button>
                   <Toggle
                     checked={p.isActive}

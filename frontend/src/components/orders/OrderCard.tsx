@@ -12,6 +12,7 @@ import { paymentMethodLabel } from '../pos/PaymentMethodSection';
 import { useAuth } from '../../context/auth.context';
 import { useBranchNames } from '../../hooks/useBranches';
 import { useNow } from '../../hooks/useNow';
+import { bs } from '../../utils/money';
 
 /** A partir de estos minutos el tiempo de espera pasa a ámbar y a rojo. */
 const WAIT_WARNING_MIN = 5;
@@ -66,7 +67,7 @@ export function paymentSummary(order: OrderDto): string {
 }
 
 /** Momento del pedido fuera de la espera activa: entregado (y cuánto tardó) o creado. */
-export function orderMoment(order: OrderDto): string {
+function orderMoment(order: OrderDto): string {
   return order.status === OrderStatus.DELIVERED
     ? `Entregado ${formatBoliviaTime(order.updatedAt)}, tardó ${durationLabel(minutesBetween(order.createdAt, order.updatedAt))}`
     : `Creado ${formatBoliviaTime(order.createdAt)}`;
@@ -145,7 +146,7 @@ export function OrderCard({ order, onStatusChange, onPayOrder, onEdit, onAddItem
 
       <div className="mt-4 pt-3 border-t border-line">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-heading font-bold text-main font-heading">Bs {order.total.toFixed(2)}</span>
+          <span className="text-heading font-bold text-main font-heading">{bs(order.total)}</span>
           <div className="flex items-center gap-2">
             {needsPayment ? <Badge variant="warning">Sin cobrar</Badge>
               : order.isPaid ? <span className="text-label text-soft">{paymentSummary(order)}</span>

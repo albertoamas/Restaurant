@@ -13,22 +13,16 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { PageShell } from '../components/ui/PageShell';
 import { Skeleton } from '../components/ui/Skeleton';
 import { CashierSheet } from '../components/team/CashierSheet';
-import { CashierFormModal, ResetPasswordModal } from '../components/team/CashierForms';
+import { CashierFormModal } from '../components/team/CashierForms';
+import { NewPasswordModal } from '../components/ui/NewPasswordModal';
 import { useUsers } from '../hooks/useUsers';
 import { useBranches, useBranchNames } from '../hooks/useBranches';
 import { useSettingsStore } from '../store/settings.store';
 import { queryKeys } from '../lib/query-keys';
 import { handleApiError } from '../utils/api-error';
+import { Notice } from '../components/ui/Notice';
+import { Avatar } from '../components/ui/Avatar';
 
-function Initial({ name, owner = false }: { name: string; owner?: boolean }) {
-  return (
-    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-heading text-body font-bold ${
-      owner ? 'bg-primary-500/15 text-primary-700 dark:text-primary-400' : 'bg-surface-2 text-soft border border-line'
-    }`}>
-      {name.trim().charAt(0).toUpperCase()}
-    </span>
-  );
-}
 
 type Pending =
   | { kind: 'branch'; user: UserDto; branchId: string | null }
@@ -130,10 +124,7 @@ export function TeamPage() {
         }
       >
         {full && (
-          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
-            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
-            Llegaste al máximo de {maxCashiers} cajeros activos de tu plan. Desactiva a quien ya no trabaja para agregar a otro.
-          </p>
+          <Notice>Llegaste al máximo de {maxCashiers} cajeros activos de tu plan. Desactiva a quien ya no trabaja para agregar a otro.</Notice>
         )}
       </PageHeader>
 
@@ -144,7 +135,7 @@ export function TeamPage() {
           <ul className="divide-y divide-line">
             {owners.map((u) => (
               <li key={u.id} className="flex items-center gap-3 px-4 py-3">
-                <Initial name={u.name} owner />
+                <Avatar name={u.name} tone="brand" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body font-semibold text-main">{u.name}</p>
                   <p className="truncate text-caption text-muted">Dueño. {u.email}</p>
@@ -159,7 +150,7 @@ export function TeamPage() {
                   onClick={() => setSelectedId(u.id)}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:outline-none focus-visible:bg-surface-2"
                 >
-                  <Initial name={u.name} />
+                  <Avatar name={u.name} />
                   <div className={`min-w-0 flex-1 ${u.isActive ? '' : 'opacity-60'}`}>
                     <div className="flex items-center gap-2">
                       <p className="min-w-0 truncate text-body font-semibold text-main">{u.name}</p>
@@ -197,7 +188,7 @@ export function TeamPage() {
       {form.open && (
         <CashierFormModal user={form.user} branches={activeBranches} onClose={() => setForm({ open: false, user: null })} onSubmit={saveCashier} />
       )}
-      {passwordFor && <ResetPasswordModal user={passwordFor} onClose={() => setPasswordFor(null)} onSubmit={resetPassword} />}
+      {passwordFor && <NewPasswordModal name={passwordFor.name} onClose={() => setPasswordFor(null)} onSubmit={resetPassword} />}
 
       <ConfirmModal
         isOpen={pending !== null}

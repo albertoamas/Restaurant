@@ -1,5 +1,6 @@
 import type { DailyReportDto, OrderDto } from '@pos/shared';
 import { OrderType, PaymentMethod } from '@pos/shared';
+import { bs } from '../utils/money';
 
 /**
  * Escapa los caracteres especiales HTML para prevenir XSS al insertar
@@ -14,9 +15,6 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function resolveUploadUrl(url: string): string {
-  return url.startsWith('http') ? url : `${window.location.origin}${url}`;
-}
 
 const ORDER_TYPE_LABEL: Record<OrderType, string> = {
   [OrderType.DINE_IN]:  'LOCAL',
@@ -211,8 +209,8 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
       <div style="margin-bottom:4pt">
         <div style="font-size:9pt;font-weight:900">${escapeHtml(i.productName)}</div>
         <div class="row" style="font-size:9pt">
-          <span>${i.quantity} x Bs ${Number(i.unitPrice).toFixed(2)}</span>
-          <span>Bs ${Number(i.subtotal).toFixed(2)}</span>
+          <span>${i.quantity} x ${bs(Number(i.unitPrice))}</span>
+          <span>${bs(Number(i.subtotal))}</span>
         </div>
       </div>`)
     .join('');
@@ -229,7 +227,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
   // Desglose de pagos (soporta split: "Efectivo Bs 50.00 + QR Bs 30.00")
   const pagoStr = order.payments.length > 0
     ? order.payments
-        .map(p => `${PAYMENT_LABEL[p.method] ?? p.method} Bs ${Number(p.amount).toFixed(2)}`)
+        .map(p => `${PAYMENT_LABEL[p.method] ?? p.method} ${bs(Number(p.amount))}`)
         .join(' + ')
     : '-';
 
@@ -247,7 +245,7 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
     <div class="divider"></div>
     ${items}
     <div class="divider"></div>
-    <div class="row bold" style="font-size:12pt"><span>TOTAL</span><span>Bs ${Number(order.total).toFixed(2)}</span></div>
+    <div class="row bold" style="font-size:12pt"><span>TOTAL</span><span>${bs(Number(order.total))}</span></div>
     <div class="row" style="font-size:8pt;margin-top:2pt"><span>Pago:</span><span>${pagoStr}</span></div>
     <div class="divider"></div>
     <div class="center" style="font-size:8pt;margin-top:4pt">¡Gracias por su compra!</div>
@@ -329,7 +327,6 @@ export interface CashierReportPrintInfo {
  * grande, el resto del desglose debajo y una línea para la firma de quien recibe.
  */
 export function printCashierReport(report: DailyReportDto, info: CashierReportPrintInfo): void {
-  const money = (n: number) => `Bs ${n.toFixed(2)}`;
   const row = (label: string, value: string) =>
     `<div class="row" style="font-size:9pt;margin:2pt 0"><span>${label}</span><span>${value}</span></div>`;
   const p = report.paymentBreakdown;
@@ -343,15 +340,15 @@ export function printCashierReport(report: DailyReportDto, info: CashierReportPr
     <div class="center" style="font-size:9pt">${escapeHtml(info.periodLabel)}</div>
     <div class="divider"></div>
     <div class="center" style="font-size:9pt">Efectivo a entregar</div>
-    <div class="center" style="font-size:18pt;margin:2pt 0">${money(p.cash)}</div>
+    <div class="center" style="font-size:18pt;margin:2pt 0">${bs(p.cash)}</div>
     <div class="divider"></div>
-    ${row('QR', money(p.qr))}
-    ${row('Transferencia', money(p.transfer))}
-    ${row('Total cobrado', money(report.totalSales))}
-    ${p.cortesia > 0 ? row('Cortesias', money(p.cortesia)) : ''}
+    ${row('QR', bs(p.qr))}
+    ${row('Transferencia', bs(p.transfer))}
+    ${row('Total cobrado', bs(report.totalSales))}
+    ${p.cortesia > 0 ? row('Cortesias', bs(p.cortesia)) : ''}
     <div class="divider"></div>
     ${row('Pedidos', String(report.orderCount))}
-    ${row('Ticket promedio', money(report.averageTicket))}
+    ${row('Ticket promedio', bs(report.averageTicket))}
     <div style="margin-top:24pt;border-top:1px solid #000"></div>
     <div class="center" style="font-size:8pt;margin-top:2pt">Firma de quien recibe</div>
     <div class="center" style="font-size:8pt;margin-top:6pt">Impreso ${formatDateTime(new Date().toISOString())}</div>

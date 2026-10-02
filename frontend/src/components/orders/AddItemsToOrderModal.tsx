@@ -16,6 +16,8 @@ import { useProducts } from '../../hooks/useProducts';
 import { useCategories } from '../../hooks/useCategories';
 import { useAuth } from '../../context/auth.context';
 import { useSettingsStore } from '../../store/settings.store';
+import { Notice } from '../ui/Notice';
+import { bs } from '../../utils/money';
 
 /* --- Types ---------------------------------------------------------------- */
 
@@ -132,7 +134,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
       ? 'Elige al menos un producto'
       : needsPayment && !selectedMethod
         ? 'Elige cómo se cobra'
-        : `Añadir al pedido: Bs ${cartTotal.toFixed(2)}`;
+        : `Añadir al pedido: ${bs(cartTotal)}`;
 
   // En celular no caben las dos columnas: primero se elige y después se revisa.
   const reviewing = mobileStep === 'review';
@@ -149,7 +151,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
             <p className="text-label text-soft">
               {cartEmpty ? 'Sin productos elegidos' : `${units} ${units === 1 ? 'unidad' : 'unidades'}, nuevo total`}
             </p>
-            <p className="text-heading font-bold text-main tabular-nums">Bs {newOrderTotal.toFixed(2)}</p>
+            <p className="text-heading font-bold text-main tabular-nums">{bs(newOrderTotal)}</p>
           </div>
           {!reviewing && (
             <Button className="lg:hidden" size="lg" onClick={() => setMobileStep('review')} disabled={cartEmpty}>
@@ -210,7 +212,6 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
         {/* Lo que se añade */}
         <div className={`flex flex-col gap-4 px-6 py-4 min-w-0 ${reviewing ? '' : 'max-lg:hidden'}`}>
           <Button variant="ghost" size="sm" className="lg:hidden self-start" onClick={() => setMobileStep('pick')}>
-            <Icon name="chevron-left" size={14} strokeWidth={2} />
             Seguir eligiendo
           </Button>
 
@@ -236,11 +237,11 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
             <dl className="rounded-card border border-line bg-surface-2 px-4 py-3 space-y-1.5">
               <div className="flex justify-between text-label text-soft">
                 <dt>Total actual</dt>
-                <dd className="tabular-nums">Bs {order.total.toFixed(2)}</dd>
+                <dd className="tabular-nums">{bs(order.total)}</dd>
               </div>
               <div className="flex justify-between text-label text-soft">
                 <dt>{needsPayment ? 'A cobrar ahora' : 'Se suma'}</dt>
-                <dd className="tabular-nums font-semibold text-main">Bs {cartTotal.toFixed(2)}</dd>
+                <dd className="tabular-nums font-semibold text-main">{bs(cartTotal)}</dd>
               </div>
             </dl>
           )}
@@ -248,7 +249,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
           {/* Pedido ya cobrado: la diferencia se cobra ahora. */}
           {needsPayment && !cartEmpty && (
             <div>
-              <p className="text-label font-semibold text-soft mb-2">Cobrar la diferencia de Bs {cartTotal.toFixed(2)}</p>
+              <p className="text-label font-semibold text-soft mb-2">Cobrar la diferencia de {bs(cartTotal)}</p>
               <div role="radiogroup" aria-label="Método de pago" className={`grid gap-2 ${availableMethods.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                 {availableMethods.map((m) => (
                   <button
@@ -268,10 +269,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
           )}
 
           {!needsPayment && !cartEmpty && (
-            <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-label text-amber-800 dark:text-amber-300">
-              <Icon name="warning" size={16} strokeWidth={2} className="shrink-0 mt-0.5" />
-              El pedido está sin cobrar: todo se cobra junto al final.
-            </p>
+            <Notice>El pedido está sin cobrar: todo se cobra junto al final.</Notice>
           )}
         </div>
       </div>
