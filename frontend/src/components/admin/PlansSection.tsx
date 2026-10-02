@@ -1,216 +1,172 @@
-import { useState } from 'react';
-import { SaasPlan } from '@pos/shared';
+import { useId, useState } from 'react';
+import toast from 'react-hot-toast';
+import { SaasPlan, isUnlimited } from '@pos/shared';
 import { adminApi, type PlanDto } from '../../api/admin.api';
-import { PlanBadge, PLAN_CONFIG, limitLabel } from './PlanBadge';
+import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
+import { Input } from '../ui/Input';
+import { Modal } from '../ui/Modal';
+import { Toggle } from '../ui/Toggle';
+import { PLAN_ORDER, PlanBadge, limitLabel, storageLabel } from './PlanBadge';
 import { handleApiError } from '../../utils/api-error';
 
-const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
+type LimitField = 'maxBranches' | 'maxCashiers' | 'maxProducts' | 'reportHistoryDays' | 'maxStorageMb';
+type FlagField = 'kitchenEnabled' | 'rafflesEnabled' | 'advancedReports';
 
-interface PlansSectionProps {
-  plans: PlanDto[];
-  onUpdate: (updated: PlanDto) => void;
+const LIMITS: { field: LimitField; label: string; unit?: string }[] = [
+  { field: 'maxBranches',       label: 'Sucursales' },
+  { field: 'maxCashiers',       label: 'Cajeros' },
+  { field: 'maxProducts',       label: 'Productos' },
+  { field: 'reportHistoryDays', label: 'Historial de reportes', unit: 'días' },
+  { field: 'maxStorageMb',      label: 'Espacio para fotos', unit: 'MB' },
+];
+
+/** Equipo no está: se deriva de `maxCashiers` (el número de cajeros ya es su interruptor). */
+const FLAGS: { field: FlagField; label: string }[] = [
+  { field: 'kitchenEnabled',  label: 'Cocina' },
+  { field: 'rafflesEnabled',  label: 'Sorteos' },
+  { field: 'advancedReports', label: 'Reportes avanzados' },
+];
+
+/** Un límite: número o "Sin límite" (-1). Antes había que escribir -1 a mano. */
+function LimitInput({ label, unit, value, onChange }: { label: string; unit?: string; value: number; onChange: (v: number) => void }) {
+  const unlimited = isUnlimited(value);
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+      <span className="min-w-0 flex-1 text-body font-semibold text-main">{label}</span>
+      {unlimited ? (
+        <span className="text-label text-soft">Sin límite</span>
+      ) : (
+        <div className="w-36">
+          <Input
+            aria-label={label}
+            inputSize="sm"
+            type="number" inputMode="numeric" min={1} step={1}
+            value={String(value)}
+            onChange={(e) => onChange(Math.floor(Number(e.target.value)))}
+            rightAddon={unit ? <span className="pr-3 text-label text-muted">{unit}</span> : undefined}
+          />
+        </div>
+      )}
+      <span className="inline-flex items-center gap-2 text-caption text-soft">
+        Sin límite
+        <Toggle checked={unlimited} onChange={() => onChange(unlimited ? 1 : -1)} label={`${label} sin límite`} />
+      </span>
+    </div>
+  );
 }
 
-export function PlansSection({ plans, onUpdate }: PlansSectionProps) {
-  const [editing, setEditing] = useState<SaasPlan | null>(null);
-  const [form, setForm] = useState<Partial<PlanDto>>({});
+function PlanFormModal({ plan, onClose, onSaved }: { plan: PlanDto; onClose: () => void; onSaved: (p: PlanDto) => void }) {
+  const formId = useId();
+  const [form, setForm] = useState<PlanDto>(plan);
   const [saving, setSaving] = useState(false);
+  const set = <K extends keyof PlanDto>(key: K, value: PlanDto[K]) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const startEdit = (p: PlanDto) => {
-    setEditing(p.id);
-    setForm({
-      displayName: p.displayName,
-      priceBs: p.priceBs,
-      maxBranches: p.maxBranches,
-      maxCashiers: p.maxCashiers,
-      maxProducts: p.maxProducts,
-      kitchenEnabled: p.kitchenEnabled,
-      rafflesEnabled: p.rafflesEnabled,
-      advancedReports: p.advancedReports,
-      reportHistoryDays: p.reportHistoryDays,
-      maxStorageMb: p.maxStorageMb,
-    });
-  };
-
-  const handleSave = async (id: SaasPlan) => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setSaving(true);
     try {
-      const updated = await adminApi.updatePlan(id, form);
-      onUpdate(updated);
-      setEditing(null);
+      const { id: _id, ...updates } = form;
+      const updated = await adminApi.updatePlan(plan.id as SaasPlan, updates);
+      onSaved(updated);
+      toast.success(`Plan ${updated.displayName} actualizado`);
+      onClose();
     } catch (err) {
-      // El backend rechaza límites en 0 o incoherentes entre planes: sin esto
-      // el error se perdía y el formulario parecía no hacer nada.
+      // El backend rechaza límites en 0 o incoherentes entre planes.
       handleApiError(err, 'No se pudo guardar el plan');
     } finally {
       setSaving(false);
     }
   };
 
-  const sortedPlans = PLAN_ORDER
-    .map((id) => plans.find((p) => p.id === id))
-    .filter(Boolean) as PlanDto[];
-
   return (
-    <section className="mb-6">
-      <div className="px-1 mb-3">
-        <h2 className="font-heading font-bold text-sm text-gray-800">Planes SaaS</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Límites y precios por nivel</p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {sortedPlans.map((p) => {
-          const cfg = PLAN_CONFIG[p.id as SaasPlan];
-          return (
-            <div key={p.id} className={`rounded-2xl border ${cfg.card} overflow-hidden`}>
-              {editing === p.id ? (
-                <PlanEditForm
-                  plan={p}
-                  form={form}
-                  saving={saving}
-                  onFormChange={setForm}
-                  onSave={() => handleSave(p.id as SaasPlan)}
-                  onCancel={() => setEditing(null)}
-                />
-              ) : (
-                <PlanViewCard plan={p} cfg={cfg} onEdit={() => startEdit(p)} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Editar plan ${plan.displayName}`}
+      size="md"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" fullWidth onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button type="submit" form={formId} fullWidth loading={saving}>Guardar plan</Button>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={submit} className="space-y-5">
+        <p className="text-label text-soft">Los cambios valen para todos los negocios con este plan desde ahora.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input label="Nombre" value={form.displayName} onChange={(e) => set('displayName', e.target.value)} maxLength={40} />
+          <Input label="Precio al mes" type="number" inputMode="numeric" min={0} leftAddon="Bs"
+            value={String(form.priceBs)} onChange={(e) => set('priceBs', Number(e.target.value))} />
+        </div>
+        <div>
+          <p className="mb-2 text-label font-semibold text-soft">Límites</p>
+          <div className="overflow-hidden rounded-card border border-line divide-y divide-line">
+            {LIMITS.map((l) => (
+              <LimitInput key={l.field} label={l.label} unit={l.unit} value={form[l.field]} onChange={(v) => set(l.field, v)} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-label font-semibold text-soft">Módulos que incluye</p>
+          <ul className="overflow-hidden rounded-card border border-line divide-y divide-line">
+            {FLAGS.map((f) => (
+              <li key={f.field} className="flex items-center justify-between gap-3 px-4 py-3">
+                <span className="text-body text-main">{f.label}</span>
+                <Toggle checked={form[f.field]} onChange={() => set(f.field, !form[f.field])} label={f.label} />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-caption text-muted">Equipo y Sucursales dependen del número de cajeros y sucursales.</p>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────
+/** Planes a la venta: precio, límites y módulos. "Editar" abre el formulario. */
+export function PlansSection({ plans, onUpdate }: { plans: PlanDto[]; onUpdate: (updated: PlanDto) => void }) {
+  const [editing, setEditing] = useState<PlanDto | null>(null);
+  const sorted = PLAN_ORDER.map((id) => plans.find((p) => p.id === id)).filter((p): p is PlanDto => !!p);
 
-const PLAN_FIELDS: [keyof PlanDto, string, string][] = [
-  ['displayName',  'Nombre',                  'text'],
-  ['priceBs',      'Precio (Bs)',              'number'],
-  ['maxBranches',  'Máx sucursales (-1=∞)',    'number'],
-  ['maxCashiers',  'Máx cajeros (-1=∞)',       'number'],
-  ['maxProducts',  'Máx productos (-1=∞)',     'number'],
-  ['reportHistoryDays', 'Historial reportes en días (-1=∞)', 'number'],
-  ['maxStorageMb',      'Almacenamiento MB (-1=∞)',          'number'],
-];
-
-/**
- * Los flags de módulo que el plan vende. Equipo no está: se deriva de
- * `maxCashiers`, así que el número de cajeros ya es su interruptor.
- */
-const PLAN_TOGGLES: [keyof PlanDto, string][] = [
-  ['kitchenEnabled',  'Cocina'],
-  ['rafflesEnabled',  'Sorteos'],
-  ['advancedReports', 'Reportes avanzados'],
-];
-
-function PlanEditForm({ plan, form, saving, onFormChange, onSave, onCancel }: {
-  plan: PlanDto;
-  form: Partial<PlanDto>;
-  saving: boolean;
-  onFormChange: (updater: (prev: Partial<PlanDto>) => Partial<PlanDto>) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) {
   return (
-    <div className="p-4 bg-surface-2 space-y-3">
-      <div className="flex items-center gap-2 mb-1">
-        <PlanBadge plan={plan.id as SaasPlan} />
-        <span className="text-xs text-gray-500">editando</span>
-      </div>
-      <div className="space-y-2">
-        {PLAN_FIELDS.map(([field, label, type]) => (
-          <div key={field}>
-            <label className="block text-[11px] font-medium text-gray-500 mb-1">{label}</label>
-            <input
-              type={type}
-              value={String(form[field] ?? '')}
-              onChange={(e) => onFormChange((prev) => ({
-                ...prev,
-                [field]: type === 'number' ? Number(e.target.value) : e.target.value,
-              }))}
-              className="w-full text-sm border border-line rounded-lg px-2.5 py-1.5 bg-surface-card text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
-            />
-          </div>
-        ))}
-        {PLAN_TOGGLES.map(([field, label]) => {
-          const on = !!form[field];
-          return (
-            <div key={field} className="flex items-center justify-between py-1.5">
-              <label className="text-sm font-medium text-gray-600">{label}</label>
-              <button
-                type="button"
-                aria-label={label}
-                aria-pressed={on}
-                onClick={() => onFormChange((prev) => ({ ...prev, [field]: !prev[field] }))}
-                className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${on ? 'bg-primary-500' : 'bg-line-strong'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${on ? 'translate-x-4' : 'translate-x-0'}`} />
-              </button>
+    <>
+      <div className="grid gap-4 md:grid-cols-3">
+        {sorted.map((p) => (
+          <article key={p.id} className="flex flex-col rounded-card border border-line bg-surface-card p-5 shadow-raised">
+            <div className="flex items-center justify-between gap-2">
+              <PlanBadge plan={p.id as SaasPlan} />
+              <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
+                <Icon name="edit" size={16} />
+                Editar
+              </Button>
             </div>
-          );
-        })}
-      </div>
-      <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 text-sm text-gray-500 hover:text-gray-700 py-1.5 rounded-lg border border-line bg-surface-2 hover:bg-surface-3 transition-colors">
-          Cancelar
-        </button>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="flex-1 text-sm font-semibold bg-primary-600 text-white py-1.5 rounded-lg hover:bg-primary-500 disabled:opacity-50 transition-colors"
-        >
-          {saving ? 'Guardando…' : 'Guardar'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PlanViewCard({ plan, cfg, onEdit }: {
-  plan: PlanDto;
-  cfg: typeof PLAN_CONFIG[SaasPlan];
-  onEdit: () => void;
-}) {
-  return (
-    <div className="p-4">
-      <div className="flex items-start justify-between mb-3">
-        <PlanBadge plan={plan.id as SaasPlan} />
-        <button
-          onClick={onEdit}
-          className="text-[11px] font-medium text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-surface-2 transition-colors"
-        >
-          Editar
-        </button>
-      </div>
-      <div className="mb-3">
-        <span className={`font-heading font-black text-2xl ${cfg.accent}`}>Bs {plan.priceBs}</span>
-        <span className="text-xs text-gray-500 ml-1">/mes</span>
-      </div>
-      <div className="space-y-1.5">
-        {([
-          ['Sucursales', limitLabel(plan.maxBranches)],
-          ['Cajeros',    limitLabel(plan.maxCashiers)],
-          ['Productos',  limitLabel(plan.maxProducts)],
-        ] as [string, string][]).map(([label, val]) => (
-          <div key={label} className="flex justify-between text-xs">
-            <span className="text-gray-500">{label}</span>
-            <span className="font-semibold text-gray-700">{val}</span>
-          </div>
+            <p className="mt-3 flex items-baseline gap-1.5">
+              <span className="font-heading text-[32px] font-bold leading-none text-main tabular-nums">{p.priceBs}</span>
+              <span className="text-label text-soft">Bs al mes</span>
+            </p>
+            <dl className="mt-4 divide-y divide-line border-t border-line text-label">
+              {LIMITS.map((l) => (
+                <div key={l.field} className="flex justify-between gap-3 py-1.5">
+                  <dt className="text-soft">{l.label}</dt>
+                  <dd className="font-semibold text-main tabular-nums">
+                    {l.field === 'maxStorageMb'
+                      ? storageLabel(p[l.field])
+                      : `${limitLabel(p[l.field])}${!isUnlimited(p[l.field]) && l.unit ? ` ${l.unit}` : ''}`}
+                  </dd>
+                </div>
+              ))}
+              {FLAGS.map((f) => (
+                <div key={f.field} className="flex justify-between gap-3 py-1.5">
+                  <dt className="text-soft">{f.label}</dt>
+                  <dd className={`font-semibold ${p[f.field] ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted'}`}>{p[f.field] ? 'Sí' : 'No'}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
         ))}
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Cocina</span>
-          <span className={`font-semibold ${plan.kitchenEnabled ? 'text-emerald-500' : 'text-gray-400'}`}>
-            {plan.kitchenEnabled ? 'Sí' : 'No'}
-          </span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Sorteos</span>
-          <span className={`font-semibold ${plan.rafflesEnabled ? 'text-emerald-500' : 'text-gray-400'}`}>
-            {plan.rafflesEnabled ? 'Sí' : 'No'}
-          </span>
-        </div>
       </div>
-    </div>
+      {editing && <PlanFormModal plan={editing} onClose={() => setEditing(null)} onSaved={onUpdate} />}
+    </>
   );
 }

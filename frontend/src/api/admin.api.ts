@@ -1,3 +1,4 @@
+import axios from 'axios';
 import client from './client';
 import type { SaasPlan, PlanDto } from '@pos/shared';
 
@@ -49,6 +50,24 @@ export interface TenantPlanUpdateResponse {
   excess: PlanExcess[];
 }
 
+/** Chequeo de alta de un negocio (`GET /admin/tenants/:id/health`). */
+export interface TenantHealth {
+  tenantId: string;
+  isActive: boolean;
+  hasBranch: boolean;
+  hasActiveOwner: boolean;
+  hasProducts: boolean;
+  branchCount: number;
+  cashierCount: number;
+  productCount: number;
+  /** Informativo: una diferencia es una excepción concedida a mano, no una falla. */
+  moduleFlagsMatchPlan: boolean;
+  withinBranchLimit: boolean;
+  withinCashierLimit: boolean;
+  withinProductLimit: boolean;
+  ok: boolean;
+}
+
 export type { PlanDto };
 
 export interface CreateTenantPayload {
@@ -66,6 +85,23 @@ function adminHeaders() {
   return { 'x-admin-key': sessionStorage.getItem(KEY) ?? '' };
 }
 
+/** Lo emite cualquier llamada de /admin que recibe 401: la clave guardada dejó de servir. */
+export const ADMIN_KEY_INVALID_EVENT = 'pos:admin-key-invalid';
+
+/**
+ * Si la clave deja de servir a mitad de sesión (se cambió ADMIN_SECRET), se borra y la página
+ * vuelve al ingreso, en vez de mostrar un error en cada acción.
+ */
+function guard<T>(request: Promise<T>): Promise<T> {
+  return request.catch((err: unknown) => {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      sessionStorage.removeItem(KEY);
+      window.dispatchEvent(new Event(ADMIN_KEY_INVALID_EVENT));
+    }
+    throw err;
+  });
+}
+
 export const adminApi = {
   saveKey: (key: string) => sessionStorage.setItem(KEY, key),
   clearKey: () => sessionStorage.removeItem(KEY),
@@ -76,27 +112,30 @@ export const adminApi = {
 
   // ── Tenants ────────────────────────────────────────────────
   getTenants: () =>
-    client.get<TenantRow[]>('/api/v1/admin/tenants', { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.get<TenantRow[]>('/api/v1/admin/tenants', { headers: adminHeaders() }).then((r) => r.data)),
 
   createTenant: (payload: CreateTenantPayload) =>
-    client.post<{ tenantId: string; message: string }>('/api/v1/admin/tenants', payload, { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.post<{ tenantId: string; message: string }>('/api/v1/admin/tenants', payload, { headers: adminHeaders() }).then((r) => r.data)),
+
+  getTenantHealth: (id: string) =>
+    guard(client.get<TenantHealth>(`/api/v1/admin/tenants/${id}/health`, { headers: adminHeaders() }).then((r) => r.data)),
 
   toggleTenant: (id: string) =>
-    client.patch<{ id: string; isActive: boolean }>(`/api/v1/admin/tenants/${id}/toggle`, {}, { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.patch<{ id: string; isActive: boolean }>(`/api/v1/admin/tenants/${id}/toggle`, {}, { headers: adminHeaders() }).then((r) => r.data)),
 
   updateTenantPlan: (id: string, plan: SaasPlan) =>
-    client.patch<TenantPlanUpdateResponse>(`/api/v1/admin/tenants/${id}/plan`, { plan }, { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.patch<TenantPlanUpdateResponse>(`/api/v1/admin/tenants/${id}/plan`, { plan }, { headers: adminHeaders() }).then((r) => r.data)),
 
   updateModules: (id: string, modules: Partial<TenantModules>) =>
-    client.patch<TenantModules>(`/api/v1/admin/tenants/${id}/modules`, modules, { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.patch<TenantModules>(`/api/v1/admin/tenants/${id}/modules`, modules, { headers: adminHeaders() }).then((r) => r.data)),
 
   // ── Plans ──────────────────────────────────────────────────
   getPlans: () =>
-    client.get<PlanDto[]>('/api/v1/admin/plans', { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.get<PlanDto[]>('/api/v1/admin/plans', { headers: adminHeaders() }).then((r) => r.data)),
 
   updatePlan: (id: SaasPlan, updates: Partial<Omit<PlanDto, 'id'>>) =>
-    client.patch<PlanDto>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data),
+    guard(client.patch<PlanDto>(`/api/v1/admin/plans/${id}`, updates, { headers: adminHeaders() }).then((r) => r.data)),
 
   resetUserPassword: (userId: string, newPassword: string) =>
-    client.patch(`/api/v1/admin/users/${userId}/password`, { newPassword }, { headers: adminHeaders() }),
+    guard(client.patch(`/api/v1/admin/users/${userId}/password`, { newPassword }, { headers: adminHeaders() })),
 };

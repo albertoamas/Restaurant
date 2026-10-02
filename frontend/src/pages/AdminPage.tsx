@@ -1,58 +1,57 @@
-import { useState, useEffect, useCallback } from 'react';
-import { SaasPlan } from '@pos/shared';
-import { adminApi, type TenantRow, type TenantModules, type PlanDto, type CreateTenantPayload } from '../api/admin.api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { isUnlimited } from '@pos/shared';
+import { ADMIN_KEY_INVALID_EVENT, adminApi, type CreateTenantPayload, type PlanDto, type TenantRow } from '../api/admin.api';
+import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
-import { Spinner } from '../components/ui/Spinner';
+import { Input } from '../components/ui/Input';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
+import { Skeleton } from '../components/ui/Skeleton';
 import { AdminLogin } from '../components/admin/AdminLogin';
 import { PlansSection } from '../components/admin/PlansSection';
-import { TenantPanel } from '../components/admin/TenantPanel';
-import { TenantAvatar } from '../components/admin/TenantAvatar';
+import { TenantFormModal } from '../components/admin/TenantFormModal';
+import { TenantSheet } from '../components/admin/TenantSheet';
 import { PlanBadge } from '../components/admin/PlanBadge';
 import { useTheme } from '../hooks/useTheme';
+import { handleApiError } from '../utils/api-error';
+import { formatBoliviaDateShort } from '../utils/date';
 
-function formatTenantDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-const EMPTY_FORM: CreateTenantPayload = { businessName: '', ownerName: '', email: '', password: '', branchName: '' };
+type Tab = 'tenants' | 'plans';
 
 /**
- * `required` y `minLength` replican lo que valida RegisterDto en el backend: si
- * no coinciden, el navegador deja pasar un valor que el servidor rechaza con un
- * mensaje de class-validator en inglés dentro de una UI en español.
+ * Algo a revisar en un negocio, con lo que ya trae la lista (el chequeo completo vive en la
+ * ficha): sin dueño, sin sucursal o por encima de un límite de su plan.
  */
-type CreateField = {
-  field: keyof CreateTenantPayload;
-  label: string;
-  type: string;
-  placeholder: string;
-  required: boolean;
-  minLength?: number;
-};
-
-const CREATE_FIELDS: CreateField[] = [
-  { field: 'businessName', label: 'Nombre del negocio', type: 'text',  placeholder: 'Ej: HamBurgos',                    required: true,  minLength: 2 },
-  { field: 'ownerName',    label: 'Nombre del dueño',   type: 'text',  placeholder: 'Ej: Juan Pérez',                   required: true,  minLength: 2 },
-  { field: 'email',        label: 'Email del dueño',    type: 'email', placeholder: 'correo@ejemplo.com',               required: true },
-  { field: 'password',     label: 'Contraseña inicial', type: 'text',  placeholder: 'Mínimo 6 caracteres',              required: true,  minLength: 6 },
-  { field: 'branchName',   label: 'Primera sucursal',   type: 'text',  placeholder: 'Principal (si lo dejas vacío)',    required: false, minLength: 2 },
-];
+function attention(t: TenantRow, plan: PlanDto | undefined): string | null {
+  if (!t.owner) return 'Sin dueño';
+  if (t.branchCount === 0) return 'Sin sucursal';
+  if (plan) {
+    const over = (used: number, max: number) => !isUnlimited(max) && used > max;
+    if (over(t.branchCount, plan.maxBranches) || over(t.cashierCount, plan.maxCashiers) || over(t.productCount, plan.maxProducts)) {
+      return 'Por encima del plan';
+    }
+  }
+  return null;
+}
 
 export function AdminPage() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [authenticated, setAuthenticated] = useState(adminApi.hasKey());
   const [keyInput, setKeyInput] = useState('');
   const [keyError, setKeyError] = useState('');
+  const [signingIn, setSigningIn] = useState(false);
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [plans, setPlans] = useState<PlanDto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [toggling, setToggling] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [tab, setTab] = useState<Tab>('tenants');
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [form, setForm] = useState<CreateTenantPayload>(EMPTY_FORM);
+  const [toggling, setToggling] = useState<TenantRow | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -60,55 +59,41 @@ export function AdminPage() {
       const [t, p] = await Promise.all([adminApi.getTenants(), adminApi.getPlans()]);
       setTenants(t);
       setPlans(p);
-    } catch {
-      setAuthenticated(false);
-      adminApi.clearKey();
+    } catch (err) {
+      // Un 401 ya lo atiende ADMIN_KEY_INVALID_EVENT; cualquier otro error se muestra.
+      handleApiError(err, 'No se pudieron cargar los negocios');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { if (authenticated) loadData(); }, [authenticated, loadData]);
+  useEffect(() => { if (authenticated) void loadData(); }, [authenticated, loadData]);
+
+  // La clave dejó de servir a mitad de sesión: de vuelta al ingreso, con el motivo.
+  useEffect(() => {
+    const onInvalid = () => {
+      setAuthenticated(false);
+      setSelectedId(null);
+      setCreating(false);
+      setToggling(null);
+      setKeyError('La clave dejó de ser válida. Ingrésala de nuevo.');
+    };
+    window.addEventListener(ADMIN_KEY_INVALID_EVENT, onInvalid);
+    return () => window.removeEventListener(ADMIN_KEY_INVALID_EVENT, onInvalid);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setKeyError('');
-    adminApi.saveKey(keyInput);
+    setSigningIn(true);
     try {
-      const [t, p] = await Promise.all([adminApi.getTenants(), adminApi.getPlans()]);
-      setTenants(t);
-      setPlans(p);
+      await adminApi.ping(keyInput.trim());
+      adminApi.saveKey(keyInput.trim());
       setAuthenticated(true);
     } catch {
-      adminApi.clearKey();
       setKeyError('Clave incorrecta');
-    }
-  };
-
-  const handleToggle = async (id: string) => {
-    setToggling(id);
-    try {
-      const updated = await adminApi.toggleTenant(id);
-      setTenants((prev) => prev.map((t) => t.id === id ? { ...t, isActive: updated.isActive } : t));
     } finally {
-      setToggling(null);
-    }
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreating(true);
-    setCreateError('');
-    try {
-      await adminApi.createTenant(form);
-      setForm(EMPTY_FORM);
-      setShowForm(false);
-      await loadData();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setCreateError(typeof msg === 'string' ? msg : 'Error al crear el negocio');
-    } finally {
-      setCreating(false);
+      setSigningIn(false);
     }
   };
 
@@ -119,223 +104,197 @@ export function AdminPage() {
     setKeyInput('');
   };
 
-  const setField = (field: keyof CreateTenantPayload) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const updateTenant = (id: string, changes: Partial<TenantRow>) =>
+    setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, ...changes } : t)));
 
-  const updateTenantPlan = (id: string, plan: SaasPlan) =>
-    setTenants((prev) => prev.map((t) => t.id === id ? { ...t, plan } : t));
+  const updatePlan = (updated: PlanDto) =>
+    setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
 
-  const updateTenantModules = (id: string, modules: TenantModules) =>
-    setTenants((prev) => prev.map((t) => t.id === id ? { ...t, modules } : t));
+  const createTenant = async (data: CreateTenantPayload) => {
+    try {
+      await adminApi.createTenant(data);
+      toast.success(`${data.businessName} creado`);
+      setCreating(false);
+      await loadData();
+    } catch (err) {
+      handleApiError(err, 'No se pudo crear el negocio');
+    }
+  };
 
-  const updatePlanDto = (updated: PlanDto) =>
-    setPlans((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+  const confirmToggle = async () => {
+    if (!toggling) return;
+    setBusy(true);
+    try {
+      const updated = await adminApi.toggleTenant(toggling.id);
+      updateTenant(toggling.id, { isActive: updated.isActive });
+      toast.success(updated.isActive ? `${toggling.name} reactivado` : `${toggling.name} suspendido`);
+      setToggling(null);
+    } catch (err) {
+      handleApiError(err, 'No se pudo cambiar el estado del negocio');
+    } finally {
+      setBusy(false);
+    }
+  };
 
+  const planOf = (t: TenantRow) => plans.find((p) => p.id === t.plan);
   const activeCount = tenants.filter((t) => t.isActive).length;
-  const inactiveCount = tenants.filter((t) => !t.isActive).length;
+  const q = search.trim().toLowerCase();
+  const visible = useMemo(() => [...tenants]
+    .filter((t) => !q || [t.name, t.slug, t.owner?.name, t.owner?.email].some((v) => v?.toLowerCase().includes(q)))
+    .sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name, 'es')),
+  [tenants, q]);
+  const selected = tenants.find((t) => t.id === selectedId) ?? null;
 
   if (!authenticated) {
-    return (
-      <AdminLogin
-        keyInput={keyInput}
-        keyError={keyError}
-        onKeyChange={setKeyInput}
-        onSubmit={handleLogin}
-      />
-    );
+    return <AdminLogin keyInput={keyInput} keyError={keyError} loading={signingIn} onKeyChange={(v) => { setKeyInput(v); setKeyError(''); }} onSubmit={handleLogin} />;
   }
 
   return (
-    <div className="min-h-screen bg-surface-page">
-
-      {/* Top bar */}
-      <header
-        data-print-hide
-        className="sticky top-0 z-20 border-b border-line bg-surface-page/85 backdrop-blur-xl transition-colors"
-      >
-        <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
-          <div className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10">
-              <Icon name="lock" size={14} strokeWidth={2} className="text-primary-500" />
-            </div>
-            <div className="leading-tight">
-              <p className="font-heading text-sm font-bold text-main">Admin Console</p>
-              <p className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:block">YankoPOS</p>
-            </div>
-          </div>
-
-          <div className="h-6 w-px shrink-0 bg-line" />
-
-          <div className="flex items-center gap-2 text-xs">
-            <span className="hidden text-muted sm:inline">{tenants.length} negocios</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-500">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-              {activeCount} activos
+    <div className="min-h-dvh bg-surface-page">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface-page/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
+              <Icon name="cart" size={18} strokeWidth={2} />
             </span>
-            {inactiveCount > 0 && (
-              <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 font-medium text-red-500">
-                {inactiveCount} inactivos
-              </span>
-            )}
+            <span className="truncate font-heading text-heading font-bold text-main">
+              Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
+              <span className="ml-2 hidden text-body font-medium text-soft sm:inline">Administración</span>
+            </span>
           </div>
-
-          <div className="flex-1" />
-
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1">
             <button
+              type="button"
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-main"
+              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'}
+              className="flex h-10 w-10 items-center justify-center rounded-control text-soft transition-colors hover:bg-surface-2 hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60"
             >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} strokeWidth={1.75} />
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
-            <button
-              onClick={() => { setShowForm((v) => !v); setCreateError(''); }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                showForm
-                  ? 'bg-surface-2 text-soft hover:bg-surface-3'
-                  : 'bg-primary-600 text-white hover:bg-primary-500'
-              }`}
-            >
-              <Icon name={showForm ? 'x' : 'plus'} size={13} strokeWidth={2.5} />
-              {showForm ? 'Cancelar' : 'Nuevo negocio'}
-            </button>
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              className="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-soft"
-            >
-              <Icon name="logout" size={15} strokeWidth={1.75} />
-            </button>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Icon name="logout" size={16} />
+              Salir
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-
-        {/* Create tenant form */}
-        {showForm && (
-          <div className="rounded-2xl p-5 mb-6 border border-line animate-slide" style={{ background: 'var(--color-surface-card)' }}>
-            <h2 className="font-heading font-bold text-sm text-gray-900 mb-4">Nuevo negocio</h2>
-            <form onSubmit={handleCreate} className="grid grid-cols-2 gap-3">
-              {CREATE_FIELDS.map(({ field, label, type, placeholder, required, minLength }) => (
-                <div key={field} className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    {label}{!required && <span className="text-gray-400 font-normal"> (opcional)</span>}
-                  </label>
-                  <input
-                    type={type} value={form[field] ?? ''} onChange={setField(field)}
-                    placeholder={placeholder} required={required} minLength={minLength}
-                    className="w-full text-sm border border-line rounded-xl px-3 py-2 bg-surface-2 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-colors"
-                  />
-                </div>
-              ))}
-              {createError && <p className="col-span-2 text-xs text-red-500">{createError}</p>}
-              <div className="col-span-2 flex justify-end">
-                <Button type="submit" variant="primary" size="sm" loading={creating}>Crear negocio</Button>
-              </div>
-            </form>
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="font-heading text-title font-bold text-main">Panel de administración</h1>
+            <p className="mt-1 text-body text-soft">
+              {tenants.length === 1 ? '1 negocio' : `${tenants.length} negocios`}, {activeCount === 1 ? '1 activo' : `${activeCount} activos`}.
+            </p>
           </div>
-        )}
-
-        {/* Plans editor */}
-        {plans.length > 0 && (
-          <PlansSection plans={plans} onUpdate={updatePlanDto} />
-        )}
-
-        {/* Tenant list */}
-        <section>
-          <div className="px-1 mb-3">
-            <h2 className="font-heading font-bold text-sm text-gray-900">Negocios</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Gestión de tenants, planes y módulos</p>
-          </div>
-
-          <div className="rounded-2xl border border-line overflow-hidden" style={{ background: 'var(--color-surface-card)' }}>
-            {loading ? (
-              <div className="flex justify-center py-12"><Spinner /></div>
-            ) : tenants.length === 0 ? (
-              <div className="flex flex-col items-center py-14 text-center">
-                <div className="w-10 h-10 rounded-xl bg-surface-2 flex items-center justify-center mb-3">
-                  <Icon name="building" size={20} strokeWidth={1.5} className="text-gray-300" />
-                </div>
-                <p className="text-sm text-gray-400">No hay negocios registrados</p>
-                <p className="text-xs text-gray-300 mt-1">Crea el primero con el botón de arriba</p>
-              </div>
-            ) : (
-              <div>
-                {tenants.map((t, idx) => (
-                  <div key={t.id} className={idx !== 0 ? 'border-t border-line' : ''}>
-                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors">
-                      <button
-                        onClick={() => setExpandedId((prev) => prev === t.id ? null : t.id)}
-                        className="p-1 rounded-lg text-gray-500 hover:text-gray-400 hover:bg-surface-2 transition-colors shrink-0"
-                        aria-expanded={expandedId === t.id}
-                      >
-                        <Icon
-                          name="chevron-right"
-                          size={16}
-                          strokeWidth={2}
-                          className={`transition-transform duration-200 ${expandedId === t.id ? 'rotate-90' : ''}`}
-                        />
-                      </button>
-
-                      <TenantAvatar name={t.name} />
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-gray-900 truncate">{t.name}</p>
-                        <p className="text-xs text-gray-400 truncate">{t.slug}</p>
-                      </div>
-
-                      <div className="hidden sm:block w-36 shrink-0">
-                        {t.owner ? (
-                          <>
-                            <p className="text-xs font-medium text-gray-700 truncate">{t.owner.name}</p>
-                            <p className="text-xs text-gray-400 truncate">{t.owner.email}</p>
-                          </>
-                        ) : (
-                          <span className="text-gray-300 text-xs">-</span>
-                        )}
-                      </div>
-
-                      <div className="hidden md:block w-20 shrink-0 text-xs text-gray-400 text-right">
-                        {formatTenantDate(t.createdAt)}
-                      </div>
-
-                      <div className="shrink-0">
-                        <PlanBadge plan={t.plan} />
-                      </div>
-
-                      <div className="shrink-0 hidden sm:block">
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${t.isActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${t.isActive ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                          {t.isActive ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </div>
-
-                      <button
-                        onClick={() => handleToggle(t.id)}
-                        disabled={toggling === t.id}
-                        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${t.isActive ? 'bg-red-500/12 text-red-600 dark:text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'}`}
-                      >
-                        {toggling === t.id ? '…' : t.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </div>
-
-                    {expandedId === t.id && (
-                      <TenantPanel
-                        tenant={t}
-                        plans={plans}
-                        onPlanUpdate={updateTenantPlan}
-                        onModulesUpdate={updateTenantModules}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SegmentedControl
+              label="Sección"
+              value={tab}
+              onChange={setTab}
+              options={[{ value: 'tenants', label: 'Negocios' }, { value: 'plans', label: 'Planes' }]}
+            />
+            {tab === 'tenants' && (
+              <Button onClick={() => setCreating(true)}>
+                <Icon name="plus" size={18} />
+                Nuevo negocio
+              </Button>
             )}
           </div>
-        </section>
+        </div>
+
+        {tab === 'plans' ? (
+          loading ? <div className="grid gap-4 md:grid-cols-3"><Skeleton variant="card" /><Skeleton variant="card" /><Skeleton variant="card" /></div>
+            : <PlansSection plans={plans} onUpdate={updatePlan} />
+        ) : (
+          <>
+            {tenants.length > 5 && (
+              <div className="mb-4">
+                <Input
+                  aria-label="Buscar negocio"
+                  placeholder="Buscar por negocio, dueño o correo"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  leftAddon={<Icon name="search" size={18} />}
+                />
+              </div>
+            )}
+            {loading ? (
+              <div className="space-y-3"><Skeleton variant="card" /><Skeleton variant="card" /></div>
+            ) : visible.length === 0 ? (
+              <EmptyState
+                icon="building"
+                title={q ? 'Ningún negocio con esa búsqueda' : 'Todavía no hay negocios'}
+                description={q ? 'Prueba con otro nombre o correo.' : 'Crea el primero con su dueño y su sucursal.'}
+                action={q ? undefined : <Button onClick={() => setCreating(true)}>Crear el primero</Button>}
+              />
+            ) : (
+              <section className="overflow-hidden rounded-card border border-line bg-surface-card shadow-raised">
+                <ul className="divide-y divide-line">
+                  {visible.map((t) => {
+                    const warn = attention(t, planOf(t));
+                    return (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(t.id)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
+                        >
+                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-line font-heading text-body font-bold ${
+                            t.isActive ? 'bg-primary-500/10 text-primary-700 dark:text-primary-400' : 'bg-surface-2 text-muted'
+                          }`}>
+                            {t.name.trim().charAt(0).toUpperCase()}
+                          </span>
+                          <span className={`min-w-0 flex-1 ${t.isActive ? '' : 'opacity-60'}`}>
+                            <span className="flex flex-wrap items-center gap-2">
+                              <span className="min-w-0 truncate text-body font-semibold text-main">{t.name}</span>
+                              <PlanBadge plan={t.plan} />
+                              {!t.isActive && <Badge variant="error" dot>Suspendido</Badge>}
+                              {t.isActive && warn && <Badge variant="warning" dot>{warn}</Badge>}
+                            </span>
+                            <span className="block truncate text-caption text-muted">
+                              {t.owner ? `${t.owner.name}, ${t.owner.email}` : 'Sin dueño'}. Alta el {formatBoliviaDateShort(t.createdAt)}
+                            </span>
+                          </span>
+                          <span className="hidden shrink-0 text-right text-caption text-muted tabular-nums sm:block">
+                            {t.branchCount} suc.<br />{t.cashierCount} cajeros
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+          </>
+        )}
       </main>
+
+      {selected && (
+        <TenantSheet
+          tenant={selected}
+          plans={plans}
+          onClose={() => setSelectedId(null)}
+          onChange={updateTenant}
+          onToggleActive={() => setToggling(selected)}
+        />
+      )}
+
+      {creating && <TenantFormModal onClose={() => setCreating(false)} onSubmit={createTenant} />}
+
+      <ConfirmModal
+        isOpen={toggling !== null}
+        onClose={() => setToggling(null)}
+        onConfirm={confirmToggle}
+        loading={busy}
+        variant={toggling?.isActive ? 'danger' : 'primary'}
+        title={toggling ? (toggling.isActive ? `Suspender ${toggling.name}` : `Reactivar ${toggling.name}`) : ''}
+        message={toggling?.isActive
+          ? 'El dueño y todos sus cajeros quedan fuera al instante: nadie podrá iniciar sesión. No se borra ningún dato y puedes reactivarlo cuando quieras.'
+          : 'El dueño y sus cajeros vuelven a poder iniciar sesión con sus contraseñas.'}
+        confirmLabel={toggling?.isActive ? 'Suspender' : 'Reactivar'}
+        cancelLabel="Volver"
+      />
     </div>
   );
 }

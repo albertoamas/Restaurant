@@ -1,45 +1,57 @@
-import { SaasPlan, isUnlimited } from '@pos/shared';
+import { SaasPlan, isUnlimited, type PlanDto } from '@pos/shared';
+import type { TenantModules } from '../../api/admin.api';
+import { Badge } from '../ui/Badge';
 
-/** La convención "-1 = sin límite" vive en @pos/shared; acá solo se le da formato. */
-export function limitLabel(n: number) {
-  return isUnlimited(n) ? '∞' : String(n);
+/** "-1 = sin límite" vive en @pos/shared; aquí solo se le da formato. */
+export function limitLabel(n: number): string {
+  return isUnlimited(n) ? 'Sin límite' : String(n);
 }
 
-export const PLAN_CONFIG: Record<SaasPlan, {
-  label: string;
-  badge: string;
-  card: string;
-  cardActive: string;
-  accent: string;
-}> = {
-  [SaasPlan.BASICO]: {
-    label: 'Básico',
-    badge: 'bg-surface-2 text-gray-600 border-line',
-    card: 'border-line bg-surface-2',
-    cardActive: 'border-line-strong bg-surface-3 ring-1 ring-line',
-    accent: 'text-gray-700',
-  },
-  [SaasPlan.PRO]: {
-    label: 'Pro',
-    badge: 'bg-primary-500/10 text-primary-600 border-primary-500/20',
-    card: 'border-primary-500/20 bg-primary-500/5',
-    cardActive: 'border-primary-500/50 bg-primary-500/12 ring-1 ring-primary-500/25',
-    accent: 'text-primary-400',
-  },
-  [SaasPlan.NEGOCIO]: {
-    label: 'Negocio',
-    badge: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-    card: 'border-violet-500/20 bg-violet-500/5',
-    cardActive: 'border-violet-500/50 bg-violet-500/12 ring-1 ring-violet-500/25',
-    accent: 'text-violet-600 dark:text-violet-400',
-  },
+/** Espacio en MB con la unidad que se lee mejor: "100 MB", "1 GB", "5 GB". */
+export function storageLabel(mb: number): string {
+  if (isUnlimited(mb)) return 'Sin límite';
+  return mb >= 1024 && mb % 1024 === 0 ? `${mb / 1024} GB` : `${mb} MB`;
+}
+
+export const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
+
+const PLAN_LABEL: Record<SaasPlan, string> = {
+  [SaasPlan.BASICO]:  'Básico',
+  [SaasPlan.PRO]:     'Pro',
+  [SaasPlan.NEGOCIO]: 'Negocio',
 };
 
+/** Básico neutro, Pro y Negocio con el color de marca (Negocio con punto: el nivel más alto). */
 export function PlanBadge({ plan }: { plan: SaasPlan }) {
-  const cfg = PLAN_CONFIG[plan];
   return (
-    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}>
-      {cfg.label}
-    </span>
+    <Badge variant={plan === SaasPlan.BASICO ? 'neutral' : 'info'} dot={plan === SaasPlan.NEGOCIO}>
+      {PLAN_LABEL[plan] ?? plan}
+    </Badge>
   );
+}
+
+export const MODULE_DEFS: { key: keyof TenantModules; label: string; description: string }[] = [
+  { key: 'ordersEnabled',          label: 'Pedidos',            description: 'Pantalla de pedidos y sus estados' },
+  { key: 'cashEnabled',            label: 'Caja',               description: 'Abrir y cerrar caja con el efectivo esperado' },
+  { key: 'teamEnabled',            label: 'Equipo',             description: 'Cajeros y la sucursal de cada uno' },
+  { key: 'branchesEnabled',        label: 'Sucursales',         description: 'Administrar varios locales' },
+  { key: 'kitchenEnabled',         label: 'Cocina',             description: 'Pantalla de pedidos para la cocina' },
+  { key: 'rafflesEnabled',         label: 'Sorteos',            description: 'Sorteos y tickets para clientes' },
+  { key: 'advancedReportsEnabled', label: 'Reportes avanzados', description: 'Caja, productos y clientes en reportes' },
+];
+
+/**
+ * Lo que el plan trae por sí solo. Misma regla que `PlanModulesService.baseModules` del backend:
+ * pedidos y caja siempre; sucursales y equipo según sus límites; el resto, sus flags.
+ */
+export function planModules(plan: PlanDto): TenantModules {
+  return {
+    ordersEnabled:          true,
+    cashEnabled:            true,
+    branchesEnabled:        plan.maxBranches !== 1,
+    teamEnabled:            plan.maxCashiers !== 0,
+    kitchenEnabled:         plan.kitchenEnabled,
+    rafflesEnabled:         plan.rafflesEnabled,
+    advancedReportsEnabled: plan.advancedReports,
+  };
 }
