@@ -1,14 +1,33 @@
-import { Link } from 'react-router-dom';
-import { LegalLayout, LegalSection, LegalP, LegalList } from '../components/legal/LegalLayout';
+import { LegalContact, LegalLayout, LegalLink, LegalList, LegalP, LegalSection, type LegalSectionRef } from '../components/legal/LegalLayout';
 
-const UPDATED_AT = '21 de septiembre de 2026';
-const CONTACT_EMAIL = 'albertoamasv@gmail.com';
+const UPDATED_AT = '2 de octubre de 2026';
+
+const SECTIONS: LegalSectionRef[] = [
+  { id: 'proveedor', title: '1. Quién ofrece el servicio' },
+  { id: 'acceso', title: '2. Cómo se accede al servicio' },
+  { id: 'planes-y-pago', title: '3. Planes y pago' },
+  { id: 'datos', title: '4. Tus datos y los datos de tus clientes' },
+  { id: 'uso-aceptable', title: '5. Uso aceptable' },
+  { id: 'disponibilidad', title: '6. Disponibilidad del servicio' },
+  { id: 'propiedad-intelectual', title: '7. Propiedad intelectual' },
+  { id: 'suspension', title: '8. Suspensión y cancelación' },
+  { id: 'responsabilidad', title: '9. Limitación de responsabilidad' },
+  { id: 'cambios', title: '10. Cambios a estos Términos' },
+  { id: 'ley-aplicable', title: '11. Ley aplicable' },
+  { id: 'contacto', title: '12. Contacto' },
+];
 
 export function TermsPage() {
   return (
-    <LegalLayout icon="document" title="Términos y Condiciones" updatedAt={UPDATED_AT}>
+    <LegalLayout
+      icon="document"
+      title="Términos y condiciones"
+      summary="Las reglas para usar YankoPOS: quién lo ofrece, cómo se contrata y qué se espera de cada parte."
+      updatedAt={UPDATED_AT}
+      sections={SECTIONS}
+    >
 
-      <LegalSection title="1. Quién ofrece el servicio">
+      <LegalSection id="proveedor" title="1. Quién ofrece el servicio">
         <LegalP>
           YankoPOS es un servicio de software (SaaS) para la gestión de restaurantes: pedidos, cocina, caja,
           reportes, gastos, clientes y sorteos. Lo ofrece <strong className="text-main">Alberto Amas Villarroel</strong>,
@@ -20,7 +39,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="2. Cómo se accede al servicio">
+      <LegalSection id="acceso" title="2. Cómo se accede al servicio">
         <LegalP>
           YankoPOS no tiene registro público: las cuentas se activan directamente por nosotros una vez acordado el
           plan (Básico, Pro o Negocio) con el Cliente. El Cliente designa un usuario propietario ("Owner"), quien a
@@ -32,10 +51,10 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="3. Planes y pago">
+      <LegalSection id="planes-y-pago" title="3. Planes y pago">
         <LegalP>
           Los planes disponibles y sus precios en bolivianos (Bs) son los publicados en{' '}
-          <Link to="/" className="font-semibold text-primary-500 hover:underline">nuestro sitio</Link>. Las
+          <LegalLink to="/">nuestro sitio</LegalLink>. Las
           condiciones de pago se coordinan directamente con el Proveedor al contratar o renovar el servicio.
         </LegalP>
         <LegalP>
@@ -44,7 +63,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="4. Tus datos y los datos de tus clientes">
+      <LegalSection id="datos" title="4. Tus datos y los datos de tus clientes">
         <LegalP>
           El Cliente conserva la propiedad de toda la información que carga en el sistema: su catálogo de productos,
           historial de ventas, gastos y los datos de sus propios clientes (nombre, teléfono, correo) que registre
@@ -55,11 +74,11 @@ export function TermsPage() {
           propios clientes finales (por ejemplo, haberles informado para qué se usan). Nosotros actuamos como
           encargados del tratamiento de esos datos: los almacenamos y procesamos para que el sistema funcione,
           pero no los usamos con fines propios ni los compartimos con terceros ajenos al servicio. Más detalle en
-          nuestra <Link to="/privacidad" className="font-semibold text-primary-500 hover:underline">Política de Privacidad</Link>.
+          nuestra <LegalLink to="/privacidad">Política de privacidad</LegalLink>.
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="5. Uso aceptable">
+      <LegalSection id="uso-aceptable" title="5. Uso aceptable">
         <LegalP>Al usar YankoPOS, el Cliente se compromete a no:</LegalP>
         <LegalList>
           <li>Usar el servicio para fines ilícitos o para procesar datos de terceros sin su consentimiento.</li>
@@ -69,7 +88,7 @@ export function TermsPage() {
         </LegalList>
       </LegalSection>
 
-      <LegalSection title="6. Disponibilidad del servicio">
+      <LegalSection id="disponibilidad" title="6. Disponibilidad del servicio">
         <LegalP>
           Nos esforzamos por mantener YankoPOS disponible de forma continua. El servicio puede sufrir
           interrupciones por mantenimiento programado, actualizaciones, causas de fuerza mayor o fallos de
@@ -82,7 +101,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="7. Propiedad intelectual">
+      <LegalSection id="propiedad-intelectual" title="7. Propiedad intelectual">
         <LegalP>
           El software, el nombre "YankoPOS", su diseño y su código son propiedad del Proveedor. Estos Términos no
           transfieren ningún derecho de propiedad intelectual sobre el software al Cliente. Solo otorgan un
@@ -90,7 +109,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="8. Suspensión y cancelación">
+      <LegalSection id="suspension" title="8. Suspensión y cancelación">
         <LegalP>
           Podemos suspender o cancelar el acceso al servicio si el Cliente incumple estos Términos, no realiza el
           pago acordado, o hace un uso indebido del sistema. El Cliente puede solicitar la cancelación de su
@@ -103,7 +122,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="9. Limitación de responsabilidad">
+      <LegalSection id="responsabilidad" title="9. Limitación de responsabilidad">
         <LegalP>
           YankoPOS se ofrece "tal cual". En la medida permitida por la ley, no seremos responsables por pérdidas
           indirectas, lucro cesante, o daños derivados de interrupciones del servicio, errores de terceros
@@ -112,7 +131,7 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="10. Cambios a estos Términos">
+      <LegalSection id="cambios" title="10. Cambios a estos Términos">
         <LegalP>
           Podemos actualizar estos Términos para reflejar cambios en el servicio o en la normativa aplicable. Los
           cambios relevantes se comunicarán al Cliente con anticipación razonable. El uso continuado del servicio
@@ -120,17 +139,17 @@ export function TermsPage() {
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="11. Ley aplicable">
+      <LegalSection id="ley-aplicable" title="11. Ley aplicable">
         <LegalP>
           Estos Términos se rigen por las leyes del Estado Plurinacional de Bolivia. Cualquier controversia se
           resolverá ante los tribunales competentes de la ciudad de Tarija, salvo que la ley disponga otra cosa.
         </LegalP>
       </LegalSection>
 
-      <LegalSection title="12. Contacto">
+      <LegalSection id="contacto" title="12. Contacto">
         <LegalP>
           Para consultas sobre estos Términos, escríbenos a{' '}
-          <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-primary-500 hover:underline">{CONTACT_EMAIL}</a>.
+          <LegalContact />.
         </LegalP>
       </LegalSection>
 
