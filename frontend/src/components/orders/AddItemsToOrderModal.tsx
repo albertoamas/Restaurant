@@ -192,6 +192,7 @@ export function AddItemsToOrderModal({ isOpen, onClose, order, onUpdated }: Prop
               categories={categories}
               selected={selectedCategory}
               onSelect={(c) => { setSelectedCategory(c); setSearch(''); }}
+              surface="card"
             />
           </div>
           {/* En escritorio el catálogo se desplaza solo; en celular, con todo el modal. */}
