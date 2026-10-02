@@ -272,11 +272,11 @@ DB model.
 
 ## Reference docs
 
+`docs/` is git-ignored: local working notes, not product documentation.
+
 - `docs/onboarding-cliente.md` — onboarding a new tenant
 - `docs/analisis-zona-horaria.md` — timezone bug diagnosis
-- `docs/plan-escalado-multisucursal-multitenant-planes.md` — multi-branch / multi-tenant / plans audit
-- `docs/gastos-hardening-plan.md` — expenses hardening plan
-- `docs/reports-charts-plan/` — reports screen, per tab
+- `docs/plan-calidad.md` — QA audit of 2026-10-02 and its fix plan
 
 ## Skills
 
