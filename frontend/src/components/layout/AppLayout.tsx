@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Icon } from '../ui/Icon';
+import { Button } from '../ui/Button';
 import { NavBrand, NavList, UserMenu } from './NavParts';
 import { useAuth } from '../../context/auth.context';
 import { useSocketEvent } from '../../context/socket.context';
@@ -76,20 +77,17 @@ export function AppLayout() {
   if (user?.role === 'CASHIER' && !user.branchId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="rounded-2xl border border-line p-8 max-w-sm w-full text-center animate-in shadow-card-xl bg-surface-card">
-          <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-            <Icon name="warning" size={28} className="text-amber-500" />
-          </div>
-          <h2 className="text-base font-bold text-main mb-2 font-heading">Sin sucursal asignada</h2>
-          <p className="text-sm text-soft mb-6">
-            Tu cuenta no tiene una sucursal asignada. Comunícate con el administrador para que te asigne una.
+        <div className="w-full max-w-sm rounded-card border border-line bg-surface-card p-8 text-center shadow-raised animate-in">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            <Icon name="warning" size={24} />
+          </span>
+          <h2 className="mt-4 font-heading text-heading font-bold text-main">Sin sucursal asignada</h2>
+          <p className="mt-1 text-body text-soft">
+            Tu cuenta todavía no tiene sucursal. Pídele al dueño del negocio que te asigne una desde Equipo.
           </p>
-          <button
-            onClick={logout}
-            className="text-sm text-muted hover:text-main underline transition-colors"
-          >
+          <Button variant="secondary" fullWidth className="mt-6" onClick={logout}>
             Cerrar sesión
-          </button>
+          </Button>
         </div>
       </div>
     );

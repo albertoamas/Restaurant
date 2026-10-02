@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const OWNER_EMAIL    = 'owner@demo.com';
 const OWNER_PASSWORD = 'demo123';
 
-// Login helper — also selects first branch for OWNER accounts with multiple branches
+// Inicia sesión como dueño y, si la pantalla lo pide, elige la sucursal Principal.
 async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
@@ -11,12 +11,21 @@ async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
   await page.waitForURL(/\/pos/, { timeout: 10_000 });
 
-  // If the sidebar shows "Seleccionar sucursal", pick the first branch
-  const noBranchBtn = page.getByRole('button', { name: /seleccionar sucursal/i });
-  if (await noBranchBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await noBranchBtn.click();
-    await page.locator('[class*="slide-down"] button').first().click();
-    await page.waitForTimeout(300);
+  await pickBranchIfAsked(page);
+}
+
+/**
+ * Con varias sucursales el dueño empieza en "Todas las sucursales", y POS, Caja y Cocina le
+ * piden elegir una ("Elige una sucursal"). Se elige "Principal", la del seed; la elección queda
+ * guardada para el resto del test.
+ */
+async function pickBranchIfAsked(page: import('@playwright/test').Page) {
+  const prompt = page.getByText('Elige una sucursal');
+  // `isVisible` no espera: hay que darle tiempo a la pantalla a decidir si pide sucursal.
+  const asked = await prompt.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true, () => false);
+  if (asked) {
+    await page.getByRole('button', { name: 'Principal', exact: true }).click();
+    await prompt.waitFor({ state: 'hidden' });
   }
 }
 
