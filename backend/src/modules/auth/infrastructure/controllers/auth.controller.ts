@@ -50,7 +50,8 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  // La clave es el nombre del limitador de AppModule ('global'); otra clave se ignora.
+  @Throttle({ global: { ttl: 60000, limit: 10 } })
   login(@Body() dto: LoginDto) {
     return this.loginUseCase.execute(dto);
   }
@@ -66,7 +67,7 @@ export class AuthController {
   @Patch('me/password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ global: { ttl: 60000, limit: 5 } })
   changePassword(
     @CurrentUser() user: JwtPayload,
     @Body() dto: ChangePasswordDto,

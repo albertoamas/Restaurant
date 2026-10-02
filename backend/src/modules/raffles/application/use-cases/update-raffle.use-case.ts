@@ -33,7 +33,7 @@ export class UpdateRaffleUseCase {
 
     const updated = await this.repo.findRaffleWithTickets(id, tenantId);
     if (!updated) throw new NotFoundException('Sorteo no encontrado');
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, updated);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, updated);
     return updated;
   }
 }

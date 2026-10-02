@@ -87,7 +87,7 @@ escriba datos de sucursal la valida primero** con `BranchAccessService`
 
 Un `branchId` sin validar deja pedidos o gastos huérfanos que no aparecen en ningún reporte.
 
-`JwtStrategy` resuelve el `branchId` **desde la BD** (caché 60 s), no del token: reasignar un
+`JwtStrategy` (vía `ActiveSessionService`) resuelve el `branchId` **desde la BD** (caché 60 s), no del token: reasignar un
 cajero surte efecto sin re-login. `ToggleBranchUseCase` lee lo que necesita por `BranchUsagePort`,
 propio de `BranchModule` — inyectar los puertos de usuarios o caja crearía una dependencia
 circular.
@@ -109,9 +109,20 @@ app doesn't boot.
 
 ### Real time
 
-Use cases call `EventsService.emitToTenant(tenantId, event, payload)` (or `emit(tenantId, branchId, …)`
-for branch-local views). Event names only from `SOCKET_EVENTS` in `@pos/shared` — never string
-literals. Rooms: `tenant:{tenantId}`, `t:{tenantId}:b:{branchId}`. Recipe: `realtime-event` skill.
+Use cases emit through `EventsService`, picking the method by **who may see the data**:
+`emitToTenant` (catalog, customers, modules: everyone), `emitToBranch(tenantId, branchId, …)`
+(orders, cash: owners + that branch's cashiers), `emitToOwners` (expenses, raffles). A cashier
+never receives another branch's orders or owner-only data. Event names only from `SOCKET_EVENTS`
+in `@pos/shared` — never string literals. Recipe: `realtime-event` skill.
+
+The socket validates the session in a connection middleware with the same `ActiveSessionService`
+as `JwtStrategy` (tenant and user active, branch from the DB). `ToggleUserUseCase`,
+`UpdateUserBranchUseCase` and `ToggleTenantActiveUseCase` clear that cache and cut or move the
+open sockets, so they take effect at once. The gateway lives in `EventsGatewayModule`, apart from
+`EventsModule`, to avoid an `AuthModule` cycle.
+
+`@Throttle({ global: … })`: the key must be the `AppModule` throttler name (`'global'`), otherwise
+the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
 
 ### Module notes (non-obvious rules only — endpoints are in each controller)
 

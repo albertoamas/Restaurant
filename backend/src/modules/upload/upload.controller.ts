@@ -28,7 +28,7 @@ export class UploadController {
   @Post('image')
   @UseGuards(JwtAuthGuard)
   // 20 uploads por minuto por IP — suficiente para uso legítimo, bloquea spam que sature CPU/disco
-  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  @Throttle({ global: { ttl: 60000, limit: 20 } })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

@@ -32,7 +32,7 @@ export class CloseCashSessionUseCase {
     session.close(userId, dto.closingAmount, cashSales, dto.notes);
 
     const saved = await this.repo.save(session);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CASH_CLOSED, saved);
+    this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.CASH_CLOSED, saved);
     this.metricsService?.recordCashSessionClosed();
     return saved;
   }

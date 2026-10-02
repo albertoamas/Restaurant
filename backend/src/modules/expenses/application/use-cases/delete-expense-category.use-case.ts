@@ -16,6 +16,6 @@ export class DeleteExpenseCategoryUseCase {
     const category = await this.repo.findById(id, tenantId);
     if (!category) throw new NotFoundException('Categoría no encontrada');
     await this.repo.delete(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_DELETED, { id });
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_DELETED, { id });
   }
 }

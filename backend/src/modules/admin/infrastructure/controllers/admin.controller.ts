@@ -31,7 +31,7 @@ import { ResetUserPasswordDto } from '../../application/dto/reset-user-password.
 
 @Controller('admin')
 @UseGuards(AdminGuard)
-@Throttle({ default: { ttl: 60000, limit: 10 } })
+@Throttle({ global: { ttl: 60000, limit: 10 } })
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 

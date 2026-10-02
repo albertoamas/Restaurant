@@ -111,6 +111,6 @@ describe('CloseCashSessionUseCase', () => {
 
     const result = await useCase.execute('tenant-1', 'branch-1', 'user-1', { closingAmount: 100 });
 
-    expect(eventsService.emitToTenant).toHaveBeenCalledWith('tenant-1', 'cash.closed', result);
+    expect(eventsService.emitToBranch).toHaveBeenCalledWith('tenant-1', result.branchId, 'cash.closed', result);
   });
 });

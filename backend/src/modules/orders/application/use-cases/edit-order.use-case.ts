@@ -67,7 +67,7 @@ export class EditOrderUseCase {
     });
 
     const saved = await this.orderRepository.update(order);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
+    this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
     return saved;
   }
 }

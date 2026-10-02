@@ -85,7 +85,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 
@@ -118,7 +118,7 @@ export class RaffleAutoTicketService {
       }));
 
       await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 

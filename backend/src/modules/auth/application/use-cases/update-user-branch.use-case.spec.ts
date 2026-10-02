@@ -5,6 +5,8 @@ import { UpdateUserBranchUseCase } from './update-user-branch.use-case';
 import { UserRepositoryPort } from '../../domain/ports/user-repository.port';
 import { BranchAccessService } from '../../../branch/application/services/branch-access.service';
 import { User } from '../../domain/entities/user.entity';
+import { ActiveSessionService } from '../services/active-session.service';
+import { EventsService } from '../../../events/events.service';
 
 const TENANT_ID = 'tenant-1';
 const USER_ID   = 'user-1';
@@ -28,11 +30,15 @@ describe('UpdateUserBranchUseCase', () => {
   let useCase: UpdateUserBranchUseCase;
   let userRepo: MockProxy<UserRepositoryPort>;
   let branchAccess: MockProxy<BranchAccessService>;
+  let activeSession: MockProxy<ActiveSessionService>;
+  let events: MockProxy<EventsService>;
 
   beforeEach(() => {
     userRepo     = mock<UserRepositoryPort>();
     branchAccess = mock<BranchAccessService>();
-    useCase      = new UpdateUserBranchUseCase(userRepo, branchAccess);
+    activeSession = mock<ActiveSessionService>();
+    events       = mock<EventsService>();
+    useCase      = new UpdateUserBranchUseCase(userRepo, branchAccess, activeSession, events);
     userRepo.findById.mockResolvedValue(makeUser(UserRole.CASHIER));
   });
 
@@ -42,10 +48,17 @@ describe('UpdateUserBranchUseCase', () => {
     expect(userRepo.updateBranch).toHaveBeenCalledWith(USER_ID, TENANT_ID, BRANCH_ID);
   });
 
+  it('la nueva sucursal rige ya: borra la caché de sesión y mueve sus sockets', async () => {
+    await useCase.execute(USER_ID, TENANT_ID, BRANCH_ID);
+    expect(activeSession.forgetUser).toHaveBeenCalledWith(USER_ID);
+    expect(events.moveUserToBranch).toHaveBeenCalledWith(TENANT_ID, USER_ID, BRANCH_ID);
+  });
+
   it('lanza NotFoundException si el usuario no existe en el tenant', async () => {
     userRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute(USER_ID, TENANT_ID, BRANCH_ID)).rejects.toThrow(NotFoundException);
     expect(userRepo.updateBranch).not.toHaveBeenCalled();
+    expect(events.moveUserToBranch).not.toHaveBeenCalled();
   });
 
   it('lanza ForbiddenException si el usuario es OWNER', async () => {

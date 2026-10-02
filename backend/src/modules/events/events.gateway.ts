@@ -1,67 +1,63 @@
 import {
   OnGatewayConnection,
-  OnGatewayDisconnect,
   OnGatewayInit,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@pos/shared';
 import { EventsService } from './events.service';
+import { ActiveSessionService, TokenPayload } from '../auth/application/services/active-session.service';
 
 @WebSocketGateway({
   cors: { origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true },
   namespace: '/',
 })
-export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class EventsGateway implements OnGatewayInit, OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly eventsService: EventsService,
+    private readonly activeSession: ActiveSessionService,
   ) {}
 
+  /**
+   * La sesión se valida en un middleware, antes de aceptar la conexión: un token de un usuario
+   * desactivado o de un negocio suspendido recibe `connect_error` y nunca llega a conectar.
+   * Mismo control que el HTTP: firma, negocio y usuario activos, sucursal leída de la BD.
+   */
   afterInit(server: Server) {
     this.eventsService.setServer(server);
-  }
-
-  handleConnection(client: Socket) {
-    try {
+    server.use((client, next) => {
       const token =
         (client.handshake.auth?.token as string) ||
         (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
-
-      if (!token) {
-        client.disconnect();
-        return;
+      if (!token) return next(new Error('Sin sesión'));
+      let payload: TokenPayload;
+      try {
+        payload = this.jwtService.verify<TokenPayload>(token);
+      } catch {
+        return next(new Error('Sesión inválida'));
       }
-
-      const payload = this.jwtService.verify(token) as {
-        sub: string;
-        tenantId: string;
-        branchId: string | null;
-        role: string;
-      };
-
-      client.data.userId = payload.sub;
-      client.data.tenantId = payload.tenantId;
-      client.data.branchId = payload.branchId;
-      client.data.role = payload.role;
-
-      // Join tenant-wide room (for OWNER)
-      client.join(`tenant:${payload.tenantId}`);
-
-      // Join branch-specific room
-      if (payload.branchId) {
-        client.join(`t:${payload.tenantId}:b:${payload.branchId}`);
-      }
-    } catch {
-      client.disconnect();
-    }
+      this.activeSession.resolve(payload)
+        .then((session) => { client.data.session = session; next(); })
+        .catch(() => next(new Error('Sesión inactiva')));
+    });
   }
 
-  handleDisconnect(_client: Socket) {
-    // nothing needed — Socket.IO auto-removes from rooms
+  /** Las salas dependen del rol (ver `EventsService`). */
+  async handleConnection(client: Socket) {
+    const session = client.data.session as TokenPayload | undefined;
+    if (!session) {
+      client.disconnect(true);
+      return;
+    }
+    const rooms = [EventsService.tenantRoom(session.tenantId), EventsService.userRoom(session.sub)];
+    if (session.role === UserRole.OWNER) rooms.push(EventsService.ownersRoom(session.tenantId));
+    else if (session.branchId) rooms.push(EventsService.branchRoom(session.tenantId, session.branchId));
+    await client.join(rooms);
   }
 }

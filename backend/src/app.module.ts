@@ -12,7 +12,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { BranchModule } from './modules/branch/branch.module';
 import { CashSessionModule } from './modules/cash-session/cash-session.module';
-import { EventsModule } from './modules/events/events.module';
+import { EventsGatewayModule } from './modules/events/events-gateway.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { RafflesModule } from './modules/raffles/raffles.module';
@@ -33,7 +33,7 @@ import { PlansModule } from './modules/plans/plans.module';
     ReportsModule,
     UploadModule,
     CashSessionModule,
-    EventsModule,
+    EventsGatewayModule,
     ExpensesModule,
     CustomersModule,
     RafflesModule,

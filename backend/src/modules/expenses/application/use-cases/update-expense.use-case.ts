@@ -42,7 +42,7 @@ export class UpdateExpenseUseCase {
       documentNumber: keepOrClear(dto.documentNumber, existing.documentNumber),
     }, items);
 
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_UPDATED, saved);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_UPDATED, saved);
     return saved;
   }
 }

@@ -20,6 +20,6 @@ export class DeleteExpenseConceptUseCase {
     const concept = await this.repo.findById(id, tenantId);
     if (!concept) throw new NotFoundException('Gasto predefinido no encontrado');
     await this.repo.deactivate(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_DELETED, { id });
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_DELETED, { id });
   }
 }

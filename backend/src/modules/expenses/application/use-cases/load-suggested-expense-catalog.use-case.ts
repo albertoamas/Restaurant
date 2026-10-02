@@ -81,7 +81,7 @@ export class LoadSuggestedExpenseCatalogUseCase {
         category = existing;
       } else if (existing) {
         category = await this.categoryRepo.update(existing.withChanges({ isActive: true }));
-        this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, category);
+        this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, category);
       } else {
         category = await this.categoryRepo.save(ExpenseCategoryEntity.create({
           tenantId,
@@ -90,7 +90,7 @@ export class LoadSuggestedExpenseCatalogUseCase {
           trackQuantity: group.trackQuantity,
           sortOrder:     lastOrder + (i + 1) * 10,
         }));
-        this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, category);
+        this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, category);
       }
       categoryByGroup.set(group.name, category);
     }
@@ -105,7 +105,7 @@ export class LoadSuggestedExpenseCatalogUseCase {
         : await this.conceptRepo.save(ExpenseConceptEntity.create({
             tenantId, categoryId: category.id, name, unit, defaultUnitPrice: null, sortOrder,
           }));
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, toExpenseConceptDto(concept, category.name));
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, toExpenseConceptDto(concept, category.name));
     }
 
     return { categories: newCategories, concepts: newConcepts };

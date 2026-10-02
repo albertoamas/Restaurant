@@ -46,7 +46,7 @@ describe('UpdateOrderStatusUseCase', () => {
     const result = await useCase.execute(order.id, 'tenant-1', OrderStatus.PREPARING);
 
     expect(result.status).toBe(OrderStatus.PREPARING);
-    expect(eventsService.emitToTenant).toHaveBeenCalledWith('tenant-1', 'order.updated', result);
+    expect(eventsService.emitToBranch).toHaveBeenCalledWith('tenant-1', result.branchId, 'order.updated', result);
   });
 
   it('actualiza a DELIVERED y emite evento', async () => {
@@ -55,7 +55,7 @@ describe('UpdateOrderStatusUseCase', () => {
 
     const result = await useCase.execute(order.id, 'tenant-1', OrderStatus.DELIVERED);
     expect(result.status).toBe(OrderStatus.DELIVERED);
-    expect(eventsService.emitToTenant).toHaveBeenCalledTimes(1);
+    expect(eventsService.emitToBranch).toHaveBeenCalledTimes(1);
   });
 
   it('actualiza a CANCELLED y emite evento', async () => {

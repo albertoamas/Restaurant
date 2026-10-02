@@ -52,7 +52,7 @@ export class CreateExpenseUseCase {
     });
 
     const saved = await this.expenseRepository.save(expense, items);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, saved);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, saved);
     return saved;
   }
 }
