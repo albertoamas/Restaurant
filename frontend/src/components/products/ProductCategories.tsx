@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
 import type { CategoryDto } from '@pos/shared';
@@ -15,7 +15,7 @@ import { Skeleton } from '../ui/Skeleton';
 import { handleApiError } from '../../utils/api-error';
 import { queryKeys } from '../../lib/query-keys';
 
-/** Crear (`category` null) o renombrar una categoría. */
+/** Crear (`category` null) o renombrar una categoría. Se monta al abrir. */
 function CategoryNameModal({ category, nextOrder, onClose, onSaved }: {
   category: CategoryDto | null;
   nextOrder: number;
@@ -25,7 +25,6 @@ function CategoryNameModal({ category, nextOrder, onClose, onSaved }: {
   const formId = useId();
   const [name, setName] = useState(category?.name ?? '');
   const [saving, setSaving] = useState(false);
-  useEffect(() => setName(category?.name ?? ''), [category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +179,7 @@ export function ProductCategories({ categories, loading, onChanged, createOpen, 
 
       {(form.open || createOpen) && (
         <CategoryNameModal
+          key={createOpen ? 'nueva' : form.category?.id}
           category={createOpen ? null : form.category}
           nextOrder={nextOrder}
           onClose={() => { setForm({ open: false, category: null }); onCreateClose(); }}

@@ -1,6 +1,6 @@
 import type { ExpenseDto } from '@pos/shared';
 import { expenseCategoryLabel, pluralUnit } from '../../utils/expense-labels';
-import { bs } from '../report';
+import { bs } from '../../utils/money';
 
 /** Une frases con ". " sin duplicar el punto de las que ya terminan en él ("Embol S.A."). */
 export const sentences = (parts: (string | null | undefined)[]) =>

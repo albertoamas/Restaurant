@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
 import type { CartItem as CartItemType } from '../../store/cart.store';
+import { bs } from '../../utils/money';
 
 interface Props {
   item: CartItemType;
@@ -42,10 +43,10 @@ export function CartItem({ item, onIncrement, onDecrement }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-body font-semibold text-main leading-snug line-clamp-2">{item.name}</p>
-          <p className="text-caption text-muted">Bs {item.price.toFixed(2)} c/u</p>
+          <p className="text-caption text-muted">{bs(item.price)} c/u</p>
         </div>
         <span className="text-body font-bold text-main whitespace-nowrap">
-          Bs {(item.price * item.quantity).toFixed(2)}
+          {bs(item.price * item.quantity)}
         </span>
       </div>
       <div className="mt-2 flex items-center gap-1.5">

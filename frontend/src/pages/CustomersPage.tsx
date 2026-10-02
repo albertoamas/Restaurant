@@ -18,6 +18,7 @@ import { CustomerSheet } from '../components/customers/CustomerSheet';
 import { CustomerFormModal } from '../components/customers/CustomerFormModal';
 import { formatBoliviaDateShort } from '../utils/date';
 import { handleApiError } from '../utils/api-error';
+import { bs } from '../utils/money';
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'all',    label: 'Histórico' },
@@ -34,7 +35,6 @@ const SORTS: { value: string; label: string; by: CustomerSortBy; dir: CustomerSo
   { value: 'purchaseCount-desc', label: 'Los que más compraron', by: 'purchaseCount', dir: 'desc' },
 ];
 
-const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 const lastPurchase = (c: CustomerStatsDto) => (c.lastOrderAt ? formatBoliviaDateShort(c.lastOrderAt) : '-');
 
 function SortHeader({ label, by, sortBy, sortDir, onSort, align = 'left' }: {

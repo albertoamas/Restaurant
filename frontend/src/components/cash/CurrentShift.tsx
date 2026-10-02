@@ -5,13 +5,15 @@ import { Icon } from '../ui/Icon';
 import { useNow } from '../../hooks/useNow';
 import { durationLabel, formatBoliviaDayMonth, formatBoliviaTime, minutesBetween, today } from '../../utils/date';
 import { toBoliviaDateString } from '../../utils/timezone';
+import { Notice } from '../ui/Notice';
+import { bs } from '../../utils/money';
 
 function Figure({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
   return (
     // El esperado ocupa la fila entera en celular: es la cifra que importa al cerrar.
     <div className={highlight ? 'max-sm:col-span-2 rounded-card bg-emerald-500/10 border border-emerald-500/25 px-4 py-3' : 'px-4 py-3 rounded-card bg-surface-2 border border-line'}>
       <dt className={`text-label ${highlight ? 'text-emerald-800 dark:text-emerald-300 font-semibold' : 'text-soft'}`}>{label}</dt>
-      <dd className="mt-0.5 text-heading sm:text-title font-bold text-main font-heading tabular-nums whitespace-nowrap">Bs {value.toFixed(2)}</dd>
+      <dd className="mt-0.5 text-heading sm:text-title font-bold text-main font-heading tabular-nums whitespace-nowrap">{bs(value)}</dd>
     </div>
   );
 }
@@ -43,13 +45,10 @@ export function OpenShift({ session, isOwner, onClose }: OpenShiftProps) {
       </p>
 
       {fromPreviousDay && (
-        <p className="mt-4 flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-label text-amber-800 dark:text-amber-300">
-          <Icon name="warning" size={16} strokeWidth={2} className="shrink-0 mt-0.5" />
-          <span>
-            La caja está abierta desde el {formatBoliviaDayMonth(session.openedAt)}.
-            {isOwner ? ' Ciérrala para que el conteo de hoy empiece limpio.' : ' Avisa al administrador para que la cierre.'}
-          </span>
-        </p>
+        <Notice className="mt-4">
+          La caja está abierta desde el {formatBoliviaDayMonth(session.openedAt)}.
+          {isOwner ? ' Ciérrala para que el conteo de hoy empiece limpio.' : ' Avisa al administrador para que la cierre.'}
+        </Notice>
       )}
 
       <dl className={`mt-4 grid grid-cols-2 gap-3 ${isOwner ? 'sm:grid-cols-3' : ''}`}>

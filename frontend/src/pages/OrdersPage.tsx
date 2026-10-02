@@ -26,6 +26,7 @@ import { OrderSuccessModal } from '../components/pos/OrderSuccessModal';
 import { EditOrderModal } from '../components/orders/EditOrderModal';
 import { useAuth } from '../context/auth.context';
 import { AddItemsToOrderModal } from '../components/orders/AddItemsToOrderModal';
+import { queryKeys } from '../lib/query-keys';
 
 type ActiveTab = 'operation' | 'history';
 
@@ -97,7 +98,7 @@ export function OrdersPage() {
 
   // ── Shared mutations ──────────────────────────────────────────────────────
   const invalidateHistory = () => {
-    queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.orderHistoryAll });
     refreshCounts();
   };
 
@@ -291,7 +292,6 @@ export function OrdersPage() {
 
       {editingOrder && (
         <EditOrderModal
-          isOpen
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
           onSaved={handleEditSaved}

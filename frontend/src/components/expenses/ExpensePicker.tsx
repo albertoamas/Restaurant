@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon';
 import { Input, Select } from '../ui/Input';
 import { Skeleton } from '../ui/Skeleton';
 import { SuggestedCatalogModal } from './SuggestedCatalogModal';
-import { chipClass } from './filter-chip';
+import { chipClass } from '../ui/filter-chip';
 
 interface ExpensePickerProps {
   /** Tocar un gasto de la lista: se abre el registro con su monto. */

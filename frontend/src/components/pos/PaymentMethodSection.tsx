@@ -3,6 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import type { PaymentSelection } from './usePaymentSelection';
+import { bs } from '../../utils/money';
 
 export const PAYMENT_METHODS = [
   { value: PaymentMethod.CASH,     label: 'Efectivo',      cortesiaOnly: false, icon: 'cash' as const },
@@ -66,7 +67,7 @@ function CashChange({ s }: { s: PaymentSelection }) {
       {hasValue && (
         <p className={`flex items-baseline justify-between text-body font-semibold ${diff < 0 ? 'text-amber-700 dark:text-amber-300' : 'text-main'}`}>
           <span>{diff < 0 ? 'Falta' : 'Cambio'}</span>
-          <span className="text-heading font-bold tabular-nums">Bs {Math.abs(diff).toFixed(2)}</span>
+          <span className="text-heading font-bold tabular-nums">{bs(Math.abs(diff))}</span>
         </p>
       )}
     </div>
@@ -117,8 +118,7 @@ export function PaymentMethodSection({ selection: s, allowCortesia = false }: Pr
       <div className="flex items-center justify-between">
         <span className="text-label font-semibold text-soft">Pago dividido</span>
         <Button variant="ghost" size="sm" onClick={s.cancelSplit}>
-          <Icon name="chevron-left" size={14} strokeWidth={2} />
-          Pago simple
+          Volver a pago simple
         </Button>
       </div>
 
@@ -138,10 +138,10 @@ export function PaymentMethodSection({ selection: s, allowCortesia = false }: Pr
         </div>
         <div className="flex justify-between mt-1.5 text-label">
           <span className="text-soft">
-            Asignado <span className="font-semibold text-main">Bs {s.assigned.toFixed(2)}</span>
+            Asignado <span className="font-semibold text-main">{bs(s.assigned)}</span>
           </span>
           <span className={s.splitComplete ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-amber-700 dark:text-amber-300 font-semibold'}>
-            {s.splitComplete ? 'Completo' : `Falta Bs ${s.remaining.toFixed(2)}`}
+            {s.splitComplete ? 'Completo' : `Falta ${bs(s.remaining)}`}
           </span>
         </div>
       </div>
@@ -151,11 +151,11 @@ export function PaymentMethodSection({ selection: s, allowCortesia = false }: Pr
           {s.splitPayments.map((p, i) => (
             <div key={i} className="flex items-center gap-1.5 pl-3 pr-1 min-h-9 rounded-full bg-surface-2 border border-line text-label">
               <span className="font-semibold text-main">{paymentMethodLabel(p.method)}</span>
-              <span className="text-soft">Bs {p.amount.toFixed(2)}</span>
+              <span className="text-soft">{bs(p.amount)}</span>
               <button
                 onClick={() => s.removeSplit(i)}
                 className="w-7 h-7 rounded-full flex items-center justify-center text-muted hover:text-red-700 hover:bg-red-500/10 transition-colors"
-                aria-label={`Quitar ${paymentMethodLabel(p.method)} Bs ${p.amount.toFixed(2)}`}
+                aria-label={`Quitar ${paymentMethodLabel(p.method)} ${bs(p.amount)}`}
               >
                 <Icon name="x" size={14} strokeWidth={2.5} />
               </button>

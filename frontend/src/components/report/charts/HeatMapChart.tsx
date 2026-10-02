@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { DayHourDataDto } from '@pos/shared';
 import { C } from './chartColors';
+import { bs } from '../../../utils/money';
 
 // PostgreSQL EXTRACT(DOW): 0=Domingo, 1=Lunes … 6=Sábado
 // Pantalla: Lunes … Domingo → [1,2,3,4,5,6,0]
@@ -148,7 +149,7 @@ export function HeatMapChart({ data }: Props) {
             border:       '1px solid var(--border-strong)',
             borderRadius: '10px',
             padding:      '8px 12px',
-            boxShadow:    'var(--shadow-card-lg)',
+            boxShadow:    'var(--shadow-floating)',
             whiteSpace:   'nowrap',
           }}
         >
@@ -158,7 +159,7 @@ export function HeatMapChart({ data }: Props) {
           {hovered.totalSales > 0 ? (
             <>
               <p style={{ color: C.primary, fontSize: 12, fontWeight: 700 }}>
-                Ventas: <span style={{ color: 'var(--color-text-main)' }}>Bs {hovered.totalSales.toFixed(2)}</span>
+                Ventas: <span style={{ color: 'var(--color-text-main)' }}>{bs(hovered.totalSales)}</span>
               </p>
               <p style={{ color: C.emerald, fontSize: 12, fontWeight: 700 }}>
                 Pedidos: <span style={{ color: 'var(--color-text-main)' }}>{hovered.orderCount}</span>

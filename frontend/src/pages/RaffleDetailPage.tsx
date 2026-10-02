@@ -63,8 +63,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
   const back = (
     <Button variant="ghost" size="sm" className="mb-2 -ml-2" onClick={goBack} disabled={!!busy}>
-      <Icon name="chevron-left" size={16} />
-      Sorteos
+      Volver a Sorteos
     </Button>
   );
 

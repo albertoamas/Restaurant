@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { buttonClasses } from '../ui/Button';
 import { Icon, type IconName } from '../ui/Icon';
 import { Select } from '../ui/Input';
+import { BrandLogo } from '../ui/BrandLogo';
+import { CONTACT_EMAIL, WHATSAPP_DISPLAY, whatsappUrl } from '../../contact';
 
 export interface LegalSectionRef {
   /** Ancla de la sección (`/terminos#pagos`). */
@@ -10,24 +12,9 @@ export interface LegalSectionRef {
   title: string;
 }
 
-export const LEGAL_CONTACT_EMAIL = 'albertoamasv@gmail.com';
-export const LEGAL_WHATSAPP = '+591 74526068';
-export const LEGAL_WHATSAPP_URL = 'https://wa.me/59174526068';
 
 const link = 'font-semibold text-primary-700 underline-offset-2 hover:underline dark:text-primary-400';
 
-function Logo() {
-  return (
-    <span className="inline-flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
-        <Icon name="cart" size={18} strokeWidth={2} />
-      </span>
-      <span className="font-heading text-heading font-bold text-main">
-        Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
-      </span>
-    </span>
-  );
-}
 
 /**
  * Sección que se está leyendo: la última cuyo título ya pasó justo debajo del encabezado fijo
@@ -93,7 +80,7 @@ export function LegalLayout({ icon, title, summary, updatedAt, sections, childre
       <header className="sticky top-0 z-50 border-b border-line bg-surface-page/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between gap-3 px-4 sm:px-6">
           <Link to="/" aria-label="YankoPOS, inicio" className="rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60">
-            <Logo />
+            <BrandLogo />
           </Link>
           {/* Los dos documentos se enlazan desde el pie y desde su propio texto. */}
           <Link to="/" className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'whitespace-nowrap' })}>
@@ -198,8 +185,8 @@ export function LegalLink({ to, href, children }: { to?: string; href?: string; 
 export function LegalContact() {
   return (
     <>
-      <LegalLink href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</LegalLink> o por WhatsApp al{' '}
-      <LegalLink href={LEGAL_WHATSAPP_URL}>{LEGAL_WHATSAPP}</LegalLink>
+      <LegalLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</LegalLink> o por WhatsApp al{' '}
+      <LegalLink href={whatsappUrl()}>{WHATSAPP_DISPLAY}</LegalLink>
     </>
   );
 }

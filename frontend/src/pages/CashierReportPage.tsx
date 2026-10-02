@@ -13,14 +13,13 @@ import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Skeleton } from '../components/ui/Skeleton';
 import { printCashierReport } from '../utils/print';
 import { orderTypeLabels } from '../utils/order';
+import { bs } from '../utils/money';
 
 const PERIODS: { value: CashierPeriod; label: string }[] = [
   { value: 'today', label: 'Hoy' },
   { value: 'week',  label: 'Esta semana' },
   { value: 'month', label: 'Este mes' },
 ];
-
-const money = (n: number) => `Bs ${n.toFixed(2)}`;
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 
 /** Lo que el cajero entrega: el efectivo, en grande; lo demás ya está en la cuenta del negocio. */
@@ -32,21 +31,21 @@ function ToHandIn({ report }: { report: DailyReportDto }) {
         <Icon name="cash" size={16} />
         Efectivo a entregar
       </p>
-      <p className="mt-1 text-display font-bold text-main font-heading tabular-nums">{money(p.cash)}</p>
+      <p className="mt-1 text-display font-bold text-main font-heading tabular-nums">{bs(p.cash)}</p>
       <p className="text-label text-soft">Es lo que debe haber en efectivo por las ventas del período.</p>
 
       <dl className="mt-5 divide-y divide-line border-t border-line">
-        <Row label="QR" hint="Ya está en la cuenta" value={money(p.qr)} />
-        <Row label="Transferencia" hint="Ya está en la cuenta" value={money(p.transfer)} />
+        <Row label="QR" hint="Ya está en la cuenta" value={bs(p.qr)} />
+        <Row label="Transferencia" hint="Ya está en la cuenta" value={bs(p.transfer)} />
         <div className="flex items-baseline justify-between gap-3 pt-3">
           <dt className="text-body font-semibold text-main">Total cobrado</dt>
-          <dd className="text-heading font-bold text-main tabular-nums">{money(report.totalSales)}</dd>
+          <dd className="text-heading font-bold text-main tabular-nums">{bs(report.totalSales)}</dd>
         </div>
       </dl>
 
       {p.cortesia > 0 && (
         <p className="mt-3 rounded-control bg-surface-2 border border-line px-3 py-2 text-label text-soft">
-          Cortesías por <span className="font-semibold text-main tabular-nums">{money(p.cortesia)}</span>: no suman al total cobrado.
+          Cortesías por <span className="font-semibold text-main tabular-nums">{bs(p.cortesia)}</span>: no suman al total cobrado.
         </p>
       )}
     </Card>
@@ -155,7 +154,7 @@ export function CashierReportPage() {
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <Stat label="Pedidos" value={String(report!.orderCount)} />
-                <Stat label="Ticket promedio" value={money(report!.averageTicket)} />
+                <Stat label="Ticket promedio" value={bs(report!.averageTicket)} />
               </div>
               <OrderTypes report={report!} />
             </div>

@@ -10,22 +10,9 @@ import { Modal } from '../components/ui/Modal';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import { getApiErrorMessage } from '../utils/api-error';
 import { isStandalone } from '../utils/pwa-install';
+import { BrandLogo } from '../components/ui/BrandLogo';
+import { Notice } from '../components/ui/Notice';
 
-function Brand({ subtitle }: { subtitle?: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
-        <Icon name="cart" size={22} strokeWidth={2} />
-      </span>
-      <div>
-        <p className="font-heading text-title font-bold leading-none text-main">
-          Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
-        </p>
-        {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
 
 /** Casilla accesible del kit visual: input nativo (teclado y lector) con la tilde dibujada encima. */
 function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -68,7 +55,10 @@ export function LoginPage() {
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
-        if (status === 401)      setErrorMsg('Correo o contraseña incorrectos.');
+        // 400 = credenciales con un formato que el servidor ni intenta (contraseña de menos de 6
+        // caracteres): su mensaje viene de class-validator, en inglés. Para quien inicia sesión
+        // es lo mismo que una contraseña incorrecta.
+        if (status === 401 || status === 400) setErrorMsg('Correo o contraseña incorrectos.');
         else if (status === 429) setErrorMsg('Demasiados intentos fallidos. Espera un momento e intenta de nuevo.');
         else                     setErrorMsg(getApiErrorMessage(err, 'No se pudo conectar con el servidor. Revisa tu conexión.'));
       } else {
@@ -103,7 +93,7 @@ export function LoginPage() {
           <section className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface-2 p-10 lg:flex">
             <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary-500/15 blur-[80px]" />
             <div className="relative">
-              <Brand />
+              <BrandLogo size="lg" />
             </div>
             <div className="relative">
               <p className="font-heading text-[30px] font-bold leading-tight text-main">
@@ -115,7 +105,7 @@ export function LoginPage() {
 
           <section className="p-6 sm:p-10">
             <div className="lg:hidden mb-8">
-              <Brand subtitle="Ventas, caja y cocina" />
+              <BrandLogo size="lg" subtitle="Ventas, caja y cocina" />
             </div>
 
             <h1 className="font-heading text-title font-bold text-main">Inicia sesión</h1>
@@ -143,10 +133,7 @@ export function LoginPage() {
               <Checkbox checked={remember} onChange={setRemember} label="Recordar sesión en este equipo" />
 
               {errorMsg && (
-                <p role="alert" className="flex items-start gap-2 rounded-control border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-label font-medium text-red-700 dark:text-red-400 animate-in">
-                  <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
-                  {errorMsg}
-                </p>
+                <Notice tone="error" role="alert" className="font-medium animate-in">{errorMsg}</Notice>
               )}
 
               <Button type="submit" size="lg" fullWidth loading={loading} disabled={!email.trim() || !password}>

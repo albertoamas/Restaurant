@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { formatDayRange, formatWeekdayDay, mondayOf } from './date';
-import { formatDate, elapsed, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
+import { formatDate, today, formatBoliviaTime, formatBoliviaDateShort, eachDay, timeAgo, minutesBetween, durationLabel } from './date';
 
 describe('date utils', () => {
   describe('formatDate', () => {
@@ -12,17 +12,6 @@ describe('date utils', () => {
     });
   });
 
-  describe('elapsed', () => {
-    it('devuelve "Xs" cuando han pasado menos de 60 segundos', () => {
-      const createdAt = new Date(Date.now() - 30_000).toISOString(); // hace 30s
-      expect(elapsed(createdAt)).toMatch(/^\d+s$/);
-    });
-
-    it('devuelve "Xm Ys" cuando han pasado 60 segundos o más', () => {
-      const createdAt = new Date(Date.now() - 90_000).toISOString(); // hace 1m 30s
-      expect(elapsed(createdAt)).toMatch(/^\d+m \d+s$/);
-    });
-  });
 
   describe('today', () => {
     it('devuelve una string en formato YYYY-MM-DD', () => {

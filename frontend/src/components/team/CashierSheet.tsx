@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { Select } from '../ui/Input';
 import { formatBoliviaDayMonth } from '../../utils/date';
+import { Avatar } from '../ui/Avatar';
 
 /**
  * Ficha del cajero: quién es, dónde vende y lo que el dueño puede hacer con su cuenta. Reemplaza
@@ -24,9 +25,7 @@ export function CashierSheet({ user, branches, onClose, onBranch, onEdit, onPass
     <Modal isOpen onClose={onClose} title="Cajero" size="md">
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-line bg-surface-2 font-heading text-title font-bold text-soft">
-            {user.name.trim().charAt(0).toUpperCase()}
-          </span>
+          <Avatar name={user.name} size="lg" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="min-w-0 truncate text-heading font-semibold text-main">{user.name}</p>

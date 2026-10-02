@@ -1,5 +1,5 @@
 import type { ExpenseDto } from '@pos/shared';
-import { bs } from '../report';
+import { bs } from '../../utils/money';
 import { Icon } from '../ui/Icon';
 import { formatBoliviaTime, formatWeekdayDay } from '../../utils/date';
 import { toBoliviaDateString } from '../../utils/timezone';

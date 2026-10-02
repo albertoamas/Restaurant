@@ -11,9 +11,10 @@ import { OrderStatusBadge } from '../orders/OrderStatusBadge';
 import { paymentSummary } from '../orders/OrderCard';
 import { orderTypeLabels } from '../../utils/order';
 import { formatBoliviaDateShort, formatBoliviaTime } from '../../utils/date';
+import { bs } from '../../utils/money';
+import { queryKeys } from '../../lib/query-keys';
 
 const HISTORY_PAGE = 20;
-const bs = (n: number) => `Bs ${n.toFixed(2)}`;
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -27,7 +28,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 /** Pedidos del cliente, de a 20: un cliente frecuente pasa de largo los 50 que se veían antes. */
 function OrderHistory({ customerId }: { customerId: string }) {
   const { data, isPending, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
-    queryKey: ['customerOrders', customerId],
+    queryKey: queryKeys.customerOrders(customerId),
     queryFn:  ({ pageParam }) => ordersApi.getAll({ customerId, page: pageParam, limit: HISTORY_PAGE }),
     initialPageParam: 1,
     getNextPageParam: (last, all) => {

@@ -60,7 +60,7 @@ export function useOrderCounts(params: {
   const refreshCounts = useCallback(() => {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['orderCounts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orderCountsAll });
     }, REFRESH_DEBOUNCE_MS);
   }, [queryClient]);
 

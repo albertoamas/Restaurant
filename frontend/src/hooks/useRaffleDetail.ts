@@ -8,7 +8,7 @@ import type { DetailRaffle } from '../components/raffles/types';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 
-export const DRAW_DURATION_MS = 7000;
+const DRAW_DURATION_MS = 7000;
 export const WINNER_PAUSE_MS  = 4000;
 
 export type BusyState = 'draw' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;

@@ -51,7 +51,7 @@ export function useExpenseSummary(from: string, to: string, branchId?: string) {
   return { summary: data ?? EMPTY_SUMMARY, loading: isPending, invalidate };
 }
 
-export const MOVEMENTS_PAGE_SIZE = 30;
+const MOVEMENTS_PAGE_SIZE = 30;
 
 /**
  * Movimientos de a 30, con los filtros aplicados en el servidor: con un rango largo no se

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { OrderType, PaymentMethod } from '@pos/shared';
 import type { OrderDto } from '@pos/shared';
 import type { CreateCustomerRequest } from '@pos/shared';
@@ -15,7 +15,6 @@ import { handleApiError } from '../../utils/api-error';
 import toast from 'react-hot-toast';
 
 interface Props {
-  isOpen: boolean;
   onClose: () => void;
   order: OrderDto;
   onSaved: (order: OrderDto) => void;
@@ -32,11 +31,11 @@ const ORDER_TYPES: { value: OrderType; icon: IconName }[] = [
 /** Cortesía no se ofrece al editar: cambiaría el total cobrado. */
 const EDITABLE_METHODS = PAYMENT_METHODS.filter((m) => m.value !== PaymentMethod.CORTESIA);
 
-export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
+/** Editar tipo, nota, cliente y método de pago de un pedido. Se monta al abrir. */
+export function EditOrderModal({ onClose, order, onSaved }: Props) {
   const [selectedType,    setSelectedType]    = useState<OrderType>(order.type);
   const [notes,           setNotes]           = useState(order.notes ?? '');
   const [customerValue,   setCustomerValue]   = useState<CustomerPayload>(null);
-  const [pickerKey,       setPickerKey]       = useState(0);
   const [showPicker,      setShowPicker]      = useState(!order.customer);
   const [selectedMethod,  setSelectedMethod]  = useState<PaymentMethod | null>(
     order.isPaid && order.payments.length === 1 ? order.payments[0].method : null,
@@ -45,16 +44,6 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
 
   const canEditPayment = order.isPaid && order.payments.length === 1;
 
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedType(order.type);
-      setNotes(order.notes ?? '');
-      setCustomerValue(null);
-      setPickerKey((k) => k + 1);
-      setShowPicker(!order.customer);
-      setSelectedMethod(canEditPayment ? order.payments[0].method : null);
-    }
-  }, [isOpen, order.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     setLoading(true);
@@ -79,7 +68,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen
       onClose={onClose}
       title={`Editar pedido #${order.orderNumber}`}
       size="md"
@@ -153,13 +142,12 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setShowPicker(false); setCustomerValue(null); setPickerKey((k) => k + 1); }}
+                  onClick={() => { setShowPicker(false); setCustomerValue(null); }}
                 >
-                  <Icon name="chevron-left" size={14} strokeWidth={2} />
                   Mantener a {order.customer.name}
                 </Button>
               )}
-              <CustomerPicker key={pickerKey} onCustomerChange={setCustomerValue} />
+              <CustomerPicker onCustomerChange={setCustomerValue} />
             </div>
           )}
         </div>

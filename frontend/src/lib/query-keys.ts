@@ -11,13 +11,19 @@ export const queryKeys = {
     ['raffles', id] as const,
 
   /** Productos activos (lo que cuenta el límite del plan). Bajo 'products': se invalida con el resto. */
+  /** Prefijo de todas las queries de productos: para invalidar listas y conteos a la vez. */
+  productsAll: ['products'] as const,
   productsActiveCount: ['products', 'activeCount'] as const,
   productsCountByCategory: (categoryIds: string[]) => ['products', 'countByCategory', categoryIds] as const,
   products: (p: { q: string; categoryId?: string; page: number; includeInactive: boolean; pageSize: number }) =>
     ['products', p] as const,
 
+  /** Prefijo de las listas de clientes. */
+  customersAll: ['customers'] as const,
   customers: (p: { q: string; page: number; sortBy: string; sortDir: string }) =>
     ['customers', p] as const,
+  /** Pedidos de un cliente (su ficha). */
+  customerOrders: (customerId: string) => ['customerOrders', customerId] as const,
 
   /** Prefijo de todas las queries de gastos — para invalidar cualquier rango a la vez. */
   expensesAll: ['expenses'] as const,
@@ -30,16 +36,20 @@ export const queryKeys = {
   expenseSummary: (from: string, to: string, branchId?: string) =>
     ['expenses', 'summary', from, to, branchId] as const,
 
+  orderHistoryAll: ['orderHistory'] as const,
   orderHistory: (p: { from: string; to: string; q: string; status: string; branchId: string | null }) =>
     ['orderHistory', p] as const,
 
+  ordersAll: ['orders'] as const,
   orders: (p: { date: string; statusFilter: string; branchId: string | null }) =>
     ['orders', p] as const,
 
   /** Cantidad de pedidos del día por estado (contadores de los filtros de Operación). */
+  orderCountsAll: ['orderCounts'] as const,
   orderCounts: (p: { date: string; branchId: string | null }) =>
     ['orderCounts', p] as const,
 
+  kitchenOrdersAll: ['kitchenOrders'] as const,
   kitchenOrders: (branchId: string | null) =>
     ['kitchenOrders', branchId] as const,
 

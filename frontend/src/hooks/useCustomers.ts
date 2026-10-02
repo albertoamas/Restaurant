@@ -31,7 +31,7 @@ export function useCustomers(initialQ = '', dateFrom?: string, dateTo?: string) 
   });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.customersAll });
   }, [queryClient]);
 
   useSocketEvent(SOCKET_EVENTS.CUSTOMER_CREATED, invalidate);

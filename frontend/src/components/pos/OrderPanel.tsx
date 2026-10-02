@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Textarea } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
+import { bs } from '../../utils/money';
 
 /*
  * Piezas del pedido en curso. El panel lateral (escritorio) y la hoja del carrito (celular y
@@ -92,7 +93,7 @@ export function OrderTotal({ onCharge }: { onCharge: () => void }) {
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-label font-semibold text-soft">Total</span>
-        <span className="text-display font-bold text-main font-heading">Bs {getTotal().toFixed(2)}</span>
+        <span className="text-display font-bold text-main font-heading">{bs(getTotal())}</span>
       </div>
       <Button variant="success" size="xl" fullWidth disabled={items.length === 0} onClick={onCharge}>
         Cobrar

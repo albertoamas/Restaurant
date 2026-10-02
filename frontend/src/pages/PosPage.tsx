@@ -22,6 +22,9 @@ import { printKitchenTicket } from '../utils/print';
 import { useSettingsStore } from '../store/settings.store';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
+import { Notice } from '../components/ui/Notice';
+import { bs } from '../utils/money';
+import { queryKeys } from '../lib/query-keys';
 
 export function PosPage() {
   const queryClient = useQueryClient();
@@ -43,8 +46,8 @@ export function PosPage() {
   const { isOpen: isCashOpen } = useCashSessionStore();
 
   const invalidateOrderCaches = () => {
-    queryClient.invalidateQueries({ queryKey: ['orders'] });
-    queryClient.invalidateQueries({ queryKey: ['kitchenOrders'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.ordersAll });
+    queryClient.invalidateQueries({ queryKey: queryKeys.kitchenOrdersAll });
   };
 
   const filteredProducts = products.filter((p) => {
@@ -102,12 +105,9 @@ export function PosPage() {
         {/* Barra: buscador y categorías. Sin título ni tarjeta: el espacio es para productos. */}
         <div className="shrink-0 px-3 sm:px-5 pt-3 sm:pt-4 pb-3 space-y-3 border-b border-line">
           {user?.role === 'OWNER' && !currentBranchId && (
-            <div role="alert" className="flex items-start gap-2.5 rounded-card border border-amber-500/40 bg-amber-500/12 px-4 py-3">
-              <Icon name="warning" size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-              <p className="text-label text-amber-900 dark:text-amber-300">
-                Estás viendo <strong>todas las sucursales</strong>. Elige una en el menú para poder cobrar.
-              </p>
-            </div>
+            <Notice role="alert">
+              Estás viendo <strong>todas las sucursales</strong>. Elige una en el menú para poder cobrar.
+            </Notice>
           )}
           <Input
             aria-label="Buscar producto"
@@ -156,7 +156,7 @@ export function PosPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-caption text-soft">{itemsLabel(itemCount)}</p>
-              <p className="text-heading font-bold text-main font-heading">Bs {getTotal().toFixed(2)}</p>
+              <p className="text-heading font-bold text-main font-heading">{bs(getTotal())}</p>
             </div>
             <Button size="lg" onClick={() => setShowCart(true)}>
               <Icon name="cart" size={18} />

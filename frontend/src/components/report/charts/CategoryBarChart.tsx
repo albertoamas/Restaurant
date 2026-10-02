@@ -14,6 +14,7 @@ import { ChartTooltip } from './ChartTooltip';
 import { TICK_COLOR, TICK_SIZE, useBarColors, useChartColors } from './chartColors';
 import { formatAmountAxis, useChartAnimation } from './chartFormat';
 import { SegmentedControl } from '../../ui/SegmentedControl';
+import { bs } from '../../../utils/money';
 
 type View = 'quantity' | 'revenue';
 
@@ -38,7 +39,7 @@ export function CategoryBarChart({ data }: Props) {
 
   const dataKey  = view === 'quantity' ? 'Unidades' : 'Ingresos';
   const fmtFull  = (v: number | string) =>
-    view === 'revenue' ? `Bs ${Number(v).toFixed(2)}` : `${v} unidades`;
+    view === 'revenue' ? bs(Number(v)) : `${v} unidades`;
 
   return (
     <div>

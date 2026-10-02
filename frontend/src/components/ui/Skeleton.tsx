@@ -52,8 +52,7 @@ export function Skeleton({
   if (variant === 'card') {
     return (
       <div
-        className={`rounded-card border border-line p-6 ${className}`}
-        style={{ background: 'var(--color-surface-card)' }}
+        className={`rounded-card border border-line bg-surface-card p-6 ${className}`}
         aria-hidden="true"
       >
         <div className="flex items-center gap-3 mb-4">

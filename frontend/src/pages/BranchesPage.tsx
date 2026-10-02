@@ -19,6 +19,7 @@ import { useUsers } from '../hooks/useUsers';
 import { useSettingsStore } from '../store/settings.store';
 import { queryKeys } from '../lib/query-keys';
 import { handleApiError } from '../utils/api-error';
+import { Notice } from '../components/ui/Notice';
 
 export function BranchesPage() {
   const queryClient = useQueryClient();
@@ -90,10 +91,7 @@ export function BranchesPage() {
         }
       >
         {full && (
-          <p className="flex items-start gap-2 rounded-control border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-label text-amber-800 dark:text-amber-300">
-            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
-            Llegaste al máximo de {maxBranches} sucursales activas de tu plan. Desactiva una que ya no uses para abrir otra.
-          </p>
+          <Notice>Llegaste al máximo de {maxBranches} sucursales activas de tu plan. Desactiva una que ya no uses para abrir otra.</Notice>
         )}
       </PageHeader>
 

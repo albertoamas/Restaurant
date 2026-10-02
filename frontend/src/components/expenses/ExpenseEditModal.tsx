@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ExpenseDto } from '@pos/shared';
-import { bs } from '../report';
+import { bs } from '../../utils/money';
 import { expensesApi } from '../../api/expenses.api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
