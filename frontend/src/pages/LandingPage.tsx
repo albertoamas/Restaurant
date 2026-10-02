@@ -337,46 +337,30 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Llamado final */}
-      <section className="relative overflow-hidden bg-primary-700 px-4 py-20 sm:px-6 sm:py-24">
-        {/* Grilla de puntos: guiño a la pantalla de una terminal. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.12]"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }}
-        />
-        <div className="relative mx-auto max-w-[720px] text-center">
-          <h2 className="font-heading text-[32px] font-bold leading-tight text-white sm:text-[44px]">
-            ¿Lo vemos funcionando en tu negocio?
-          </h2>
-          <p className="mx-auto mt-4 max-w-[520px] text-[17px] text-white/85">
-            Escríbenos por WhatsApp: te mostramos YankoPOS con tus productos y te ayudamos a empezar.
-          </p>
-          <a
-            href={whatsappUrl(DEMO_MESSAGE)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-control bg-white px-6 text-body font-semibold text-primary-700 shadow-floating transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-700"
-          >
-            <Icon name="chat" size={18} />
-            Pedir una demo
-          </a>
+      {/* Llamado final: tarjeta sobria con un brillo de marca, como el resto de la página. */}
+      <section className="px-4 py-16 sm:px-6 sm:py-24">
+        <div className="relative mx-auto max-w-[960px] overflow-hidden rounded-dialog border border-line bg-surface-card px-6 py-12 text-center shadow-raised sm:px-12 sm:py-16">
+          <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[520px] -translate-x-1/2 rounded-full bg-primary-500/15 blur-[90px]" />
+          <div className="relative">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-primary-500/10 text-primary-700 dark:text-primary-400">
+              <Icon name="chat" size={24} />
+            </span>
+            <h2 className="mt-5 font-heading text-[28px] font-bold leading-tight text-main sm:text-[40px]">
+              ¿Lo vemos funcionando en tu negocio?
+            </h2>
+            <p className="mx-auto mt-3 max-w-[520px] text-body text-soft sm:text-[17px]">
+              Escríbenos por WhatsApp: te mostramos YankoPOS con tus productos y te ayudamos a empezar.
+            </p>
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+              <ExternalButton href={whatsappUrl(DEMO_MESSAGE)}>
+                <Icon name="chat" size={18} />
+                Pedir una demo
+              </ExternalButton>
+              <a href="#pricing" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>Ver planes</a>
+            </div>
+          </div>
         </div>
       </section>
-
-      {/* Borde perforado: remata el bloque naranja como el talón de un ticket. */}
-      <div
-        aria-hidden
-        className="h-5 bg-primary-700"
-        style={{
-          maskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
-          maskSize: '28px 100%',
-          maskRepeat: 'repeat-x',
-          WebkitMaskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
-          WebkitMaskSize: '28px 100%',
-          WebkitMaskRepeat: 'repeat-x',
-        }}
-      />
 
       <footer className="border-t border-line bg-surface-page px-4 pb-8 pt-14 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
