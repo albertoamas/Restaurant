@@ -5,13 +5,13 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 export class AdminGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
     const secret = process.env.ADMIN_SECRET;
-    if (!secret) throw new UnauthorizedException('Admin access not configured');
+    if (!secret) throw new UnauthorizedException('El acceso de administración no está configurado en el servidor');
 
     const request = ctx.switchToHttp().getRequest<{ headers: Record<string, string> }>();
     const provided = request.headers['x-admin-key'];
 
     if (!provided) {
-      throw new UnauthorizedException('Invalid admin key');
+      throw new UnauthorizedException('Clave de administrador incorrecta');
     }
 
     // Comparación en tiempo constante para prevenir timing attacks.
@@ -21,7 +21,7 @@ export class AdminGuard implements CanActivate {
     const valid = a.length === b.length && timingSafeEqual(a, b);
 
     if (!valid) {
-      throw new UnauthorizedException('Invalid admin key');
+      throw new UnauthorizedException('Clave de administrador incorrecta');
     }
     return true;
   }
