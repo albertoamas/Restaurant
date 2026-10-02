@@ -32,7 +32,12 @@ export class CreateExpenseConceptUseCase {
     const category = await this.categoryRepo.findById(dto.categoryId, tenantId);
     if (!category?.isActive) throw new NotFoundException('Categoría no encontrada');
 
-    const existing = await this.repo.findByName(tenantId, name);
+    const found = await this.repo.findByName(tenantId, name);
+    // Un gasto activo en una categoría eliminada no se ve en la lista: se trata como eliminado
+    // y se reactiva en la categoría elegida, en vez de responder que ya existe.
+    const existing = found?.isActive && !(await this.categoryRepo.findById(found.categoryId, tenantId))?.isActive
+      ? found.withChanges({ isActive: false })
+      : found;
     // Crear o reactivar suma un gasto activo a la lista: ambos respetan el tope.
     if (!existing?.isActive) {
       const active = await this.repo.findAll(tenantId);

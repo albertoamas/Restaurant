@@ -122,4 +122,19 @@ describe('CreateExpenseConceptUseCase', () => {
     expect(result.unit).toBeNull();
     expect(result.defaultUnitPrice).toBeNull();
   });
+
+  it('reactiva un gasto que seguía activo en una categoría eliminada en vez de decir que ya existe', async () => {
+    const hidden = makeConcept(true); // activo, pero en una categoría eliminada
+    repo.findByName.mockResolvedValue(hidden);
+    repo.findAll.mockResolvedValue([]);
+    categoryRepo.findById.mockImplementation(async (id) =>
+      id === 'cat-nueva' ? makeCategory() : makeCategory().withChanges({ isActive: false }));
+    repo.update.mockImplementation(async (c) => c);
+
+    const result = await useCase.execute(TENANT, { categoryId: 'cat-nueva', name: 'carne' });
+
+    expect(repo.update).toHaveBeenCalledWith(expect.objectContaining({ id: hidden.id, categoryId: 'cat-nueva', isActive: true }));
+    expect(repo.save).not.toHaveBeenCalled();
+    expect(result.isActive).toBe(true);
+  });
 });
