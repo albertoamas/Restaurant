@@ -8,7 +8,7 @@ test.describe('Autenticación', () => {
   test('login válido redirige a /pos', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
-    await page.getByLabel(/contraseña/i).fill(OWNER_PASSWORD);
+    await page.getByLabel('Contraseña', { exact: true }).fill(OWNER_PASSWORD);
     await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
 
     await expect(page).toHaveURL(/\/pos/, { timeout: 10_000 });
@@ -17,7 +17,7 @@ test.describe('Autenticación', () => {
   test('contraseña incorrecta no redirige al panel', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel(/correo/i).fill(OWNER_EMAIL);
-    await page.getByLabel(/contraseña/i).fill('wrong-password');
+    await page.getByLabel('Contraseña', { exact: true }).fill('wrong-password');
 
     // Capture the API response concurrently with the click — avoids toast timing race
     const [response] = await Promise.all([
