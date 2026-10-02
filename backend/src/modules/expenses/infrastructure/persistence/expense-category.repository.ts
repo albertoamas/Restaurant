@@ -81,10 +81,21 @@ export class ExpenseCategoryRepository implements ExpenseCategoryRepositoryPort 
     return row ? toDomain(row) : null;
   }
 
+  /**
+   * Baja lógica de la categoría y de sus gastos predefinidos. Antes los gastos quedaban activos
+   * pero ocultos (la lista filtra por categoría activa) y su nombre seguía ocupado: no se podía
+   * volver a crear un gasto con ese nombre ("Ya existe un gasto predefinido llamado...").
+   */
   async delete(id: string, tenantId: string): Promise<void> {
-    await this.prisma.expenseCategory.updateMany({
-      where: { id, tenantId },
-      data:  { isActive: false },
-    });
+    await this.prisma.$transaction([
+      this.prisma.expenseCategory.updateMany({
+        where: { id, tenantId },
+        data:  { isActive: false },
+      }),
+      this.prisma.expenseConcept.updateMany({
+        where: { categoryId: id, tenantId, isActive: true },
+        data:  { isActive: false },
+      }),
+    ]);
   }
 }
