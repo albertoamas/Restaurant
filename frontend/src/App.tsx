@@ -27,6 +27,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { CashierAccountPage } from './pages/CashierAccountPage';
 import { CashierReportPage } from './pages/CashierReportPage';
+import { ScrollToTop } from './components/layout/ScrollToTop';
 
 // Galería del kit: solo en desarrollo. En producción la condición es falsa y Vite descarta el módulo.
 const KitPage = import.meta.env.DEV ? lazy(() => import('./pages/dev/KitPage')) : null;
@@ -112,6 +113,7 @@ export default function App() {
   return (
     <AuthProvider>
       <SocketProvider>
+        <ScrollToTop />
         <AppRoutes />
       </SocketProvider>
     </AuthProvider>

@@ -3,7 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/auth.context';
-import { Button } from '../components/ui/Button';
+import { Button, buttonClasses } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -91,11 +91,7 @@ export function LoginPage() {
 
       {!installed && (
         <div className="relative z-10 px-4 pt-4 sm:px-6 sm:pt-6">
-          <Link
-            to="/"
-            className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 text-label font-medium text-soft transition-colors hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60"
-          >
-            <Icon name="arrow-left" size={16} />
+          <Link to="/" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
             Volver al inicio
           </Link>
         </div>
