@@ -37,6 +37,28 @@ const sizes = {
   xl: 'min-h-14 px-6 text-heading gap-2.5',
 };
 
+/**
+ * Clases de un botón del kit, para enlaces que deben verse como botón (`<Link>`, `<a>`).
+ * Un `<button>` que solo navega no se anuncia como enlace ni se abre en otra pestaña.
+ */
+export function buttonClasses({ variant = 'primary', size = 'md', fullWidth = false, className = '' }: {
+  variant?: ButtonVariant; size?: keyof typeof sizes; fullWidth?: boolean; className?: string;
+} = {}): string {
+  return [
+    'inline-flex items-center justify-center rounded-control font-semibold',
+    'transition-[background-color,border-color,color,box-shadow] duration-150 active:brightness-95',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-page',
+    // Deshabilitado: neutro para todas las variantes. Un color de marca "apagado" se
+    // confunde con un botón activo (el "Cobrar" verde pálido).
+    'disabled:cursor-not-allowed disabled:shadow-none disabled:active:brightness-100',
+    'disabled:bg-surface-3 disabled:border-line disabled:text-muted',
+    variants[variant],
+    sizes[size],
+    fullWidth ? 'w-full' : '',
+    className,
+  ].join(' ');
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -49,19 +71,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={[
-        'inline-flex items-center justify-center rounded-control font-semibold',
-        'transition-[background-color,border-color,color,box-shadow] duration-150 active:brightness-95',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-page',
-        // Deshabilitado: neutro para todas las variantes. Un color de marca "apagado" se
-        // confunde con un botón activo (el "Cobrar" verde pálido).
-        'disabled:cursor-not-allowed disabled:shadow-none disabled:active:brightness-100',
-        'disabled:bg-surface-3 disabled:border-line disabled:text-muted',
-        variants[variant],
-        sizes[size],
-        fullWidth ? 'w-full' : '',
-        className,
-      ].join(' ')}
+      className={buttonClasses({ variant, size, fullWidth, className })}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}

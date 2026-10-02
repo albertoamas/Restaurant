@@ -1,596 +1,403 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { isUnlimited, type PlanDto } from '@pos/shared';
-import { SaasPlan } from '@pos/shared';
+import { isUnlimited, SaasPlan, type PlanDto } from '@pos/shared';
 import { usePlans } from '../hooks/usePlans';
-import { Spinner } from '../components/ui/Spinner';
 import { useTheme } from '../hooks/useTheme';
-import { Icon } from '../components/ui/Icon';
-import type { IconName } from '../components/ui/Icon';
+import { buttonClasses } from '../components/ui/Button';
+import { Icon, type IconName } from '../components/ui/Icon';
+import { Skeleton } from '../components/ui/Skeleton';
 import landingPosImage from '../assets/landing-pos.jpg';
 
-/* ─── Data ──────────────────────────────────────────────── */
-const FEATURES = [
-  {
-    icon: <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />,
-    title: 'POS Fluido',
-    desc: 'Toma pedidos y cobra en segundos. Pagos mixtos, múltiples métodos, sin fricciones.',
-    featured: true,
-  },
-  {
-    icon: <path d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5" />,
-    title: 'Cocina en Tiempo Real',
-    desc: 'Los pedidos llegan al display de cocina al instante vía WebSocket. Sin tickets de papel.',
-    featured: false,
-  },
-  {
-    icon: <path d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />,
-    title: 'Caja Controlada',
-    desc: 'Apertura y cierre con arqueos automáticos. Registra gastos y detecta diferencias.',
-    featured: false,
-  },
-  {
-    icon: <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />,
-    title: 'Reportes Detallados',
-    desc: 'Ventas por período, productos más vendidos, métodos de pago. Todo en un panel limpio.',
-    featured: true,
-  },
-  {
-    icon: <path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />,
-    title: 'Multi-sucursal',
-    desc: 'Gestiona varias sucursales desde una sola cuenta. Equipos independientes, visión unificada.',
-    featured: false,
-  },
-  {
-    icon: <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />,
-    title: 'Clientes y Fidelización',
-    desc: 'Historial de pedidos, registro de clientes y sorteos. Relaciones duraderas, no solo ventas.',
-    featured: false,
-  },
+/* ─── Contacto ──────────────────────────────────────────── */
+
+/** No hay registro público: todo interesado llega por WhatsApp con el mensaje ya escrito. */
+const WHATSAPP_NUMBER = '59174526068';
+const CONTACT_EMAIL   = 'albertoamasv@gmail.com';
+
+function whatsappUrl(message: string): string {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+const DEMO_MESSAGE = 'Hola, quiero una demo de YankoPOS para mi negocio.';
+
+/* ─── Contenido ─────────────────────────────────────────── */
+
+const FEATURES: { icon: IconName; title: string; desc: string }[] = [
+  { icon: 'cart',     title: 'Punto de venta',   desc: 'Toma pedidos y cobra en pocos toques. Efectivo, QR o tarjeta, y pagos divididos.' },
+  { icon: 'flame',    title: 'Cocina conectada', desc: 'Los pedidos aparecen en la pantalla de cocina apenas se confirman. Sin comandas perdidas.' },
+  { icon: 'cash',     title: 'Caja y gastos',    desc: 'Abre y cierra caja con el efectivo esperado a la vista. Registra gastos y compras del día.' },
+  { icon: 'chart',    title: 'Reportes',         desc: 'Ventas por día y por hora, productos más vendidos y ganancia después de gastos.' },
+  { icon: 'building', title: 'Varias sucursales', desc: 'Cada sucursal con su caja y sus cajeros. Tú ves todo junto o por separado.' },
+  { icon: 'gift',     title: 'Clientes y sorteos', desc: 'Historial de cada cliente y sorteos para premiar a los que vuelven.' },
 ];
 
-const STATS: { value: string; label: string; icon: IconName }[] = [
-  { value: '< 3s',        label: 'para crear un pedido',        icon: 'flame'   },
-  { value: '100%',        label: 'en la nube, sin instalación', icon: 'refresh' },
-  { value: '24/7',        label: 'disponibilidad garantizada',  icon: 'check'   },
-  { value: 'Tiempo real', label: 'actualizaciones en vivo',     icon: 'ticket'  },
+const FACTS: { icon: IconName; title: string; desc: string }[] = [
+  { icon: 'download', title: 'Sin instalar nada',         desc: 'Funciona en el navegador' },
+  { icon: 'maximize', title: 'Tablet, PC o celular',      desc: 'Y se instala como app' },
+  { icon: 'refresh',  title: 'Cocina y caja al instante', desc: 'Todo se actualiza solo' },
+  { icon: 'dollar',   title: 'Precios en bolivianos',     desc: 'Sin comisión por venta' },
 ];
 
 const USD_RATE = 9;
 
-/** Clases completas para que el scanner de Tailwind las detecte (no admite interpolación dinámica). */
-const STAGGER_CLASS = ['stagger-1', 'stagger-2', 'stagger-3', 'stagger-4'];
-
-type PlanMeta = { description: string; highlight: boolean; badge?: string; cta: string };
+type PlanMeta = { description: string; highlight: boolean };
 
 const PLAN_META: Record<SaasPlan, PlanMeta> = {
-  [SaasPlan.BASICO]:  { description: 'Todo lo esencial para un restaurante que arranca.', highlight: false, cta: 'Empezar con Básico' },
-  [SaasPlan.PRO]:     { description: 'Para restaurantes en operación que quieren escalar.', highlight: true, badge: 'Más popular', cta: 'Empezar con Pro' },
-  [SaasPlan.NEGOCIO]: { description: 'Para cadenas y franquicias con múltiples locales.', highlight: false, cta: 'Contactar' },
+  [SaasPlan.BASICO]:  { description: 'Para un local que empieza.', highlight: false },
+  [SaasPlan.PRO]:     { description: 'Para un negocio con cocina y más de un cajero.', highlight: true },
+  [SaasPlan.NEGOCIO]: { description: 'Para cadenas con varias sucursales.', highlight: false },
 };
 
 const PLAN_ORDER: SaasPlan[] = [SaasPlan.BASICO, SaasPlan.PRO, SaasPlan.NEGOCIO];
 
-/**
- * `-1` es "sin límite" en la BD. Antes se detectaba con `>= 999`, así que la
- * landing mostraba literalmente "-1 sucursal" en los planes ilimitados.
- */
-function limitLine(value: number, singular: string, plural: string, unlimited: string): string {
+/** Lo que todos los planes incluyen: va una sola vez, no repetido en cada tarjeta. */
+const COMMON = 'Punto de venta, pedidos, caja y gastos, clientes y equipo.';
+
+/** `-1` es "sin límite" en la BD. */
+function limit(value: number, singular: string, plural: string, unlimited: string): string {
   if (isUnlimited(value)) return unlimited;
   return `${value} ${value === 1 ? singular : plural}`;
 }
 
-function getLimits(plan: PlanDto): string[] {
+/** Lo que cambia entre planes, desde sus valores reales (cambiar un límite en /admin se ve aquí). */
+function planLines(plan: PlanDto): { text: string; included: boolean }[] {
   return [
-    limitLine(plan.maxBranches, 'sucursal', 'sucursales', 'sucursales ilimitadas'),
-    limitLine(plan.maxCashiers, 'cajero',   'cajeros',    'cajeros ilimitados'),
-    isUnlimited(plan.maxProducts)
-      ? 'productos ilimitados'
-      : `hasta ${plan.maxProducts} productos`,
-  ];
-}
-
-/**
- * Las viñetas salen de los valores reales del plan, no de listas fijas por id:
- * antes PRO decía "Hasta 3 sucursales ✓" y "Sucursales ilimitadas ✗" a la vez,
- * y cambiar un límite desde /admin no se reflejaba acá.
- */
-function getFeatures(plan: PlanDto): { text: string; included: boolean }[] {
-  const base = [
-    { text: 'POS + pagos mixtos',                included: true },
-    { text: 'Pedidos con estados y seguimiento', included: true },
-    { text: 'Gestión de caja y gastos',          included: true },
-    { text: 'Clientes y fidelización',           included: true },
-    // Equipo va con lo común: todos los planes venden cajeros; lo que cambia
-    // entre planes es cuántos, y eso ya lo dice la línea de límites.
-    { text: 'Gestión de equipo',                 included: true },
-  ];
-
-  const limits = [
+    { text: limit(plan.maxBranches, 'sucursal', 'sucursales', 'Sucursales ilimitadas'), included: true },
+    { text: limit(plan.maxCashiers, 'cajero', 'cajeros', 'Cajeros ilimitados'), included: true },
+    { text: isUnlimited(plan.maxProducts) ? 'Productos ilimitados' : `Hasta ${plan.maxProducts} productos`, included: true },
+    // Solo se anuncia lo que el servidor hace cumplir de verdad.
+    { text: 'Pantalla de cocina', included: plan.kitchenEnabled },
+    { text: 'Sorteos para clientes', included: plan.rafflesEnabled },
+    { text: 'Reportes avanzados', included: plan.advancedReports },
     {
-      text: isUnlimited(plan.maxBranches)
-        ? 'Sucursales ilimitadas'
-        : `Hasta ${limitLine(plan.maxBranches, 'sucursal', 'sucursales', '')}`,
-      included: true,
-    },
-    {
-      text: isUnlimited(plan.maxCashiers)
-        ? 'Cajeros ilimitados'
-        : `Hasta ${limitLine(plan.maxCashiers, 'cajero', 'cajeros', '')}`,
-      included: true,
-    },
-    {
-      text: isUnlimited(plan.maxProducts)
-        ? 'Productos ilimitados'
-        : `Hasta ${plan.maxProducts} productos`,
-      included: true,
-    },
-  ];
-
-  // Solo se anuncia lo que hoy se hace cumplir de verdad: cada línea de acá
-  // tiene su guard del lado del servidor.
-  const gated = [
-    { text: 'Display de cocina en tiempo real', included: plan.kitchenEnabled },
-    { text: 'Sorteos para clientes',            included: plan.rafflesEnabled },
-    { text: 'Reportes avanzados',               included: plan.advancedReports },
-    {
-      text: isUnlimited(plan.reportHistoryDays)
-        ? 'Historial de reportes completo'
-        : `Historial de reportes de ${plan.reportHistoryDays} días`,
+      text: isUnlimited(plan.reportHistoryDays) ? 'Historial de reportes completo' : `Reportes de los últimos ${plan.reportHistoryDays} días`,
       included: true,
     },
     {
       text: isUnlimited(plan.maxStorageMb)
-        ? 'Almacenamiento de imágenes ilimitado'
-        : `${plan.maxStorageMb} MB para imágenes`,
+        ? 'Fotos de productos sin límite'
+        : `${plan.maxStorageMb >= 1024 ? `${Math.round(plan.maxStorageMb / 1024)} GB` : `${plan.maxStorageMb} MB`} para fotos`,
       included: true,
     },
   ];
-
-  return [...base, ...limits, ...gated];
 }
 
-/* ─── PlanCard ──────────────────────────────────────────── */
+/* ─── Piezas ────────────────────────────────────────────── */
+
+function Logo() {
+  return (
+    <span className="inline-flex items-center gap-2.5">
+      <span className="flex h-9 w-9 items-center justify-center rounded-control bg-primary-600 text-white shadow-raised">
+        <Icon name="cart" size={18} strokeWidth={2} />
+      </span>
+      <span className="font-heading text-heading font-bold text-main">
+        Yanko<span className="text-primary-600 dark:text-primary-400">POS</span>
+      </span>
+    </span>
+  );
+}
+
+function SectionTitle({ eyebrow, title, desc, center = false }: { eyebrow: string; title: string; desc?: string; center?: boolean }) {
+  return (
+    <div className={center ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
+      <p className="text-label font-semibold text-primary-700 dark:text-primary-400">{eyebrow}</p>
+      <h2 className="mt-2 font-heading text-[32px] font-bold leading-tight text-main sm:text-[40px]">{title}</h2>
+      {desc && <p className="mt-3 text-body text-soft sm:text-[17px]">{desc}</p>}
+    </div>
+  );
+}
+
+function ExternalButton({ href, children, variant = 'primary', size = 'lg', className = '' }: {
+  href: string; children: ReactNode; variant?: 'primary' | 'secondary'; size?: 'md' | 'lg'; className?: string;
+}) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={buttonClasses({ variant, size, className })}>
+      {children}
+    </a>
+  );
+}
+
 function PlanCard({ plan }: { plan: PlanDto }) {
-  const meta     = PLAN_META[plan.id as SaasPlan] ?? PLAN_META[SaasPlan.BASICO];
-  const limits   = getLimits(plan);
-  const features = getFeatures(plan);
-  const usd      = Math.round(plan.priceBs / USD_RATE);
+  const meta = PLAN_META[plan.id as SaasPlan] ?? PLAN_META[SaasPlan.BASICO];
+  const usd  = Math.round(plan.priceBs / USD_RATE);
 
   return (
-    <div className={`relative flex flex-col rounded-[20px] p-7 transition-all duration-300 hover:-translate-y-1 ${
-      meta.highlight 
-        ? 'bg-surface-3 border-[1.5px] border-line-strong shadow-card-xl' 
-        : 'bg-surface-card border border-line shadow-card-lg'
+    <article className={`relative flex flex-col rounded-card border bg-surface-card p-6 sm:p-7 ${
+      meta.highlight ? 'border-primary-600 shadow-floating ring-1 ring-primary-600' : 'border-line shadow-raised'
     }`}>
       {meta.highlight && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[11px] font-black text-white whitespace-nowrap tracking-wide bg-primary-500 shadow-[0_4px_12px_oklch(0.65_0.22_42/0.4)]">
-          {meta.badge}
-        </div>
+        <span className="absolute -top-3 left-6 rounded-full bg-primary-600 px-3 py-1 text-caption font-semibold text-white shadow-raised">
+          El más elegido
+        </span>
       )}
 
-      {/* Nombre */}
-      <p className={`text-[11px] font-bold tracking-[0.12em] uppercase mb-2 ${meta.highlight ? 'text-primary-500' : 'text-muted'}`}>
-        {plan.displayName}
+      <h3 className="font-heading text-heading font-bold text-main">{plan.displayName}</h3>
+      <p className="mt-1 text-label text-soft">{meta.description}</p>
+
+      <p className="mt-5 flex items-baseline gap-1.5">
+        <span className="font-heading text-[44px] font-bold leading-none text-main tabular-nums">{plan.priceBs}</span>
+        <span className="text-body font-semibold text-soft">Bs al mes</span>
       </p>
-      <p className="text-[13px] text-soft leading-relaxed mb-5">
-        {meta.description}
-      </p>
+      <p className="mt-1 text-caption text-muted">Unos {usd} USD al cambio referencial</p>
 
-      {/* Precio */}
-      <div className="mb-5">
-        <div className="flex items-end gap-1.5">
-          <span className={`font-heading font-black text-5xl leading-none ${meta.highlight ? 'text-primary-500' : 'text-main'}`}>
-            {plan.priceBs}
-          </span>
-          <div className="pb-1">
-            <p className="text-sm font-bold text-soft">Bs</p>
-            <p className="text-[11px] text-muted">/mes</p>
-          </div>
-        </div>
-        <p className="text-[11px] text-muted mt-1.5">~${usd} USD al cambio referencial</p>
-      </div>
-
-      {/* Límites */}
-      <div className={`flex flex-wrap gap-1.5 mb-5 p-3 rounded-xl ${
-        meta.highlight ? 'bg-primary-500/15 border border-primary-500/30' : 'bg-surface-3 border border-line'
-      }`}>
-        {limits.map((l) => (
-          <span key={l} className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
-            meta.highlight 
-              ? 'bg-primary-500/20 text-primary-600 border border-primary-500/30' 
-              : 'bg-surface-card text-main border border-line'
-          }`}>
-            {l}
-          </span>
-        ))}
-      </div>
-
-      {/* Features */}
-      <ul className="flex-1 flex flex-col gap-2.5 mb-6">
-        {features.map((f) => (
-          <li key={f.text} className="flex items-start gap-2.5">
-            <span className={`mt-0.5 w-4 h-4 shrink-0 rounded-full flex items-center justify-center ${
-              f.included
-                ? (meta.highlight ? 'bg-primary-500/20' : 'bg-emerald-500/20')
-                : 'bg-surface-3'
+      <ul className="mt-6 flex-1 space-y-2.5 border-t border-line pt-5">
+        {planLines(plan).map((l) => (
+          <li key={l.text} className={`flex items-start gap-2.5 text-label ${l.included ? 'text-main' : 'text-muted'}`}>
+            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+              l.included ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-surface-2 text-muted'
             }`}>
-              <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke={f.included ? (meta.highlight ? 'oklch(0.65 0.22 42)' : 'oklch(0.55 0.18 145)') : 'var(--color-text-muted)'} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                {f.included ? <path d="M5 13l4 4L19 7" /> : <path d="M6 18L18 6M6 6l12 12" />}
-              </svg>
+              <Icon name={l.included ? 'check' : 'minus'} size={12} strokeWidth={3} />
             </span>
-            <span className={`text-[13px] leading-snug ${f.included ? 'text-soft' : 'text-muted'}`}>
-              {f.text}
+            <span className={l.included ? '' : 'line-through decoration-muted/60'}>
+              {l.text}
+              {!l.included && <span className="sr-only"> (no incluido)</span>}
             </span>
           </li>
         ))}
       </ul>
 
-      {/* CTA */}
-      <Link
-        to="/login"
-        className={`block text-center py-3.5 rounded-xl text-[13px] font-bold transition-all duration-200 active:scale-[0.98] ${
-          meta.highlight 
-            ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-[0_4px_14px_oklch(0.65_0.22_42/0.3)]' 
-            : 'bg-surface-3 text-soft border border-line-strong hover:bg-surface-card'
-        }`}
+      <ExternalButton
+        href={whatsappUrl(`Hola, me interesa el plan ${plan.displayName} de YankoPOS.`)}
+        variant={meta.highlight ? 'primary' : 'secondary'}
+        className="mt-6 w-full"
       >
-        {meta.cta}
-      </Link>
-    </div>
+        <Icon name="chat" size={18} />
+        Quiero el plan {plan.displayName}
+      </ExternalButton>
+    </article>
   );
 }
 
-/* ─── PricingSection ────────────────────────────────────── */
 function PricingSection() {
   const { plans, loading, error } = usePlans();
 
-  if (loading) return (
-    <div className="flex justify-center py-20">
-      <Spinner size="md" color="primary" />
-    </div>
-  );
-
-  if (error || plans.length === 0) return (
-    <p className="text-center py-20 text-sm text-muted">
-      No se pudieron cargar los planes. Intenta de nuevo más tarde.
-    </p>
-  );
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        {PLAN_ORDER.map((id) => <Skeleton key={id} variant="rect" h="520px" />)}
+      </div>
+    );
+  }
+  if (error || plans.length === 0) {
+    return (
+      <div className="rounded-card border border-line bg-surface-card px-6 py-10 text-center">
+        <p className="text-body text-soft">No se pudieron cargar los planes.</p>
+        <ExternalButton href={whatsappUrl('Hola, quiero conocer los planes de YankoPOS.')} variant="secondary" size="md" className="mt-4">
+          Pregúntanos por WhatsApp
+        </ExternalButton>
+      </div>
+    );
+  }
 
   const ordered = PLAN_ORDER.map((id) => plans.find((p) => p.id === id)).filter((p): p is PlanDto => p !== undefined);
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start pt-5">
+    <div className="grid grid-cols-1 gap-6 pt-3 md:grid-cols-3 md:gap-5 lg:gap-6">
       {ordered.map((plan) => <PlanCard key={plan.id} plan={plan} />)}
     </div>
   );
 }
 
-function FooterHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-4 text-[11px] font-bold uppercase tracking-wider text-muted">
-      {children}
-    </p>
-  );
-}
+const navLink = 'rounded-control px-2 py-2 text-label font-semibold text-soft transition-colors hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60';
+const footerLink = 'text-label text-soft transition-colors hover:text-main';
 
-/* ─── Landing principal ─────────────────────────────────── */
+/* ─── Página ────────────────────────────────────────────── */
+
 export function LandingPage() {
   const { theme, toggle: toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface-page text-main selection:bg-primary-500/30">
-      
-      {/* ── Barra de navegación ──────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-line bg-surface-page/80 backdrop-blur-xl supports-[backdrop-filter]:bg-surface-page/60 transition-colors">
-        <div className="max-w-[1200px] mx-auto px-5 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm">
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-              </svg>
-            </div>
-            <span className="font-heading font-black text-lg tracking-tight text-main">
-              Yanko<span className="text-primary-500">POS</span>
-            </span>
-          </div>
-
-          {/* Links */}
-          <nav className="flex items-center gap-4 sm:gap-6">
-            <a href="#features" className="hidden sm:block text-[13px] font-semibold text-soft hover:text-main transition-colors">
-              Características
-            </a>
-            <a href="#pricing" className="hidden sm:block text-[13px] font-semibold text-soft hover:text-main transition-colors">
-              Precios
-            </a>
+      <header className="sticky top-0 z-50 border-b border-line bg-surface-page/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6">
+          <Link to="/" aria-label="YankoPOS, inicio" className="rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60">
+            <Logo />
+          </Link>
+          <nav aria-label="Principal" className="flex items-center gap-1 sm:gap-3">
+            <a href="#features" className={`${navLink} hidden md:inline-flex`}>Características</a>
+            <a href="#pricing" className={navLink}>Precios</a>
             <button
+              type="button"
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-              className="p-1.5 rounded-lg text-muted hover:text-main hover:bg-surface-2 transition-all"
+              aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro'}
+              className="flex h-10 w-10 items-center justify-center rounded-control text-soft transition-colors hover:bg-surface-2 hover:text-main focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60"
             >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} strokeWidth={2} />
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
-            <Link to="/login" className="px-4 py-2 rounded-xl text-[13px] font-bold bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">
-              Acceder
+            <Link to="/login" className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'whitespace-nowrap' })}>
+              <span className="sm:hidden">Entrar</span>
+              <span className="hidden sm:inline">Iniciar sesión</span>
             </Link>
           </nav>
         </div>
       </header>
 
-      {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative px-5 py-8 sm:py-12 lg:py-16 overflow-hidden">
-        {/* Orbe de luz naranja decorativo */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[100px] pointer-events-none bg-primary-500/10 -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[100px] pointer-events-none bg-primary-500/5 translate-y-1/3 -translate-x-1/4" />
+      {/* Hero */}
+      <section className="relative overflow-hidden px-4 pb-14 pt-10 sm:px-6 sm:pt-14 lg:pb-20 lg:pt-20">
+        <div aria-hidden className="pointer-events-none absolute -right-48 -top-48 h-[600px] w-[600px] rounded-full bg-primary-500/10 blur-[110px]" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-40 h-[460px] w-[460px] rounded-full bg-primary-500/5 blur-[100px]" />
 
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative">
-          
-          {/* Texto */}
-          <div className="max-w-[540px] mx-auto lg:mx-0 text-center lg:text-left z-10 animate-fade">
-            <div className="inline-flex items-center gap-2 mb-6 px-3.5 py-1.5 rounded-full border border-primary-500/20 bg-primary-500/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse-dot" />
-              <span className="text-[11px] font-bold text-primary-600 tracking-wider uppercase">
-                Software POS para Bolivia
-              </span>
-            </div>
-
-            <h1 className="font-heading font-black text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-main mb-6 drop-shadow-sm">
-              Tu restaurante<br className="hidden sm:block" />
-              {' '}en{' '}
-              <span className="text-primary-500 bg-gradient-to-r from-primary-500 to-orange-400 bg-clip-text text-transparent">
-                ritmo de servicio
-              </span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-soft leading-relaxed mb-10 mx-auto lg:mx-0 max-w-[460px]">
-              Toma pedidos, envía a cocina y cobra al instante. Todo en una sola plataforma diseñada para operar a máxima velocidad.
+        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div className="mx-auto max-w-[560px] text-center lg:mx-0 lg:text-left animate-fade">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-label font-semibold text-primary-700 dark:text-primary-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary-600" aria-hidden />
+              Para restaurantes, cafeterías y comida rápida
             </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 mb-12">
-              <Link to="/login" className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-[14px] font-bold bg-primary-500 text-white hover:bg-primary-600 transition-all active:scale-[0.98] shadow-[0_4px_16px_oklch(0.65_0.22_42/0.25)] hover:shadow-[0_6px_20px_oklch(0.65_0.22_42/0.35)] text-center">
-                Entrar al panel
-              </Link>
-              <a href="#pricing" className="w-full sm:w-auto px-7 py-3.5 rounded-xl text-[14px] font-bold bg-surface-2 text-main border border-line-strong hover:bg-surface-3 transition-all active:scale-[0.98] text-center">
-                Ver planes y precios
-              </a>
+            <h1 className="mt-5 font-heading text-[44px] font-bold leading-[1.05] tracking-tight text-main sm:text-[56px] lg:text-[64px]">
+              Vende, cocina y cobra <span className="text-primary-600 dark:text-primary-400">sin papeles</span>
+            </h1>
+            <p className="mx-auto mt-5 max-w-[480px] text-[17px] leading-relaxed text-soft lg:mx-0">
+              Pedidos, cocina, caja y reportes de tu negocio en un solo lugar. Desde la tablet, la computadora o el celular.
+            </p>
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <ExternalButton href={whatsappUrl(DEMO_MESSAGE)}>
+                <Icon name="chat" size={18} />
+                Pedir una demo
+              </ExternalButton>
+              <a href="#pricing" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>Ver planes</a>
             </div>
           </div>
 
-          {/* Imagen principal (Humana, realista) */}
-          <div className="relative animate-slide lg:block w-full max-w-[600px] mx-auto z-10">
-            {/* Decoración detrás de la imagen */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-[32px] transform translate-x-4 translate-y-4 blur-sm" />
-
-            <div className="relative rounded-[32px] overflow-hidden border border-line shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] bg-surface-card">
-              {/* Imagen local: se incluye en el build y no depende de un host externo. */}
-              <img
-                src={landingPosImage}
-                alt="Terminal POS"
-                className="w-full h-auto aspect-[4/3] object-cover"
-              />
-              {/* Capa de brillo superior (Glassmorphism sutil) */}
-              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-[32px] pointer-events-none" />
-
-              {/* Etiqueta flotante: cocina conectada */}
-              <div className="hidden sm:flex absolute top-6 right-6 items-center gap-2.5 bg-surface-card/90 backdrop-blur-md border border-line px-3.5 py-2.5 rounded-2xl shadow-lg animate-fade stagger-2">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 animate-pulse-dot" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          <div className="relative mx-auto w-full max-w-[560px] animate-slide">
+            <div className="relative overflow-hidden rounded-dialog border border-line bg-surface-card shadow-overlay">
+              <img src={landingPosImage} alt="Cajera cobrando un pedido en una tablet" className="aspect-[4/3] w-full object-cover" />
+              <div className="absolute right-4 top-4 hidden items-center gap-2 rounded-control border border-line bg-surface-card/90 px-3 py-2 shadow-floating backdrop-blur-md sm:flex">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                <p className="text-label font-semibold text-main">Cocina conectada</p>
+              </div>
+              <div className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-card border border-line bg-surface-card/90 p-3 shadow-floating backdrop-blur-md sm:right-auto">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                  <Icon name="check" size={18} strokeWidth={2.5} />
                 </span>
-                <p className="text-xs font-bold text-main">Cocina conectada</p>
-              </div>
-
-              {/* Etiqueta flotante: pedido completado */}
-              <div className="absolute bottom-6 left-6 right-6 sm:left-8 sm:right-auto bg-surface-card/90 backdrop-blur-md border border-line p-4 rounded-2xl shadow-xl flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                  <Icon name="check" size={20} className="text-emerald-500" />
-                </div>
                 <div>
-                  <p className="text-sm font-bold text-main">Pedido completado</p>
-                  <p className="text-xs font-medium text-muted mt-0.5">Cobro en efectivo procesado</p>
+                  <p className="text-label font-semibold text-main">Pedido 24 cobrado</p>
+                  <p className="text-caption text-muted">Efectivo, Bs 85.00</p>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* ── Banda de stats ───────────────────────────────── */}
+      {/* Hechos */}
       <div className="border-y border-line bg-surface-2">
-        <div className="max-w-[1200px] mx-auto px-5 py-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4">
-            {STATS.map((s, i) => (
-              <div
-                key={s.label}
-                className={`flex items-center gap-3.5 py-3 ${i > 0 ? 'lg:border-l lg:border-line lg:pl-6' : ''}`}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-500">
-                  <Icon name={s.icon} size={18} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="font-heading font-black text-2xl leading-none text-main">{s.value}</p>
-                  <p className="mt-1 text-[12px] font-semibold text-muted">{s.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ul className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-4 gap-y-6 px-4 py-8 sm:px-6 lg:grid-cols-4">
+          {FACTS.map((f) => (
+            <li key={f.title} className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-primary-500/10 text-primary-700 dark:text-primary-400">
+                <Icon name={f.icon} size={18} />
+              </span>
+              <span>
+                <span className="block text-body font-semibold text-main">{f.title}</span>
+                <span className="block text-caption text-muted">{f.desc}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* ── Features ─────────────────────────────────────── */}
-      <section id="features" className="px-5 py-20 sm:py-32">
-        <div className="max-w-[1200px] mx-auto">
-          {/* Header de sección */}
-          <div className="mb-16 md:mb-24 text-center sm:text-left">
-            <p className="text-[12px] font-bold text-primary-500 tracking-[0.16em] uppercase mb-4">
-              Todo lo que necesitas
-            </p>
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-              <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-main max-w-[600px]">
-                Una plataforma completa,<br />nada de extras innecesarios
-              </h2>
-              <p className="text-base text-soft max-w-[320px] mx-auto sm:mx-0 leading-relaxed">
-                Herramientas diseñadas para que operes de forma rápida, reduzcas errores y conozcas tus márgenes reales.
-              </p>
-            </div>
-          </div>
-
-          {/* Grid de features: dos tarjetas destacadas rompen la retícula pareja */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {FEATURES.map((f, i) => (
-              <div
-                key={i}
-                className={`group relative overflow-hidden p-8 rounded-3xl border shadow-card-md hover:shadow-card-xl hover:-translate-y-1 transition-all duration-300 animate-slide ${STAGGER_CLASS[i % 4]} ${
-                  f.featured
-                    ? 'lg:col-span-2 bg-primary-500/[0.04] border-primary-500/20'
-                    : 'bg-surface-card border-line'
-                }`}
-              >
-                <span className="pointer-events-none absolute -right-3 -top-6 font-heading font-black text-[7rem] leading-none text-main/[0.035] select-none">
-                  {String(i + 1).padStart(2, '0')}
+      {/* Características */}
+      <section id="features" className="scroll-mt-16 px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-[1200px]">
+          <SectionTitle
+            eyebrow="Todo lo que necesitas"
+            title="Lo que pasa en tu negocio, en una sola pantalla"
+            desc="Menos papel y menos errores: cada pedido va de la caja a la cocina y termina en tus reportes."
+          />
+          <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            {FEATURES.map((f) => (
+              <li key={f.title} className="rounded-card border border-line bg-surface-card p-6 shadow-raised">
+                <span className="flex h-11 w-11 items-center justify-center rounded-control bg-primary-500/10 text-primary-700 dark:text-primary-400">
+                  <Icon name={f.icon} size={22} />
                 </span>
-
-                <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-primary-500/10 border border-primary-500/20 mb-6 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300 text-primary-500">
-                  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                    {f.icon}
-                  </svg>
-                </div>
-                <h3 className="relative font-heading font-bold text-xl text-main mb-3 tracking-tight">
-                  {f.title}
-                </h3>
-                <p className="relative text-[14.5px] text-soft leading-relaxed max-w-[380px]">
-                  {f.desc}
-                </p>
-              </div>
+                <h3 className="mt-4 font-heading text-heading font-bold text-main">{f.title}</h3>
+                <p className="mt-1.5 text-body text-soft">{f.desc}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* ── Pricing ──────────────────────────────────────── */}
-      <section id="pricing" className="px-5 py-20 sm:py-32 bg-surface-2 border-t border-line">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[12px] font-bold text-primary-500 tracking-[0.16em] uppercase mb-4">
-              Planes y precios
-            </p>
-            <h2 className="font-heading font-black text-4xl sm:text-5xl leading-tight tracking-tight text-main mb-5">
-              Paga solo lo que necesitas
-            </h2>
-            <p className="text-base text-soft max-w-[480px] mx-auto">
-              Precios transparentes en bolivianos, sin contratos ocultos ni comisiones por transacción. Cancela cuando quieras.
-            </p>
-          </div>
-
+      {/* Planes */}
+      <section id="pricing" className="scroll-mt-16 border-t border-line bg-surface-2 px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-[1200px]">
+          <SectionTitle
+            center
+            eyebrow="Planes y precios"
+            title="Paga solo lo que necesitas"
+            desc="Precios en bolivianos, sin comisión por venta y sin contratos largos."
+          />
+          <p className="mx-auto mb-8 mt-6 flex max-w-2xl items-start justify-center gap-2 text-center text-label text-soft">
+            <Icon name="check" size={16} className="mt-0.5 shrink-0 text-emerald-700 dark:text-emerald-400" />
+            <span><span className="font-semibold text-main">Todos los planes incluyen:</span> {COMMON}</span>
+          </p>
           <PricingSection />
-
-          <p className="text-center text-xs font-medium text-muted mt-12 max-w-xl mx-auto">
-            Tipo de cambio referencial: 1 USD = {USD_RATE} Bs. Los precios en bolivianos pueden estar sujetos a ajustes según la variación del tipo de cambio.
-          </p>
         </div>
       </section>
 
-      {/* ── CTA final ────────────────────────────────────── */}
-      <section className="relative px-5 py-24 sm:py-32 overflow-hidden bg-primary-600">
-        {/* Textura de grilla de puntos: guiño a la pantalla de una terminal, no un degradado genérico */}
-        <div
-          className="absolute inset-0 opacity-[0.12] pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-            backgroundSize: '22px 22px',
-          }}
-        />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
-
-        <div className="max-w-[800px] mx-auto text-center relative z-10">
-          <h2 className="font-heading font-black text-4xl sm:text-6xl text-white tracking-tight mb-6 drop-shadow-sm">
-            ¿Listo para modernizar tu negocio?
-          </h2>
-          <p className="text-lg sm:text-xl text-primary-100 max-w-[500px] mx-auto mb-10 leading-relaxed">
-            Únete a los restaurantes que ya están operando con YankoPOS. Configuración en minutos.
-          </p>
-          <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-[15px] font-bold bg-white text-primary-600 hover:bg-gray-50 transition-all active:scale-[0.98] shadow-xl hover:shadow-2xl">
-            Acceder al panel ahora
-          </Link>
+      {/* Llamado final: tarjeta sobria con un brillo de marca, como el resto de la página. */}
+      <section className="px-4 py-16 sm:px-6 sm:py-24">
+        <div className="relative mx-auto max-w-[960px] overflow-hidden rounded-dialog border border-line bg-surface-card px-6 py-12 text-center shadow-raised sm:px-12 sm:py-16">
+          <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[520px] -translate-x-1/2 rounded-full bg-primary-500/15 blur-[90px]" />
+          <div className="relative">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-card bg-primary-500/10 text-primary-700 dark:text-primary-400">
+              <Icon name="chat" size={24} />
+            </span>
+            <h2 className="mt-5 font-heading text-[28px] font-bold leading-tight text-main sm:text-[40px]">
+              ¿Lo vemos funcionando en tu negocio?
+            </h2>
+            <p className="mx-auto mt-3 max-w-[520px] text-body text-soft sm:text-[17px]">
+              Escríbenos por WhatsApp: te mostramos YankoPOS con tus productos y te ayudamos a empezar.
+            </p>
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+              <ExternalButton href={whatsappUrl(DEMO_MESSAGE)}>
+                <Icon name="chat" size={18} />
+                Pedir una demo
+              </ExternalButton>
+              <a href="#pricing" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>Ver planes</a>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Borde perforado: remata el bloque naranja como el talón de un ticket */}
-      <div
-        aria-hidden="true"
-        className="h-5 bg-primary-600"
-        style={{
-          maskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
-          maskSize: '28px 100%',
-          maskRepeat: 'repeat-x',
-          WebkitMaskImage: 'radial-gradient(circle 7px at 14px 0, transparent 7px, black 7.5px)',
-          WebkitMaskSize: '28px 100%',
-          WebkitMaskRepeat: 'repeat-x',
-        }}
-      />
-
-      {/* ── Footer ───────────────────────────────────────── */}
-      <footer className="relative overflow-hidden border-t border-line bg-surface-page px-5 pt-16 pb-8">
-        {/* Glow decorativo: eco del hero, muy sutil */}
-        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-72 w-[640px] -translate-x-1/2 rounded-full bg-primary-500/5 blur-[110px]" />
-
-        <div className="relative max-w-[1200px] mx-auto">
+      <footer className="border-t border-line bg-surface-page px-4 pb-8 pt-14 sm:px-6">
+        <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4 lg:grid-cols-12">
-
-            {/* Marca */}
             <div className="col-span-2 sm:col-span-4 lg:col-span-5">
-              <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm">
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                  </svg>
-                </div>
-                <span className="font-heading font-black text-lg tracking-tight text-main">
-                  Yanko<span className="text-primary-500">POS</span>
-                </span>
-              </Link>
-              <p className="text-sm text-muted leading-relaxed max-w-[300px]">
-                El sistema de punto de venta hecho para restaurantes bolivianos. Pedidos, cocina, caja y reportes en un solo lugar.
+              <Logo />
+              <p className="mt-4 max-w-[320px] text-label text-muted">
+                Sistema de ventas para restaurantes y negocios de comida de Bolivia. Pedidos, cocina, caja y reportes en un solo lugar.
               </p>
             </div>
-
-            {/* Producto */}
             <div className="lg:col-span-2">
-              <FooterHeading>Producto</FooterHeading>
+              <p className="mb-3 text-label font-semibold text-main">Producto</p>
               <ul className="space-y-2.5">
-                <li><a href="#features" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Características</a></li>
-                <li><a href="#pricing" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Precios</a></li>
-                <li><Link to="/login" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Acceder al panel</Link></li>
+                <li><a href="#features" className={footerLink}>Características</a></li>
+                <li><a href="#pricing" className={footerLink}>Precios</a></li>
+                <li><Link to="/login" className={footerLink}>Iniciar sesión</Link></li>
               </ul>
             </div>
-
-            {/* Legal */}
             <div className="lg:col-span-2">
-              <FooterHeading>Legal</FooterHeading>
+              <p className="mb-3 text-label font-semibold text-main">Legal</p>
               <ul className="space-y-2.5">
-                <li><Link to="/terminos" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Términos y Condiciones</Link></li>
-                <li><Link to="/privacidad" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">Política de Privacidad</Link></li>
+                <li><Link to="/terminos" className={footerLink}>Términos y condiciones</Link></li>
+                <li><Link to="/privacidad" className={footerLink}>Política de privacidad</Link></li>
               </ul>
             </div>
-
-            {/* Contacto */}
             <div className="col-span-2 sm:col-span-4 lg:col-span-3">
-              <FooterHeading>Contacto</FooterHeading>
-              <a href="mailto:albertoamasv@gmail.com" className="text-[13px] font-medium text-soft hover:text-primary-500 transition-colors">
-                albertoamasv@gmail.com
-              </a>
+              <p className="mb-3 text-label font-semibold text-main">Contacto</p>
+              <ul className="space-y-2.5">
+                <li>
+                  <a href={whatsappUrl(DEMO_MESSAGE)} target="_blank" rel="noopener noreferrer" className={footerLink}>
+                    WhatsApp: +591 74526068
+                  </a>
+                </li>
+                <li><a href={`mailto:${CONTACT_EMAIL}`} className={footerLink}>{CONTACT_EMAIL}</a></li>
+              </ul>
             </div>
           </div>
-
-          {/* Barra inferior */}
-          <div className="mt-12 pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs font-medium text-muted">
-              © {new Date().getFullYear()} YankoPOS. Hecho en Bolivia 🇧🇴
-            </p>
-            <p className="text-xs font-medium text-muted">
-              Alberto Amas Villarroel
-            </p>
+          <div className="mt-12 flex flex-col items-center justify-between gap-2 border-t border-line pt-6 sm:flex-row">
+            <p className="text-caption text-muted">© {new Date().getFullYear()} YankoPOS. Hecho en Bolivia.</p>
+            <p className="text-caption text-muted">Alberto Amas Villarroel</p>
           </div>
         </div>
       </footer>
