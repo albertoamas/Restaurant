@@ -240,13 +240,13 @@ export function LandingPage() {
           <div className="mx-auto max-w-[560px] text-center lg:mx-0 lg:text-left animate-fade">
             <p className="inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/10 px-3 py-1 text-label font-semibold text-primary-700 dark:text-primary-300">
               <span className="h-1.5 w-1.5 rounded-full bg-primary-600" aria-hidden />
-              Sistema de ventas hecho en Bolivia
+              Para restaurantes, cafeterías y comida rápida
             </p>
             <h1 className="mt-5 font-heading text-[44px] font-bold leading-[1.05] tracking-tight text-main sm:text-[56px] lg:text-[64px]">
-              Tu restaurante en <span className="text-primary-600 dark:text-primary-400">ritmo de servicio</span>
+              Vende, cocina y cobra <span className="text-primary-600 dark:text-primary-400">sin papeles</span>
             </h1>
             <p className="mx-auto mt-5 max-w-[480px] text-[17px] leading-relaxed text-soft lg:mx-0">
-              Pedidos, cocina, caja y reportes en un solo lugar. Desde la tablet, la computadora o el celular.
+              Pedidos, cocina, caja y reportes de tu negocio en un solo lugar. Desde la tablet, la computadora o el celular.
             </p>
             <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <ExternalButton href={whatsappUrl(DEMO_MESSAGE)}>
@@ -331,9 +331,6 @@ export function LandingPage() {
             <span><span className="font-semibold text-main">Todos los planes incluyen:</span> {COMMON}</span>
           </p>
           <PricingSection />
-          <p className="mx-auto mt-8 max-w-xl text-center text-caption text-muted">
-            Cambio referencial: 1 USD = {USD_RATE} Bs. Los precios en bolivianos pueden ajustarse según el tipo de cambio.
-          </p>
         </div>
       </section>
 
