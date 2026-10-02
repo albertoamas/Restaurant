@@ -185,12 +185,12 @@ export function ProductsPage() {
             {products.map((p) => {
               const cat = categoryName(p.categoryId);
               return (
-                <li key={p.id} className="flex items-center gap-3 px-3 py-2.5 sm:px-4">
+                <li key={p.id} className="group flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-surface-2 sm:px-4">
                   <button
                     type="button"
                     onClick={() => openProduct(p)}
                     aria-label={`Editar ${p.name}`}
-                    className={`flex min-w-0 flex-1 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${p.isActive ? '' : 'opacity-60'}`}
+                    className={`flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${p.isActive ? '' : 'opacity-60'}`}
                   >
                     <ProductThumb product={p} tone={tones.get(p.categoryId)} />
                     <span className="min-w-0 flex-1">

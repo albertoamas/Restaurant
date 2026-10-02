@@ -38,9 +38,8 @@ export function OrderSuccessModal({ isOpen, onClose, order, title = 'Pedido crea
     >
       <div className="flex flex-col items-center text-center py-2">
         <div className="w-14 h-14 rounded-full bg-green-600/12 border border-green-600/30 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-700 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" className="animate-success-check" />
-          </svg>
+          {/* El trazo se dibuja solo: stroke-dasharray/dashoffset se heredan al path del ícono. */}
+          <Icon name="check" size={32} strokeWidth={2.5} className="text-green-700 dark:text-green-400 animate-success-check" />
         </div>
 
         <p className="text-label text-soft">

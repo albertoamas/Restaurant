@@ -21,17 +21,17 @@ export function PwaUpdatePrompt() {
       data-print-hide
       role="status"
       aria-live="polite"
-      className="fixed z-[60] bottom-4 left-4 right-4 sm:left-auto sm:w-96 rounded-xl border border-line bg-surface-card shadow-card-xl p-4 animate-slide"
+      className="fixed z-[60] bottom-4 left-4 right-4 sm:left-auto sm:w-96 rounded-card border border-line bg-surface-card shadow-floating p-4 animate-slide"
     >
       <div className="flex gap-3">
-        <div className="w-9 h-9 rounded-lg bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
-          <Icon name="refresh" size={18} className="text-primary-500" />
-        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-primary-500/10 text-primary-700 dark:text-primary-400">
+          <Icon name="refresh" size={18} />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-main font-heading">
+          <p className="text-body font-semibold text-main">
             Hay una versión nueva de YankoPOS
           </p>
-          <p className="text-xs text-soft mt-0.5">
+          <p className="mt-0.5 text-label text-soft">
             {blockedByCart
               ? 'Termina o vacía el pedido en curso para actualizar: al recargar se perdería el carrito.'
               : 'Actualizar recarga la página en un segundo.'}

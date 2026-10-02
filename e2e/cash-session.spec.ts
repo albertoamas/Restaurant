@@ -10,12 +10,21 @@ async function loginAsOwner(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /ingresar|entrar|login/i }).click();
   await page.waitForURL(/\/pos/, { timeout: 10_000 });
 
-  // If the sidebar shows "Seleccionar sucursal", pick the first branch
-  const noBranchBtn = page.getByRole('button', { name: /seleccionar sucursal/i });
-  if (await noBranchBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    await noBranchBtn.click();
-    await page.locator('[class*="slide-down"] button').first().click();
-    await page.waitForTimeout(300);
+  await pickBranchIfAsked(page);
+}
+
+/**
+ * Con varias sucursales el dueño empieza en "Todas las sucursales", y POS, Caja y Cocina le
+ * piden elegir una ("Elige una sucursal"). Se elige "Principal", la del seed; la elección queda
+ * guardada para el resto del test.
+ */
+async function pickBranchIfAsked(page: import('@playwright/test').Page) {
+  const prompt = page.getByText('Elige una sucursal');
+  // `isVisible` no espera: hay que darle tiempo a la pantalla a decidir si pide sucursal.
+  const asked = await prompt.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true, () => false);
+  if (asked) {
+    await page.getByRole('button', { name: 'Principal', exact: true }).click();
+    await prompt.waitFor({ state: 'hidden' });
   }
 }
 
@@ -23,6 +32,7 @@ test.describe('Sesión de caja', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsOwner(page);
     await page.goto('/cash');
+    await pickBranchIfAsked(page);
   });
 
   test('abrir caja con monto inicial muestra opción de cierre', async ({ page }) => {
@@ -92,26 +102,21 @@ test.describe('Sesión de caja', () => {
       test.skip(true, 'Hay sesión abierta — este test requiere caja cerrada');
     }
 
-    // Go to POS and try to add item + pay with cash
+    // POS: un producto, Cobrar, Efectivo y Confirmar pedido.
     await page.goto('/pos');
+    await pickBranchIfAsked(page);
     const firstProduct = page.locator('[data-testid="product-card"]').first();
     await firstProduct.waitFor({ timeout: 10_000 });
     await firstProduct.click();
 
-    const confirmBtn = page.getByRole('button', { name: /confirmar|cobrar|pagar/i });
-    if (await confirmBtn.isVisible()) {
-      await confirmBtn.click();
-    }
-
-    const cashOption = page.getByText(/efectivo|cash/i).first();
-    if (await cashOption.isVisible()) {
-      await cashOption.click();
-    }
-
-    const finalizeBtn = page.getByRole('button', { name: /completar|finalizar|confirmar/i }).last();
-    if (await finalizeBtn.isVisible()) {
-      await finalizeBtn.click();
-    }
+    await page.getByRole('button', { name: /^cobrar$/i }).first().click();
+    const payment = page.getByRole('dialog');
+    // El pago pide tipo de pedido y cliente antes de confirmar.
+    await payment.getByRole('radiogroup', { name: 'Tipo de pedido' }).getByRole('radio', { name: /^local/i }).click();
+    await payment.getByRole('button', { name: 'Sin cliente para este pedido' }).click();
+    await payment.getByRole('radiogroup', { name: 'Método de pago' }).getByRole('radio', { name: /efectivo/i }).click();
+    await payment.getByRole('button', { name: 'Exacto' }).click();
+    await payment.getByRole('button', { name: /confirmar pedido/i }).click();
 
     // PosPage shows: "No hay caja abierta. Ve a Caja y abre el turno antes de cobrar en efectivo."
     await expect(page.getByText(/no hay caja abierta/i)).toBeVisible({ timeout: 5_000 });

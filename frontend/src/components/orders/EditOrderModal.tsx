@@ -139,7 +139,7 @@ export function EditOrderModal({ isOpen, onClose, order, onSaved }: Props) {
 
           {order.customer && !showPicker && (
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-control bg-surface-2 border border-line">
-              <span className="w-9 h-9 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0 text-primary-700 dark:text-primary-300">
+              <span className="w-9 h-9 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0 text-primary-700 dark:text-primary-400">
                 <Icon name="user" size={16} strokeWidth={2} />
               </span>
               <p className="flex-1 min-w-0 text-body font-semibold text-main truncate">{order.customer.name}</p>

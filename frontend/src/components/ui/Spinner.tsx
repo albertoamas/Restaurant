@@ -12,7 +12,7 @@ const sizes = {
 const colors = {
   primary: 'border-primary-600 border-t-transparent',
   white:   'border-white border-t-transparent',
-  muted:   'border-gray-300 border-t-gray-600',
+  muted:   'border-line-strong border-t-transparent',
 };
 
 export function Spinner({ size = 'md', color = 'primary' }: SpinnerProps) {

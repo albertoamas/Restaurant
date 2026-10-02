@@ -48,7 +48,7 @@ export function BranchSelector({
         onClick={() => canSelect && onToggle()}
         className={[
           'w-full flex items-center justify-between gap-1.5 px-3 py-2',
-          'rounded-xl bg-surface-3 border border-line',
+          'rounded-control bg-surface-3 border border-line',
           'text-xs text-soft transition-colors',
           canSelect
             ? 'hover:bg-surface-card-hover hover:text-main cursor-pointer'
@@ -71,7 +71,7 @@ export function BranchSelector({
 
       {isOpen && canSelect && (
         <div
-          className="absolute top-full left-0 right-0 mt-1.5 rounded-xl z-50 overflow-hidden animate-slide-down border border-line shadow-card-xl bg-surface-card"
+          className="absolute top-full left-0 right-0 mt-1.5 rounded-card z-50 overflow-hidden animate-slide-down border border-line shadow-floating bg-surface-card"
         >
           <button
             onClick={() => onSelect(null)}

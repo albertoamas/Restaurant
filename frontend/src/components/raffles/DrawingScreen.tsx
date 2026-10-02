@@ -318,9 +318,15 @@ function SideArrow({
       className="absolute flex items-center"
       style={{ top: centerTop, height: itemHeight, [isLeft ? 'right' : 'left']: '100%', padding: '0 8px' }}
     >
-      <svg viewBox="0 0 10 18" style={{ width: 12, height: 22, fill: color, transform: isLeft ? 'none' : 'scaleX(-1)' }}>
-        <path d="M10 9 L0 0 L0 18 Z" />
-      </svg>
+      {/* Triángulo que apunta al nombre elegido, dibujado con CSS (sin <svg> pegado). */}
+      <span
+        aria-hidden
+        style={{
+          width: 12, height: 22, background: color, display: 'block',
+          clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
+          transform: isLeft ? 'none' : 'scaleX(-1)',
+        }}
+      />
     </div>
   );
 }
