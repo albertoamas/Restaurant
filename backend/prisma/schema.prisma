@@ -318,7 +318,9 @@ model ExpenseCategory {
   items  ExpenseItem[]
   concepts ExpenseConcept[]
 
-  @@unique([tenantId, name])
+  // @@unique([tenantId, name]) — reemplazado por índice parcial en DB (WHERE is_active = true):
+  // una categoría eliminada no ocupa su nombre.
+  @@index([tenantId, name])
   @@index([tenantId])
   @@map("expense_categories")
 }
@@ -340,7 +342,9 @@ model ExpenseConcept {
   category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   items    ExpenseItem[]
 
-  @@unique([tenantId, name])
+  // @@unique([tenantId, name]) — reemplazado por índice parcial en DB (WHERE is_active = true):
+  // un gasto predefinido eliminado no ocupa su nombre.
+  @@index([tenantId, name])
   @@index([tenantId, categoryId, isActive])
   @@map("expense_concepts")
 }

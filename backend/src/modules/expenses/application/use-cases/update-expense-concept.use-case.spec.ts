@@ -71,4 +71,18 @@ describe('UpdateExpenseConceptUseCase', () => {
       useCase.execute('c1', TENANT, { categoryId: 'cat-ajena' }),
     ).rejects.toThrow(NotFoundException);
   });
+
+  it('permite renombrar al nombre de un gasto eliminado', async () => {
+    repo.findByName.mockResolvedValue(
+      ExpenseConceptEntity.reconstitute({
+        id: 'eliminado', tenantId: TENANT, categoryId: CATEGORY_ID, name: 'Alquiler', unit: null,
+        defaultUnitPrice: null, isActive: false, sortOrder: 0, createdAt: new Date(),
+      }),
+    );
+
+    const result = await useCase.execute('c1', TENANT, { name: 'Alquiler' });
+
+    expect(result.name).toBe('Alquiler');
+    expect(repo.update).toHaveBeenCalledTimes(1);
+  });
 });

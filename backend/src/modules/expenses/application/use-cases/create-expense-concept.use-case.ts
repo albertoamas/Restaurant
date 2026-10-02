@@ -48,8 +48,8 @@ export class CreateExpenseConceptUseCase {
       }
     }
     if (existing) {
-      // El índice único (tenant, name) cubre también los desactivados: reactivar
-      // en vez de fallar, para que borrar y volver a crear no quede bloqueado.
+      // Si hay uno eliminado con ese nombre se reactiva (conserva su id y su vínculo con los
+      // gastos registrados) en vez de crear otro.
       if (existing.isActive) {
         throw new ConflictException(`Ya existe un gasto predefinido llamado "${name}"`);
       }

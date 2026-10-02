@@ -26,7 +26,8 @@ export class UpdateExpenseCategoryUseCase {
       name = dto.name.trim();
       if (!name) throw new BadRequestException('El nombre de la categoría es obligatorio');
       const clash = await this.repo.findByName(tenantId, name);
-      if (clash && clash.id !== id) {
+      // Una categoría eliminada no ocupa su nombre (índice único parcial, solo activas).
+      if (clash?.isActive && clash.id !== id) {
         throw new ConflictException(`Ya existe una categoría con el nombre "${name}"`);
       }
     }

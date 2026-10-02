@@ -63,7 +63,9 @@ export class ExpenseCategoryRepository implements ExpenseCategoryRepositoryPort 
 
   async findByName(tenantId: string, name: string): Promise<ExpenseCategoryEntity | null> {
     const row = await this.prisma.expenseCategory.findFirst({
-      where: { tenantId, name: { equals: name, mode: 'insensitive' } },
+      where:   { tenantId, name: { equals: name, mode: 'insensitive' } },
+      // El activo primero: el nombre es único solo entre activos, y los eliminados pueden repetirlo.
+      orderBy: { isActive: 'desc' },
     });
     return row ? toDomain(row) : null;
   }
