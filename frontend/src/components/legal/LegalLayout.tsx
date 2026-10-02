@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { buttonClasses } from '../ui/Button';
 import { Icon, type IconName } from '../ui/Icon';
 import { Select } from '../ui/Input';
 
@@ -57,7 +58,7 @@ function useActiveSection(ids: string[]): string {
 }
 
 /**
- * Página legal (Términos, Privacidad): encabezado y pie de la landing, índice lateral fijo en
+ * Página legal (Términos, Privacidad): logo y "Volver al inicio" arriba, índice lateral fijo en
  * escritorio y desplegable "Ir a la sección" en celular. Cada sección tiene su ancla.
  */
 export function LegalLayout({ icon, title, summary, updatedAt, sections, children }: {
@@ -87,11 +88,6 @@ export function LegalLayout({ icon, title, summary, updatedAt, sections, childre
     history.replaceState(null, '', `#${id}`);
   };
 
-  const tabClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-control px-2 py-2 text-label font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 ${
-      isActive ? 'text-main' : 'text-soft hover:text-main'
-    }`;
-
   return (
     <div className="min-h-screen bg-surface-page text-main">
       <header className="sticky top-0 z-50 border-b border-line bg-surface-page/85 backdrop-blur-xl">
@@ -99,14 +95,10 @@ export function LegalLayout({ icon, title, summary, updatedAt, sections, childre
           <Link to="/" aria-label="YankoPOS, inicio" className="rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60">
             <Logo />
           </Link>
-          <nav aria-label="Documentos legales" className="flex items-center gap-1 sm:gap-3">
-            <NavLink to="/terminos" className={tabClass}>Términos</NavLink>
-            <NavLink to="/privacidad" className={tabClass}>Privacidad</NavLink>
-            <Link to="/" className="hidden items-center gap-1.5 rounded-control px-2 py-2 text-label font-semibold text-soft transition-colors hover:text-main sm:inline-flex">
-              <Icon name="arrow-left" size={16} />
-              Volver al inicio
-            </Link>
-          </nav>
+          {/* Los dos documentos se enlazan desde el pie y desde su propio texto. */}
+          <Link to="/" className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'whitespace-nowrap' })}>
+            Volver al inicio
+          </Link>
         </div>
       </header>
 
