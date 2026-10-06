@@ -288,11 +288,11 @@ DB model.
 
 ## Reference docs
 
+`docs/` is gitignored (local only, not in clones or CI); check a file exists before relying on it.
+
 - `docs/onboarding-cliente.md` — onboarding a new tenant
 - `docs/analisis-zona-horaria.md` — timezone bug diagnosis
-- `docs/plan-escalado-multisucursal-multitenant-planes.md` — multi-branch / multi-tenant / plans audit
-- `docs/gastos-hardening-plan.md` — expenses hardening plan
-- `docs/reports-charts-plan/` — reports screen, per tab
+- `docs/plan-calidad.md` — QA plan from the 2026-10-02 audit
 
 ## Skills
 
