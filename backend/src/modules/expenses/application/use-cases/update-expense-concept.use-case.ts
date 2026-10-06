@@ -51,7 +51,7 @@ export class UpdateExpenseConceptUseCase {
       }),
     );
     const updatedDto = toExpenseConceptDto(updated, category.name);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_UPDATED, updatedDto);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_UPDATED, updatedDto);
     return updatedDto;
   }
 }

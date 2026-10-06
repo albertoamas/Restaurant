@@ -32,7 +32,7 @@ export class VoidWinnerUseCase {
     }
 
     const result = await this.repo.findRaffleWithTickets(raffleId, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
     return result!;
   }
 }

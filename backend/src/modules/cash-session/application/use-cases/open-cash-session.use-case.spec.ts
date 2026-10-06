@@ -44,7 +44,7 @@ describe('OpenCashSessionUseCase', () => {
 
     const result = await useCase.execute('tenant-1', 'branch-1', 'user-1', DTO);
 
-    expect(eventsService.emitToTenant).toHaveBeenCalledWith('tenant-1', 'cash.opened', result);
+    expect(eventsService.emitToBranch).toHaveBeenCalledWith('tenant-1', result.branchId, 'cash.opened', result);
   });
 
   it('lanza ConflictException (check en app) si ya existe una sesión abierta', async () => {
@@ -83,7 +83,7 @@ describe('OpenCashSessionUseCase', () => {
 
     await expect(useCase.execute('tenant-1', 'branch-1', 'user-1', DTO)).rejects.toThrow();
 
-    expect(eventsService.emitToTenant).not.toHaveBeenCalled();
+    expect(eventsService.emitToBranch).not.toHaveBeenCalled();
   });
 
   it('valida que la sucursal pertenezca al tenant antes de abrir', async () => {

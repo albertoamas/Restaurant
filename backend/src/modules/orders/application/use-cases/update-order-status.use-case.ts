@@ -37,7 +37,7 @@ export class UpdateOrderStatusUseCase {
     }
 
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
+    this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
       await this.raffleAutoTicket.cancelOrderTickets(tenantId, id, {

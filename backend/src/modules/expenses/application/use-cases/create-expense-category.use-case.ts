@@ -37,7 +37,7 @@ export class CreateExpenseCategoryUseCase {
           isActive: true,
         }),
       );
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, revived);
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, revived);
       return revived;
     }
 
@@ -49,7 +49,7 @@ export class CreateExpenseCategoryUseCase {
       sortOrder:     0,
     });
     const created = await this.repo.save(category);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, created);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_CREATED, created);
     return created;
   }
 

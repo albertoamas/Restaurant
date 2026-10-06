@@ -21,7 +21,10 @@ const SocketContext = createContext<SocketContextType>({
 export function SocketProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected]       = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
-  const { token } = useAuth();
+  const { token, refreshUser } = useAuth();
+  // En un ref: el socket no debe recrearse cuando cambia la identidad de la función.
+  const refreshUserRef = useRef(refreshUser);
+  refreshUserRef.current = refreshUser;
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -49,8 +52,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setConnected(true);
       setReconnecting(false);
     });
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
       setConnected(false);
+      // Corte del servidor = me desactivaron o suspendieron el negocio. Releer la sesión da 401
+      // y el cliente HTTP cierra la sesión al instante, sin esperar a la próxima acción.
+      if (reason === 'io server disconnect') void refreshUserRef.current();
+    });
+    socket.on('connect_error', (err) => {
+      if (err.message === 'Sesión inactiva') void refreshUserRef.current();
     });
     socket.io.on('reconnect_attempt', () => {
       setReconnecting(true);

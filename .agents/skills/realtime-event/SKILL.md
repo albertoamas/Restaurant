@@ -36,15 +36,17 @@ constructor(
   @Optional() private readonly eventsService?: EventsService,
 ) {}
 
-this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, payload);
+this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CREATED, payload);
 ```
 
 - Emit **after** the write succeeds, never before.
 - `@Optional()` keeps unit tests able to build the use case with only the repo mock.
 - The module must import `EventsModule`.
-- The gateway joins each socket to `tenant:{tenantId}` and `t:{tenantId}:b:{branchId}`.
-  `emitToTenant(tenantId, event, data)` reaches the whole tenant; `emit(tenantId, branchId, event, data)`
-  reaches one branch — use it only for branch-local views (kitchen, cash session).
+- Pick the method by **who may see the data** (rooms are joined by role in `EventsGateway`):
+  - `emitToTenant(tenantId, event, data)`: everyone in the tenant. Catalog, customers, modules.
+  - `emitToBranch(tenantId, branchId, event, data)`: owners + cashiers of that branch. Orders, cash.
+  - `emitToOwners(tenantId, event, data)`: owners only. Expenses, raffles, anything behind `@Roles(OWNER)`.
+  When unsure, choose the narrower one: a cashier must never get another branch's orders or owner data.
 - Payload: send the same DTO the REST endpoint returns, so subscribers need no second shape.
 
 ## 3. Subscribe on the frontend

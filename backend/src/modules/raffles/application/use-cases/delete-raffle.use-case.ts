@@ -19,6 +19,6 @@ export class DeleteRaffleUseCase {
     }
 
     await this.repo.deleteRaffle(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_DELETED, { id });
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_DELETED, { id });
   }
 }

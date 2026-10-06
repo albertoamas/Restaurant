@@ -98,7 +98,7 @@ export class RegisterOrderPaymentUseCase {
     }
 
     // 9. Notify connected clients
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_UPDATED, saved);
+    this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     return saved;
   }

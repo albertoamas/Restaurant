@@ -62,7 +62,7 @@ export class CreateRaffleUseCase {
     await this.repo.createRaffle(raffle);
 
     const result = await this.repo.findRaffleWithTickets(raffle.id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_CREATED, result);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_CREATED, result);
     return result!;
   }
 }

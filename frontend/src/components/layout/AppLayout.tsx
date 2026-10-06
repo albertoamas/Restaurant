@@ -72,6 +72,8 @@ export function AppLayout() {
 
   const handleModulesUpdated = useCallback(() => { refreshUser(); }, [refreshUser]);
   useSocketEvent<void>(SOCKET_EVENTS.TENANT_MODULES_UPDATED, handleModulesUpdated);
+  // El dueño cambió mi sucursal: sin recargar, el POS pasa a la nueva o al aviso de sin sucursal.
+  useSocketEvent<void>(SOCKET_EVENTS.USER_SESSION_UPDATED, handleModulesUpdated);
 
 
   if (user?.role === 'CASHIER' && !user.branchId) {

@@ -34,7 +34,7 @@ export class OpenCashSessionUseCase {
 
     try {
       const saved = await this.repo.save(session);
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CASH_OPENED, saved);
+      this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.CASH_OPENED, saved);
       this.metricsService?.recordCashSessionOpened();
       return saved;
     } catch (err: unknown) {

@@ -67,7 +67,7 @@ export class CreateExpenseConceptUseCase {
         }),
       );
       const revivedDto = toExpenseConceptDto(revived, category.name);
-      this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, revivedDto);
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, revivedDto);
       return revivedDto;
     }
 
@@ -82,7 +82,7 @@ export class CreateExpenseConceptUseCase {
       }),
     );
     const createdDto = toExpenseConceptDto(created, category.name);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, createdDto);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CONCEPT_CREATED, createdDto);
     return createdDto;
   }
 }

@@ -38,7 +38,7 @@ export class UpdateExpenseCategoryUseCase {
         icon: dto.icon === undefined ? undefined : (dto.icon || null),
       }),
     );
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_UPDATED, updated);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_CATEGORY_UPDATED, updated);
     return updated;
   }
 }

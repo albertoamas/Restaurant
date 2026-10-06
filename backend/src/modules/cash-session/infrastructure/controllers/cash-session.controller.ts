@@ -13,6 +13,7 @@ import { CloseCashSessionUseCase } from '../../application/use-cases/close-cash-
 import { GetCurrentSessionUseCase } from '../../application/use-cases/get-current-session.use-case';
 import { GetSessionHistoryUseCase } from '../../application/use-cases/get-session-history.use-case';
 import { BadRequestException } from '@nestjs/common';
+import { scopedBranchId } from '../../../../common/utils/branch-scope';
 
 @Controller('cash-sessions')
 @UseGuards(JwtAuthGuard, ModuleGuard)
@@ -31,7 +32,7 @@ export class CashSessionController {
     @CurrentUser() user: JwtPayload,
     @Query('branchId') queryBranchId?: string,
   ) {
-    const branchId = user.branchId ?? queryBranchId;
+    const branchId = scopedBranchId(user, queryBranchId);
     if (!branchId) throw new BadRequestException('Selecciona una sucursal primero');
     return this.getCurrentUseCase.execute(tenantId, branchId);
   }
@@ -43,7 +44,7 @@ export class CashSessionController {
     @Query('branchId') queryBranchId?: string,
     @Query('limit') limit?: string,
   ) {
-    const branchId = user.branchId ?? queryBranchId;
+    const branchId = scopedBranchId(user, queryBranchId);
     if (!branchId) throw new BadRequestException('Selecciona una sucursal primero');
     return this.getHistoryUseCase.execute(tenantId, branchId, limit ? Number(limit) : 20);
   }
@@ -57,7 +58,7 @@ export class CashSessionController {
     @Body() dto: OpenCashSessionDto,
     @Query('branchId') queryBranchId?: string,
   ) {
-    const branchId = user.branchId ?? queryBranchId;
+    const branchId = scopedBranchId(user, queryBranchId);
     if (!branchId) throw new BadRequestException('Selecciona una sucursal primero');
     return this.openUseCase.execute(tenantId, branchId, user.sub, dto);
   }
@@ -72,7 +73,7 @@ export class CashSessionController {
     @Body() dto: CloseCashSessionDto,
     @Query('branchId') queryBranchId?: string,
   ) {
-    const branchId = user.branchId ?? queryBranchId;
+    const branchId = scopedBranchId(user, queryBranchId);
     if (!branchId) throw new BadRequestException('Selecciona una sucursal primero');
     return this.closeUseCase.execute(tenantId, branchId, user.sub, dto);
   }

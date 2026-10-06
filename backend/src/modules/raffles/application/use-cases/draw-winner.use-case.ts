@@ -73,7 +73,7 @@ export class DrawWinnerUseCase {
     this.logger.log(`draw success raffleId=${id} tenantId=${tenantId} position=${nextPosition} ticketId=${winnerTicket.id} newStatus=${raffle.status}`);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
     return result!;
   }
 }

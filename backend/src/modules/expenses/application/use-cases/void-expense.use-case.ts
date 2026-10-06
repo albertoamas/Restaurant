@@ -16,6 +16,6 @@ export class VoidExpenseUseCase {
     const voided = await this.expenseRepository.void(id, tenantId, userId, reason?.trim() || null);
     // Antes respondía 204 y avisaba a todos aunque el gasto no existiera o ya estuviera anulado.
     if (!voided) throw new NotFoundException('Gasto no encontrado o ya anulado');
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.EXPENSE_DELETED, { id });
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.EXPENSE_DELETED, { id });
   }
 }

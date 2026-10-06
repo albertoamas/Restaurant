@@ -24,7 +24,7 @@ export class ReopenRaffleUseCase {
     await this.repo.saveRaffle(raffle);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);
     return result!;
   }
 }

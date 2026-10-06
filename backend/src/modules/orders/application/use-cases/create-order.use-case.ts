@@ -186,7 +186,7 @@ export class CreateOrderUseCase {
 
     // 12. Persist and return
     const saved = await this.orderRepository.save(order);
-    this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.ORDER_CREATED, saved);
+    this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_CREATED, saved);
     this.metricsService?.recordOrderCreated(dominant?.method ?? null, order.total);
 
     // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
