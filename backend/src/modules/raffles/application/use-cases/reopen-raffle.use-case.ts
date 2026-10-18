@@ -20,8 +20,9 @@ export class ReopenRaffleUseCase {
       );
     }
 
+    const from = raffle.status;
     raffle.reopen();
-    await this.repo.saveRaffle(raffle);
+    await this.repo.changeStatus(id, tenantId, from, raffle.status);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
     this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);

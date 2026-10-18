@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { CloseRaffleUseCase } from './close-raffle.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
@@ -24,38 +24,43 @@ describe('CloseRaffleUseCase', () => {
   beforeEach(() => {
     repo    = mock<RaffleRepositoryPort>();
     useCase = new CloseRaffleUseCase(repo);
-    repo.saveRaffle.mockResolvedValue({} as any);
+    repo.changeStatus.mockResolvedValue();
     repo.findRaffleWithTickets.mockResolvedValue({ id: 'r1', tickets: [] } as any);
   });
 
   it('cierra un sorteo ACTIVE correctamente', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
     await useCase.execute('r1', 'tenant-1');
-    const saved = repo.saveRaffle.mock.calls[0][0];
-    expect(saved.status).toBe('CLOSED');
+    expect(repo.changeStatus).toHaveBeenCalledWith('r1', 'tenant-1', 'ACTIVE', 'CLOSED');
+  });
+
+  it('propaga el conflicto si otra operación movió el estado antes', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
+    repo.changeStatus.mockRejectedValue(new ConflictException('cambió'));
+    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(ConflictException);
   });
 
   it('lanza NotFoundException si no existe el sorteo', async () => {
     repo.findRaffleById.mockResolvedValue(null);
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(NotFoundException);
-    expect(repo.saveRaffle).not.toHaveBeenCalled();
+    expect(repo.changeStatus).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el sorteo ya está CLOSED', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-    expect(repo.saveRaffle).not.toHaveBeenCalled();
+    expect(repo.changeStatus).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el sorteo está DRAWING (en curso)', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-    expect(repo.saveRaffle).not.toHaveBeenCalled();
+    expect(repo.changeStatus).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequestException si el sorteo ya está DRAWN', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-    expect(repo.saveRaffle).not.toHaveBeenCalled();
+    expect(repo.changeStatus).not.toHaveBeenCalled();
   });
 });

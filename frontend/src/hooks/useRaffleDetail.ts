@@ -10,12 +10,11 @@ import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 import { formatTicketRanges } from '../utils/raffle-utils';
 
-export type BusyState = 'register' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;
+type BusyState = 'register' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;
 
 export function useRaffleDetail(
   raffleId: string,
   onClose:  () => void,
-  onUpdate: () => void,
 ) {
   const queryClient = useQueryClient();
 
@@ -45,13 +44,20 @@ export function useRaffleDetail(
     if (data.raffleId !== raffleId) return;
     invalidate();
     if (data.printedTicketNumbers.length > 0) {
-      toast.error(`Un pedido cancelado anuló tickets que ya estaban en el ánfora. Sácalos: ${formatTicketRanges(data.printedTicketNumbers)}`, { duration: 15000 });
+      toast.error(`Un cambio en un pedido anuló tickets que ya estaban en el ánfora. Sácalos: ${formatTicketRanges(data.printedTicketNumbers)}`, { duration: 15000 });
     }
   }, [raffleId, invalidate]);
 
   const handlePrintChanged = useCallback((data: { raffleId: string }) => {
     if (data.raffleId === raffleId) invalidate();
   }, [raffleId, invalidate]);
+
+  // Otra sesión eliminó este sorteo: lo que se ve ya no existe (las acciones propias lo marcan en `deleted`).
+  const handleRaffleDeleted = useCallback((data: { id: string }) => {
+    if (data.id !== raffleId || deleted) return;
+    toast.error('Este sorteo fue eliminado');
+    onClose();
+  }, [raffleId, deleted, onClose]);
 
   const handleRaffleUpdated = useCallback((updated: DetailRaffle) => {
     if (updated?.id === raffleId) {
@@ -63,6 +69,7 @@ export function useRaffleDetail(
   useSocketEvent<RaffleTicketsRevokedPayload>(SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, handleTicketsRevoked);
   useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_PRINT_CHANGED, handlePrintChanged);
   useSocketEvent<DetailRaffle>(SOCKET_EVENTS.RAFFLE_UPDATED, handleRaffleUpdated);
+  useSocketEvent<{ id: string }>(SOCKET_EVENTS.RAFFLE_DELETED, handleRaffleDeleted);
 
   // Mutations update cache directly with server response, no extra refetch needed
   function setRaffle(updated: DetailRaffle) {
@@ -75,7 +82,6 @@ export function useRaffleDetail(
     try {
       const updated = await rafflesApi.close(raffle.id);
       setRaffle(updated);
-      onUpdate();
     } catch (err) { handleApiError(err, 'Error al cerrar sorteo'); }
     finally { setBusy(null); }
   }
@@ -86,7 +92,6 @@ export function useRaffleDetail(
     try {
       const updated = await rafflesApi.reopen(raffle.id);
       setRaffle(updated);
-      onUpdate();
     } catch (err) { handleApiError(err, 'Error al reabrir sorteo'); }
     finally { setBusy(null); }
   }
@@ -98,7 +103,6 @@ export function useRaffleDetail(
     try {
       const updated = await rafflesApi.voidWinner(raffle.id, winnerId, { reason });
       setRaffle(updated);
-      onUpdate();
     } catch (err) { handleApiError(err, 'Error al anular ganador'); }
     finally { setBusy(null); }
   }
@@ -110,7 +114,6 @@ export function useRaffleDetail(
     try {
       await rafflesApi.delete(raffle.id);
       setDeleted(true);
-      onUpdate();
       onClose();
     } catch (err) {
       handleApiError(err, 'Error al eliminar sorteo');
@@ -126,7 +129,6 @@ export function useRaffleDetail(
     try {
       const updated = await rafflesApi.registerWinner(raffle.id, ticketNumber);
       setRaffle(updated);
-      onUpdate();
       setRegisterOpen(false);
       setDrawnWinner(updated.winners.find((w) => w.position === position && !w.voided) ?? null);
     } catch (err) {

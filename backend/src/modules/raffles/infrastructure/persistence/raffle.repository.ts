@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { RaffleDetailDto, RaffleDto, RaffleSpendingDto, RaffleTicketMode, RaffleWinnerDto } from '@pos/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -7,7 +7,6 @@ import {
   DRAWABLE_STATUSES,
   Raffle,
   RafflePrize,
-  RaffleProps,
   RaffleStatus,
   TICKET_REVOCABLE_STATUSES,
   WINNER_VOIDABLE_STATUSES,
@@ -16,7 +15,7 @@ import {
 } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 import {
-  NewTicketInput,
+  ItemTicketsInput,
   OrderSpendingInput,
   RaffleRepositoryPort,
   RevokedTicket,
@@ -89,17 +88,14 @@ export class RaffleRepository implements RaffleRepositoryPort {
     ]);
   }
 
-  async saveRaffle(raffle: Raffle): Promise<void> {
-    await this.prisma.raffle.updateMany({
-      where: { id: raffle.id, tenantId: raffle.tenantId },
-      data: {
-        name: raffle.name,
-        description: raffle.description,
-        status: raffle.status,
-        numberOfWinners: raffle.numberOfWinners,
-        productId: raffle.productId,
-        updatedAt: raffle.updatedAt,
-      },
+  async changeStatus(id: string, tenantId: string, from: RaffleStatus, to: RaffleStatus): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const raffle = await this.lockRaffle(tx, id, tenantId);
+      if (!raffle) throw new NotFoundException('Sorteo no encontrado');
+      if (raffle.status !== from) {
+        throw new ConflictException('El estado del sorteo cambió mientras se procesaba. Recarga e intenta de nuevo');
+      }
+      await tx.raffle.updateMany({ where: { id, tenantId }, data: { status: to, updatedAt: new Date() } });
     });
   }
 
@@ -149,11 +145,17 @@ export class RaffleRepository implements RaffleRepositoryPort {
     };
   }
 
-  async findActiveItemRaffles(tenantId: string, productIds: string[], categoryIds: string[]): Promise<Raffle[]> {
+  async findActiveItemRaffles(
+    tenantId: string,
+    productIds: string[],
+    categoryIds: string[],
+    orderCreatedAt: Date,
+  ): Promise<Raffle[]> {
     const rows = await this.prisma.raffle.findMany({
       where: {
         tenantId,
         status: 'ACTIVE',
+        createdAt: { lte: orderCreatedAt },
         OR: [
           { ticketMode: 'PRODUCT_MATCH', productId: { in: productIds } },
           { ticketMode: 'CATEGORY_MATCH', categories: { some: { categoryId: { in: categoryIds } } } },
@@ -164,12 +166,20 @@ export class RaffleRepository implements RaffleRepositoryPort {
     return rows.map((r) => this.raffleToDomain(r));
   }
 
-  async findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]> {
+  async findActiveSpendingRaffles(tenantId: string, orderCreatedAt: Date): Promise<Raffle[]> {
     const rows = await this.prisma.raffle.findMany({
-      where: { tenantId, status: 'ACTIVE', ticketMode: 'SPENDING_THRESHOLD' },
+      where: { tenantId, status: 'ACTIVE', ticketMode: 'SPENDING_THRESHOLD', createdAt: { lte: orderCreatedAt } },
       include: domainInclude,
     });
     return rows.map((r) => this.raffleToDomain(r));
+  }
+
+  async findProductCategoryIds(tenantId: string, productIds: string[]): Promise<Map<string, string>> {
+    const rows = await this.prisma.product.findMany({
+      where: { tenantId, id: { in: productIds } },
+      select: { id: true, categoryId: true },
+    });
+    return new Map(rows.map((r) => [r.id, r.categoryId]));
   }
 
   // ─── Bloqueo del sorteo ────────────────────────────────────────────────────
@@ -194,39 +204,35 @@ export class RaffleRepository implements RaffleRepositoryPort {
 
   // ─── Tickets ───────────────────────────────────────────────────────────────
 
-  async addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<boolean> {
-    if (!inputs.length) return false;
+  async topUpItemTickets(input: ItemTicketsInput): Promise<number> {
+    const { tenantId, raffleId, customerId, orderId, expected } = input;
 
     return this.prisma.$transaction(async (tx) => {
-      const raffle = await this.lockRaffle(tx, raffleId, inputs[0].tenantId);
-      if (raffle?.status !== 'ACTIVE') return false;
+      const raffle = await this.lockRaffle(tx, raffleId, tenantId);
+      if (raffle?.status !== 'ACTIVE') return 0;
 
-      await this.insertTickets(tx, raffleId, inputs);
-      return true;
+      const issued = await tx.raffleTicket.count({ where: { tenantId, raffleId, orderId } });
+      const missing = expected - issued;
+      if (missing <= 0) return 0;
+
+      await this.insertTickets(tx, { tenantId, raffleId, customerId, orderId, count: missing });
+      return missing;
     });
   }
 
   /** Inserta con números secuenciales. El llamador debe tener el sorteo bloqueado (`lockRaffle`). */
   private async insertTickets(
     tx: Prisma.TransactionClient,
-    raffleId: string,
-    inputs: NewTicketInput[],
+    batch: { tenantId: string; raffleId: string; customerId: string; orderId: string | null; count: number },
   ): Promise<void> {
-    const agg = await tx.raffleTicket.aggregate({
-      where: { raffleId },
-      _max: { ticketNumber: true },
-    });
+    const { tenantId, raffleId, customerId, orderId, count } = batch;
+    const agg = await tx.raffleTicket.aggregate({ where: { raffleId }, _max: { ticketNumber: true } });
     const base = (agg._max.ticketNumber ?? 0) + 1;
+    const now = new Date();
 
     await tx.raffleTicket.createMany({
-      data: inputs.map((t, i) => ({
-        id: t.id,
-        tenantId: t.tenantId,
-        raffleId: t.raffleId,
-        customerId: t.customerId,
-        ticketNumber: base + i,
-        orderId: t.orderId,
-        createdAt: t.createdAt,
+      data: Array.from({ length: count }, (_, i) => ({
+        id: randomUUID(), tenantId, raffleId, customerId, orderId, ticketNumber: base + i, createdAt: now,
       })),
     });
   }
@@ -355,20 +361,22 @@ export class RaffleRepository implements RaffleRepositoryPort {
       const raffle = await this.lockRaffle(tx, raffleId, tenantId);
       if (raffle?.status !== 'ACTIVE' || raffle.spendingThreshold === null) return 0;
 
-      // Un pedido suma una sola vez por sorteo: reintentar no duplica gasto ni tickets.
-      const alreadyApplied = await tx.raffleOrderSpending.findUnique({
-        where: { raffleId_orderId: { raffleId, orderId } },
-        select: { id: true },
-      });
-      if (alreadyApplied) return 0;
+      // Lo que el pedido ya aportó: se suma solo el aumento, así que repetir no duplica.
+      const entry = await tx.raffleOrderSpending.findUnique({ where: { raffleId_orderId: { raffleId, orderId } } });
+      // Aporte de otro cliente: el retiro previo aún no se vio (carrera). La próxima conciliación lo resuelve.
+      if (entry && entry.customerId !== customerId) return 0;
+      const delta = Math.round((amount - (entry ? Number(entry.amount) : 0)) * 100) / 100;
+      if (delta <= 0) return 0;
 
-      await tx.raffleOrderSpending.create({
-        data: { id: randomUUID(), tenantId, raffleId, customerId, orderId, amount },
-      });
+      if (entry) {
+        await tx.raffleOrderSpending.update({ where: { id: entry.id }, data: { amount } });
+      } else {
+        await tx.raffleOrderSpending.create({ data: { id: randomUUID(), tenantId, raffleId, customerId, orderId, amount } });
+      }
       const spending = await tx.customerRaffleSpending.upsert({
         where: { raffleId_customerId: { raffleId, customerId } },
-        create: { id: randomUUID(), tenantId, raffleId, customerId, totalSpent: amount },
-        update: { totalSpent: { increment: amount } },
+        create: { id: randomUUID(), tenantId, raffleId, customerId, totalSpent: delta },
+        update: { totalSpent: { increment: delta } },
       });
 
       const earned = ticketsEarned(Number(spending.totalSpent), raffle.spendingThreshold);
@@ -376,34 +384,23 @@ export class RaffleRepository implements RaffleRepositoryPort {
       const missing = earned - issued;
       if (missing <= 0) return 0;
 
-      const now = new Date();
-      await this.insertTickets(
-        tx,
-        raffleId,
-        Array.from({ length: missing }, () => ({
-          id: randomUUID(),
-          tenantId,
-          raffleId,
-          customerId,
-          orderId: null,
-          createdAt: now,
-        })),
-      );
+      await this.insertTickets(tx, { tenantId, raffleId, customerId, orderId: null, count: missing });
       return missing;
     });
   }
 
-  async revokeOrderTickets(tenantId: string, orderId: string): Promise<RevokedTicket[]> {
+  async revokeOrderTickets(tenantId: string, orderId: string, keepCustomerId: string | null): Promise<RevokedTicket[]> {
     const inRevocableRaffle = { raffle: { status: { in: [...TICKET_REVOCABLE_STATUSES] } } };
+    const ofOtherCustomers = keepCustomerId === null ? {} : { customerId: { not: keepCustomerId } };
 
     return this.prisma.$transaction(async (tx) => {
       const withTickets = await tx.raffleTicket.findMany({
-        where: { tenantId, orderId, ...inRevocableRaffle },
+        where: { tenantId, orderId, ...ofOtherCustomers, ...inRevocableRaffle },
         select: { raffleId: true },
         distinct: ['raffleId'],
       });
       const withSpending = await tx.raffleOrderSpending.findMany({
-        where: { tenantId, orderId, ...inRevocableRaffle },
+        where: { tenantId, orderId, ...ofOtherCustomers, ...inRevocableRaffle },
         select: { raffleId: true },
       });
       // Orden estable para tomar los bloqueos siempre en la misma secuencia
@@ -415,10 +412,10 @@ export class RaffleRepository implements RaffleRepositoryPort {
         const raffle = await this.lockRaffle(tx, raffleId, tenantId);
         if (!raffle || !TICKET_REVOCABLE_STATUSES.includes(raffle.status)) continue;
 
-        revoked.push(...(await this.deleteOrderTickets(tx, tenantId, raffleId, orderId)));
+        revoked.push(...(await this.deleteOrderTickets(tx, tenantId, raffleId, orderId, keepCustomerId)));
         if (raffle.spendingThreshold !== null) {
           revoked.push(
-            ...(await this.revertOrderSpending(tx, tenantId, raffleId, orderId, raffle.spendingThreshold)),
+            ...(await this.revertOrderSpending(tx, tenantId, raffleId, orderId, raffle.spendingThreshold, keepCustomerId)),
           );
         }
       }
@@ -426,15 +423,16 @@ export class RaffleRepository implements RaffleRepositoryPort {
     });
   }
 
-  /** Tickets PRODUCT_MATCH ligados al pedido. */
+  /** Tickets por producto o categorías ligados al pedido, salvo los del cliente que se conserva. */
   private async deleteOrderTickets(
     tx: Prisma.TransactionClient,
     tenantId: string,
     raffleId: string,
     orderId: string,
+    keepCustomerId: string | null,
   ): Promise<RevokedTicket[]> {
     const tickets = await tx.raffleTicket.findMany({
-      where: { tenantId, raffleId, orderId },
+      where: { tenantId, raffleId, orderId, ...(keepCustomerId === null ? {} : { customerId: { not: keepCustomerId } }) },
       select: { id: true, ticketNumber: true, printedAt: true },
     });
     if (!tickets.length) return [];
@@ -453,11 +451,12 @@ export class RaffleRepository implements RaffleRepositoryPort {
     raffleId: string,
     orderId: string,
     threshold: number,
+    keepCustomerId: string | null,
   ): Promise<RevokedTicket[]> {
     const entry = await tx.raffleOrderSpending.findUnique({
       where: { raffleId_orderId: { raffleId, orderId } },
     });
-    if (!entry) return [];
+    if (!entry || entry.customerId === keepCustomerId) return [];
 
     await tx.raffleOrderSpending.delete({ where: { id: entry.id } });
     const spending = await tx.customerRaffleSpending.update({
@@ -482,50 +481,37 @@ export class RaffleRepository implements RaffleRepositoryPort {
   // ─── Mappers ───────────────────────────────────────────────────────────────
 
   private rowToRaffleDto(row: RaffleWithRelations | RaffleWithTickets): RaffleDto {
-    const numberOfWinners = row.numberOfWinners ?? 1;
-    const allWinners = row.winners ?? [];
-    const activeWinners = allWinners.filter((w) => !w.voided);
-    const nextPosition = row.status !== 'DRAWN'
-      ? nextPositionToDraw(numberOfWinners, activeWinners.map((w) => w.position))
-      : null;
+    const activePositions = row.winners.filter((w) => !w.voided).map((w) => w.position);
 
-    const winners: RaffleWinnerDto[] = allWinners.map((w) => ({
+    const winners: RaffleWinnerDto[] = row.winners.map((w) => ({
       id: w.id,
       position: w.position,
-      prizeDescription: w.prizeDescription ?? null,
+      prizeDescription: w.prizeDescription,
       customerId: w.customerId,
       customer: { id: w.customer.id, name: w.customer.name, phone: w.customer.phone },
       ticketId: w.ticketId,
-      ticketNumber: w.ticket!.ticketNumber,
+      ticketNumber: w.ticket.ticketNumber,
       drawnAt: w.drawnAt.toISOString(),
-      voided: w.voided ?? false,
+      voided: w.voided,
       voidedAt: w.voidedAt ? w.voidedAt.toISOString() : null,
       voidReason: w.voidReason,
     }));
 
-    const ticketCount =
-      '_count' in row && row._count?.tickets != null
-        ? row._count.tickets
-        : ('tickets' in row ? (row as RaffleWithTickets).tickets.length : 0);
-
     return {
       id: row.id,
       name: row.name,
-      description: row.description ?? null,
+      description: row.description,
       status: row.status as RaffleStatus,
-      numberOfWinners,
-      ticketMode: (row.ticketMode ?? 'PRODUCT_MATCH') as RaffleTicketMode,
-      spendingThreshold: row.spendingThreshold ?? null,
+      numberOfWinners: row.numberOfWinners,
+      ticketMode: row.ticketMode as RaffleTicketMode,
+      spendingThreshold: row.spendingThreshold,
       productId: row.product?.id ?? null,
       productName: row.product?.name ?? null,
       categories: row.categories.map((c) => ({ id: c.category.id, name: c.category.name })),
-      prizes: (row.prizes ?? []).map((p) => ({
-        position: p.position,
-        prizeDescription: p.prizeDescription,
-      })),
+      prizes: row.prizes.map((p) => ({ position: p.position, prizeDescription: p.prizeDescription })),
       winners,
-      nextPositionToDraw: nextPosition,
-      ticketCount,
+      nextPositionToDraw: row.status === 'DRAWN' ? null : nextPositionToDraw(row.numberOfWinners, activePositions),
+      ticketCount: row._count.tickets,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
@@ -536,20 +522,17 @@ export class RaffleRepository implements RaffleRepositoryPort {
       id: row.id,
       tenantId: row.tenantId,
       name: row.name,
-      description: row.description ?? null,
+      description: row.description,
       status: row.status as RaffleStatus,
-      numberOfWinners: row.numberOfWinners ?? 1,
-      ticketMode: (row.ticketMode ?? 'PRODUCT_MATCH') as RaffleTicketMode,
-      spendingThreshold: row.spendingThreshold ?? null,
-      productId: row.productId ?? null,
+      numberOfWinners: row.numberOfWinners,
+      ticketMode: row.ticketMode as RaffleTicketMode,
+      spendingThreshold: row.spendingThreshold,
+      productId: row.productId,
       categoryIds: row.categories.map((c) => c.categoryId),
-      prizes: (row.prizes ?? []).map((p): RafflePrize => ({
-        position: p.position,
-        prizeDescription: p.prizeDescription,
-      })),
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
-    } as RaffleProps);
+      prizes: row.prizes.map((p): RafflePrize => ({ position: p.position, prizeDescription: p.prizeDescription })),
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
   }
 
   async setTicketsPrinted(raffleId: string, ticketIds: string[], tenantId: string, printed: boolean): Promise<void> {
@@ -565,25 +548,31 @@ export class RaffleRepository implements RaffleRepositoryPort {
     data: { name?: string; description?: string | null; prizes?: Array<{ position: number; prizeDescription: string }> },
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      if (data.name !== undefined || data.description !== undefined) {
-        await tx.raffle.update({
-          where: { id, tenantId },
-          data: {
-            ...(data.name !== undefined      && { name: data.name }),
-            ...(data.description !== undefined && { description: data.description }),
-          },
-        });
-      }
+      if (!(await this.lockRaffle(tx, id, tenantId))) throw new NotFoundException('Sorteo no encontrado');
+
       if (data.prizes?.length) {
-        await Promise.all(
-          data.prizes.map((p) =>
-            tx.rafflePrize.update({
-              where: { raffleId_position: { raffleId: id, position: p.position } },
-              data: { prizeDescription: p.prizeDescription },
-            }),
-          ),
-        );
+        const awarded = await tx.raffleWinner.findFirst({
+          where: { raffleId: id, tenantId, voided: false, position: { in: data.prizes.map((p) => p.position) } },
+          select: { position: true },
+        });
+        if (awarded) {
+          throw new ConflictException(`El premio del puesto ${awarded.position} ya tiene ganador y no se puede modificar`);
+        }
+        for (const p of data.prizes) {
+          await tx.rafflePrize.update({
+            where: { raffleId_position: { raffleId: id, position: p.position } },
+            data: { prizeDescription: p.prizeDescription },
+          });
+        }
       }
+
+      await tx.raffle.update({
+        where: { id },
+        data: {
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.description !== undefined && { description: data.description }),
+        },
+      });
     });
   }
 }

@@ -151,14 +151,24 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
   existing raffles keep working, new ones can no longer be created (`Raffle.ticketsForItems` is the
   single place that decides what an order earns). Deleting a category used by a raffle, or holding
   a product of one, is refused (409).
-  `RaffleAutoTicketService` issues tickets when an order is **created** (fire-and-forget) and
-  retires them when it is cancelled or paid as CORTESIA. Rules that are easy to break:
+  Rules that are easy to break:
+  - `RaffleAutoTicketService.syncOrder(tenantId, snapshot)` is the **only** way tickets follow an
+    order. It reconciles (revokes what no longer applies, tops up what is missing) and is called
+    after every change that matters: create (fire-and-forget), add items, change/clear customer,
+    cancel, CORTESIA payment. Build the snapshot with `toRaffleTicketSnapshot(order)`
+    (`orders/application`). It never throws (a raffle failure must not stop a sale) and is
+    idempotent, so the next call heals a failed one. An order created before the raffle does not
+    participate; a closed raffle stops adding but still revokes. Changing the customer retires the
+    old customer's tickets and awards new ones.
   - Every write that touches tickets, winners or status runs in one transaction that starts with
     `lockRaffle` (`SELECT … FOR UPDATE` on the raffle row) and re-checks the status under the lock.
+    That includes closing/reopening (`changeStatus`, which fails with 409 if the state moved) and
+    editing prizes (the "position already has a winner" rule is checked inside that transaction).
   - `SPENDING_THRESHOLD`: `RaffleOrderSpending` is the per-order ledger (unique per raffle+order,
-    so retries are idempotent); `CustomerRaffleSpending` is the running total. Cancelling reverts
-    exactly the ledger entry, never `order.total`: an order that never contributed (CORTESIA,
-    created before the raffle) reverts nothing. Orders from before that ledger existed have no entry.
+    so retries are idempotent); `CustomerRaffleSpending` is the running total. Adding items adds
+    only the increase to the entry; cancelling reverts exactly the ledger entry, never
+    `order.total`: an order that never contributed (CORTESIA, created before the raffle) reverts
+    nothing. Orders from before that ledger existed have no entry.
   - The draw happens in a physical urn: the owner types the ticket number that came out
     (`POST /raffles/:id/winners`), positions are registered last to first, and there is no random
     draw in the system. It needs the raffle CLOSED (or already DRAWING); each customer wins one

@@ -49,7 +49,7 @@ function RaffleDetailContent({ id }: { id: string }) {
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleRegisterWinner,
     isDrawable, isActive, isReopenable, canVoid,
     activeWinnersCount, reload,
-  } = useRaffleDetail(id, goBack, () => {});
+  } = useRaffleDetail(id, goBack);
 
   const { user } = useAuth();
   const { businessAddress, businessPhone, receiptSlogan } = useSettingsStore();

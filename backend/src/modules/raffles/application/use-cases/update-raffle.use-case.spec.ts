@@ -1,9 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { UpdateRaffleUseCase } from './update-raffle.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
-import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
 
 const PRIZES = [
   { position: 1, prizeDescription: '1er lugar' },
@@ -17,14 +16,6 @@ function makeRaffle(): Raffle {
   });
 }
 
-function makeWinner(position: number, voided = false): RaffleWinner {
-  return RaffleWinner.reconstitute({
-    id: `winner-${position}`, tenantId: 'tenant-1', raffleId: 'r1', customerId: `cust-${position}`,
-    ticketId: `ticket-${position}`, position, prizeDescription: `${position} lugar`,
-    drawnAt: new Date(), voided, voidedAt: null, voidedBy: null, voidReason: null,
-  });
-}
-
 describe('UpdateRaffleUseCase', () => {
   let useCase: UpdateRaffleUseCase;
   let repo: MockProxy<RaffleRepositoryPort>;
@@ -33,7 +24,6 @@ describe('UpdateRaffleUseCase', () => {
     repo    = mock<RaffleRepositoryPort>();
     useCase = new UpdateRaffleUseCase(repo);
     repo.findRaffleById.mockResolvedValue(makeRaffle());
-    repo.findWinnersByRaffleId.mockResolvedValue([]);
     repo.updateRaffle.mockResolvedValue();
     repo.findRaffleWithTickets.mockResolvedValue({ id: 'r1' } as never);
   });
@@ -45,11 +35,19 @@ describe('UpdateRaffleUseCase', () => {
     expect(repo.updateRaffle).not.toHaveBeenCalled();
   });
 
-  it('actualiza nombre y descripción sin consultar ganadores', async () => {
+  it('actualiza nombre y descripción', async () => {
     await useCase.execute('r1', 'tenant-1', { name: '  Nuevo  ', description: ' Desc ' });
 
     expect(repo.updateRaffle).toHaveBeenCalledWith('r1', 'tenant-1', { name: 'Nuevo', description: 'Desc', prizes: undefined });
-    expect(repo.findWinnersByRaffleId).not.toHaveBeenCalled();
+  });
+
+  it('propaga el conflicto del repositorio si el puesto ya tiene ganador', async () => {
+    repo.updateRaffle.mockRejectedValue(new ConflictException('El premio del puesto 1 ya tiene ganador'));
+
+    await expect(
+      useCase.execute('r1', 'tenant-1', { prizes: [{ position: 1, prizeDescription: 'Otro' }] }),
+    ).rejects.toThrow('ya tiene ganador');
+    expect(repo.findRaffleWithTickets).not.toHaveBeenCalled();
   });
 
   it('actualiza el premio de un puesto sin ganador', async () => {
@@ -65,23 +63,5 @@ describe('UpdateRaffleUseCase', () => {
       useCase.execute('r1', 'tenant-1', { prizes: [{ position: 5, prizeDescription: 'X' }] }),
     ).rejects.toThrow('no existe en este sorteo');
     expect(repo.updateRaffle).not.toHaveBeenCalled();
-  });
-
-  it('lanza BadRequestException si el puesto ya tiene un ganador activo', async () => {
-    repo.findWinnersByRaffleId.mockResolvedValue([makeWinner(1)]);
-
-    await expect(
-      useCase.execute('r1', 'tenant-1', { prizes: [{ position: 1, prizeDescription: 'Otro premio' }] }),
-    ).rejects.toThrow(BadRequestException);
-    expect(repo.updateRaffle).not.toHaveBeenCalled();
-  });
-
-  it('permite cambiar el premio de un puesto cuyo ganador fue anulado', async () => {
-    repo.findWinnersByRaffleId.mockResolvedValue([makeWinner(1, true)]);
-    const prizes = [{ position: 1, prizeDescription: 'Otro premio' }];
-
-    await useCase.execute('r1', 'tenant-1', { prizes });
-
-    expect(repo.updateRaffle).toHaveBeenCalled();
   });
 });

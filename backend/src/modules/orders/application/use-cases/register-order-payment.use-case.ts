@@ -7,6 +7,7 @@ import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/ca
 import { EventsService } from '../../../events/events.service';
 import { RegisterOrderPaymentDto } from '../dto/register-order-payment.dto';
 import { OrderStatus } from '@pos/shared';
+import { toRaffleTicketSnapshot } from '../raffle-ticket-snapshot';
 import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 
 @Injectable()
@@ -95,10 +96,8 @@ export class RegisterOrderPaymentUseCase {
     this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     // 10. Revoke the raffle tickets assigned when the order was created (deferred-payment CORTESIA path)
-    if (hasCortesia && this.raffleAutoTicket) {
-      await this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId).catch((err) =>
-        this.logger.error(`cancelOrderTickets failed orderId=${orderId} tenantId=${tenantId}`, err?.stack),
-      );
+    if (hasCortesia) {
+      await this.raffleAutoTicket?.syncOrder(tenantId, toRaffleTicketSnapshot(saved));
     }
 
     return saved;

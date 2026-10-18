@@ -4,14 +4,14 @@ import { RaffleWinner } from '../entities/raffle-winner.entity';
 
 export const RAFFLE_REPOSITORY_PORT = 'RaffleRepositoryPort';
 
-/** Datos mínimos para crear un ticket — el número secuencial lo asigna el repositorio. */
-export interface NewTicketInput {
-  id: string;
+/** Tickets que un pedido debe tener en un sorteo por producto o categorías. */
+export interface ItemTicketsInput {
   tenantId: string;
   raffleId: string;
   customerId: string;
-  orderId: string | null;
-  createdAt: Date;
+  orderId: string;
+  /** Unidades del pedido que cumplen la regla del sorteo = tickets que debe tener. */
+  expected: number;
 }
 
 /** Pedido que aporta gasto a un sorteo SPENDING_THRESHOLD. */
@@ -20,6 +20,7 @@ export interface OrderSpendingInput {
   raffleId: string;
   customerId: string;
   orderId: string;
+  /** Total vigente del pedido: solo se suma lo que aún no se había contado. */
   amount: number;
 }
 
@@ -35,8 +36,11 @@ export interface RaffleRepositoryPort {
   /** Persiste un sorteo nuevo junto con sus premios en una sola transacción. */
   createRaffle(raffle: Raffle): Promise<void>;
 
-  /** Actualiza estado y metadatos del sorteo. No toca la tabla de premios. */
-  saveRaffle(raffle: Raffle): Promise<void>;
+  /**
+   * Cambia el estado bajo el bloqueo del sorteo, solo si sigue en `from`. Lanza ConflictException
+   * si otra operación lo movió antes (p. ej. reabrir un sorteo que acaba de registrar su primer ganador).
+   */
+  changeStatus(id: string, tenantId: string, from: RaffleStatus, to: RaffleStatus): Promise<void>;
 
   findRaffleById(id: string, tenantId: string): Promise<Raffle | null>;
   findAllRaffles(tenantId: string): Promise<RaffleDto[]>;
@@ -45,19 +49,22 @@ export interface RaffleRepositoryPort {
   /**
    * Sorteos ACTIVE que pueden dar tickets por las líneas de un pedido: los de producto (PRODUCT_MATCH)
    * cuyo producto está en la lista y los de categorías (CATEGORY_MATCH) con alguna de esas categorías.
+   * Solo los creados antes que el pedido: un pedido anterior al sorteo no participa.
    */
-  findActiveItemRaffles(tenantId: string, productIds: string[], categoryIds: string[]): Promise<Raffle[]>;
+  findActiveItemRaffles(tenantId: string, productIds: string[], categoryIds: string[], orderCreatedAt: Date): Promise<Raffle[]>;
 
-  /** Retorna sorteos ACTIVE con ticketMode SPENDING_THRESHOLD. */
-  findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]>;
+  /** Sorteos ACTIVE por monto creados antes que el pedido. */
+  findActiveSpendingRaffles(tenantId: string, orderCreatedAt: Date): Promise<Raffle[]>;
+
+  /** Categoría de cada producto del negocio que exista (un producto borrado no aparece). */
+  findProductCategoryIds(tenantId: string, productIds: string[]): Promise<Map<string, string>>;
 
   /**
-   * Inserta tickets asignando números secuenciales, solo si el sorteo sigue ACTIVE.
-   * Bloquea la fila del sorteo (SELECT FOR UPDATE): serializa contra otras emisiones, contra el
-   * cierre y contra el sorteo, y evita colisiones en UNIQUE(raffleId, ticketNumber).
-   * Retorna false (sin insertar) si el sorteo ya no está ACTIVE.
+   * Completa los tickets del pedido en un sorteo ACTIVE hasta `expected`, con números secuenciales y
+   * bajo el bloqueo del sorteo. Es idempotente: repetirlo no duplica. Retorna cuántos emitió
+   * (0 si el sorteo ya no está ACTIVE o ya tenía todos).
    */
-  addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<boolean>;
+  topUpItemTickets(input: ItemTicketsInput): Promise<number>;
 
   deleteRaffle(id: string, tenantId: string): Promise<void>;
 
@@ -83,18 +90,20 @@ export interface RaffleRepositoryPort {
   // ── Spending threshold ────────────────────────────────────────────────────
 
   /**
-   * Registra el aporte de un pedido al gasto del cliente y emite los tickets que ese gasto le
-   * faltaba, todo en una transacción con el sorteo bloqueado. Es idempotente por pedido y no hace
-   * nada si el sorteo ya no está ACTIVE. Retorna cuántos tickets emitió.
+   * Suma al gasto del cliente lo que el pedido aún no había aportado (todo el total la primera vez;
+   * solo el aumento si se agregaron productos) y emite los tickets que ese gasto le faltaba, en una
+   * transacción con el sorteo bloqueado. Es idempotente y no hace nada si el sorteo ya no está
+   * ACTIVE. Retorna cuántos tickets emitió.
    */
   applyOrderSpending(input: OrderSpendingInput): Promise<number>;
 
   /**
-   * Retira lo que un pedido cancelado otorgó: sus tickets PRODUCT_MATCH y, en los sorteos
-   * SPENDING_THRESHOLD, su aporte de gasto junto con los tickets que ese gasto ya no cubre
-   * (primero los aún sin imprimir, luego los más recientes). Solo actúa en sorteos ACTIVE o CLOSED.
+   * Retira lo que un pedido otorgó a clientes distintos de `keepCustomerId` (null = a todos: pedido
+   * cancelado, cobrado como cortesía o sin cliente): sus tickets por producto o categorías y, en los
+   * sorteos por monto, su aporte de gasto junto con los tickets que ya no cubre (primero los aún
+   * sin imprimir, luego los más recientes). Solo actúa en sorteos ACTIVE o CLOSED.
    */
-  revokeOrderTickets(tenantId: string, orderId: string): Promise<RevokedTicket[]>;
+  revokeOrderTickets(tenantId: string, orderId: string, keepCustomerId: string | null): Promise<RevokedTicket[]>;
 
   /**
    * Marca (printed = true) o desmarca los tickets como impresos para el ánfora. Solo cambia los que
@@ -102,7 +111,12 @@ export interface RaffleRepositoryPort {
    */
   setTicketsPrinted(raffleId: string, ticketIds: string[], tenantId: string, printed: boolean): Promise<void>;
 
-  /** Actualiza nombre, descripción y/o textos de premios. No toca numberOfWinners, ticketMode ni posiciones. */
+  /**
+   * Actualiza nombre, descripción y/o textos de premios bajo el bloqueo del sorteo. No toca
+   * numberOfWinners, ticketMode ni posiciones. Lanza NotFoundException si el sorteo no existe y
+   * ConflictException si algún premio es de un puesto que ya tiene ganador activo (el ganador
+   * conserva el texto con que se registró).
+   */
   updateRaffle(
     id: string,
     tenantId: string,

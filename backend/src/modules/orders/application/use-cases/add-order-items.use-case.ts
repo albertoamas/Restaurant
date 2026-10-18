@@ -14,6 +14,8 @@ import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
+import { toRaffleTicketSnapshot } from '../raffle-ticket-snapshot';
 import { AddOrderItemsDto } from '../dto/add-order-items.dto';
 
 @Injectable()
@@ -29,6 +31,7 @@ export class AddOrderItemsUseCase {
     private readonly cashSessionRepository: CashSessionRepositoryPort,
 
     @Optional() private readonly eventsService?: EventsService,
+    @Optional() private readonly raffleAutoTicket?: RaffleAutoTicketService,
   ) {}
 
   async execute(
@@ -146,6 +149,9 @@ export class AddOrderItemsUseCase {
 
     // 8. Notify connected clients (kitchen will update automatically)
     this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
+
+    // 9. Lo agregado también da tickets (sin cliente no hay a quién dárselos)
+    if (saved.customerId) await this.raffleAutoTicket?.syncOrder(tenantId, toRaffleTicketSnapshot(saved));
 
     return saved;
   }

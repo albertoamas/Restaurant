@@ -15,7 +15,8 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { trim } from './trim';
 import { RaffleTicketMode } from '@pos/shared';
 
 export class RafflePrizeInputDto {
@@ -23,6 +24,7 @@ export class RafflePrizeInputDto {
   @Min(1)
   position: number;
 
+  @Transform(trim)
   @IsString()
   @MinLength(1)
   @MaxLength(500)
@@ -30,12 +32,14 @@ export class RafflePrizeInputDto {
 }
 
 export class CreateRaffleDto {
+  @Transform(trim)
   @IsString()
   @MinLength(1)
   @MaxLength(255)
   name: string;
 
   @IsOptional()
+  @Transform(trim)
   @IsString()
   @MaxLength(500)
   description?: string;
@@ -63,6 +67,7 @@ export class CreateRaffleDto {
   @ValidateIf((o: CreateRaffleDto) => o.ticketMode === 'SPENDING_THRESHOLD')
   @IsInt()
   @Min(1)
+  @Max(1_000_000)
   spendingThreshold?: number;
 
   @IsInt()

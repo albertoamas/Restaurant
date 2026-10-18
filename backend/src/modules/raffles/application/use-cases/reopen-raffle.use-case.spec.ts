@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { ReopenRaffleUseCase } from './reopen-raffle.use-case';
 import { RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
@@ -24,15 +24,20 @@ describe('ReopenRaffleUseCase', () => {
   beforeEach(() => {
     repo    = mock<RaffleRepositoryPort>();
     useCase = new ReopenRaffleUseCase(repo);
-    repo.saveRaffle.mockResolvedValue({} as any);
+    repo.changeStatus.mockResolvedValue();
     repo.findRaffleWithTickets.mockResolvedValue({ id: 'r1', tickets: [] } as any);
   });
 
   it('reabre un sorteo CLOSED correctamente', async () => {
     repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
     await useCase.execute('r1', 'tenant-1');
-    const saved = repo.saveRaffle.mock.calls[0][0];
-    expect(saved.status).toBe('ACTIVE');
+    expect(repo.changeStatus).toHaveBeenCalledWith('r1', 'tenant-1', 'CLOSED', 'ACTIVE');
+  });
+
+  it('propaga el conflicto si el sorteo empezó a registrar ganadores mientras tanto', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
+    repo.changeStatus.mockRejectedValue(new ConflictException('cambió'));
+    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(ConflictException);
   });
 
   it('lanza NotFoundException si no existe el sorteo', async () => {

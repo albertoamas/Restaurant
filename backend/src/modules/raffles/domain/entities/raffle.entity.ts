@@ -36,6 +36,20 @@ export interface OrderTicketItem {
   quantity: number;
 }
 
+/**
+ * Lo que un pedido otorga hoy. La app lo arma tras crear, editar, completar o cancelar un pedido y
+ * el servicio concilia los tickets con él (ver RaffleAutoTicketService.syncOrder).
+ */
+export interface OrderTicketSnapshot {
+  orderId: string;
+  customerId: string | null;
+  total: number;
+  items: Array<{ productId: string; quantity: number }>;
+  createdAt: Date;
+  /** false si el pedido está cancelado o se cobró entero como cortesía. */
+  awardsTickets: boolean;
+}
+
 export interface RafflePrize {
   position: number;
   prizeDescription: string;

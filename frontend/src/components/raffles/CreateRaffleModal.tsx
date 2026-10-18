@@ -144,7 +144,7 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
             min={1}
             leftAddon="Bs"
             value={spendingThreshold}
-            onChange={(e) => setSpendingThreshold(Math.max(1, Number(e.target.value)))}
+            onChange={(e) => setSpendingThreshold(Math.max(1, Math.floor(Number(e.target.value))))}
             hint="El consumo de cada cliente se acumula; cada vez que pasa este monto, recibe un ticket."
           />
         )}

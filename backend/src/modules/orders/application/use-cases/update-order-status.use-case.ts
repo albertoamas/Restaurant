@@ -10,6 +10,7 @@ import { OrderStatus, SOCKET_EVENTS } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { EventsService } from '../../../events/events.service';
+import { toRaffleTicketSnapshot } from '../raffle-ticket-snapshot';
 import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 
 @Injectable()
@@ -39,8 +40,8 @@ export class UpdateOrderStatusUseCase {
     const saved = await this.orderRepository.save(order);
     this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
-    if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
-      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id).catch((err) => this.logger.error(`cancelOrderTickets failed orderId=${id} tenantId=${tenantId}`, err?.stack));
+    if (newStatus === OrderStatus.CANCELLED) {
+      await this.raffleAutoTicket?.syncOrder(tenantId, toRaffleTicketSnapshot(saved));
     }
 
     return saved;
