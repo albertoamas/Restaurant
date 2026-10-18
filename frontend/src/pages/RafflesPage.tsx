@@ -37,7 +37,7 @@ export function RafflesPage() {
     <PageShell>
       <PageHeader
         title="Sorteos"
-        description="Tus clientes ganan tickets al comprar; aquí los sorteas entre ellos."
+        description="Tus clientes ganan tickets al comprar; aquí los imprimes para el ánfora y registras a los ganadores."
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Icon name="plus" size={18} />
@@ -71,7 +71,7 @@ export function RafflesPage() {
         <EmptyState
           icon="ticket"
           title={filter === 'open' ? 'No hay sorteos en curso' : 'Todavía no terminó ningún sorteo'}
-          description={filter === 'open' ? 'Crea uno nuevo o revisa los terminados.' : 'Cuando sortees todos los lugares de un sorteo, aparece aquí.'}
+          description={filter === 'open' ? 'Crea uno nuevo o revisa los terminados.' : 'Cuando registres a todos los ganadores de un sorteo, aparece aquí.'}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

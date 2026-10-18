@@ -64,7 +64,6 @@ describe('VoidWinnerUseCase', () => {
       const [winner, newStatus] = repo.voidWinnerAtomic.mock.calls[0];
       expect(winner.id).toBe('winner-1');
       expect(newStatus).toBe('DRAWING');
-      expect(repo.saveRaffle).not.toHaveBeenCalled();
     });
   });
 

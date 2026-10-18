@@ -36,7 +36,7 @@ describe('UpdateOrderStatusUseCase', () => {
     raffleAutoTicket = mock<RaffleAutoTicketService>();
     useCase          = new UpdateOrderStatusUseCase(orderRepo, eventsService, raffleAutoTicket);
     orderRepo.save.mockImplementation(async (o) => o);
-    raffleAutoTicket.cancelOrderTickets.mockResolvedValue();
+    raffleAutoTicket.syncOrder.mockResolvedValue();
   });
 
   it('actualiza a PREPARING y emite evento order.updated', async () => {
@@ -79,21 +79,21 @@ describe('UpdateOrderStatusUseCase', () => {
       .rejects.toThrow(BadRequestException);
   });
 
-  it('al cancelar llama a raffleAutoTicket.cancelOrderTickets con tenant e id del pedido', async () => {
+  it('al cancelar concilia los tickets: el pedido ya no otorga ninguno', async () => {
     const order = makeOrder(OrderStatus.PENDING);
     orderRepo.findById.mockResolvedValue(order);
 
     await useCase.execute(order.id, 'tenant-1', OrderStatus.CANCELLED);
 
-    expect(raffleAutoTicket.cancelOrderTickets).toHaveBeenCalledWith('tenant-1', order.id);
+    expect(raffleAutoTicket.syncOrder).toHaveBeenCalledWith('tenant-1', expect.objectContaining({ orderId: order.id, awardsTickets: false }));
   });
 
-  it('no llama a cancelOrderTickets si el nuevo estado no es CANCELLED', async () => {
+  it('no concilia tickets si el nuevo estado no es CANCELLED', async () => {
     const order = makeOrder(OrderStatus.PENDING);
     orderRepo.findById.mockResolvedValue(order);
 
     await useCase.execute(order.id, 'tenant-1', OrderStatus.PREPARING);
 
-    expect(raffleAutoTicket.cancelOrderTickets).not.toHaveBeenCalled();
+    expect(raffleAutoTicket.syncOrder).not.toHaveBeenCalled();
   });
 });

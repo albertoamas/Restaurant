@@ -18,15 +18,9 @@ export class UpdateRaffleUseCase {
 
     if (dto.prizes?.length) {
       const existingPositions = new Set(raffle.prizes.map((p) => p.position));
-      // El ganador conserva el texto del premio con que se sorteó: cambiarlo después los desfasaría.
-      const winners = await this.repo.findWinnersByRaffleId(id, tenantId);
-      const awardedPositions = new Set(winners.filter((w) => !w.voided).map((w) => w.position));
       for (const p of dto.prizes) {
         if (!existingPositions.has(p.position)) {
           throw new BadRequestException(`La posición ${p.position} no existe en este sorteo`);
-        }
-        if (awardedPositions.has(p.position)) {
-          throw new BadRequestException(`El premio del puesto ${p.position} ya tiene ganador y no se puede modificar`);
         }
       }
     }

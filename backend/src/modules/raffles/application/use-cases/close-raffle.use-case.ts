@@ -16,8 +16,9 @@ export class CloseRaffleUseCase {
     if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
     if (!raffle.isActive) throw new BadRequestException('Solo se pueden cerrar sorteos en estado ACTIVO');
 
+    const from = raffle.status;
     raffle.close();
-    await this.repo.saveRaffle(raffle);
+    await this.repo.changeStatus(id, tenantId, from, raffle.status);
 
     const result = await this.repo.findRaffleWithTickets(id, tenantId);
     this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_UPDATED, result);

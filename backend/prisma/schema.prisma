@@ -504,6 +504,7 @@ model RaffleTicket {
   @@unique([raffleId, ticketNumber])
   @@index([tenantId, raffleId])
   @@index([tenantId, customerId])
+  @@index([tenantId, orderId])
   @@map("raffle_tickets")
 }
 

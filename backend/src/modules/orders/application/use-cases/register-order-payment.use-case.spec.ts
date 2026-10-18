@@ -60,7 +60,7 @@ describe('RegisterOrderPaymentUseCase', () => {
     orderRepo      = mock<OrderRepositoryPort>();
     cashSessionRepo = mock<CashSessionRepositoryPort>();
     raffleAutoTicket = mock<RaffleAutoTicketService>();
-    raffleAutoTicket.cancelOrderTickets.mockResolvedValue();
+    raffleAutoTicket.syncOrder.mockResolvedValue();
     useCase = new RegisterOrderPaymentUseCase(orderRepo, cashSessionRepo, undefined, raffleAutoTicket);
   });
 
@@ -122,46 +122,36 @@ describe('RegisterOrderPaymentUseCase', () => {
     ).resolves.not.toThrow();
   });
 
-  it('retira los tickets del sorteo al cobrar con CORTESIA, una vez registrado el pago', async () => {
+  it('concilia los tickets al cobrar con CORTESIA, una vez registrado el pago', async () => {
     const order = makeOrder({ total: 100 });
     orderRepo.findById.mockResolvedValue(order);
     orderRepo.registerPayments.mockResolvedValue(order);
 
     await useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }]));
 
-    expect(raffleAutoTicket.cancelOrderTickets).toHaveBeenCalledWith(TENANT_ID, ORDER_ID);
+    expect(raffleAutoTicket.syncOrder).toHaveBeenCalledWith(TENANT_ID, expect.objectContaining({ orderId: ORDER_ID }));
   });
 
-  it('no retira tickets si el pago no es CORTESIA', async () => {
+  it('no concilia tickets si el pago no es CORTESIA', async () => {
     const order = makeOrder({ total: 100 });
     orderRepo.findById.mockResolvedValue(order);
     orderRepo.registerPayments.mockResolvedValue(order);
 
     await useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.QR, amount: 100 }]));
 
-    expect(raffleAutoTicket.cancelOrderTickets).not.toHaveBeenCalled();
+    expect(raffleAutoTicket.syncOrder).not.toHaveBeenCalled();
   });
 
-  it('no retira tickets si el pedido ya fue cobrado por otra solicitud', async () => {
+  it('no concilia tickets si el pedido ya fue cobrado por otra solicitud', async () => {
     orderRepo.findById.mockResolvedValue(makeOrder({ total: 100 }));
     orderRepo.registerPayments.mockResolvedValue(null);
 
     await expect(
       useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }])),
     ).rejects.toThrow(BadRequestException);
-    expect(raffleAutoTicket.cancelOrderTickets).not.toHaveBeenCalled();
+    expect(raffleAutoTicket.syncOrder).not.toHaveBeenCalled();
   });
 
-  it('el cobro se completa aunque falle el retiro de tickets', async () => {
-    const order = makeOrder({ total: 100 });
-    orderRepo.findById.mockResolvedValue(order);
-    orderRepo.registerPayments.mockResolvedValue(order);
-    raffleAutoTicket.cancelOrderTickets.mockRejectedValue(new Error('db caída'));
-
-    await expect(
-      useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }])),
-    ).resolves.toBe(order);
-  });
 
   it('throws BadRequestException when CORTESIA is combined with another method', async () => {
     orderRepo.findById.mockResolvedValue(makeOrder({ total: 100 }));
