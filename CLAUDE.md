@@ -159,7 +159,10 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
     so retries are idempotent); `CustomerRaffleSpending` is the running total. Cancelling reverts
     exactly the ledger entry, never `order.total`: an order that never contributed (CORTESIA,
     created before the raffle) reverts nothing. Orders from before that ledger existed have no entry.
-  - Drawing needs the raffle CLOSED (or already DRAWING); each customer wins one prize per raffle.
+  - The draw happens in a physical urn: the owner types the ticket number that came out
+    (`POST /raffles/:id/winners`), positions are registered last to first, and there is no random
+    draw in the system. It needs the raffle CLOSED (or already DRAWING); each customer wins one
+    prize per raffle.
   - Voiding a winner requires a reason and records who and when; the prize of a position that
     already has an active winner is not editable (the winner keeps the text it was drawn with).
   - Revoking never touches DRAWING/DRAWN raffles; tickets already printed (in the urn) are retired

@@ -11,6 +11,7 @@ import {
   RaffleStatus,
   TICKET_REVOCABLE_STATUSES,
   WINNER_VOIDABLE_STATUSES,
+  nextPositionToDraw,
   ticketsEarned,
 } from '../../domain/entities/raffle.entity';
 import { RaffleWinner } from '../../domain/entities/raffle-winner.entity';
@@ -255,7 +256,18 @@ export class RaffleRepository implements RaffleRepositoryPort {
     );
   }
 
-  async drawWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void> {
+  async findTicketByNumber(
+    raffleId: string,
+    tenantId: string,
+    ticketNumber: number,
+  ): Promise<{ id: string; customerId: string } | null> {
+    return this.prisma.raffleTicket.findFirst({
+      where: { raffleId, tenantId, ticketNumber },
+      select: { id: true, customerId: true },
+    });
+  }
+
+  async addWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // Re-verificar estado dentro de la transacción, ya con el sorteo bloqueado
       const raffle = await this.lockRaffle(tx, id, tenantId);
@@ -263,13 +275,13 @@ export class RaffleRepository implements RaffleRepositoryPort {
         throw new ConflictException('El sorteo ya fue completado o está en estado inválido');
       }
 
-      // El ticket elegido pudo retirarse (pedido cancelado) desde que se armó el ánfora
+      // El ticket pudo retirarse (pedido cancelado) entre que se buscó y se registra
       const ticket = await tx.raffleTicket.findFirst({
         where: { id: winner.ticketId, raffleId: id, tenantId },
         select: { id: true },
       });
       if (!ticket) {
-        throw new ConflictException('El ticket sorteado ya no existe. Vuelve a sortear');
+        throw new ConflictException('El ticket ya no existe. Verifica el número');
       }
 
       // Verificar que esta posición no tenga ya un ganador activo
@@ -473,14 +485,9 @@ export class RaffleRepository implements RaffleRepositoryPort {
     const numberOfWinners = row.numberOfWinners ?? 1;
     const allWinners = row.winners ?? [];
     const activeWinners = allWinners.filter((w) => !w.voided);
-    const activePositions = new Set(activeWinners.map((w) => w.position));
-
-    let nextPosition: number | null = null;
-    if (row.status !== 'DRAWN') {
-      const allPositions = Array.from({ length: numberOfWinners }, (_, i) => i + 1);
-      const missing = allPositions.filter((p) => !activePositions.has(p));
-      nextPosition = missing.length > 0 ? Math.max(...missing) : null;
-    }
+    const nextPosition = row.status !== 'DRAWN'
+      ? nextPositionToDraw(numberOfWinners, activeWinners.map((w) => w.position))
+      : null;
 
     const winners: RaffleWinnerDto[] = allWinners.map((w) => ({
       id: w.id,

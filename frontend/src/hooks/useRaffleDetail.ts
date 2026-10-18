@@ -10,10 +10,7 @@ import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
 import { formatTicketRanges } from '../utils/raffle-utils';
 
-const DRAW_DURATION_MS = 7000;
-export const WINNER_PAUSE_MS  = 4000;
-
-export type BusyState = 'draw' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;
+export type BusyState = 'register' | 'close' | 'reopen' | 'delete' | `void-${string}` | null;
 
 export function useRaffleDetail(
   raffleId: string,
@@ -23,11 +20,9 @@ export function useRaffleDetail(
   const queryClient = useQueryClient();
 
   const [busy, setBusy]                           = useState<BusyState>(null);
-  const [showConfirm, setShowConfirm]             = useState(false);
+  const [registerOpen, setRegisterOpen]           = useState(false);
   const [deleteConfirm, setDeleteConfirm]         = useState(false);
   const [deleted, setDeleted]                     = useState(false);
-  const [drawingPosition, setDrawingPosition]     = useState<number | null>(null);
-  const [pendingWinnerName, setPendingWinnerName] = useState<string | null>(null);
   const [drawnWinner, setDrawnWinner]             = useState<RaffleWinnerDto | null>(null);
   const [voidConfirmId, setVoidConfirmId]         = useState<string | null>(null);
 
@@ -123,45 +118,32 @@ export function useRaffleDetail(
     }
   }
 
-  async function handleDraw() {
+  /** Registra al dueño del ticket que salió del ánfora para el puesto que toca. */
+  async function handleRegisterWinner(ticketNumber: number) {
     if (!raffle || raffle.nextPositionToDraw === null) return;
-    const positionBeingDrawn = raffle.nextPositionToDraw;
-    setShowConfirm(false);
-    setDrawingPosition(positionBeingDrawn);
-    setPendingWinnerName(null);
-    setBusy('draw');
+    const position = raffle.nextPositionToDraw;
+    setBusy('register');
     try {
-      const [updated] = await Promise.all([
-        rafflesApi.draw(raffle.id),
-        new Promise<void>((r) => setTimeout(r, DRAW_DURATION_MS)),
-      ]);
-      const justDrawn = updated.winners.find((w) => w.position === positionBeingDrawn && !w.voided) ?? null;
-      if (justDrawn) setPendingWinnerName(justDrawn.customer.name);
-      await new Promise<void>((r) => setTimeout(r, WINNER_PAUSE_MS));
-      setDrawingPosition(null);
-      setPendingWinnerName(null);
+      const updated = await rafflesApi.registerWinner(raffle.id, ticketNumber);
       setRaffle(updated);
       onUpdate();
-      if (justDrawn) setDrawnWinner(justDrawn);
+      setRegisterOpen(false);
+      setDrawnWinner(updated.winners.find((w) => w.position === position && !w.voided) ?? null);
     } catch (err) {
-      setDrawingPosition(null);
-      setPendingWinnerName(null);
-      handleApiError(err, 'Error al sortear');
+      handleApiError(err, 'Error al registrar el ganador');
     } finally {
       setBusy(null);
     }
   }
 
-  // Se sortea con el sorteo cerrado: con el ánfora abierta seguirían entrando tickets.
+  // Los ganadores se registran con el sorteo cerrado: con el ánfora abierta seguirían entrando tickets.
+  
   const isDrawable   = raffle?.status === 'CLOSED' || raffle?.status === 'DRAWING';
   const isActive     = raffle?.status === 'ACTIVE';
   const isReopenable = raffle?.status === 'CLOSED';
   const canVoid      = raffle?.status === 'DRAWING' || raffle?.status === 'DRAWN';
 
-  // Cada cliente gana un solo premio: el ánfora excluye todos los tickets de quien ya ganó.
-  const winnerCustomerIds = new Set(raffle?.winners.filter((w) => !w.voided).map((w) => w.customerId) ?? []);
-  const availableTickets  = raffle?.tickets.filter((t) => !winnerCustomerIds.has(t.customerId)) ?? [];
-  const activeWinnersCount    = raffle?.winners.filter((w) => !w.voided).length ?? 0;
+  const activeWinnersCount = raffle?.winners.filter((w) => !w.voided).length ?? 0;
 
   return {
     raffle:      raffle ?? null,
@@ -170,16 +152,13 @@ export function useRaffleDetail(
     error,
     busy,
     deleted,
-    showConfirm,    setShowConfirm,
+    registerOpen,   setRegisterOpen,
     deleteConfirm,  setDeleteConfirm,
-    drawingPosition,
-    pendingWinnerName,
     drawnWinner,    setDrawnWinner,
     voidConfirmId,  setVoidConfirmId,
-    handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
+    handleClose, handleReopen, handleVoidWinner, handleDelete, handleRegisterWinner,
     reload:     refetch,
     isDrawable, isActive, isReopenable, canVoid,
-    availableTickets,
     activeWinnersCount,
   };
 }

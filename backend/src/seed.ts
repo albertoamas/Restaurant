@@ -4,7 +4,8 @@
  *
  * Cubre los 21 modelos del schema: planes, tenants, sucursales, usuarios,
  * catálogo, pedidos (con pagos mixtos y cancelados), caja, gastos (con catálogo
- * de conceptos y anulaciones), clientes y sorteos en sus dos modalidades.
+ * de conceptos y anulaciones), clientes y sorteos de los tres modos (por categorías, por
+ * monto y el anterior por producto) en distintos estados.
  *
  * Credenciales:
  *   OWNER:   owner@demo.com   / demo123
@@ -356,9 +357,13 @@ async function seed() {
   let todaySales = 0;
   let cancelledCreated = 0;
   let splitCreated = 0;
-  /** Pedidos con cliente, guardados para generar tickets de sorteo después. */
+  /**
+   * Pedidos que dan tickets de sorteo, en orden cronológico: con cliente, cobrados y sin
+   * cortesía (igual que la app, que no los premia).
+   */
   const ordersWithCustomer: {
-    id: string; customerId: string; total: number; productIds: string[]; createdAt: Date;
+    id: string; customerId: string; total: number;
+    items: { productId: string; quantity: number }[]; createdAt: Date;
   }[] = [];
 
   for (let d = DAYS_BACK - 1; d >= 0; d--) {
@@ -450,10 +455,10 @@ async function seed() {
             .filter((p) => p.method === PaymentMethod.CASH)
             .reduce((s, p) => s + p.amount, 0);
           if (cash > 0) addCash(branch.id, dayStr, cash);
-          if (customerId) {
+          if (customerId && !payments.some((p) => p.method === PaymentMethod.CORTESIA)) {
             ordersWithCustomer.push({
               id: orderId, customerId, total,
-              productIds: items.map((it) => it.productId), createdAt,
+              items: items.map((it) => ({ productId: it.productId, quantity: it.quantity })), createdAt,
             });
           }
         }
@@ -574,17 +579,104 @@ async function seed() {
     `Bs ${expensesTotal.toFixed(2)} vigentes)`,
   );
 
-  // ── Sorteo 1: por producto, en curso ───────────────────────────────────────
-  const raffleProduct = products.find((p) => p.name === 'Pique macho')!;
+  // ── Sorteos ────────────────────────────────────────────────────────────────
+  // Los tickets reproducen lo que hace la app. Un ticket "impreso" es una tira que ya está en el
+  // ánfora; los de hoy quedan pendientes para probar "Imprimir pendientes" y el resumen.
+  const startOfToday = atBolivia(todayStr, 0, 0);
+  const printedAt = (createdAt: Date): Date | null =>
+    createdAt < startOfToday ? new Date(createdAt.getTime() + 300_000) : null;
+  const atDayStart = (daysAgo: number) => atBolivia(dayStrAgo(daysAgo), 0, 0);
+  const inWindow = (createdAt: Date, since: Date, until: Date | null) =>
+    createdAt >= since && (until === null || createdAt < until);
+
+  /** Un ticket por unidad que cumple la regla del sorteo, ligado al pedido que lo originó. */
+  const seedItemTickets = async (
+    raffleId: string, since: Date, until: Date | null, earns: (productId: string) => boolean,
+  ) => {
+    const rows: {
+      id: string; tenantId: string; raffleId: string; customerId: string;
+      ticketNumber: number; orderId: string; createdAt: Date; printedAt: Date | null;
+    }[] = [];
+    for (const o of ordersWithCustomer) {
+      if (!inWindow(o.createdAt, since, until)) continue;
+      const units = o.items.filter((it) => earns(it.productId)).reduce((n, it) => n + it.quantity, 0);
+      for (let u = 0; u < units; u++) {
+        rows.push({
+          id: randomUUID(), tenantId: tenant.id, raffleId, customerId: o.customerId,
+          ticketNumber: rows.length + 1, orderId: o.id, createdAt: o.createdAt,
+          printedAt: printedAt(o.createdAt),
+        });
+      }
+    }
+    if (rows.length) await prisma.raffleTicket.createMany({ data: rows });
+    return rows;
+  };
+
+  /**
+   * Gasto acumulado por cliente: aporte de cada pedido (para poder revertirlo al cancelar), total
+   * corriente y un ticket cada vez que el acumulado cruza un múltiplo del umbral.
+   */
+  const seedSpendingData = async (
+    raffleId: string, threshold: number, since: Date, until: Date | null,
+  ) => {
+    const spent: Record<string, number> = {};
+    const earned: Record<string, number> = {};
+    const ledger: {
+      id: string; tenantId: string; raffleId: string; customerId: string;
+      orderId: string; amount: number; createdAt: Date;
+    }[] = [];
+    const tickets: {
+      id: string; tenantId: string; raffleId: string; customerId: string;
+      ticketNumber: number; orderId: null; createdAt: Date; printedAt: Date | null;
+    }[] = [];
+
+    for (const o of ordersWithCustomer) {
+      if (!inWindow(o.createdAt, since, until)) continue;
+      ledger.push({
+        id: randomUUID(), tenantId: tenant.id, raffleId, customerId: o.customerId,
+        orderId: o.id, amount: o.total, createdAt: o.createdAt,
+      });
+      spent[o.customerId] = money((spent[o.customerId] ?? 0) + o.total);
+      const due = Math.floor(spent[o.customerId] / threshold) - (earned[o.customerId] ?? 0);
+      for (let t = 0; t < due; t++) {
+        tickets.push({
+          id: randomUUID(), tenantId: tenant.id, raffleId, customerId: o.customerId,
+          ticketNumber: tickets.length + 1, orderId: null, createdAt: o.createdAt,
+          printedAt: printedAt(o.createdAt),
+        });
+      }
+      earned[o.customerId] = (earned[o.customerId] ?? 0) + Math.max(due, 0);
+    }
+
+    const spendingRows = Object.entries(spent).map(([customerId, totalSpent]) => ({
+      id: randomUUID(), tenantId: tenant.id, raffleId, customerId, totalSpent,
+    }));
+    if (spendingRows.length) await prisma.customerRaffleSpending.createMany({ data: spendingRows });
+    if (ledger.length) await prisma.raffleOrderSpending.createMany({ data: ledger });
+    if (tickets.length) await prisma.raffleTicket.createMany({ data: tickets });
+    return { tickets, spendingRows };
+  };
+
+  const categoriesOf = (...names: string[]) => ({
+    create: names.map((name) => ({ tenantId: tenant.id, categoryId: catId[name] })),
+  });
+  const productsOf = (...names: string[]) => {
+    const wanted = new Set(names.map((n) => catId[n]));
+    return new Set<string>(products.filter((p) => wanted.has(catId[p.cat])).map((p) => p.id));
+  };
+
+  // Sorteo 1: por categorías, en curso. Tiene tickets impresos y pendientes (los de hoy).
+  const raffle1Products = productsOf('Platos principales', 'Postres');
   const raffle1 = await prisma.raffle.create({
     data: {
       tenantId: tenant.id,
       name: 'Sorteo de Aniversario',
-      description: 'Cada Pique macho que compres te da un ticket para el sorteo.',
+      description: 'Cada plato principal o postre que compres te da un ticket para el sorteo.',
       status: 'ACTIVE',
       numberOfWinners: 2,
-      ticketMode: 'PRODUCT_MATCH',
-      productId: raffleProduct.id,
+      ticketMode: 'CATEGORY_MATCH',
+      createdAt: atDayStart(9),
+      categories: categoriesOf('Platos principales', 'Postres'),
       prizes: {
         create: [
           { position: 1, prizeDescription: 'Cena para dos personas' },
@@ -593,32 +685,15 @@ async function seed() {
       },
     },
   });
-
-  // Un ticket por cada pedido con cliente que incluyó el producto del sorteo.
-  const matching = ordersWithCustomer.filter((o) => o.productIds.includes(raffleProduct.id));
-  let ticketNumber = 0;
-  const raffle1Tickets = matching.map((o) => {
-    const delivered = Math.random() < 0.6;
-    return {
-      id: randomUUID(),
-      tenantId: tenant.id,
-      raffleId: raffle1.id,
-      customerId: o.customerId,
-      ticketNumber: ++ticketNumber,
-      orderId: o.id,
-      // Los tickets físicos se entregan cuando el cliente vuelve; no todos aún.
-      delivered,
-      deliveredAt: delivered ? new Date(o.createdAt.getTime() + 86_400_000) : null,
-      createdAt: o.createdAt,
-    };
-  });
-  if (raffle1Tickets.length) await prisma.raffleTicket.createMany({ data: raffle1Tickets });
+  const raffle1Tickets = await seedItemTickets(raffle1.id, atDayStart(9), null, (id) => raffle1Products.has(id));
   console.log(
-    `Sorteo "Sorteo de Aniversario" (PRODUCT_MATCH, ACTIVE): ${raffle1Tickets.length} tickets`,
+    `Sorteo "${raffle1.name}" (CATEGORY_MATCH, ACTIVE): ${raffle1Tickets.length} tickets, ` +
+    `${raffle1Tickets.filter((t) => t.printedAt === null).length} sin imprimir`,
   );
 
-  // ── Sorteo 2: por monto gastado, ya sorteado ───────────────────────────────
+  // Sorteo 2: por monto, ya sorteado. Un ganador se anuló con motivo y se volvió a registrar.
   const THRESHOLD = 200;
+  const drawnAt = atBolivia(dayStrAgo(1), 20, 0);
   const raffle2 = await prisma.raffle.create({
     data: {
       tenantId: tenant.id,
@@ -628,6 +703,7 @@ async function seed() {
       numberOfWinners: 3,
       ticketMode: 'SPENDING_THRESHOLD',
       spendingThreshold: THRESHOLD,
+      createdAt: atDayStart(DAYS_BACK - 1),
       prizes: {
         create: [
           { position: 1, prizeDescription: 'Televisor 32 pulgadas' },
@@ -637,53 +713,19 @@ async function seed() {
       },
     },
   });
+  const raffle2Data = await seedSpendingData(raffle2.id, THRESHOLD, atDayStart(DAYS_BACK - 1), drawnAt);
 
-  // Acumulado real por cliente, a partir de sus pedidos.
-  const spentByCustomer: Record<string, number> = {};
-  for (const o of ordersWithCustomer) {
-    spentByCustomer[o.customerId] = (spentByCustomer[o.customerId] ?? 0) + o.total;
-  }
-
-  const spendingRows: {
-    id: string; tenantId: string; raffleId: string; customerId: string; totalSpent: number;
-  }[] = [];
-  // orderId queda null: el ticket nace del acumulado, no de una compra puntual.
-  const raffle2Tickets: {
-    id: string; tenantId: string; raffleId: string; customerId: string;
-    ticketNumber: number; orderId: null; delivered: boolean; createdAt: Date;
-  }[] = [];
-  let ticketNumber2 = 0;
-  for (const [customerId, spent] of Object.entries(spentByCustomer)) {
-    const totalSpent = money(spent);
-    spendingRows.push({
-      id: randomUUID(), tenantId: tenant.id, raffleId: raffle2.id, customerId, totalSpent,
-    });
-
-    const earned = Math.floor(totalSpent / THRESHOLD);
-    for (let t = 0; t < earned; t++) {
-      raffle2Tickets.push({
-        id: randomUUID(), tenantId: tenant.id, raffleId: raffle2.id, customerId,
-        ticketNumber: ++ticketNumber2, orderId: null,
-        delivered: true, createdAt: atBolivia(dayStrAgo(3), 12, 0),
-      });
-    }
-  }
-  if (spendingRows.length) await prisma.customerRaffleSpending.createMany({ data: spendingRows });
-  if (raffle2Tickets.length) await prisma.raffleTicket.createMany({ data: raffle2Tickets });
-
-  // Ganadores: uno por posición. El de la 3ª se anuló y se volvió a sortear, que
-  // es el caso que ejercita los índices parciales (una sola fila no anulada por
-  // posición, y un ticket no puede ganar dos veces).
-  const drawnAt = atBolivia(dayStrAgo(1), 20, 0);
-  const winnerTickets: typeof raffle2Tickets = [];
+  // Ganadores: uno por posición y un cliente gana una sola vez. El de la 3ª se anuló y se
+  // volvió a registrar, el caso que ejercita los índices parciales (una sola fila no anulada por
+  // posición y un ticket no puede ganar dos veces).
+  const winnerTickets: typeof raffle2Data.tickets = [];
   const usedCustomers = new Set<string>();
-  for (const t of raffle2Tickets) {
+  for (const t of raffle2Data.tickets) {
     if (winnerTickets.length >= 4) break;
     if (usedCustomers.has(t.customerId)) continue;
     usedCustomers.add(t.customerId);
     winnerTickets.push(t);
   }
-
   if (winnerTickets.length >= 4) {
     await prisma.raffleWinner.createMany({
       data: [
@@ -691,6 +733,8 @@ async function seed() {
           tenantId: tenant.id, raffleId: raffle2.id, position: 3,
           customerId: winnerTickets[0].customerId, ticketId: winnerTickets[0].id,
           prizeDescription: 'Vale de consumo de Bs 200', drawnAt, voided: true,
+          voidedAt: new Date(drawnAt.getTime() + 240_000), voidedBy: ownerUser.id,
+          voidReason: 'El cliente no se presentó a reclamar el premio',
         },
         {
           tenantId: tenant.id, raffleId: raffle2.id, position: 3,
@@ -714,10 +758,75 @@ async function seed() {
     });
   }
   console.log(
-    `Sorteo "Sorteo Fiestas Patrias" (SPENDING_THRESHOLD, DRAWN): ` +
-    `${raffle2Tickets.length} tickets, ${spendingRows.length} acumulados, ` +
-    `${winnerTickets.length >= 4 ? '3 ganadores (1 anulado y resorteado)' : 'sin ganadores'}`,
+    `Sorteo "${raffle2.name}" (SPENDING_THRESHOLD, DRAWN): ` +
+    `${raffle2Data.tickets.length} tickets, ${raffle2Data.spendingRows.length} acumulados, ` +
+    `${winnerTickets.length >= 4 ? '3 ganadores (1 anulado y registrado de nuevo)' : 'sin ganadores'}`,
   );
+
+  // Sorteo 3: por categorías, cerrado y sin ganadores. Sirve para probar "Registrar ganador"
+  // por número de ticket y eliminar sorteos.
+  const raffle3Products = productsOf('Bebidas');
+  const raffle3Until = atDayStart(2);
+  const raffle3 = await prisma.raffle.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Sorteo de Verano',
+      description: 'Cada bebida que compres te da un ticket.',
+      status: 'CLOSED',
+      numberOfWinners: 2,
+      ticketMode: 'CATEGORY_MATCH',
+      createdAt: atDayStart(9),
+      categories: categoriesOf('Bebidas'),
+      prizes: {
+        create: [
+          { position: 1, prizeDescription: 'Parlante bluetooth' },
+          { position: 2, prizeDescription: 'Vale de Bs 100' },
+        ],
+      },
+    },
+  });
+  const raffle3Tickets = await seedItemTickets(raffle3.id, atDayStart(9), raffle3Until, (id) => raffle3Products.has(id));
+  console.log(`Sorteo "${raffle3.name}" (CATEGORY_MATCH, CLOSED): ${raffle3Tickets.length} tickets, sin ganadores`);
+
+  // Sorteo 4: por monto, en curso. Para probar el resumen con "te faltan Bs X" y el retiro
+  // de tickets al cancelar un pedido.
+  const raffle4 = await prisma.raffle.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Sorteo Cliente Frecuente',
+      description: 'Cada Bs 150 de consumo acumulado te dan un ticket.',
+      status: 'ACTIVE',
+      numberOfWinners: 1,
+      ticketMode: 'SPENDING_THRESHOLD',
+      spendingThreshold: 150,
+      createdAt: atDayStart(4),
+      prizes: { create: [{ position: 1, prizeDescription: 'Cena de cumpleaños para 6 personas' }] },
+    },
+  });
+  const raffle4Data = await seedSpendingData(raffle4.id, 150, atDayStart(4), null);
+  console.log(
+    `Sorteo "${raffle4.name}" (SPENDING_THRESHOLD, ACTIVE): ${raffle4Data.tickets.length} tickets, ` +
+    `${raffle4Data.spendingRows.length} acumulados`,
+  );
+
+  // Sorteo 5: por producto, el modo anterior. Los clientes ya existentes pueden tener sorteos así;
+  // ya no se pueden crear, pero deben seguir viéndose y funcionando.
+  const raffle5Product = products.find((p) => p.name === 'Pique macho')!;
+  const raffle5 = await prisma.raffle.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Sorteo Pique macho (anterior)',
+      description: 'Cada Pique macho que compres te da un ticket.',
+      status: 'CLOSED',
+      numberOfWinners: 1,
+      ticketMode: 'PRODUCT_MATCH',
+      productId: raffle5Product.id,
+      createdAt: atDayStart(13),
+      prizes: { create: [{ position: 1, prizeDescription: 'Pique macho gratis por un mes' }] },
+    },
+  });
+  const raffle5Tickets = await seedItemTickets(raffle5.id, atDayStart(13), atDayStart(6), (id) => id === raffle5Product.id);
+  console.log(`Sorteo "${raffle5.name}" (PRODUCT_MATCH anterior, CLOSED): ${raffle5Tickets.length} tickets`);
 
   // ── Segundo tenant: plan BASICO ────────────────────────────────────────────
   // Mínimo a propósito. Sirve para verificar el aislamiento entre negocios y que

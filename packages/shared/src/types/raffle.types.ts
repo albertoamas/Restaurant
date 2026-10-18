@@ -37,7 +37,7 @@ export interface RaffleDto {
   categories: Array<{ id: string; name: string }>;
   prizes: RafflePrizeDto[];
   winners: RaffleWinnerDto[];
-  /** Posición que se sorteará en el próximo draw. null cuando status === 'DRAWN'. */
+  /** Puesto cuyo ganador se registra a continuación (del último al primero). null cuando status === 'DRAWN'. */
   nextPositionToDraw: number | null;
   ticketCount: number;
   createdAt: string;
@@ -86,6 +86,11 @@ export interface CreateRaffleRequest {
 export interface SetTicketsPrintedRequest {
   ticketIds: string[];
   printed: boolean;
+}
+
+/** El ganador se saca de la ánfora física: se registra por el número de su ticket. */
+export interface RegisterWinnerRequest {
+  ticketNumber: number;
 }
 
 /** Motivo obligatorio: queda registrado junto con quién y cuándo anuló al ganador. */
