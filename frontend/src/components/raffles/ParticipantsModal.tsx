@@ -131,11 +131,14 @@ function ParticipantRow({ p, threshold, raffleName, printSettings, onDeliver }: 
  * tiene cada uno y cuántos se le entregaron; al tocarlo, sus tickets para entregar o imprimir.
  * Antes, en el sorteo por producto, había una fila por ticket y un cliente se repetía muchas veces.
  */
-export function ParticipantsList({ raffle, printSettings = { businessName: '' } }: { raffle: DetailRaffle; printSettings?: RaffleTicketPrintSettings }) {
+export function ParticipantsList({ raffle, printSettings = { businessName: '' }, onDeliveryChanged }: {
+  raffle: DetailRaffle;
+  printSettings?: RaffleTicketPrintSettings;
+  /** Se llama tras marcar o deshacer una entrega, para releer el sorteo. */
+  onDeliveryChanged: () => void;
+}) {
   const [search, setSearch] = useState('');
   const [shown, setShown] = useState(PAGE);
-  // Entregas hechas en esta pantalla, hasta que el servidor mande el sorteo actualizado.
-  const [localDelivery, setLocalDelivery] = useState<Map<string, boolean>>(new Map());
   const isSpending = raffle.ticketMode === 'SPENDING_THRESHOLD';
   const threshold = isSpending ? (raffle.spendingThreshold ?? 1) : null;
 
@@ -153,14 +156,14 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
     }
     for (const t of raffle.tickets) {
       const pos = winnerByTicket.get(t.id);
-      get(t.customer).tickets.push({ id: t.id, number: t.ticketNumber, delivered: localDelivery.get(t.id) ?? t.delivered, winnerPosition: pos });
+      get(t.customer).tickets.push({ id: t.id, number: t.ticketNumber, delivered: t.delivered, winnerPosition: pos });
       if (pos !== undefined) get(t.customer).winnerPositions.push(pos);
     }
     return [...byCustomer.values()]
       .map((p) => ({ ...p, tickets: p.tickets.sort((a, b) => a.number - b.number), winnerPositions: p.winnerPositions.sort((a, b) => a - b) }))
       // Ganadores primero; después, los que más tickets tienen.
       .sort((a, b) => (Number(b.winnerPositions.length > 0) - Number(a.winnerPositions.length > 0)) || (b.tickets.length - a.tickets.length) || a.name.localeCompare(b.name, 'es'));
-  }, [raffle, threshold, localDelivery]);
+  }, [raffle, threshold]);
 
   const q = search.trim().toLowerCase();
   const filtered = q ? participants.filter((p) => p.name.toLowerCase().includes(q) || (p.phone ?? '').includes(q)) : participants;
@@ -172,7 +175,7 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' } 
     try {
       if (deliver) await rafflesApi.deliverTickets(raffle.id, ids);
       else         await rafflesApi.undeliverTickets(raffle.id, ids);
-      setLocalDelivery((prev) => { const next = new Map(prev); ids.forEach((id) => next.set(id, deliver)); return next; });
+      onDeliveryChanged();
       toast.success(deliver ? (ids.length === 1 ? 'Ticket entregado' : `${ids.length} tickets entregados`) : 'Entrega deshecha');
     } catch (err) {
       handleApiError(err, deliver ? 'Error al marcar como entregado' : 'Error al deshacer la entrega');

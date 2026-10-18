@@ -73,11 +73,14 @@ export class RaffleAutoTicketService {
     if (!activeRaffles.length) return;
 
     for (const raffle of activeRaffles) {
-      const item = items.find((i) => i.productId === raffle.productId);
-      if (!item) continue;
+      // El mismo producto puede venir en más de una línea: cuentan todas.
+      const quantity = items
+        .filter((i) => i.productId === raffle.productId)
+        .reduce((total, i) => total + i.quantity, 0);
+      if (quantity === 0) continue;
 
       const now = new Date();
-      const inputs: NewTicketInput[] = Array.from({ length: item.quantity }, () => ({
+      const inputs: NewTicketInput[] = Array.from({ length: quantity }, () => ({
         id: uuidv4(),
         tenantId,
         raffleId: raffle.id,

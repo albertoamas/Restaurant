@@ -48,6 +48,7 @@ export const SOCKET_EVENTS = {
   RAFFLE_DELETED:         'raffle.deleted',
   RAFFLE_TICKET_ADDED:    'raffle.ticket_added',
   RAFFLE_TICKETS_REVOKED: 'raffle.tickets_revoked',
+  RAFFLE_DELIVERY_CHANGED: 'raffle.delivery_changed',
 
   // Sesión de un usuario (solo a sus sockets): cambió su sucursal; el cliente relee /auth/me.
   USER_SESSION_UPDATED: 'user.session_updated',

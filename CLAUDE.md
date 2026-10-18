@@ -160,6 +160,11 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
     already has an active winner is not editable (the winner keeps the text it was drawn with).
   - Revoking never touches DRAWING/DRAWN raffles; delivered tickets are retired last and
     reported through `RAFFLE_TICKETS_REVOKED`.
+  - Customers and products are hard-deleted, and their raffle rows cascade or go null: deleting a
+    customer with tickets in an unfinished raffle (or any winner row), or a product used by any
+    raffle, is refused (409). Deactivate the product instead.
+  - Marking tickets delivered emits `RAFFLE_DELIVERY_CHANGED`; the screen refetches, it keeps no
+    local copy of the delivery state.
 - **admin** — `POST /admin/tenants` creates tenant + owner + first branch in one transaction;
   `/admin/tenants/:id/health` is the onboarding checklist (`docs/onboarding-cliente.md`).
 - **auth** — `PATCH /auth/me/password` (Mi cuenta) needs only the JWT and the current password; throttled to 5/min.

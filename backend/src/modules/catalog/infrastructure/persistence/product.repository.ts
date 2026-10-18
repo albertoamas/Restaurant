@@ -81,6 +81,10 @@ export class ProductRepository implements ProductRepositoryPort {
     return toDomain(row);
   }
 
+  async isUsedByRaffle(id: string, tenantId: string): Promise<boolean> {
+    return (await this.prisma.raffle.count({ where: { tenantId, productId: id } })) > 0;
+  }
+
   async delete(id: string, tenantId: string): Promise<void> {
     await this.prisma.product.delete({ where: { id, tenantId } });
   }

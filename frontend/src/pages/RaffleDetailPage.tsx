@@ -49,7 +49,7 @@ function RaffleDetailContent({ id }: { id: string }) {
     voidConfirmId, setVoidConfirmId,
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
     isDrawable, isDeletable, isActive, isReopenable, canVoid,
-    availableTickets, activeWinnersCount,
+    availableTickets, activeWinnersCount, reload,
   } = useRaffleDetail(id, goBack, () => {});
 
   const { user } = useAuth();
@@ -162,7 +162,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
         <Card padding="none">
           <h2 className="px-4 pt-4 pb-3 text-heading font-semibold text-main sm:px-5">Participantes</h2>
-          <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} />
+          <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} onDeliveryChanged={() => { void reload(); }} />
         </Card>
       </div>
 

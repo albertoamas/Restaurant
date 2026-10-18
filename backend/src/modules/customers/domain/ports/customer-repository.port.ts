@@ -10,5 +10,7 @@ export interface CustomerRepositoryPort {
   findAll(tenantId: string, q?: string, page?: number, limit?: number, sortBy?: 'name' | 'totalSpent' | 'purchaseCount', sortDir?: 'asc' | 'desc', dateFrom?: string, dateTo?: string): Promise<{ data: CustomerStatsDto[]; total: number }>;
   findOneWithStats(id: string, tenantId: string): Promise<CustomerStatsDto | null>;
   search(q: string, tenantId: string): Promise<CustomerSearchResult[]>;
+  /** Tiene tickets en un sorteo sin terminar o figura como ganador (aunque esté anulado) en alguno. */
+  isInvolvedInRaffles(id: string, tenantId: string): Promise<boolean>;
   delete(id: string, tenantId: string): Promise<void>;
 }
