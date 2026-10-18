@@ -27,7 +27,7 @@
 - Antes de ejecutar backend local, asegurar PostgreSQL levantado con `docker-compose up -d`.
 
 ## Conventions
-- No existe suite de tests automatizados establecida; validar cambios con typecheck y pruebas manuales de flujos afectados.
+- La suite automatizada (Jest, Vitest, Playwright) no es exhaustiva; validar cambios con typecheck y pruebas manuales de flujos afectados.
 - Si se toca `packages/shared`, compilar shared antes de validar backend/frontend: `pnpm --filter @pos/shared build`.
 - Mantener contratos compartidos en `packages/shared/src` y exportarlos en su `index.ts`.
 - En endpoints protegidos, usar decoradores y guards existentes (`@CurrentTenant`, `@CurrentUser`, `@Roles`, `JwtAuthGuard`, `RolesGuard`, `AdminGuard`).
@@ -36,6 +36,4 @@
 ## Reference Docs
 - Arquitectura, modulos y comandos extendidos: ver `CLAUDE.md`.
 - Pipeline de build/deploy: ver `.github/workflows/cd.yml`.
-- Pasos operativos de despliegue inicial VPS: ver `docs/linked-cuddling-mountain.md`.
-- Plan de auditoria pre-venta multi-restaurante: ver `docs/plan-auditoria-360.md`.
 - Instrucciones específicas para agentes de IA: ver `AGENTS.md`.
