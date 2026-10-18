@@ -17,12 +17,13 @@ import { ParticipantsList } from '../components/raffles/ParticipantsModal';
 import { StatusBadge } from '../components/raffles/StatusBadge';
 import { ticketRule } from '../components/raffles/RaffleCard';
 import { WinnerModal } from '../components/raffles/WinnerModal';
+import { DeleteRaffleModal } from '../components/raffles/DeleteRaffleModal';
 import { VoidWinnerModal } from '../components/raffles/VoidWinnerModal';
 import { DrawingScreen } from '../components/raffles/DrawingScreen';
 import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
 import { PrizesSection } from '../components/raffles/PrizesSection';
 import { useRaffleDetail } from '../hooks/useRaffleDetail';
-import { positionLabel } from '../utils/raffle-utils';
+import { formatTicketRanges, positionLabel } from '../utils/raffle-utils';
 import { downloadExcelSheets } from '../utils/excel';
 
 export function RaffleDetailPage() {
@@ -48,7 +49,7 @@ function RaffleDetailContent({ id }: { id: string }) {
     drawnWinner, setDrawnWinner,
     voidConfirmId, setVoidConfirmId,
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
-    isDrawable, isDeletable, isActive, isReopenable, canVoid,
+    isDrawable, isActive, isReopenable, canVoid,
     availableTickets, activeWinnersCount, reload,
   } = useRaffleDetail(id, goBack, () => {});
 
@@ -89,24 +90,41 @@ function RaffleDetailContent({ id }: { id: string }) {
   const participantCount = new Set(raffle.tickets.map((t) => t.customerId)).size;
   const voiding = raffle.winners.find((w) => w.id === voidConfirmId) ?? null;
 
-  const exportWinners = () => {
-    const rows = raffle.winners.filter((w) => !w.voided).sort((a, b) => a.position - b.position);
-    downloadExcelSheets(`ganadores-${raffle.name}`, [{
-      title: 'Ganadores',
-      headers: ['Lugar', 'Nombre', 'Teléfono', 'Ticket', 'Fecha del sorteo', 'Premio'],
-      rows: rows.map((w) => [
-        positionLabel(w.position), w.customer.name, w.customer.phone ?? '-', String(w.ticketNumber),
-        new Date(w.drawnAt).toLocaleDateString('es-BO'), w.prizeDescription ?? '-',
-      ]),
-    }]);
+  /** Participantes con sus tickets y ganadores: lo que conviene guardar antes de eliminar el sorteo. */
+  const exportRecord = () => {
+    const byCustomer = new Map<string, { name: string; phone: string | null; numbers: number[] }>();
+    for (const t of raffle.tickets) {
+      const entry = byCustomer.get(t.customerId) ?? { name: t.customer.name, phone: t.customer.phone, numbers: [] };
+      entry.numbers.push(t.ticketNumber);
+      byCustomer.set(t.customerId, entry);
+    }
+    const winners = raffle.winners.filter((w) => !w.voided).sort((a, b) => a.position - b.position);
+    downloadExcelSheets(`sorteo-${raffle.name}`, [
+      {
+        title: 'Participantes',
+        headers: ['Nombre', 'Teléfono', 'Tickets', 'Cantidad'],
+        rows: [...byCustomer.values()]
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((c) => [c.name, c.phone ?? '-', formatTicketRanges(c.numbers), String(c.numbers.length)]),
+      },
+      {
+        title: 'Ganadores',
+        headers: ['Lugar', 'Nombre', 'Teléfono', 'Ticket', 'Fecha del sorteo', 'Premio'],
+        rows: winners.map((w) => [
+          positionLabel(w.position), w.customer.name, w.customer.phone ?? '-', String(w.ticketNumber),
+          new Date(w.drawnAt).toLocaleDateString('es-BO'), w.prizeDescription ?? '-',
+        ]),
+      },
+    ]);
   };
+  const hasRecord = raffle.tickets.length > 0 || activeWinnersCount > 0;
 
   const menu: ActionMenuItem[] = [
     { label: 'Editar sorteo', icon: 'edit', onSelect: () => setEditOpen(true) },
     ...(isActive ? [{ label: 'Cerrar sorteo', icon: 'lock' as const, onSelect: () => { void handleClose(); } }] : []),
     ...(isReopenable ? [{ label: 'Reabrir sorteo', icon: 'refresh' as const, onSelect: () => { void handleReopen(); } }] : []),
-    ...(activeWinnersCount > 0 ? [{ label: 'Exportar ganadores', icon: 'download' as const, onSelect: exportWinners }] : []),
-    ...(isDeletable ? [{ label: 'Eliminar sorteo', icon: 'trash' as const, danger: true, onSelect: () => setDeleteConfirm(true) }] : []),
+    ...(hasRecord ? [{ label: 'Descargar registro', icon: 'download' as const, onSelect: exportRecord }] : []),
+    ...(!isActive ? [{ label: 'Eliminar sorteo', icon: 'trash' as const, danger: true, onSelect: () => setDeleteConfirm(true) }] : []),
   ];
 
   return (
@@ -162,7 +180,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
         <Card padding="none">
           <h2 className="px-4 pt-4 pb-3 text-heading font-semibold text-main sm:px-5">Participantes</h2>
-          <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} onDeliveryChanged={() => { void reload(); }} />
+          <ParticipantsList raffle={raffle} printSettings={ticketPrintSettings} onPrintChanged={() => { void reload(); }} />
         </Card>
       </div>
 
@@ -186,17 +204,16 @@ function RaffleDetailContent({ id }: { id: string }) {
         />
       )}
 
-      <ConfirmModal
-        isOpen={deleteConfirm}
-        onClose={() => setDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        loading={busy === 'delete'}
-        variant="danger"
-        title={`Eliminar "${raffle.name}"`}
-        message="Se eliminan también sus tickets y los consumos acumulados. Esta acción no se puede deshacer."
-        confirmLabel="Eliminar sorteo"
-        cancelLabel="Volver"
-      />
+      {deleteConfirm && (
+        <DeleteRaffleModal
+          raffleName={raffle.name}
+          loading={busy === 'delete'}
+          hasRecord={hasRecord}
+          onExport={exportRecord}
+          onClose={() => setDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
+      )}
 
       {drawingPosition !== null && (
         <DrawingScreen

@@ -47,15 +47,15 @@ export class RaffleAutoTicketService {
 
     const raffleIds = new Set(revoked.map((t) => t.raffleId));
     for (const raffleId of raffleIds) {
-      const deliveredTicketNumbers = revoked
-        .filter((t) => t.raffleId === raffleId && t.delivered)
+      const printedTicketNumbers = revoked
+        .filter((t) => t.raffleId === raffleId && t.printed)
         .map((t) => t.ticketNumber);
-      if (deliveredTicketNumbers.length) {
+      if (printedTicketNumbers.length) {
         this.logger.warn(
-          `Tickets ya entregados retirados raffleId=${raffleId} orderId=${orderId} numeros=${deliveredTicketNumbers.join(',')}`,
+          `Tickets ya impresos retirados raffleId=${raffleId} orderId=${orderId} numeros=${printedTicketNumbers.join(',')}`,
         );
       }
-      const payload: RaffleTicketsRevokedPayload = { raffleId, deliveredTicketNumbers };
+      const payload: RaffleTicketsRevokedPayload = { raffleId, printedTicketNumbers };
       this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, payload);
     }
   }

@@ -48,8 +48,8 @@ export interface RaffleTicketDto {
   customer: { id: string; name: string; phone: string | null };
   ticketNumber: number;
   orderId: string | null;
-  delivered: boolean;
-  deliveredAt: string | null;
+  /** Cuándo se imprimió para el ánfora. null = pendiente de imprimir. */
+  printedAt: string | null;
   createdAt: string;
 }
 
@@ -78,6 +78,12 @@ export interface CreateRaffleRequest {
   prizes: RafflePrizeDto[];
 }
 
+/** Marca (printed: true) o desmarca los tickets como impresos y puestos en el ánfora. */
+export interface SetTicketsPrintedRequest {
+  ticketIds: string[];
+  printed: boolean;
+}
+
 /** Motivo obligatorio: queda registrado junto con quién y cuándo anuló al ganador. */
 export interface VoidWinnerRequest {
   reason: string;
@@ -86,8 +92,8 @@ export interface VoidWinnerRequest {
 /** Payload de SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED: tickets retirados porque se canceló su pedido. */
 export interface RaffleTicketsRevokedPayload {
   raffleId: string;
-  /** Números de los tickets que ya estaban entregados al cliente y se retiraron. */
-  deliveredTicketNumbers: number[];
+  /** Números de los tickets que ya estaban impresos (en el ánfora) y hay que sacar de ella. */
+  printedTicketNumbers: number[];
 }
 
 /** Solo name, description y los textos de premios son editables en cualquier estado; el premio de un lugar que ya tiene ganador no. */

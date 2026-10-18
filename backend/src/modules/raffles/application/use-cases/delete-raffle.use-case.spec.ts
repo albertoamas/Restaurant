@@ -27,33 +27,27 @@ describe('DeleteRaffleUseCase', () => {
     repo.deleteRaffle.mockResolvedValue();
   });
 
-  it('elimina un sorteo ACTIVE y pasa id + tenantId al repositorio', async () => {
-    repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
+  it('elimina un sorteo CLOSED y pasa id + tenantId al repositorio', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
     await useCase.execute('r1', 'tenant-1');
     expect(repo.deleteRaffle).toHaveBeenCalledWith('r1', 'tenant-1');
   });
 
-  it('elimina un sorteo CLOSED', async () => {
-    repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
+  it.each(['DRAWING', 'DRAWN'] as const)('elimina un sorteo %s', async (status) => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle(status));
     await useCase.execute('r1', 'tenant-1');
     expect(repo.deleteRaffle).toHaveBeenCalledTimes(1);
+  });
+
+  it('no elimina un sorteo ACTIVE: hay que cerrarlo antes', async () => {
+    repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
+    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow('Cierra el sorteo');
+    expect(repo.deleteRaffle).not.toHaveBeenCalled();
   });
 
   it('lanza NotFoundException si no existe el sorteo', async () => {
     repo.findRaffleById.mockResolvedValue(null);
     await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(NotFoundException);
-    expect(repo.deleteRaffle).not.toHaveBeenCalled();
-  });
-
-  it('lanza BadRequestException si el sorteo está DRAWING', async () => {
-    repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
-    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
-    expect(repo.deleteRaffle).not.toHaveBeenCalled();
-  });
-
-  it('lanza BadRequestException si el sorteo ya fue sorteado (DRAWN)', async () => {
-    repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
-    await expect(useCase.execute('r1', 'tenant-1')).rejects.toThrow(BadRequestException);
     expect(repo.deleteRaffle).not.toHaveBeenCalled();
   });
 });

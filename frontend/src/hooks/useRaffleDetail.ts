@@ -8,6 +8,7 @@ import { SOCKET_EVENTS } from '@pos/shared';
 import type { DetailRaffle } from '../components/raffles/types';
 import { useSocketEvent } from '../context/socket.context';
 import { queryKeys } from '../lib/query-keys';
+import { formatTicketRanges } from '../utils/raffle-utils';
 
 const DRAW_DURATION_MS = 7000;
 export const WINNER_PAUSE_MS  = 4000;
@@ -48,13 +49,12 @@ export function useRaffleDetail(
   const handleTicketsRevoked = useCallback((data: RaffleTicketsRevokedPayload) => {
     if (data.raffleId !== raffleId) return;
     invalidate();
-    if (data.deliveredTicketNumbers.length > 0) {
-      const numbers = data.deliveredTicketNumbers.map((n) => `#${n}`).join(', ');
-      toast.error(`Un pedido cancelado retiró tickets ya entregados: ${numbers}`, { duration: 10000 });
+    if (data.printedTicketNumbers.length > 0) {
+      toast.error(`Un pedido cancelado anuló tickets que ya estaban en el ánfora. Sácalos: ${formatTicketRanges(data.printedTicketNumbers)}`, { duration: 15000 });
     }
   }, [raffleId, invalidate]);
 
-  const handleDeliveryChanged = useCallback((data: { raffleId: string }) => {
+  const handlePrintChanged = useCallback((data: { raffleId: string }) => {
     if (data.raffleId === raffleId) invalidate();
   }, [raffleId, invalidate]);
 
@@ -66,7 +66,7 @@ export function useRaffleDetail(
 
   useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_TICKET_ADDED, handleTicketAdded);
   useSocketEvent<RaffleTicketsRevokedPayload>(SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, handleTicketsRevoked);
-  useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_DELIVERY_CHANGED, handleDeliveryChanged);
+  useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_PRINT_CHANGED, handlePrintChanged);
   useSocketEvent<DetailRaffle>(SOCKET_EVENTS.RAFFLE_UPDATED, handleRaffleUpdated);
 
   // Mutations update cache directly with server response, no extra refetch needed
@@ -154,7 +154,6 @@ export function useRaffleDetail(
 
   // Se sortea con el sorteo cerrado: con el ánfora abierta seguirían entrando tickets.
   const isDrawable   = raffle?.status === 'CLOSED' || raffle?.status === 'DRAWING';
-  const isDeletable  = raffle?.status !== 'DRAWN' && raffle?.status !== 'DRAWING';
   const isActive     = raffle?.status === 'ACTIVE';
   const isReopenable = raffle?.status === 'CLOSED';
   const canVoid      = raffle?.status === 'DRAWING' || raffle?.status === 'DRAWN';
@@ -179,7 +178,7 @@ export function useRaffleDetail(
     voidConfirmId,  setVoidConfirmId,
     handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
     reload:     refetch,
-    isDrawable, isDeletable, isActive, isReopenable, canVoid,
+    isDrawable, isActive, isReopenable, canVoid,
     availableTickets,
     activeWinnersCount,
   };

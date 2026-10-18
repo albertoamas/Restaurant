@@ -194,8 +194,8 @@ describe('RaffleAutoTicketService', () => {
   describe('cancelOrderTickets()', () => {
     it('retira los tickets del pedido y avisa a los dueños de cada sorteo afectado', async () => {
       repo.revokeOrderTickets.mockResolvedValue([
-        { raffleId: 'r1', ticketNumber: 4, delivered: false },
-        { raffleId: 'r2', ticketNumber: 9, delivered: false },
+        { raffleId: 'r1', ticketNumber: 4, printed: false },
+        { raffleId: 'r2', ticketNumber: 9, printed: false },
       ]);
 
       await service.cancelOrderTickets('tenant-1', 'order-1');
@@ -203,21 +203,21 @@ describe('RaffleAutoTicketService', () => {
       expect(repo.revokeOrderTickets).toHaveBeenCalledWith('tenant-1', 'order-1');
       expect(events.emitToOwners).toHaveBeenCalledTimes(2);
       expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, {
-        raffleId: 'r1', deliveredTicketNumbers: [],
+        raffleId: 'r1', printedTicketNumbers: [],
       });
     });
 
-    it('informa qué tickets ya entregados se retiraron', async () => {
+    it('informa qué tickets ya impresos (en el ánfora) se retiraron', async () => {
       repo.revokeOrderTickets.mockResolvedValue([
-        { raffleId: 'r1', ticketNumber: 4, delivered: true },
-        { raffleId: 'r1', ticketNumber: 5, delivered: false },
+        { raffleId: 'r1', ticketNumber: 4, printed: true },
+        { raffleId: 'r1', ticketNumber: 5, printed: false },
       ]);
 
       await service.cancelOrderTickets('tenant-1', 'order-1');
 
       expect(events.emitToOwners).toHaveBeenCalledTimes(1);
       expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, {
-        raffleId: 'r1', deliveredTicketNumbers: [4],
+        raffleId: 'r1', printedTicketNumbers: [4],
       });
     });
 

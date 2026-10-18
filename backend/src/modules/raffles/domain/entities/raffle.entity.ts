@@ -132,9 +132,9 @@ export class Raffle {
     return WINNER_VOIDABLE_STATUSES.includes(this.status);
   }
 
-  /** No se puede eliminar si el sorteo ya comenzó o terminó. */
+  /** Un sorteo abierto sigue entregando tickets: primero se cierra. */
   get isDeletable(): boolean {
-    return this.status !== 'DRAWN' && this.status !== 'DRAWING';
+    return this.status !== 'ACTIVE';
   }
 
   get isReopenable(): boolean {

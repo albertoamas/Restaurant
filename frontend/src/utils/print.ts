@@ -1,6 +1,7 @@
 import type { DailyReportDto, OrderDto } from '@pos/shared';
 import { OrderType, PaymentMethod } from '@pos/shared';
 import { bs } from '../utils/money';
+import { formatTicketRanges } from './raffle-utils';
 
 /**
  * Escapa los caracteres especiales HTML para prevenir XSS al insertar
@@ -257,13 +258,6 @@ export function printReceipt(order: OrderDto, settings: ReceiptSettings): void {
 
 /* ─── Tickets físicos de sorteo ──────────────────────────────────────────── */
 
-/**
- * Imprime uno o varios tickets físicos de sorteo en impresora térmica.
- *
- * Cada ticket se separa con page-break-after:always para que el driver
- * trate cada uno como una "página" independiente en el rollo —
- * sin esto, tickets consecutivos salen pegados sin separación visual.
- */
 export interface RaffleTicketPrintSettings {
   businessName:     string;
   businessAddress?: string;
@@ -271,6 +265,28 @@ export interface RaffleTicketPrintSettings {
   receiptSlogan?:   string;
 }
 
+/** Cabecera común de los papeles del sorteo: negocio, dirección, teléfono y lema. */
+function raffleHeaderHtml(settings: RaffleTicketPrintSettings): string {
+  const addressLine = settings.businessAddress
+    ? `<div class="center" style="font-size:7pt">${escapeHtml(settings.businessAddress)}</div>` : '';
+  const phoneLine = settings.businessPhone
+    ? `<div class="center" style="font-size:7pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
+  const sloganLine = settings.receiptSlogan
+    ? `<div class="center" style="font-size:7pt;font-style:italic;margin-top:1pt">${escapeHtml(settings.receiptSlogan)}</div>` : '';
+  return `
+    <div class="center" style="font-size:9pt;font-weight:900">${escapeHtml(settings.businessName)}</div>
+    ${addressLine}${phoneLine}${sloganLine}`;
+}
+
+const todayLabel = () => new Date().toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/**
+ * Imprime una tira por ticket para el ánfora, en impresora térmica.
+ *
+ * Cada tira se separa con page-break-after:always para que el driver
+ * trate cada una como una "página" independiente en el rollo —
+ * sin esto, tiras consecutivas salen pegadas sin separación visual.
+ */
 export function printRaffleTickets(
   tickets: Array<{ ticketNumber: number; customerName: string }>,
   raffleName: string,
@@ -278,24 +294,15 @@ export function printRaffleTickets(
 ): void {
   if (!tickets.length) return;
 
-  const today = new Date().toLocaleDateString('es-BO', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  });
-
-  const addressLine = settings.businessAddress
-    ? `<div class="center" style="font-size:7pt">${escapeHtml(settings.businessAddress)}</div>` : '';
-  const phoneLine = settings.businessPhone
-    ? `<div class="center" style="font-size:7pt">Tel: ${escapeHtml(settings.businessPhone)}</div>` : '';
-  const sloganLine = settings.receiptSlogan
-    ? `<div class="center" style="font-size:7pt;font-style:italic;margin-top:1pt">${escapeHtml(settings.receiptSlogan)}</div>` : '';
+  const header = raffleHeaderHtml(settings);
+  const today = todayLabel();
 
   const html = tickets
     .map((t, i) => {
       const isLast = i === tickets.length - 1;
       return `
         <div style="${isLast ? '' : 'page-break-after:always;break-after:page;'}padding-bottom:8pt">
-          <div class="center" style="font-size:9pt;font-weight:900">${escapeHtml(settings.businessName)}</div>
-          ${addressLine}${phoneLine}${sloganLine}
+          ${header}
           <div class="divider"></div>
           <div class="center" style="font-size:9pt;font-weight:900;margin:2pt 0">${escapeHtml(raffleName)}</div>
           <div class="divider"></div>
@@ -310,6 +317,42 @@ export function printRaffleTickets(
     .join('');
 
   printViaIframe(html, 450);
+}
+
+export interface RaffleSummaryInfo {
+  customerName:  string;
+  raffleName:    string;
+  ticketNumbers: number[];
+  /** Solo en sorteos por monto: Bs que le faltan para ganar su próximo ticket. */
+  remainingForNext?: number;
+}
+
+/** HTML del resumen que se lleva el cliente: todos sus números en un solo papel. */
+export function buildRaffleSummaryHtml(info: RaffleSummaryInfo, settings: RaffleTicketPrintSettings): string {
+  const total = info.ticketNumbers.length;
+  const remaining = info.remainingForNext !== undefined
+    ? `<div class="center" style="font-size:8pt;margin-top:4pt">Te faltan ${bs(info.remainingForNext)} para tu próximo ticket</div>` : '';
+
+  return `
+    ${raffleHeaderHtml(settings)}
+    <div class="divider"></div>
+    <div class="center" style="font-size:9pt;font-weight:900">${escapeHtml(info.raffleName)}</div>
+    <div class="center" style="font-size:8pt;margin-top:2pt">RESUMEN DE TUS TICKETS</div>
+    <div class="divider"></div>
+    <div class="center" style="font-size:11pt;font-weight:900">${escapeHtml(info.customerName)}</div>
+    <div class="center" style="font-size:12pt;font-weight:900;margin:6pt 0;line-height:1.3">${escapeHtml(formatTicketRanges(info.ticketNumbers))}</div>
+    <div class="center" style="font-size:10pt;font-weight:900">${total === 1 ? '1 ticket' : `${total} tickets`}</div>
+    ${remaining}
+    <div class="divider"></div>
+    <div class="center" style="font-size:8pt">Tus tickets participan en el sorteo. Conserva este papel.</div>
+    <div class="center" style="font-size:8pt;margin-top:2pt">${todayLabel()}</div>
+  `;
+}
+
+/** Imprime el resumen del cliente. Es solo un papel informativo: no cambia el estado de ningún ticket. */
+export function printRaffleSummary(info: RaffleSummaryInfo, settings: RaffleTicketPrintSettings): void {
+  if (!info.ticketNumbers.length) return;
+  printViaIframe(buildRaffleSummaryHtml(info, settings), 450);
 }
 
 /* ─── Rendición del cajero ───────────────────────────────────────────────── */

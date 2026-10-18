@@ -27,8 +27,8 @@ export interface OrderSpendingInput {
 export interface RevokedTicket {
   raffleId: string;
   ticketNumber: number;
-  /** Ya se había entregado físicamente al cliente: el dueño debe saberlo. */
-  delivered: boolean;
+  /** Ya estaba impreso en el ánfora: el dueño debe sacarlo de ella. */
+  printed: boolean;
 }
 
 export interface RaffleRepositoryPort {
@@ -86,15 +86,15 @@ export interface RaffleRepositoryPort {
   /**
    * Retira lo que un pedido cancelado otorgó: sus tickets PRODUCT_MATCH y, en los sorteos
    * SPENDING_THRESHOLD, su aporte de gasto junto con los tickets que ese gasto ya no cubre
-   * (primero los no entregados, luego los más recientes). Solo actúa en sorteos ACTIVE o CLOSED.
+   * (primero los aún sin imprimir, luego los más recientes). Solo actúa en sorteos ACTIVE o CLOSED.
    */
   revokeOrderTickets(tenantId: string, orderId: string): Promise<RevokedTicket[]>;
 
-  /** Marca los tickets indicados como entregados físicamente. Solo actualiza los no entregados aún. */
-  deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
-
-  /** Revierte la entrega de los tickets indicados. Solo actualiza los ya entregados. */
-  undeliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
+  /**
+   * Marca (printed = true) o desmarca los tickets como impresos para el ánfora. Solo cambia los que
+   * están en el estado contrario: repetirlo no mueve la fecha de impresión.
+   */
+  setTicketsPrinted(raffleId: string, ticketIds: string[], tenantId: string, printed: boolean): Promise<void>;
 
   /** Actualiza nombre, descripción y/o textos de premios. No toca numberOfWinners, ticketMode ni posiciones. */
   updateRaffle(
