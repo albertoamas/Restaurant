@@ -32,9 +32,15 @@ function makeWinner(overrides: Partial<RaffleWinner> = {}): RaffleWinner {
     prizeDescription: '1er lugar',
     drawnAt: new Date(),
     voided: false,
+    voidedAt: null,
+    voidedBy: null,
+    voidReason: null,
     ...overrides,
   });
 }
+
+const execute = (useCase: VoidWinnerUseCase) =>
+  useCase.execute('r1', 'winner-1', 'tenant-1', 'user-1', 'Cliente no se presentó');
 
 describe('VoidWinnerUseCase', () => {
   let useCase: VoidWinnerUseCase;
@@ -43,42 +49,48 @@ describe('VoidWinnerUseCase', () => {
   beforeEach(() => {
     repo    = mock<RaffleRepositoryPort>();
     useCase = new VoidWinnerUseCase(repo);
-    repo.voidWinner.mockResolvedValue();
-    repo.saveRaffle.mockResolvedValue({} as any);
+    repo.voidWinnerAtomic.mockResolvedValue();
     repo.findRaffleWithTickets.mockResolvedValue({ id: 'r1', tickets: [] } as any);
   });
 
   describe('anulación desde DRAWN', () => {
-    it('anula el ganador y transiciona el sorteo de DRAWN a DRAWING', async () => {
+    it('anula al ganador y pide pasar el sorteo de DRAWN a DRAWING en la misma operación atómica', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
       repo.findWinnersByRaffleId.mockResolvedValue([makeWinner()]);
 
-      await useCase.execute('r1', 'winner-1', 'tenant-1');
+      await execute(useCase);
 
-      expect(repo.voidWinner).toHaveBeenCalledWith('winner-1', 'r1', 'tenant-1');
-      const saved = repo.saveRaffle.mock.calls[0][0];
-      expect(saved.status).toBe('DRAWING');
-    });
-
-    it('llama a saveRaffle cuando el sorteo estaba DRAWN', async () => {
-      repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
-      repo.findWinnersByRaffleId.mockResolvedValue([makeWinner()]);
-
-      await useCase.execute('r1', 'winner-1', 'tenant-1');
-
-      expect(repo.saveRaffle).toHaveBeenCalledTimes(1);
+      expect(repo.voidWinnerAtomic).toHaveBeenCalledTimes(1);
+      const [winner, newStatus] = repo.voidWinnerAtomic.mock.calls[0];
+      expect(winner.id).toBe('winner-1');
+      expect(newStatus).toBe('DRAWING');
+      expect(repo.saveRaffle).not.toHaveBeenCalled();
     });
   });
 
   describe('anulación desde DRAWING', () => {
-    it('anula el ganador y el sorteo permanece en DRAWING', async () => {
+    it('anula al ganador y el sorteo permanece en DRAWING', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
       repo.findWinnersByRaffleId.mockResolvedValue([makeWinner()]);
 
-      await useCase.execute('r1', 'winner-1', 'tenant-1');
+      await execute(useCase);
 
-      expect(repo.voidWinner).toHaveBeenCalledWith('winner-1', 'r1', 'tenant-1');
-      expect(repo.saveRaffle).not.toHaveBeenCalled();
+      expect(repo.voidWinnerAtomic.mock.calls[0][1]).toBe('DRAWING');
+    });
+  });
+
+  describe('auditoría', () => {
+    it('registra quién anuló, cuándo y por qué', async () => {
+      repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
+      repo.findWinnersByRaffleId.mockResolvedValue([makeWinner()]);
+
+      await execute(useCase);
+
+      const winner = repo.voidWinnerAtomic.mock.calls[0][0];
+      expect(winner.voided).toBe(true);
+      expect(winner.voidedBy).toBe('user-1');
+      expect(winner.voidReason).toBe('Cliente no se presentó');
+      expect(winner.voidedAt).toBeInstanceOf(Date);
     });
   });
 
@@ -86,40 +98,31 @@ describe('VoidWinnerUseCase', () => {
     it('lanza NotFoundException si el sorteo no existe', async () => {
       repo.findRaffleById.mockResolvedValue(null);
 
-      await expect(useCase.execute('r1', 'winner-1', 'tenant-1')).rejects.toThrow(NotFoundException);
-      expect(repo.voidWinner).not.toHaveBeenCalled();
+      await expect(execute(useCase)).rejects.toThrow(NotFoundException);
+      expect(repo.voidWinnerAtomic).not.toHaveBeenCalled();
     });
 
-    it('lanza BadRequestException si el sorteo está ACTIVE', async () => {
-      repo.findRaffleById.mockResolvedValue(makeRaffle('ACTIVE'));
+    it.each(['ACTIVE', 'CLOSED'] as const)('lanza BadRequestException si el sorteo está %s', async (status) => {
+      repo.findRaffleById.mockResolvedValue(makeRaffle(status));
 
-      await expect(useCase.execute('r1', 'winner-1', 'tenant-1')).rejects.toThrow(BadRequestException);
-      expect(repo.voidWinner).not.toHaveBeenCalled();
-    });
-
-    it('lanza BadRequestException si el sorteo está CLOSED', async () => {
-      repo.findRaffleById.mockResolvedValue(makeRaffle('CLOSED'));
-
-      await expect(useCase.execute('r1', 'winner-1', 'tenant-1')).rejects.toThrow(BadRequestException);
-      expect(repo.voidWinner).not.toHaveBeenCalled();
+      await expect(execute(useCase)).rejects.toThrow(BadRequestException);
+      expect(repo.voidWinnerAtomic).not.toHaveBeenCalled();
     });
 
     it('lanza NotFoundException si el winner no existe en el sorteo', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWN'));
       repo.findWinnersByRaffleId.mockResolvedValue([]);
 
-      await expect(useCase.execute('r1', 'winner-1', 'tenant-1')).rejects.toThrow(NotFoundException);
-      expect(repo.voidWinner).not.toHaveBeenCalled();
+      await expect(execute(useCase)).rejects.toThrow(NotFoundException);
+      expect(repo.voidWinnerAtomic).not.toHaveBeenCalled();
     });
 
     it('lanza NotFoundException si el winner ya está anulado', async () => {
       repo.findRaffleById.mockResolvedValue(makeRaffle('DRAWING'));
-      repo.findWinnersByRaffleId.mockResolvedValue([
-        makeWinner({ voided: true }),
-      ]);
+      repo.findWinnersByRaffleId.mockResolvedValue([makeWinner({ voided: true })]);
 
-      await expect(useCase.execute('r1', 'winner-1', 'tenant-1')).rejects.toThrow(NotFoundException);
-      expect(repo.voidWinner).not.toHaveBeenCalled();
+      await expect(execute(useCase)).rejects.toThrow(NotFoundException);
+      expect(repo.voidWinnerAtomic).not.toHaveBeenCalled();
     });
   });
 });

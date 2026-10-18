@@ -6,6 +6,7 @@ import { OrderRepositoryPort } from '../../domain/ports/order-repository.port';
 import { CashSessionRepositoryPort } from '../../../cash-session/domain/ports/cash-session-repository.port';
 import { Order } from '../../domain/entities/order.entity';
 import { CashSession } from '../../../cash-session/domain/entities/cash-session.entity';
+import { RaffleAutoTicketService } from '../../../raffles/application/services/raffle-auto-ticket.service';
 import { RegisterOrderPaymentDto } from '../dto/register-order-payment.dto';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -53,11 +54,14 @@ describe('RegisterOrderPaymentUseCase', () => {
   let useCase: RegisterOrderPaymentUseCase;
   let orderRepo: MockProxy<OrderRepositoryPort>;
   let cashSessionRepo: MockProxy<CashSessionRepositoryPort>;
+  let raffleAutoTicket: MockProxy<RaffleAutoTicketService>;
 
   beforeEach(() => {
     orderRepo      = mock<OrderRepositoryPort>();
     cashSessionRepo = mock<CashSessionRepositoryPort>();
-    useCase = new RegisterOrderPaymentUseCase(orderRepo, cashSessionRepo);
+    raffleAutoTicket = mock<RaffleAutoTicketService>();
+    raffleAutoTicket.cancelOrderTickets.mockResolvedValue();
+    useCase = new RegisterOrderPaymentUseCase(orderRepo, cashSessionRepo, undefined, raffleAutoTicket);
   });
 
   it('throws NotFoundException when order does not exist', async () => {
@@ -116,6 +120,47 @@ describe('RegisterOrderPaymentUseCase', () => {
     await expect(
       useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }])),
     ).resolves.not.toThrow();
+  });
+
+  it('retira los tickets del sorteo al cobrar con CORTESIA, una vez registrado el pago', async () => {
+    const order = makeOrder({ total: 100 });
+    orderRepo.findById.mockResolvedValue(order);
+    orderRepo.registerPayments.mockResolvedValue(order);
+
+    await useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }]));
+
+    expect(raffleAutoTicket.cancelOrderTickets).toHaveBeenCalledWith(TENANT_ID, ORDER_ID);
+  });
+
+  it('no retira tickets si el pago no es CORTESIA', async () => {
+    const order = makeOrder({ total: 100 });
+    orderRepo.findById.mockResolvedValue(order);
+    orderRepo.registerPayments.mockResolvedValue(order);
+
+    await useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.QR, amount: 100 }]));
+
+    expect(raffleAutoTicket.cancelOrderTickets).not.toHaveBeenCalled();
+  });
+
+  it('no retira tickets si el pedido ya fue cobrado por otra solicitud', async () => {
+    orderRepo.findById.mockResolvedValue(makeOrder({ total: 100 }));
+    orderRepo.registerPayments.mockResolvedValue(null);
+
+    await expect(
+      useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }])),
+    ).rejects.toThrow(BadRequestException);
+    expect(raffleAutoTicket.cancelOrderTickets).not.toHaveBeenCalled();
+  });
+
+  it('el cobro se completa aunque falle el retiro de tickets', async () => {
+    const order = makeOrder({ total: 100 });
+    orderRepo.findById.mockResolvedValue(order);
+    orderRepo.registerPayments.mockResolvedValue(order);
+    raffleAutoTicket.cancelOrderTickets.mockRejectedValue(new Error('db caída'));
+
+    await expect(
+      useCase.execute(TENANT_ID, ORDER_ID, UserRole.OWNER, makeDto([{ method: PaymentMethod.CORTESIA, amount: 100 }])),
+    ).resolves.toBe(order);
   });
 
   it('throws BadRequestException when CORTESIA is combined with another method', async () => {

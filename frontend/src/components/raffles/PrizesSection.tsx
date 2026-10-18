@@ -50,7 +50,7 @@ export function PrizesSection({ prizes, winners, raffleName, canVoid, onVoid, bu
               )}
               {voided.length > 0 && (
                 <p className="text-caption text-muted">
-                  Anulado: {voided.map((v) => v.customer.name).join(', ')}
+                  Anulado: {voided.map((v) => (v.voidReason ? `${v.customer.name} (${v.voidReason})` : v.customer.name)).join(', ')}
                 </p>
               )}
             </div>

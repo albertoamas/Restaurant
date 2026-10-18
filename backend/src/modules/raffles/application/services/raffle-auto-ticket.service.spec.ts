@@ -2,6 +2,8 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { RaffleAutoTicketService } from './raffle-auto-ticket.service';
 import { NewTicketInput, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
 import { Raffle } from '../../domain/entities/raffle.entity';
+import { EventsService } from '../../../events/events.service';
+import { SOCKET_EVENTS } from '@pos/shared';
 
 const PRIZES = [{ position: 1, prizeDescription: 'Premio' }];
 
@@ -22,13 +24,14 @@ function makeSpendingRaffle(threshold: number): Raffle {
 describe('RaffleAutoTicketService', () => {
   let service: RaffleAutoTicketService;
   let repo: MockProxy<RaffleRepositoryPort>;
+  let events: MockProxy<EventsService>;
 
   beforeEach(() => {
     repo    = mock<RaffleRepositoryPort>();
-    service = new RaffleAutoTicketService(repo);
-    repo.addTickets.mockResolvedValue();
+    events  = mock<EventsService>();
+    service = new RaffleAutoTicketService(repo, events);
+    repo.addTickets.mockResolvedValue(true);
     repo.findActiveSpendingRaffles.mockResolvedValue([]);
-    repo.findRevertibleSpendingRaffles.mockResolvedValue([]);
     repo.findActiveRafflesForProducts.mockResolvedValue([]);
   });
 
@@ -76,6 +79,24 @@ describe('RaffleAutoTicketService', () => {
       expect(new Set(ids).size).toBe(3);
     });
 
+    it('avisa a los dueños cuando se emitieron tickets', async () => {
+      const raffle = makeProductRaffle('prod-1');
+      repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [{ productId: 'prod-1', quantity: 1 }], 100);
+
+      expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
+    });
+
+    it('no avisa si el sorteo ya no estaba ACTIVE y no se emitió nada', async () => {
+      repo.findActiveRafflesForProducts.mockResolvedValue([makeProductRaffle('prod-1')]);
+      repo.addTickets.mockResolvedValue(false);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [{ productId: 'prod-1', quantity: 1 }], 100);
+
+      expect(events.emitToOwners).not.toHaveBeenCalled();
+    });
+
     it('no hace nada si no hay sorteos activos de producto', async () => {
       repo.findActiveRafflesForProducts.mockResolvedValue([]);
 
@@ -120,130 +141,78 @@ describe('RaffleAutoTicketService', () => {
   });
 
   describe('processOrder() — SPENDING_THRESHOLD', () => {
-    it('emite 1 ticket cuando el total supera el umbral por primera vez', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
-      repo.addCustomerSpending.mockResolvedValue({ newTotal: 100 });
-      repo.countTicketsByCustomer.mockResolvedValue(0);
+    it('registra el aporte del pedido en cada sorteo de gasto activo', async () => {
+      const r1 = makeSpendingRaffle(100);
+      const r2 = makeSpendingRaffle(50);
+      repo.findActiveSpendingRaffles.mockResolvedValue([r1, r2]);
+      repo.applyOrderSpending.mockResolvedValue(0);
 
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 100);
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 120);
 
-      expect(repo.addCustomerSpending).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 100);
-      expect(repo.addTickets).toHaveBeenCalledTimes(1);
-      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
-      expect(inputs).toHaveLength(1);
-      expect(inputs[0].orderId).toBeNull();
+      expect(repo.applyOrderSpending).toHaveBeenCalledTimes(2);
+      expect(repo.applyOrderSpending).toHaveBeenCalledWith({
+        tenantId: 'tenant-1', raffleId: r1.id, customerId: 'cust-1', orderId: 'order-1', amount: 120,
+      });
+      expect(repo.applyOrderSpending).toHaveBeenCalledWith({
+        tenantId: 'tenant-1', raffleId: r2.id, customerId: 'cust-1', orderId: 'order-1', amount: 120,
+      });
     });
 
-    it('emite 2 tickets cuando el total cruza dos umbrales de golpe', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
-      repo.addCustomerSpending.mockResolvedValue({ newTotal: 250 });
-      repo.countTicketsByCustomer.mockResolvedValue(0);
+    it('avisa a los dueños solo del sorteo que emitió tickets', async () => {
+      const r1 = makeSpendingRaffle(100);
+      const r2 = makeSpendingRaffle(500);
+      repo.findActiveSpendingRaffles.mockResolvedValue([r1, r2]);
+      repo.applyOrderSpending.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
 
       await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 250);
 
-      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
-      expect(inputs).toHaveLength(2);
+      expect(events.emitToOwners).toHaveBeenCalledTimes(1);
+      expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: r1.id });
     });
 
-    it('no emite tickets cuando el total no alcanza el umbral', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
-      repo.addCustomerSpending.mockResolvedValue({ newTotal: 80 });
-      repo.countTicketsByCustomer.mockResolvedValue(0);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 80);
-
-      expect(repo.addTickets).not.toHaveBeenCalled();
-    });
-
-    it('no emite tickets si ya los tiene todos asignados (idempotente)', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.findActiveSpendingRaffles.mockResolvedValue([raffle]);
-      repo.addCustomerSpending.mockResolvedValue({ newTotal: 200 });
-      repo.countTicketsByCustomer.mockResolvedValue(2); // ya tiene 2
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 100);
-
-      expect(repo.addTickets).not.toHaveBeenCalled();
-    });
-
-    it('no llama a addCustomerSpending si no hay sorteos spending activos', async () => {
-      repo.findActiveSpendingRaffles.mockResolvedValue([]);
-
+    it('no hace nada si no hay sorteos de gasto activos', async () => {
       await service.processOrder('tenant-1', 'cust-1', 'order-1', [], 500);
 
-      expect(repo.addCustomerSpending).not.toHaveBeenCalled();
+      expect(repo.applyOrderSpending).not.toHaveBeenCalled();
     });
   });
 
   describe('cancelOrderTickets()', () => {
-    it('llama a deleteTicketsByOrderId con los parámetros correctos', async () => {
-      repo.deleteTicketsByOrderId.mockResolvedValue();
+    it('retira los tickets del pedido y avisa a los dueños de cada sorteo afectado', async () => {
+      repo.revokeOrderTickets.mockResolvedValue([
+        { raffleId: 'r1', ticketNumber: 4, delivered: false },
+        { raffleId: 'r2', ticketNumber: 9, delivered: false },
+      ]);
 
       await service.cancelOrderTickets('tenant-1', 'order-1');
 
-      expect(repo.deleteTicketsByOrderId).toHaveBeenCalledWith('tenant-1', 'order-1');
-    });
-
-    it('revierte gasto acumulado cuando se proveen customerId y orderTotal', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.deleteTicketsByOrderId.mockResolvedValue();
-      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
-      repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 50 });
-      repo.countTicketsByCustomer.mockResolvedValue(1);
-
-      await service.cancelOrderTickets('tenant-1', 'order-1', {
-        customerId: 'cust-1',
-        orderTotal: 50,
+      expect(repo.revokeOrderTickets).toHaveBeenCalledWith('tenant-1', 'order-1');
+      expect(events.emitToOwners).toHaveBeenCalledTimes(2);
+      expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, {
+        raffleId: 'r1', deliveredTicketNumbers: [],
       });
-
-      expect(repo.subtractCustomerSpending).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 50);
     });
 
-    it('revierte gasto en sorteo CLOSED (no solo ACTIVE)', async () => {
-      const raffle = makeSpendingRaffle(50);
-      repo.deleteTicketsByOrderId.mockResolvedValue();
-      // findRevertibleSpendingRaffles incluye ACTIVE y CLOSED
-      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
-      repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 0 });
-      repo.countTicketsByCustomer.mockResolvedValue(1);
-      repo.deleteExcessTicketsByCustomer.mockResolvedValue();
-
-      await service.cancelOrderTickets('tenant-1', 'order-1', {
-        customerId: 'cust-1',
-        orderTotal: 50,
-      });
-
-      expect(repo.subtractCustomerSpending).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 50);
-      expect(repo.deleteExcessTicketsByCustomer).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 1);
-    });
-
-    it('borra tickets en exceso cuando el revertido baja por debajo del umbral', async () => {
-      const raffle = makeSpendingRaffle(100);
-      repo.deleteTicketsByOrderId.mockResolvedValue();
-      repo.findRevertibleSpendingRaffles.mockResolvedValue([raffle]);
-      // Antes de revertir: total 200 → 2 tickets; tras revertir 150: total 50 → 0 tickets
-      repo.subtractCustomerSpending.mockResolvedValue({ newTotal: 50 });
-      repo.countTicketsByCustomer.mockResolvedValue(2);
-      repo.deleteExcessTicketsByCustomer.mockResolvedValue();
-
-      await service.cancelOrderTickets('tenant-1', 'order-1', {
-        customerId: 'cust-1',
-        orderTotal: 150,
-      });
-
-      expect(repo.deleteExcessTicketsByCustomer).toHaveBeenCalledWith('tenant-1', raffle.id, 'cust-1', 2);
-    });
-
-    it('no revierte spending cuando opts está ausente', async () => {
-      repo.deleteTicketsByOrderId.mockResolvedValue();
+    it('informa qué tickets ya entregados se retiraron', async () => {
+      repo.revokeOrderTickets.mockResolvedValue([
+        { raffleId: 'r1', ticketNumber: 4, delivered: true },
+        { raffleId: 'r1', ticketNumber: 5, delivered: false },
+      ]);
 
       await service.cancelOrderTickets('tenant-1', 'order-1');
 
-      expect(repo.subtractCustomerSpending).not.toHaveBeenCalled();
-      expect(repo.findRevertibleSpendingRaffles).not.toHaveBeenCalled();
+      expect(events.emitToOwners).toHaveBeenCalledTimes(1);
+      expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, {
+        raffleId: 'r1', deliveredTicketNumbers: [4],
+      });
+    });
+
+    it('no avisa a nadie si el pedido no había otorgado tickets', async () => {
+      repo.revokeOrderTickets.mockResolvedValue([]);
+
+      await service.cancelOrderTickets('tenant-1', 'order-1');
+
+      expect(events.emitToOwners).not.toHaveBeenCalled();
     });
   });
 });

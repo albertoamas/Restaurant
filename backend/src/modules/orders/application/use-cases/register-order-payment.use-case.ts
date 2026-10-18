@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { PaymentMethod, UserRole, SOCKET_EVENTS } from '@pos/shared';
 import { Order } from '../../domain/entities/order.entity';
@@ -11,6 +11,8 @@ import { RaffleAutoTicketService } from '../../../raffles/application/services/r
 
 @Injectable()
 export class RegisterOrderPaymentUseCase {
+  private readonly logger = new Logger(RegisterOrderPaymentUseCase.name);
+
   constructor(
     @Inject('OrderRepositoryPort')
     private readonly orderRepository: OrderRepositoryPort,
@@ -55,14 +57,6 @@ export class RegisterOrderPaymentUseCase {
       throw new BadRequestException('Cortesía no puede combinarse con otros métodos de pago');
     }
 
-    // Revoke any raffle tickets already assigned to this order (deferred-payment CORTESIA path)
-    if (hasCortesia && this.raffleAutoTicket) {
-      this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId, {
-        customerId: order.customerId ?? undefined,
-        orderTotal: order.total,
-      }).catch(() => {});
-    }
-
     // 5. Cash session check if any payment is CASH
     const hasCashPayment = dto.payments.some((p) => p.method === PaymentMethod.CASH);
     if (hasCashPayment) {
@@ -99,6 +93,13 @@ export class RegisterOrderPaymentUseCase {
 
     // 9. Notify connected clients
     this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
+
+    // 10. Revoke the raffle tickets assigned when the order was created (deferred-payment CORTESIA path)
+    if (hasCortesia && this.raffleAutoTicket) {
+      await this.raffleAutoTicket.cancelOrderTickets(tenantId, orderId).catch((err) =>
+        this.logger.error(`cancelOrderTickets failed orderId=${orderId} tenantId=${tenantId}`, err?.stack),
+      );
+    }
 
     return saved;
   }

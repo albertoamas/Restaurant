@@ -40,10 +40,7 @@ export class UpdateOrderStatusUseCase {
     this.eventsService?.emitToBranch(tenantId, saved.branchId, SOCKET_EVENTS.ORDER_UPDATED, saved);
 
     if (newStatus === OrderStatus.CANCELLED && this.raffleAutoTicket) {
-      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id, {
-        customerId: order.customerId ?? undefined,
-        orderTotal: order.total,
-      }).catch((err) => this.logger.error(`cancelOrderTickets failed orderId=${id} tenantId=${tenantId}`, err?.stack));
+      await this.raffleAutoTicket.cancelOrderTickets(tenantId, id).catch((err) => this.logger.error(`cancelOrderTickets failed orderId=${id} tenantId=${tenantId}`, err?.stack));
     }
 
     return saved;

@@ -25,6 +25,8 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
   const [prizes, setPrizes] = useState(raffle.prizes.map((p) => ({ ...p })));
   const [saving, setSaving] = useState(false);
 
+  // El ganador conserva el premio con que se sorteó: el de un lugar ya sorteado no se edita.
+  const awardedPositions = new Set(raffle.winners.filter((w) => !w.voided).map((w) => w.position));
 
   const nameChanged        = name.trim() !== raffle.name;
   const descriptionChanged = description.trim() !== (raffle.description ?? '');
@@ -79,6 +81,7 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
                 aria-label={`Premio del ${positionLabel(prize.position)}`}
                 leftAddon={<span className="w-16 text-label">{positionLabel(prize.position)}</span>}
                 value={prize.prizeDescription}
+                disabled={awardedPositions.has(prize.position)}
                 maxLength={500}
                 onChange={(e) => {
                   const next = [...prizes];
@@ -87,6 +90,9 @@ export function EditRaffleModal({ raffle, onClose, onUpdated }: Props) {
                 }}
               />
             ))}
+            {awardedPositions.size > 0 && (
+              <p className="text-caption text-muted">El premio de un lugar que ya tiene ganador no se puede cambiar.</p>
+            )}
           </fieldset>
         )}
 

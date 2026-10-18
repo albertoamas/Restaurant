@@ -85,6 +85,7 @@ model Tenant {
   raffleTickets           RaffleTicket[]
   raffleWinners           RaffleWinner[]
   customerRaffleSpending  CustomerRaffleSpending[]
+  raffleOrderSpending     RaffleOrderSpending[]
 
   @@map("tenants")
 }
@@ -184,6 +185,7 @@ model Order {
   items         OrderItem[]
   payments      OrderPayment[]
   raffleTickets RaffleTicket[]
+  raffleOrderSpending RaffleOrderSpending[]
 
   @@index([tenantId, orderNumber])
   @@index([tenantId, createdAt])
@@ -389,6 +391,7 @@ model Customer {
   raffleTickets          RaffleTicket[]
   raffleWins             RaffleWinner[]
   customerRaffleSpending CustomerRaffleSpending[]
+  raffleOrderSpending    RaffleOrderSpending[]
 
   @@unique([tenantId, phone])
   @@index([tenantId, name])
@@ -419,6 +422,7 @@ model Raffle {
   prizes                 RafflePrize[]
   winners                RaffleWinner[]
   customerSpendings      CustomerRaffleSpending[]
+  orderSpendings         RaffleOrderSpending[]
 
   @@index([tenantId, status])
   @@index([tenantId, productId])
@@ -455,6 +459,10 @@ model RaffleWinner {
   prizeDescription String?  @map("prize_description") @db.VarChar(500)
   drawnAt          DateTime @default(now()) @map("drawn_at") @db.Timestamptz(3)
   voided           Boolean  @default(false) @map("voided")
+  // Auditoría de la anulación: quién (id de usuario), cuándo y por qué.
+  voidedAt         DateTime? @map("voided_at") @db.Timestamptz(3)
+  voidedBy         String?   @map("voided_by")
+  voidReason       String?   @map("void_reason") @db.VarChar(500)
 
   tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   raffle   Raffle       @relation(fields: [raffleId], references: [id], onDelete: Cascade)
@@ -510,4 +518,28 @@ model CustomerRaffleSpending {
   @@unique([raffleId, customerId])
   @@index([tenantId, raffleId])
   @@map("customer_raffle_spending")
+}
+
+// ─── RaffleOrderSpending ──────────────────────────────────────
+// Lo que cada pedido aportó al gasto acumulado de un cliente en un sorteo SPENDING_THRESHOLD.
+// Permite revertir exactamente ese aporte al cancelar el pedido (y solo si de verdad sumó) y
+// hace idempotente el registro: un pedido suma una sola vez por sorteo (@@unique).
+
+model RaffleOrderSpending {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  raffleId   String   @map("raffle_id")
+  customerId String   @map("customer_id")
+  orderId    String   @map("order_id")
+  amount     Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([raffleId, orderId])
+  @@index([tenantId, orderId])
+  @@map("raffle_order_spending")
 }

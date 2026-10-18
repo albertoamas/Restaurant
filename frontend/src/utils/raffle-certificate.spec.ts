@@ -22,6 +22,8 @@ function makeWinner(overrides: Partial<RaffleWinnerDto & { customerName: string;
     ticketNumber: 42,
     drawnAt: new Date('2026-01-15T14:00:00Z').toISOString(),
     voided: false,
+    voidedAt: null,
+    voidReason: null,
     ...Object.fromEntries(
       Object.entries(overrides).filter(([k]) => !['customerName', 'customerPhone'].includes(k)),
     ),

@@ -146,8 +146,20 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
 - **expenses** — OWNER only; `cashSessionId` nullable (an expense can exist without an open
   session); per-tenant `ExpenseCategory` and `ExpenseConcept` models; optional `items[]`.
 - **raffles** — requires `rafflesEnabled`; ACTIVE→CLOSED→DRAWING→DRAWN. Ticket modes:
-  `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent, tracked
-  in `CustomerRaffleSpending`). `RaffleAutoTicketService` issues tickets on order create/complete.
+  `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent).
+  `RaffleAutoTicketService` issues tickets when an order is **created** (fire-and-forget) and
+  retires them when it is cancelled or paid as CORTESIA. Rules that are easy to break:
+  - Every write that touches tickets, winners or status runs in one transaction that starts with
+    `lockRaffle` (`SELECT … FOR UPDATE` on the raffle row) and re-checks the status under the lock.
+  - `SPENDING_THRESHOLD`: `RaffleOrderSpending` is the per-order ledger (unique per raffle+order,
+    so retries are idempotent); `CustomerRaffleSpending` is the running total. Cancelling reverts
+    exactly the ledger entry, never `order.total`: an order that never contributed (CORTESIA,
+    created before the raffle) reverts nothing. Orders from before that ledger existed have no entry.
+  - Drawing needs the raffle CLOSED (or already DRAWING); each customer wins one prize per raffle.
+  - Voiding a winner requires a reason and records who and when; the prize of a position that
+    already has an active winner is not editable (the winner keeps the text it was drawn with).
+  - Revoking never touches DRAWING/DRAWN raffles; delivered tickets are retired last and
+    reported through `RAFFLE_TICKETS_REVOKED`.
 - **admin** — `POST /admin/tenants` creates tenant + owner + first branch in one transaction;
   `/admin/tenants/:id/health` is the onboarding checklist (`docs/onboarding-cliente.md`).
 - **auth** — `PATCH /auth/me/password` (Mi cuenta) needs only the JWT and the current password; throttled to 5/min.

@@ -17,7 +17,7 @@ import { RolesGuard } from '../../../../common/guards/roles.guard';
 import { ModuleGuard } from '../../../../common/guards/module.guard';
 import { Roles } from '../../../../common/decorators/roles.decorator';
 import { RequiresModule } from '../../../../common/decorators/module-flags.decorator';
-import { CurrentTenant } from '../../../../common/decorators/tenant.decorator';
+import { CurrentTenant, CurrentUser, JwtPayload } from '../../../../common/decorators/tenant.decorator';
 import { CreateRaffleUseCase } from '../../application/use-cases/create-raffle.use-case';
 import { ListRafflesUseCase } from '../../application/use-cases/list-raffles.use-case';
 import { GetRaffleUseCase } from '../../application/use-cases/get-raffle.use-case';
@@ -32,6 +32,7 @@ import { UpdateRaffleUseCase } from '../../application/use-cases/update-raffle.u
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
 import { DeliverTicketsDto } from '../../application/dto/deliver-tickets.dto';
 import { UpdateRaffleDto } from '../../application/dto/update-raffle.dto';
+import { VoidWinnerDto } from '../../application/dto/void-winner.dto';
 
 @Controller('raffles')
 @UseGuards(JwtAuthGuard, ModuleGuard, RolesGuard)
@@ -117,8 +118,10 @@ export class RaffleController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('winnerId', ParseUUIDPipe) winnerId: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: VoidWinnerDto,
   ) {
-    return this.voidWinner.execute(id, winnerId, tenantId);
+    return this.voidWinner.execute(id, winnerId, tenantId, user.sub, dto.reason);
   }
 
   @Patch(':id/tickets/deliver')

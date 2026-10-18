@@ -10,6 +10,9 @@ export interface RaffleWinnerProps {
   prizeDescription: string | null;
   drawnAt: Date;
   voided: boolean;
+  voidedAt: Date | null;
+  voidedBy: string | null;
+  voidReason: string | null;
 }
 
 export class RaffleWinner {
@@ -22,21 +25,37 @@ export class RaffleWinner {
   readonly prizeDescription: string | null;
   readonly drawnAt: Date;
   voided: boolean;
+  voidedAt: Date | null;
+  voidedBy: string | null;
+  voidReason: string | null;
 
   private constructor(props: RaffleWinnerProps) {
     Object.assign(this, props);
   }
 
-  static create(props: Omit<RaffleWinnerProps, 'id' | 'drawnAt' | 'voided'>): RaffleWinner {
+  static create(
+    props: Omit<RaffleWinnerProps, 'id' | 'drawnAt' | 'voided' | 'voidedAt' | 'voidedBy' | 'voidReason'>,
+  ): RaffleWinner {
     return new RaffleWinner({
       ...props,
       id: uuidv4(),
       drawnAt: new Date(),
       voided: false,
+      voidedAt: null,
+      voidedBy: null,
+      voidReason: null,
     });
   }
 
   static reconstitute(props: RaffleWinnerProps): RaffleWinner {
     return new RaffleWinner(props);
+  }
+
+  /** Anula al ganador dejando registrado quién lo hizo y por qué. */
+  void(voidedBy: string, reason: string): void {
+    this.voided = true;
+    this.voidedAt = new Date();
+    this.voidedBy = voidedBy;
+    this.voidReason = reason;
   }
 }

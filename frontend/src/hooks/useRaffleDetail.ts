@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { rafflesApi } from '../api/raffles.api';
 import { handleApiError } from '../utils/api-error';
-import type { RaffleWinnerDto } from '@pos/shared';
+import type { RaffleTicketsRevokedPayload, RaffleWinnerDto } from '@pos/shared';
 import { SOCKET_EVENTS } from '@pos/shared';
 import type { DetailRaffle } from '../components/raffles/types';
 import { useSocketEvent } from '../context/socket.context';
@@ -44,6 +45,15 @@ export function useRaffleDetail(
     if (data.raffleId === raffleId) invalidate();
   }, [raffleId, invalidate]);
 
+  const handleTicketsRevoked = useCallback((data: RaffleTicketsRevokedPayload) => {
+    if (data.raffleId !== raffleId) return;
+    invalidate();
+    if (data.deliveredTicketNumbers.length > 0) {
+      const numbers = data.deliveredTicketNumbers.map((n) => `#${n}`).join(', ');
+      toast.error(`Un pedido cancelado retiró tickets ya entregados: ${numbers}`, { duration: 10000 });
+    }
+  }, [raffleId, invalidate]);
+
   const handleRaffleUpdated = useCallback((updated: DetailRaffle) => {
     if (updated?.id === raffleId) {
       queryClient.setQueryData(qk, updated);
@@ -51,6 +61,7 @@ export function useRaffleDetail(
   }, [raffleId, queryClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_TICKET_ADDED, handleTicketAdded);
+  useSocketEvent<RaffleTicketsRevokedPayload>(SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, handleTicketsRevoked);
   useSocketEvent<DetailRaffle>(SOCKET_EVENTS.RAFFLE_UPDATED, handleRaffleUpdated);
 
   // Mutations update cache directly with server response, no extra refetch needed
@@ -80,12 +91,12 @@ export function useRaffleDetail(
     finally { setBusy(null); }
   }
 
-  async function handleVoidWinner(winnerId: string) {
+  async function handleVoidWinner(winnerId: string, reason: string) {
     if (!raffle) return;
     setBusy(`void-${winnerId}`);
     setVoidConfirmId(null);
     try {
-      const updated = await rafflesApi.voidWinner(raffle.id, winnerId);
+      const updated = await rafflesApi.voidWinner(raffle.id, winnerId, { reason });
       setRaffle(updated);
       onUpdate();
     } catch (err) { handleApiError(err, 'Error al anular ganador'); }
@@ -136,14 +147,16 @@ export function useRaffleDetail(
     }
   }
 
-  const isDrawable   = raffle?.status === 'ACTIVE' || raffle?.status === 'CLOSED' || raffle?.status === 'DRAWING';
+  // Se sortea con el sorteo cerrado: con el ánfora abierta seguirían entrando tickets.
+  const isDrawable   = raffle?.status === 'CLOSED' || raffle?.status === 'DRAWING';
   const isDeletable  = raffle?.status !== 'DRAWN' && raffle?.status !== 'DRAWING';
   const isActive     = raffle?.status === 'ACTIVE';
   const isReopenable = raffle?.status === 'CLOSED';
   const canVoid      = raffle?.status === 'DRAWING' || raffle?.status === 'DRAWN';
 
-  const activeWinnerTicketIds = new Set(raffle?.winners.filter((w) => !w.voided).map((w) => w.ticketId) ?? []);
-  const availableTickets      = raffle?.tickets.filter((t) => !activeWinnerTicketIds.has(t.id)) ?? [];
+  // Cada cliente gana un solo premio: el ánfora excluye todos los tickets de quien ya ganó.
+  const winnerCustomerIds = new Set(raffle?.winners.filter((w) => !w.voided).map((w) => w.customerId) ?? []);
+  const availableTickets  = raffle?.tickets.filter((t) => !winnerCustomerIds.has(t.customerId)) ?? [];
   const activeWinnersCount    = raffle?.winners.filter((w) => !w.voided).length ?? 0;
 
   return {

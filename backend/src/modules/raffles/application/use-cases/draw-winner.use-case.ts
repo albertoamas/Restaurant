@@ -18,6 +18,9 @@ export class DrawWinnerUseCase {
   async execute(id: string, tenantId: string): Promise<RaffleDetailDto> {
     const raffle = await this.repo.findRaffleById(id, tenantId);
     if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
+    if (raffle.isActive) {
+      throw new BadRequestException('Cierra el sorteo antes de sortear: así no entran tickets nuevos mientras se elige');
+    }
     if (!raffle.isDrawable) {
       throw new BadRequestException('El sorteo ya fue completado, no se pueden sortear más ganadores');
     }
@@ -29,12 +32,12 @@ export class DrawWinnerUseCase {
 
     // withTickets.winners ya incluye todos los ganadores del sorteo.
     const activeWinners = withTickets.winners.filter((w) => !w.voided);
-    const activeTicketIds = new Set(activeWinners.map((w) => w.ticketId));
+    const winnerCustomerIds = new Set(activeWinners.map((w) => w.customerId));
 
-    // Pool: tickets que no pertenecen a un ganador activo.
-    const availableTickets = withTickets.tickets.filter((t) => !activeTicketIds.has(t.id));
+    // Pool: tickets de clientes que aún no ganaron. Cada cliente gana un solo premio por sorteo.
+    const availableTickets = withTickets.tickets.filter((t) => !winnerCustomerIds.has(t.customerId));
     if (availableTickets.length === 0) {
-      throw new BadRequestException('No quedan tickets disponibles en el ánfora');
+      throw new BadRequestException('No quedan tickets de clientes que no hayan ganado: cada cliente gana un solo premio');
     }
 
     // La próxima posición: la más alta entre las que aún no tienen ganador activo.
@@ -68,7 +71,7 @@ export class DrawWinnerUseCase {
       raffle.startDrawing();
     }
 
-    // Inserción atómica: advisory lock + re-check de estado + insert winner + update status
+    // Inserción atómica: bloqueo del sorteo + re-check de estado + insert winner + update status
     await this.repo.drawWinnerAtomic(id, tenantId, winner, raffle.status);
     this.logger.log(`draw success raffleId=${id} tenantId=${tenantId} position=${nextPosition} ticketId=${winnerTicket.id} newStatus=${raffle.status}`);
 

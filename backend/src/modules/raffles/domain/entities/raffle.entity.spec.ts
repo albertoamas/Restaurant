@@ -1,4 +1,4 @@
-import { Raffle } from './raffle.entity';
+import { Raffle, ticketsEarned } from './raffle.entity';
 
 const PRIZES_1 = [{ position: 1, prizeDescription: '1er lugar' }];
 const PRIZES_3 = [
@@ -172,11 +172,18 @@ describe('Raffle entity', () => {
       expect(makeRaffle('DRAWN').isActive).toBe(false);
     });
 
-    it('isDrawable — true en ACTIVE, CLOSED y DRAWING; false en DRAWN', () => {
-      expect(makeRaffle('ACTIVE').isDrawable).toBe(true);
+    it('isDrawable — true en CLOSED y DRAWING; false en ACTIVE (hay que cerrarlo) y DRAWN', () => {
+      expect(makeRaffle('ACTIVE').isDrawable).toBe(false);
       expect(makeRaffle('CLOSED').isDrawable).toBe(true);
       expect(makeRaffle('DRAWING').isDrawable).toBe(true);
       expect(makeRaffle('DRAWN').isDrawable).toBe(false);
+    });
+
+    it('isWinnerVoidable — true solo en DRAWING y DRAWN', () => {
+      expect(makeRaffle('ACTIVE').isWinnerVoidable).toBe(false);
+      expect(makeRaffle('CLOSED').isWinnerVoidable).toBe(false);
+      expect(makeRaffle('DRAWING').isWinnerVoidable).toBe(true);
+      expect(makeRaffle('DRAWN').isWinnerVoidable).toBe(true);
     });
 
     it('isDeletable — false en DRAWING y DRAWN, true en ACTIVE y CLOSED', () => {
@@ -192,5 +199,14 @@ describe('Raffle entity', () => {
       expect(makeRaffle('DRAWING').isReopenable).toBe(false);
       expect(makeRaffle('DRAWN').isReopenable).toBe(false);
     });
+  });
+});
+
+describe('ticketsEarned()', () => {
+  it('da un ticket por cada múltiplo completo del umbral', () => {
+    expect(ticketsEarned(0, 100)).toBe(0);
+    expect(ticketsEarned(99.99, 100)).toBe(0);
+    expect(ticketsEarned(100, 100)).toBe(1);
+    expect(ticketsEarned(250, 100)).toBe(2);
   });
 });

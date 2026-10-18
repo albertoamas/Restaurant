@@ -17,6 +17,7 @@ import { ParticipantsList } from '../components/raffles/ParticipantsModal';
 import { StatusBadge } from '../components/raffles/StatusBadge';
 import { ticketRule } from '../components/raffles/RaffleCard';
 import { WinnerModal } from '../components/raffles/WinnerModal';
+import { VoidWinnerModal } from '../components/raffles/VoidWinnerModal';
 import { DrawingScreen } from '../components/raffles/DrawingScreen';
 import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
 import { PrizesSection } from '../components/raffles/PrizesSection';
@@ -128,8 +129,11 @@ function RaffleDetailContent({ id }: { id: string }) {
         }
       >
         {raffle.description && <p className="text-body text-soft">{raffle.description}</p>}
+        {isActive && next !== null && (
+          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Cierra el sorteo para poder sortear: así no entran tickets nuevos mientras se elige a los ganadores.</p>
+        )}
         {isDrawable && next !== null && availableTickets.length === 0 && (
-          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Para sortear hace falta al menos un ticket en el ánfora.</p>
+          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Para sortear hace falta al menos un ticket de un cliente que aún no haya ganado.</p>
         )}
       </PageHeader>
 
@@ -173,17 +177,14 @@ function RaffleDetailContent({ id }: { id: string }) {
         cancelLabel="Volver"
       />
 
-      <ConfirmModal
-        isOpen={voiding !== null}
-        onClose={() => setVoidConfirmId(null)}
-        onConfirm={() => { if (voiding) void handleVoidWinner(voiding.id); }}
-        loading={!!busy && busy.startsWith('void-')}
-        variant="danger"
-        title={voiding ? `Anular a ${voiding.customer.name}` : 'Anular ganador'}
-        message={voiding ? `El ${positionLabel(voiding.position)} queda sin ganador y se puede volver a sortear.` : ''}
-        confirmLabel="Anular ganador"
-        cancelLabel="Volver"
-      />
+      {voiding && (
+        <VoidWinnerModal
+          winner={voiding}
+          loading={!!busy && busy.startsWith('void-')}
+          onClose={() => setVoidConfirmId(null)}
+          onConfirm={(reason) => { void handleVoidWinner(voiding.id, reason); }}
+        />
+      )}
 
       <ConfirmModal
         isOpen={deleteConfirm}
