@@ -33,6 +33,19 @@ export class CategoryRepository implements CategoryRepositoryPort {
     return row ? toDomain(row) : null;
   }
 
+  async findByIds(ids: string[], tenantId: string): Promise<Category[]> {
+    const rows = await this.prisma.category.findMany({ where: { id: { in: ids }, tenantId } });
+    return rows.map(toDomain);
+  }
+
+  async isUsedByRaffle(id: string, tenantId: string): Promise<boolean> {
+    const [byCategory, byProduct] = await Promise.all([
+      this.prisma.raffleCategory.count({ where: { tenantId, categoryId: id } }),
+      this.prisma.raffle.count({ where: { tenantId, product: { categoryId: id } } }),
+    ]);
+    return byCategory + byProduct > 0;
+  }
+
   async save(category: Category): Promise<Category> {
     const data = {
       id: category.id,

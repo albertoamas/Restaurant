@@ -210,3 +210,48 @@ describe('ticketsEarned()', () => {
     expect(ticketsEarned(250, 100)).toBe(2);
   });
 });
+
+describe('ticketsForItems()', () => {
+  const line = (productId: string, categoryId: string, quantity: number) => ({ productId, categoryId, quantity });
+  const byCategory = (...categoryIds: string[]) => Raffle.create({
+    tenantId: 'tenant-1', name: 'Categorías', ticketMode: 'CATEGORY_MATCH', productId: null, categoryIds,
+    spendingThreshold: null, numberOfWinners: 1, prizes: PRIZES_1,
+  });
+
+  it('por categorías: un ticket por unidad de cualquier producto de las categorías elegidas', () => {
+    const raffle = byCategory('hamburguesas', 'milanesas');
+
+    expect(raffle.ticketsForItems([
+      line('hamburguesa-simple', 'hamburguesas', 2),
+      line('milanesa-napolitana', 'milanesas', 1),
+      line('soda', 'bebidas', 1),
+    ])).toBe(3);
+  });
+
+  it('por categorías: dos productos distintos de la misma categoría suman', () => {
+    expect(byCategory('hamburguesas').ticketsForItems([
+      line('simple', 'hamburguesas', 1), line('doble', 'hamburguesas', 2),
+    ])).toBe(3);
+  });
+
+  it('por categorías: un pedido sin productos de esas categorías no da tickets', () => {
+    expect(byCategory('hamburguesas').ticketsForItems([line('soda', 'bebidas', 4)])).toBe(0);
+  });
+
+  it('por producto (sorteos anteriores): cuenta solo las unidades de ese producto, aunque venga en varias líneas', () => {
+    const raffle = makeRaffle('ACTIVE'); // PRODUCT_MATCH con productId prod-1
+
+    expect(raffle.ticketsForItems([
+      line('prod-1', 'cat-a', 2), line('prod-2', 'cat-a', 5), line('prod-1', 'cat-a', 1),
+    ])).toBe(3);
+  });
+
+  it('por monto: las líneas no dan tickets', () => {
+    const raffle = Raffle.create({
+      tenantId: 'tenant-1', name: 'Monto', ticketMode: 'SPENDING_THRESHOLD', productId: null,
+      spendingThreshold: 100, numberOfWinners: 1, prizes: PRIZES_1,
+    });
+
+    expect(raffle.ticketsForItems([line('prod-1', 'cat-a', 9)])).toBe(0);
+  });
+});

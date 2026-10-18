@@ -1,36 +1,32 @@
-import { useState, useEffect, useId } from 'react';
+import { useState, useId } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { Input, Select, Textarea } from '../ui/Input';
+import { chipClass } from '../ui/filter-chip';
+import { Input, Textarea } from '../ui/Input';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { rafflesApi } from '../../api/raffles.api';
-import { productsApi } from '../../api/products.api';
+import { useCategories } from '../../hooks/useCategories';
 import { handleApiError } from '../../utils/api-error';
-import type { RaffleDto, ProductDto, RaffleTicketMode } from '@pos/shared';
+import type { CreateRaffleRequest, RaffleDto } from '@pos/shared';
 
 import { positionLabel } from '../../utils/raffle-utils';
 
+type NewRaffleMode = CreateRaffleRequest['ticketMode'];
+
 export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void; onCreated: (r: RaffleDto) => void }) {
-  const [ticketMode, setTicketMode] = useState<RaffleTicketMode>('PRODUCT_MATCH');
+  const [ticketMode, setTicketMode] = useState<NewRaffleMode>('CATEGORY_MATCH');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [productId, setProductId] = useState('');
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [spendingThreshold, setSpendingThreshold] = useState<number>(100);
   const [numberOfWinners, setNumberOfWinners] = useState(1);
   const [prizes, setPrizes] = useState<string[]>(['']);
-  const [products, setProducts] = useState<ProductDto[]>([]);
   const [saving, setSaving] = useState(false);
+  const { categories, loading: loadingCategories } = useCategories();
   const formId = useId();
 
-  useEffect(() => {
-    productsApi.getAll({ includeInactive: false, limit: 200 })
-      .then((r) => setProducts(r.data))
-      .catch((err) => handleApiError(err, 'Error al cargar productos'));
-  }, []);
-
-  function handleModeChange(mode: RaffleTicketMode) {
-    setTicketMode(mode);
-    setProductId('');
+  function toggleCategory(id: string) {
+    setCategoryIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   }
 
   function handleWinnersChange(n: number) {
@@ -48,8 +44,8 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
   }
 
   const modeValid =
-    ticketMode === 'PRODUCT_MATCH'
-      ? productId !== ''
+    ticketMode === 'CATEGORY_MATCH'
+      ? categoryIds.length > 0
       : spendingThreshold >= 1;
 
   const isValid =
@@ -67,7 +63,7 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
       const raffle = await rafflesApi.create({
         name: name.trim(),
         ticketMode,
-        productId: ticketMode === 'PRODUCT_MATCH' ? productId : undefined,
+        categoryIds: ticketMode === 'CATEGORY_MATCH' ? categoryIds : undefined,
         spendingThreshold: ticketMode === 'SPENDING_THRESHOLD' ? spendingThreshold : undefined,
         description: description.trim() || undefined,
         numberOfWinners,
@@ -106,24 +102,40 @@ export function CreateRaffleModal({ onClose, onCreated }: { onClose: () => void;
             label="Cómo se gana un ticket"
             fullWidth
             value={ticketMode}
-            onChange={handleModeChange}
+            onChange={setTicketMode}
             options={[
-              { value: 'PRODUCT_MATCH', label: 'Comprando un producto' },
+              { value: 'CATEGORY_MATCH', label: 'Comprando de categorías' },
               { value: 'SPENDING_THRESHOLD', label: 'Por monto consumido' },
             ]}
           />
         </div>
 
-        {ticketMode === 'PRODUCT_MATCH' ? (
-          <Select
-            label="Producto del sorteo"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-            hint="Cada pedido con este producto y un cliente asignado le da un ticket a ese cliente."
-          >
-            <option value="">Elige un producto</option>
-            {products.filter((p) => p.isActive).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </Select>
+        {ticketMode === 'CATEGORY_MATCH' ? (
+          <fieldset>
+            <legend className="mb-1.5 text-label font-medium text-soft">Categorías del sorteo</legend>
+            {loadingCategories ? (
+              <p className="text-label text-soft">Cargando categorías...</p>
+            ) : categories.length === 0 ? (
+              <p className="text-label text-soft">Primero crea una categoría en Productos.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={categoryIds.includes(c.id)}
+                    onClick={() => toggleCategory(c.id)}
+                    className={chipClass(categoryIds.includes(c.id))}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-1.5 text-caption text-muted">
+              Cada unidad que un cliente asignado compre de estas categorías le da un ticket.
+            </p>
+          </fieldset>
         ) : (
           <Input
             label="Un ticket cada"

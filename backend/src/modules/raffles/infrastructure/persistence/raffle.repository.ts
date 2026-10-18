@@ -21,40 +21,35 @@ import {
   RevokedTicket,
 } from '../../domain/ports/raffle-repository.port';
 
-type RaffleWithRelations = Prisma.RaffleGetPayload<{
-  include: {
-    product: { select: { id: true; name: true } };
-    prizes: { orderBy: { position: 'asc' } };
-    winners: {
-      include: { customer: { select: { id: true; name: true; phone: true } }; ticket: { select: { ticketNumber: true } } };
-      orderBy: { position: 'asc' };
-    };
-    _count: { select: { tickets: true } };
-  };
-}>;
+const customerSelect = { select: { id: true, name: true, phone: true } } satisfies { select: Prisma.CustomerSelect };
 
-type RaffleWithTickets = Prisma.RaffleGetPayload<{
-  include: {
-    product: { select: { id: true; name: true } };
-    prizes: { orderBy: { position: 'asc' } };
-    winners: {
-      include: {
-        customer: { select: { id: true; name: true; phone: true } };
-        ticket: { select: { ticketNumber: true } };
-      };
-      orderBy: { position: 'asc' };
-    };
-    tickets: {
-      include: { customer: { select: { id: true; name: true; phone: true } } };
-      orderBy: { ticketNumber: 'asc' };
-    };
-    customerSpendings: {
-      include: { customer: { select: { id: true; name: true; phone: true } } };
-      orderBy: { totalSpent: 'desc' };
-    };
-    _count: { select: { tickets: true } };
-  };
-}>;
+/** Lo que muestra la lista de sorteos. */
+const listInclude = {
+  product: { select: { id: true, name: true } },
+  categories: { include: { category: { select: { id: true, name: true } } } },
+  prizes: { orderBy: { position: 'asc' } },
+  winners: {
+    include: { customer: customerSelect, ticket: { select: { ticketNumber: true } } },
+    orderBy: { position: 'asc' },
+  },
+  _count: { select: { tickets: true } },
+} satisfies Prisma.RaffleInclude;
+
+/** Lista + tickets y gasto acumulado: el detalle de un sorteo. */
+const detailInclude = {
+  ...listInclude,
+  tickets: { include: { customer: customerSelect }, orderBy: { ticketNumber: 'asc' } },
+  customerSpendings: { include: { customer: customerSelect }, orderBy: { totalSpent: 'desc' } },
+} satisfies Prisma.RaffleInclude;
+
+/** Lo que necesita el dominio para reconstruir un sorteo. */
+const domainInclude = {
+  prizes: { orderBy: { position: 'asc' } },
+  categories: { select: { categoryId: true } },
+} satisfies Prisma.RaffleInclude;
+
+type RaffleWithRelations = Prisma.RaffleGetPayload<{ include: typeof listInclude }>;
+type RaffleWithTickets = Prisma.RaffleGetPayload<{ include: typeof detailInclude }>;
 
 @Injectable()
 export class RaffleRepository implements RaffleRepositoryPort {
@@ -87,6 +82,9 @@ export class RaffleRepository implements RaffleRepositoryPort {
           prizeDescription: p.prizeDescription,
         })),
       }),
+      this.prisma.raffleCategory.createMany({
+        data: raffle.categoryIds.map((categoryId) => ({ raffleId: raffle.id, categoryId, tenantId: raffle.tenantId })),
+      }),
     ]);
   }
 
@@ -107,7 +105,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   async findRaffleById(id: string, tenantId: string): Promise<Raffle | null> {
     const row = await this.prisma.raffle.findFirst({
       where: { id, tenantId },
-      include: { prizes: { orderBy: { position: 'asc' } } },
+      include: domainInclude,
     });
     return row ? this.raffleToDomain(row) : null;
   }
@@ -115,18 +113,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   async findAllRaffles(tenantId: string): Promise<RaffleDto[]> {
     const rows = await this.prisma.raffle.findMany({
       where: { tenantId },
-      include: {
-        product: { select: { id: true, name: true } },
-        prizes: { orderBy: { position: 'asc' } },
-        winners: {
-          include: {
-            customer: { select: { id: true, name: true, phone: true } },
-            ticket: { select: { ticketNumber: true } },
-          },
-          orderBy: { position: 'asc' },
-        },
-        _count: { select: { tickets: true } },
-      },
+      include: listInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -134,29 +121,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   }
 
   async findRaffleWithTickets(id: string, tenantId: string): Promise<RaffleDetailDto | null> {
-    const row = await this.prisma.raffle.findFirst({
-      where: { id, tenantId },
-      include: {
-        product: { select: { id: true, name: true } },
-        prizes: { orderBy: { position: 'asc' } },
-        winners: {
-          include: {
-            customer: { select: { id: true, name: true, phone: true } },
-            ticket: { select: { ticketNumber: true } },
-          },
-          orderBy: { position: 'asc' },
-        },
-        tickets: {
-          include: { customer: { select: { id: true, name: true, phone: true } } },
-          orderBy: { ticketNumber: 'asc' },
-        },
-        customerSpendings: {
-          include: { customer: { select: { id: true, name: true, phone: true } } },
-          orderBy: { totalSpent: 'desc' },
-        },
-        _count: { select: { tickets: true } },
-      },
-    });
+    const row = await this.prisma.raffle.findFirst({ where: { id, tenantId }, include: detailInclude });
     if (!row) return null;
 
     const threshold = row.spendingThreshold ?? 1;
@@ -183,10 +148,17 @@ export class RaffleRepository implements RaffleRepositoryPort {
     };
   }
 
-  async findActiveRafflesForProducts(tenantId: string, productIds: string[]): Promise<Raffle[]> {
+  async findActiveItemRaffles(tenantId: string, productIds: string[], categoryIds: string[]): Promise<Raffle[]> {
     const rows = await this.prisma.raffle.findMany({
-      where: { tenantId, status: 'ACTIVE', ticketMode: 'PRODUCT_MATCH', productId: { in: productIds } },
-      include: { prizes: { orderBy: { position: 'asc' } } },
+      where: {
+        tenantId,
+        status: 'ACTIVE',
+        OR: [
+          { ticketMode: 'PRODUCT_MATCH', productId: { in: productIds } },
+          { ticketMode: 'CATEGORY_MATCH', categories: { some: { categoryId: { in: categoryIds } } } },
+        ],
+      },
+      include: domainInclude,
     });
     return rows.map((r) => this.raffleToDomain(r));
   }
@@ -194,7 +166,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
   async findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]> {
     const rows = await this.prisma.raffle.findMany({
       where: { tenantId, status: 'ACTIVE', ticketMode: 'SPENDING_THRESHOLD' },
-      include: { prizes: { orderBy: { position: 'asc' } } },
+      include: domainInclude,
     });
     return rows.map((r) => this.raffleToDomain(r));
   }
@@ -539,6 +511,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
       spendingThreshold: row.spendingThreshold ?? null,
       productId: row.product?.id ?? null,
       productName: row.product?.name ?? null,
+      categories: row.categories.map((c) => ({ id: c.category.id, name: c.category.name })),
       prizes: (row.prizes ?? []).map((p) => ({
         position: p.position,
         prizeDescription: p.prizeDescription,
@@ -551,7 +524,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
     };
   }
 
-  private raffleToDomain(row: Prisma.RaffleGetPayload<{ include: { prizes: true } }>): Raffle {
+  private raffleToDomain(row: Prisma.RaffleGetPayload<{ include: typeof domainInclude }>): Raffle {
     return Raffle.reconstitute({
       id: row.id,
       tenantId: row.tenantId,
@@ -562,6 +535,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
       ticketMode: (row.ticketMode ?? 'PRODUCT_MATCH') as RaffleTicketMode,
       spendingThreshold: row.spendingThreshold ?? null,
       productId: row.productId ?? null,
+      categoryIds: row.categories.map((c) => c.categoryId),
       prizes: (row.prizes ?? []).map((p): RafflePrize => ({
         position: p.position,
         prizeDescription: p.prizeDescription,

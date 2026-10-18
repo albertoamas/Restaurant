@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { RaffleTicketsRevokedPayload, SOCKET_EVENTS } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
+import { OrderTicketItem } from '../../domain/entities/raffle.entity';
 import { EventsService } from '../../../events/events.service';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class RaffleAutoTicketService {
   /**
    * Asigna tickets automáticamente tras crear una orden.
    *
-   * PRODUCT_MATCH: emite N tickets por cada item cuyo productId coincida con un sorteo activo.
+   * PRODUCT_MATCH / CATEGORY_MATCH: emite un ticket por cada unidad que cumple la regla del sorteo.
    * SPENDING_THRESHOLD: registra el aporte del pedido al gasto del cliente y emite los tickets que
    * ese gasto le faltaba.
    */
@@ -25,11 +26,11 @@ export class RaffleAutoTicketService {
     tenantId: string,
     customerId: string,
     orderId: string,
-    items: Array<{ productId: string; quantity: number }>,
+    items: OrderTicketItem[],
     orderTotal: number,
   ): Promise<void> {
     await Promise.all([
-      this.processProductMatchTickets(tenantId, customerId, orderId, items),
+      this.processItemTickets(tenantId, customerId, orderId, items),
       this.processSpendingThresholdTickets(tenantId, customerId, orderId, orderTotal),
     ]);
   }
@@ -62,21 +63,18 @@ export class RaffleAutoTicketService {
 
   // ── Privados ───────────────────────────────────────────────────────────────
 
-  private async processProductMatchTickets(
+  private async processItemTickets(
     tenantId: string,
     customerId: string,
     orderId: string,
-    items: Array<{ productId: string; quantity: number }>,
+    items: OrderTicketItem[],
   ): Promise<void> {
     const productIds = items.map((i) => i.productId);
-    const activeRaffles = await this.repo.findActiveRafflesForProducts(tenantId, productIds);
-    if (!activeRaffles.length) return;
+    const categoryIds = items.map((i) => i.categoryId);
+    const activeRaffles = await this.repo.findActiveItemRaffles(tenantId, productIds, categoryIds);
 
     for (const raffle of activeRaffles) {
-      // El mismo producto puede venir en más de una línea: cuentan todas.
-      const quantity = items
-        .filter((i) => i.productId === raffle.productId)
-        .reduce((total, i) => total + i.quantity, 0);
+      const quantity = raffle.ticketsForItems(items);
       if (quantity === 0) continue;
 
       const now = new Date();

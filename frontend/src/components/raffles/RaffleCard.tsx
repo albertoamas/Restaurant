@@ -1,13 +1,18 @@
 import type { RaffleDto, RaffleStatus } from '@pos/shared';
 import { Icon } from '../ui/Icon';
 import { STATUS_CONFIG, StatusBadge } from './StatusBadge';
-import { positionLabel } from '../../utils/raffle-utils';
+import { joinList, positionLabel } from '../../utils/raffle-utils';
 
 /** Cómo se gana un ticket, en una frase. */
-export function ticketRule(raffle: Pick<RaffleDto, 'ticketMode' | 'spendingThreshold' | 'productName'>): string {
-  return raffle.ticketMode === 'SPENDING_THRESHOLD'
-    ? `Un ticket cada Bs ${raffle.spendingThreshold} de consumo`
-    : `Un ticket por cada ${raffle.productName ?? 'producto del sorteo'}`;
+export function ticketRule(raffle: Pick<RaffleDto, 'ticketMode' | 'spendingThreshold' | 'productName' | 'categories'>): string {
+  switch (raffle.ticketMode) {
+    case 'SPENDING_THRESHOLD':
+      return `Un ticket cada Bs ${raffle.spendingThreshold} de consumo`;
+    case 'CATEGORY_MATCH':
+      return `Un ticket por cada unidad de ${joinList(raffle.categories.map((c) => c.name))}`;
+    case 'PRODUCT_MATCH':
+      return `Un ticket por cada ${raffle.productName ?? 'producto del sorteo'}`;
+  }
 }
 
 export function RaffleCard({ raffle, onClick }: { raffle: RaffleDto; onClick: () => void }) {

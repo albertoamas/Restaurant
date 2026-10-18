@@ -222,7 +222,9 @@ export function ParticipantsList({ raffle, printSettings = { businessName: '' },
           compact
           icon="users"
           title="Todavía no hay participantes"
-          description={isSpending ? 'Los clientes aparecen al consumir con su nombre asignado en el pedido.' : 'Los tickets se generan al vender el producto del sorteo a un cliente.'}
+          description={isSpending
+            ? 'Los clientes aparecen al consumir con su nombre asignado en el pedido.'
+            : 'Los tickets se generan al vender a un cliente lo que da tickets en este sorteo.'}
         />
       ) : filtered.length === 0 ? (
         <EmptyState compact icon="search" title={`Nadie con "${search.trim()}"`} />

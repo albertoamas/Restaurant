@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { SOCKET_EVENTS } from '@pos/shared';
 import { CategoryRepositoryPort, CATEGORY_REPOSITORY_PORT } from '../../domain/ports/category-repository.port';
 import { EventsService } from '../../../events/events.service';
@@ -15,6 +15,11 @@ export class DeleteCategoryUseCase {
     const category = await this.categoryRepository.findById(id, tenantId);
     if (!category) {
       throw new NotFoundException(`Category ${id} not found`);
+    }
+    if (await this.categoryRepository.isUsedByRaffle(id, tenantId)) {
+      throw new ConflictException(
+        'No se puede eliminar la categoría porque un sorteo la usa (o usa uno de sus productos). Desactívala en su lugar.',
+      );
     }
     await this.categoryRepository.delete(id, tenantId);
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CATEGORY_DELETED, { id });

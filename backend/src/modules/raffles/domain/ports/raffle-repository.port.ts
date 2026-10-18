@@ -42,8 +42,11 @@ export interface RaffleRepositoryPort {
   findAllRaffles(tenantId: string): Promise<RaffleDto[]>;
   findRaffleWithTickets(id: string, tenantId: string): Promise<RaffleDetailDto | null>;
 
-  /** Retorna sorteos ACTIVE con ticketMode PRODUCT_MATCH cuyos productId estén en la lista. */
-  findActiveRafflesForProducts(tenantId: string, productIds: string[]): Promise<Raffle[]>;
+  /**
+   * Sorteos ACTIVE que pueden dar tickets por las líneas de un pedido: los de producto (PRODUCT_MATCH)
+   * cuyo producto está en la lista y los de categorías (CATEGORY_MATCH) con alguna de esas categorías.
+   */
+  findActiveItemRaffles(tenantId: string, productIds: string[], categoryIds: string[]): Promise<Raffle[]>;
 
   /** Retorna sorteos ACTIVE con ticketMode SPENDING_THRESHOLD. */
   findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]>;
