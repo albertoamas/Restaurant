@@ -1,4 +1,4 @@
-import { Raffle, ticketsEarned } from './raffle.entity';
+import { Raffle, nextPositionToDraw, ticketsEarned } from './raffle.entity';
 
 const PRIZES_1 = [{ position: 1, prizeDescription: '1er lugar' }];
 const PRIZES_3 = [
@@ -253,5 +253,25 @@ describe('ticketsForItems()', () => {
     });
 
     expect(raffle.ticketsForItems([line('prod-1', 'cat-a', 9)])).toBe(0);
+  });
+});
+
+describe('nextPositionToDraw()', () => {
+  it('empieza por el último puesto', () => {
+    expect(nextPositionToDraw(3, [])).toBe(3);
+  });
+
+  it('sigue con el más alto que aún no tiene ganador', () => {
+    expect(nextPositionToDraw(3, [3])).toBe(2);
+    expect(nextPositionToDraw(3, [3, 2])).toBe(1);
+  });
+
+  it('un puesto liberado por una anulación vuelve a ser el siguiente', () => {
+    expect(nextPositionToDraw(3, [3, 1])).toBe(2);
+    expect(nextPositionToDraw(3, [1])).toBe(3);
+  });
+
+  it('null cuando todos los puestos tienen ganador', () => {
+    expect(nextPositionToDraw(2, [2, 1])).toBeNull();
   });
 });

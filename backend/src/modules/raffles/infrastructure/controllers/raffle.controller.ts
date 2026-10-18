@@ -24,13 +24,14 @@ import { GetRaffleUseCase } from '../../application/use-cases/get-raffle.use-cas
 import { CloseRaffleUseCase } from '../../application/use-cases/close-raffle.use-case';
 import { ReopenRaffleUseCase } from '../../application/use-cases/reopen-raffle.use-case';
 import { DeleteRaffleUseCase } from '../../application/use-cases/delete-raffle.use-case';
-import { DrawWinnerUseCase } from '../../application/use-cases/draw-winner.use-case';
+import { RegisterWinnerUseCase } from '../../application/use-cases/register-winner.use-case';
 import { VoidWinnerUseCase } from '../../application/use-cases/void-winner.use-case';
 import { SetTicketsPrintedUseCase } from '../../application/use-cases/set-tickets-printed.use-case';
 import { UpdateRaffleUseCase } from '../../application/use-cases/update-raffle.use-case';
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
 import { SetTicketsPrintedDto } from '../../application/dto/set-tickets-printed.dto';
 import { UpdateRaffleDto } from '../../application/dto/update-raffle.dto';
+import { RegisterWinnerDto } from '../../application/dto/register-winner.dto';
 import { VoidWinnerDto } from '../../application/dto/void-winner.dto';
 
 @Controller('raffles')
@@ -45,7 +46,7 @@ export class RaffleController {
     private readonly closeRaffle: CloseRaffleUseCase,
     private readonly reopenRaffle: ReopenRaffleUseCase,
     private readonly deleteRaffle: DeleteRaffleUseCase,
-    private readonly drawWinner: DrawWinnerUseCase,
+    private readonly registerWinner: RegisterWinnerUseCase,
     private readonly voidWinner: VoidWinnerUseCase,
     private readonly setTicketsPrinted: SetTicketsPrintedUseCase,
     private readonly updateRaffle: UpdateRaffleUseCase,
@@ -103,12 +104,13 @@ export class RaffleController {
     return this.deleteRaffle.execute(id, tenantId);
   }
 
-  @Post(':id/draw')
-  draw(
+  @Post(':id/winners')
+  addWinner(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentTenant() tenantId: string,
+    @Body() dto: RegisterWinnerDto,
   ) {
-    return this.drawWinner.execute(id, tenantId);
+    return this.registerWinner.execute(id, tenantId, dto.ticketNumber);
   }
 
   @Patch(':id/winners/:winnerId/void')

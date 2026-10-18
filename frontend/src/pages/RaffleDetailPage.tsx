@@ -6,7 +6,6 @@ import { useSettingsStore } from '../store/settings.store';
 import { ActionMenu, type ActionMenuItem } from '../components/ui/ActionMenu';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Icon } from '../components/ui/Icon';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -19,7 +18,7 @@ import { ticketRule } from '../components/raffles/RaffleCard';
 import { WinnerModal } from '../components/raffles/WinnerModal';
 import { DeleteRaffleModal } from '../components/raffles/DeleteRaffleModal';
 import { VoidWinnerModal } from '../components/raffles/VoidWinnerModal';
-import { DrawingScreen } from '../components/raffles/DrawingScreen';
+import { RegisterWinnerModal } from '../components/raffles/RegisterWinnerModal';
 import { EditRaffleModal } from '../components/raffles/EditRaffleModal';
 import { PrizesSection } from '../components/raffles/PrizesSection';
 import { useRaffleDetail } from '../hooks/useRaffleDetail';
@@ -43,14 +42,13 @@ function RaffleDetailContent({ id }: { id: string }) {
 
   const {
     raffle, setRaffle, loading, error, busy,
-    showConfirm, setShowConfirm,
+    registerOpen, setRegisterOpen,
     deleteConfirm, setDeleteConfirm,
-    drawingPosition, pendingWinnerName,
     drawnWinner, setDrawnWinner,
     voidConfirmId, setVoidConfirmId,
-    handleClose, handleReopen, handleVoidWinner, handleDelete, handleDraw,
+    handleClose, handleReopen, handleVoidWinner, handleDelete, handleRegisterWinner,
     isDrawable, isActive, isReopenable, canVoid,
-    availableTickets, activeWinnersCount, reload,
+    activeWinnersCount, reload,
   } = useRaffleDetail(id, goBack, () => {});
 
   const { user } = useAuth();
@@ -88,6 +86,7 @@ function RaffleDetailContent({ id }: { id: string }) {
 
   const next = raffle.nextPositionToDraw;
   const participantCount = new Set(raffle.tickets.map((t) => t.customerId)).size;
+  const printedCount = raffle.tickets.filter((t) => t.printedAt !== null).length;
   const voiding = raffle.winners.find((w) => w.id === voidConfirmId) ?? null;
 
   /** Participantes con sus tickets y ganadores: lo que conviene guardar antes de eliminar el sorteo. */
@@ -137,9 +136,9 @@ function RaffleDetailContent({ id }: { id: string }) {
         actions={
           <>
             {isDrawable && next !== null && (
-              <Button onClick={() => setShowConfirm(true)} disabled={!!busy || availableTickets.length === 0}>
+              <Button onClick={() => setRegisterOpen(true)} disabled={!!busy || raffle.ticketCount === 0}>
                 <Icon name="star" size={18} />
-                Sortear el {positionLabel(next)}
+                Registrar el {positionLabel(next)}
               </Button>
             )}
             <ActionMenu label="Más acciones del sorteo" items={menu} />
@@ -148,18 +147,15 @@ function RaffleDetailContent({ id }: { id: string }) {
       >
         {raffle.description && <p className="text-body text-soft">{raffle.description}</p>}
         {isActive && next !== null && (
-          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Cierra el sorteo para poder sortear: así no entran tickets nuevos mientras se elige a los ganadores.</p>
-        )}
-        {isDrawable && next !== null && availableTickets.length === 0 && (
-          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Para sortear hace falta al menos un ticket de un cliente que aún no haya ganado.</p>
+          <p className="mt-2 text-label text-amber-800 dark:text-amber-300">Cierra el sorteo para registrar ganadores: así no entran tickets nuevos mientras se elige.</p>
         )}
       </PageHeader>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Kpi
-          label="Tickets en el ánfora"
-          value={String(availableTickets.length)}
-          sub={raffle.ticketCount !== availableTickets.length ? `De ${raffle.ticketCount} emitidos` : undefined}
+          label="Tickets emitidos"
+          value={String(raffle.ticketCount)}
+          sub={raffle.ticketCount > 0 ? `${printedCount} en el ánfora` : undefined}
         />
         <Kpi label="Participantes" value={String(participantCount)} />
         <div className="max-sm:col-span-2"><Kpi label="Sorteados" value={`${activeWinnersCount} de ${raffle.numberOfWinners}`} /></div>
@@ -184,16 +180,15 @@ function RaffleDetailContent({ id }: { id: string }) {
         </Card>
       </div>
 
-      <ConfirmModal
-        isOpen={showConfirm && next !== null}
-        onClose={() => setShowConfirm(false)}
-        onConfirm={handleDraw}
-        loading={busy === 'draw'}
-        title={next !== null ? `Sortear el ${positionLabel(next)}` : 'Sortear'}
-        message={`Sale un ganador entre los ${availableTickets.length} tickets del ánfora. El resultado queda registrado y no se puede repetir.`}
-        confirmLabel="Sortear ahora"
-        cancelLabel="Volver"
-      />
+      {registerOpen && next !== null && (
+        <RegisterWinnerModal
+          position={next}
+          prize={raffle.prizes.find((p) => p.position === next)?.prizeDescription}
+          loading={busy === 'register'}
+          onClose={() => setRegisterOpen(false)}
+          onConfirm={(ticketNumber) => { void handleRegisterWinner(ticketNumber); }}
+        />
+      )}
 
       {voiding && (
         <VoidWinnerModal
@@ -212,16 +207,6 @@ function RaffleDetailContent({ id }: { id: string }) {
           onExport={exportRecord}
           onClose={() => setDeleteConfirm(false)}
           onConfirm={handleDelete}
-        />
-      )}
-
-      {drawingPosition !== null && (
-        <DrawingScreen
-          position={drawingPosition}
-          names={availableTickets.map((t) => t.customer.name)}
-          revealName={pendingWinnerName}
-          raffleName={raffle.name}
-          prize={raffle.prizes.find((p) => p.position === drawingPosition)?.prizeDescription}
         />
       )}
 

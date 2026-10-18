@@ -1,65 +1,9 @@
 let ctx: AudioContext | null = null;
-let noiseBuffer: AudioBuffer | null = null;
 
 function getCtx(): AudioContext {
   if (!ctx) ctx = new AudioContext();
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
-}
-
-// Pre-baked noise buffer shared across all tick calls.
-// AudioBufferSourceNode is one-shot but AudioBuffer (the data) is reusable.
-// This eliminates the 2000-iteration Math.random() loop that ran on the main
-// thread inside every RAF callback, which was the primary source of jank.
-function getNoiseBuffer(ac: AudioContext): AudioBuffer {
-  if (!noiseBuffer) {
-    const bufLen = Math.floor(ac.sampleRate * 0.045);
-    noiseBuffer = ac.createBuffer(1, bufLen, ac.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
-  }
-  return noiseBuffer;
-}
-
-/**
- * Tick de ruleta — suena cada vez que cambia el nombre.
- * progress 0→1: el tono baja de agudo a grave conforme el ánfora frena.
- */
-export function playDrawTick(progress: number): void {
-  try {
-    const ac = getCtx();
-    const now = ac.currentTime;
-
-    // Tono principal
-    const osc = ac.createOscillator();
-    const oscGain = ac.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 1100 - 500 * progress;
-    oscGain.gain.setValueAtTime(0.14, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-    osc.connect(oscGain);
-    oscGain.connect(ac.destination);
-    osc.start(now);
-    osc.stop(now + 0.07);
-
-    // Capa de ruido — buffer pre-generado, solo se instancia un nuevo SourceNode
-    const noise = ac.createBufferSource();
-    noise.buffer = getNoiseBuffer(ac);
-    const filter = ac.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 2800;
-    filter.Q.value = 3;
-    const noiseGain = ac.createGain();
-    noiseGain.gain.setValueAtTime(0.06, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-    noise.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(ac.destination);
-    noise.start(now);
-    noise.stop(now + 0.045);
-  } catch {
-    // Silencio si el navegador bloquea audio
-  }
 }
 
 /**

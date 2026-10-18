@@ -12,6 +12,18 @@ export const TICKET_REVOCABLE_STATUSES: readonly RaffleStatus[] = ['ACTIVE', 'CL
 /** Estados con ganadores sorteados: los únicos en que se puede anular uno. */
 export const WINNER_VOIDABLE_STATUSES: readonly RaffleStatus[] = ['DRAWING', 'DRAWN'];
 
+/**
+ * Puesto cuyo ganador toca registrar: el más alto sin ganador activo (se sortea del último lugar
+ * al primero). null cuando todos los puestos ya tienen ganador.
+ */
+export function nextPositionToDraw(numberOfWinners: number, awardedPositions: Iterable<number>): number | null {
+  const awarded = new Set(awardedPositions);
+  for (let position = numberOfWinners; position >= 1; position--) {
+    if (!awarded.has(position)) return position;
+  }
+  return null;
+}
+
 /** Tickets que corresponden a un gasto acumulado: uno por cada múltiplo completo del umbral. */
 export function ticketsEarned(totalSpent: number, threshold: number): number {
   return Math.floor(totalSpent / threshold);

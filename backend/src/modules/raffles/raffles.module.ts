@@ -12,7 +12,7 @@ import { GetRaffleUseCase } from './application/use-cases/get-raffle.use-case';
 import { CloseRaffleUseCase } from './application/use-cases/close-raffle.use-case';
 import { ReopenRaffleUseCase } from './application/use-cases/reopen-raffle.use-case';
 import { DeleteRaffleUseCase } from './application/use-cases/delete-raffle.use-case';
-import { DrawWinnerUseCase } from './application/use-cases/draw-winner.use-case';
+import { RegisterWinnerUseCase } from './application/use-cases/register-winner.use-case';
 import { VoidWinnerUseCase } from './application/use-cases/void-winner.use-case';
 import { SetTicketsPrintedUseCase } from './application/use-cases/set-tickets-printed.use-case';
 import { UpdateRaffleUseCase } from './application/use-cases/update-raffle.use-case';
@@ -29,7 +29,7 @@ import { RaffleAutoTicketService } from './application/services/raffle-auto-tick
     CloseRaffleUseCase,
     ReopenRaffleUseCase,
     DeleteRaffleUseCase,
-    DrawWinnerUseCase,
+    RegisterWinnerUseCase,
     VoidWinnerUseCase,
     SetTicketsPrintedUseCase,
     UpdateRaffleUseCase,

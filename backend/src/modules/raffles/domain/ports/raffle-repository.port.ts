@@ -63,12 +63,15 @@ export interface RaffleRepositoryPort {
 
   findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]>;
 
+  /** El ticket con ese número en el sorteo, o null si no existe. */
+  findTicketByNumber(raffleId: string, tenantId: string, ticketNumber: number): Promise<{ id: string; customerId: string } | null>;
+
   /**
    * Inserta un ganador y actualiza el estado del sorteo de forma atómica.
-   * Bloquea la fila del sorteo y re-verifica estado y posición dentro de la transacción.
-   * Lanza ConflictException si el sorteo ya no se puede sortear o la posición ya tiene ganador.
+   * Bloquea la fila del sorteo y re-verifica estado, ticket y posición dentro de la transacción.
+   * Lanza ConflictException si el sorteo ya no admite ganadores, el ticket ya no existe o la posición ya tiene ganador.
    */
-  drawWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void>;
+  addWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void>;
 
   /**
    * Persiste la anulación del ganador (ya marcada con `winner.void(...)`) y el nuevo estado del

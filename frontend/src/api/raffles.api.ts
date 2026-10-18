@@ -1,5 +1,5 @@
 import client from './client';
-import type { RaffleDetailDto, RaffleDto, CreateRaffleRequest, SetTicketsPrintedRequest, UpdateRaffleRequest, VoidWinnerRequest } from '@pos/shared';
+import type { RaffleDetailDto, RaffleDto, CreateRaffleRequest, RegisterWinnerRequest, SetTicketsPrintedRequest, UpdateRaffleRequest, VoidWinnerRequest } from '@pos/shared';
 
 export const rafflesApi = {
   getAll: (): Promise<RaffleDto[]> =>
@@ -14,8 +14,8 @@ export const rafflesApi = {
   close: (id: string): Promise<RaffleDetailDto> =>
     client.patch<RaffleDetailDto>(`/api/v1/raffles/${id}/close`, {}).then((r) => r.data),
 
-  draw: (id: string): Promise<RaffleDetailDto> =>
-    client.post<RaffleDetailDto>(`/api/v1/raffles/${id}/draw`).then((r) => r.data),
+  registerWinner: (id: string, ticketNumber: number): Promise<RaffleDetailDto> =>
+    client.post<RaffleDetailDto>(`/api/v1/raffles/${id}/winners`, { ticketNumber } satisfies RegisterWinnerRequest).then((r) => r.data),
 
   delete: (id: string): Promise<void> =>
     client.delete(`/api/v1/raffles/${id}`).then(() => {}),
