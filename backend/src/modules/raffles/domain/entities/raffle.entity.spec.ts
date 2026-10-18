@@ -186,11 +186,11 @@ describe('Raffle entity', () => {
       expect(makeRaffle('DRAWN').isWinnerVoidable).toBe(true);
     });
 
-    it('isDeletable — false en DRAWING y DRAWN, true en ACTIVE y CLOSED', () => {
-      expect(makeRaffle('ACTIVE').isDeletable).toBe(true);
+    it('isDeletable — false solo en ACTIVE (se cierra antes)', () => {
+      expect(makeRaffle('ACTIVE').isDeletable).toBe(false);
       expect(makeRaffle('CLOSED').isDeletable).toBe(true);
-      expect(makeRaffle('DRAWING').isDeletable).toBe(false);
-      expect(makeRaffle('DRAWN').isDeletable).toBe(false);
+      expect(makeRaffle('DRAWING').isDeletable).toBe(true);
+      expect(makeRaffle('DRAWN').isDeletable).toBe(true);
     });
 
     it('isReopenable — true solo en CLOSED', () => {

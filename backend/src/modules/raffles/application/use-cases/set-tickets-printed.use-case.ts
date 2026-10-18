@@ -4,17 +4,18 @@ import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports
 import { EventsService } from '../../../events/events.service';
 
 @Injectable()
-export class DeliverTicketsUseCase {
+export class SetTicketsPrintedUseCase {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
     @Optional() private readonly eventsService?: EventsService,
   ) {}
 
-  async execute(raffleId: string, ticketIds: string[], tenantId: string): Promise<void> {
+  async execute(raffleId: string, ticketIds: string[], printed: boolean, tenantId: string): Promise<void> {
     const raffle = await this.repo.findRaffleById(raffleId, tenantId);
     if (!raffle) throw new NotFoundException('Sorteo no encontrado');
-    await this.repo.deliverTickets(raffleId, ticketIds, tenantId);
-    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_DELIVERY_CHANGED, { raffleId });
+
+    await this.repo.setTicketsPrinted(raffleId, ticketIds, tenantId, printed);
+    this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_PRINT_CHANGED, { raffleId });
   }
 }

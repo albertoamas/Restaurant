@@ -26,11 +26,10 @@ import { ReopenRaffleUseCase } from '../../application/use-cases/reopen-raffle.u
 import { DeleteRaffleUseCase } from '../../application/use-cases/delete-raffle.use-case';
 import { DrawWinnerUseCase } from '../../application/use-cases/draw-winner.use-case';
 import { VoidWinnerUseCase } from '../../application/use-cases/void-winner.use-case';
-import { DeliverTicketsUseCase } from '../../application/use-cases/deliver-tickets.use-case';
-import { UndeliverTicketsUseCase } from '../../application/use-cases/undeliver-tickets.use-case';
+import { SetTicketsPrintedUseCase } from '../../application/use-cases/set-tickets-printed.use-case';
 import { UpdateRaffleUseCase } from '../../application/use-cases/update-raffle.use-case';
 import { CreateRaffleDto } from '../../application/dto/create-raffle.dto';
-import { DeliverTicketsDto } from '../../application/dto/deliver-tickets.dto';
+import { SetTicketsPrintedDto } from '../../application/dto/set-tickets-printed.dto';
 import { UpdateRaffleDto } from '../../application/dto/update-raffle.dto';
 import { VoidWinnerDto } from '../../application/dto/void-winner.dto';
 
@@ -48,8 +47,7 @@ export class RaffleController {
     private readonly deleteRaffle: DeleteRaffleUseCase,
     private readonly drawWinner: DrawWinnerUseCase,
     private readonly voidWinner: VoidWinnerUseCase,
-    private readonly deliverTickets: DeliverTicketsUseCase,
-    private readonly undeliverTickets: UndeliverTicketsUseCase,
+    private readonly setTicketsPrinted: SetTicketsPrintedUseCase,
     private readonly updateRaffle: UpdateRaffleUseCase,
   ) {}
 
@@ -124,23 +122,13 @@ export class RaffleController {
     return this.voidWinner.execute(id, winnerId, tenantId, user.sub, dto.reason);
   }
 
-  @Patch(':id/tickets/deliver')
+  @Patch(':id/tickets/printed')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deliver(
+  setPrinted(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentTenant() tenantId: string,
-    @Body() dto: DeliverTicketsDto,
+    @Body() dto: SetTicketsPrintedDto,
   ) {
-    return this.deliverTickets.execute(id, dto.ticketIds, tenantId);
-  }
-
-  @Patch(':id/tickets/undeliver')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  undeliver(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentTenant() tenantId: string,
-    @Body() dto: DeliverTicketsDto,
-  ) {
-    return this.undeliverTickets.execute(id, dto.ticketIds, tenantId);
+    return this.setTicketsPrinted.execute(id, dto.ticketIds, dto.printed, tenantId);
   }
 }

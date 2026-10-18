@@ -483,8 +483,12 @@ model RaffleTicket {
   customerId   String    @map("customer_id")
   ticketNumber Int       @map("ticket_number")
   orderId      String?   @map("order_id")
+  // Reemplazados por printedAt (ticket impreso y puesto en el ánfora). Ya no se leen ni escriben;
+  // se eliminan en una migración posterior (expand/contract).
   delivered    Boolean   @default(false)
   deliveredAt  DateTime? @map("delivered_at") @db.Timestamptz(3)
+  // null = todavía sin imprimir para el ánfora.
+  printedAt    DateTime? @map("printed_at") @db.Timestamptz(3)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)

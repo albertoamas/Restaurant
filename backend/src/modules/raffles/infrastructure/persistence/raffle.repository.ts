@@ -176,8 +176,7 @@ export class RaffleRepository implements RaffleRepositoryPort {
         customer: { id: t.customer.id, name: t.customer.name, phone: t.customer.phone },
         ticketNumber: t.ticketNumber,
         orderId: t.orderId,
-        delivered: t.delivered,
-        deliveredAt: t.deliveredAt ? t.deliveredAt.toISOString() : null,
+        printedAt: t.printedAt ? t.printedAt.toISOString() : null,
         createdAt: t.createdAt.toISOString(),
       })),
       spendings,
@@ -452,12 +451,12 @@ export class RaffleRepository implements RaffleRepositoryPort {
   ): Promise<RevokedTicket[]> {
     const tickets = await tx.raffleTicket.findMany({
       where: { tenantId, raffleId, orderId },
-      select: { id: true, ticketNumber: true, delivered: true },
+      select: { id: true, ticketNumber: true, printedAt: true },
     });
     if (!tickets.length) return [];
 
     await tx.raffleTicket.deleteMany({ where: { id: { in: tickets.map((t) => t.id) } } });
-    return tickets.map((t) => ({ raffleId, ticketNumber: t.ticketNumber, delivered: t.delivered }));
+    return tickets.map((t) => ({ raffleId, ticketNumber: t.ticketNumber, printed: t.printedAt !== null }));
   }
 
   /**
@@ -482,18 +481,18 @@ export class RaffleRepository implements RaffleRepositoryPort {
       data: { totalSpent: { decrement: entry.amount } },
     });
 
-    // Primero los que aún no se entregaron; entre ellos, los más recientes.
+    // Primero los que aún no se imprimieron; entre ellos, los más recientes.
     const tickets = await tx.raffleTicket.findMany({
       where: { tenantId, raffleId, customerId: entry.customerId },
-      orderBy: [{ delivered: 'asc' }, { ticketNumber: 'desc' }],
-      select: { id: true, ticketNumber: true, delivered: true },
+      orderBy: [{ printedAt: { sort: 'asc', nulls: 'first' } }, { ticketNumber: 'desc' }],
+      select: { id: true, ticketNumber: true, printedAt: true },
     });
     const covered = ticketsEarned(Number(spending.totalSpent), threshold);
     const excess = tickets.slice(0, Math.max(0, tickets.length - covered));
     if (!excess.length) return [];
 
     await tx.raffleTicket.deleteMany({ where: { id: { in: excess.map((t) => t.id) } } });
-    return excess.map((t) => ({ raffleId, ticketNumber: t.ticketNumber, delivered: t.delivered }));
+    return excess.map((t) => ({ raffleId, ticketNumber: t.ticketNumber, printed: t.printedAt !== null }));
   }
 
   // ─── Mappers ───────────────────────────────────────────────────────────────
@@ -572,17 +571,10 @@ export class RaffleRepository implements RaffleRepositoryPort {
     } as RaffleProps);
   }
 
-  async deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void> {
+  async setTicketsPrinted(raffleId: string, ticketIds: string[], tenantId: string, printed: boolean): Promise<void> {
     await this.prisma.raffleTicket.updateMany({
-      where: { id: { in: ticketIds }, raffleId, tenantId, delivered: false },
-      data:  { delivered: true, deliveredAt: new Date() },
-    });
-  }
-
-  async undeliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void> {
-    await this.prisma.raffleTicket.updateMany({
-      where: { id: { in: ticketIds }, raffleId, tenantId, delivered: true },
-      data:  { delivered: false, deliveredAt: null },
+      where: { id: { in: ticketIds }, raffleId, tenantId, printedAt: printed ? null : { not: null } },
+      data:  { printedAt: printed ? new Date() : null },
     });
   }
 

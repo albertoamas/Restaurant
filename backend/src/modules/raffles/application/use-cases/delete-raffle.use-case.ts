@@ -15,7 +15,7 @@ export class DeleteRaffleUseCase {
     const raffle = await this.repo.findRaffleById(id, tenantId);
     if (!raffle) throw new NotFoundException(`Sorteo ${id} no encontrado`);
     if (!raffle.isDeletable) {
-      throw new BadRequestException('No se puede eliminar un sorteo que ya está siendo sorteado o que fue completado');
+      throw new BadRequestException('Cierra el sorteo antes de eliminarlo: sigue entregando tickets');
     }
 
     await this.repo.deleteRaffle(id, tenantId);

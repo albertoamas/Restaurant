@@ -158,13 +158,17 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
   - Drawing needs the raffle CLOSED (or already DRAWING); each customer wins one prize per raffle.
   - Voiding a winner requires a reason and records who and when; the prize of a position that
     already has an active winner is not editable (the winner keeps the text it was drawn with).
-  - Revoking never touches DRAWING/DRAWN raffles; delivered tickets are retired last and
-    reported through `RAFFLE_TICKETS_REVOKED`.
+  - Revoking never touches DRAWING/DRAWN raffles; tickets already printed (in the urn) are retired
+    last and reported through `RAFFLE_TICKETS_REVOKED` so the owner pulls the slip out.
   - Customers and products are hard-deleted, and their raffle rows cascade or go null: deleting a
     customer with tickets in an unfinished raffle (or any winner row), or a product used by any
     raffle, is refused (409). Deactivate the product instead.
-  - Marking tickets delivered emits `RAFFLE_DELIVERY_CHANGED`; the screen refetches, it keeps no
-    local copy of the delivery state.
+  - Raffles are drawn in a physical urn: the system prints one slip per ticket and a per-customer
+    summary. `RaffleTicket.printedAt` (null = pending) is the only state; "Imprimir pendientes"
+    prints just the pending ones. Changing it emits `RAFFLE_PRINT_CHANGED` and the screen
+    refetches, it keeps no local copy. `delivered`/`delivered_at` are legacy columns, unused, to be
+    dropped in a later migration (expand/contract).
+  - A raffle can be deleted unless it is ACTIVE (close it first); deletion is permanent.
 - **admin** — `POST /admin/tenants` creates tenant + owner + first branch in one transaction;
   `/admin/tenants/:id/health` is the onboarding checklist (`docs/onboarding-cliente.md`).
 - **auth** — `PATCH /auth/me/password` (Mi cuenta) needs only the JWT and the current password; throttled to 5/min.
