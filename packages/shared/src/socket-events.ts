@@ -43,10 +43,11 @@ export const SOCKET_EVENTS = {
   EXPENSE_CONCEPT_DELETED:  'expense_concept.deleted',
 
   // Raffles
-  RAFFLE_CREATED:       'raffle.created',
-  RAFFLE_UPDATED:       'raffle.updated',
-  RAFFLE_DELETED:       'raffle.deleted',
-  RAFFLE_TICKET_ADDED:  'raffle.ticket_added',
+  RAFFLE_CREATED:         'raffle.created',
+  RAFFLE_UPDATED:         'raffle.updated',
+  RAFFLE_DELETED:         'raffle.deleted',
+  RAFFLE_TICKET_ADDED:    'raffle.ticket_added',
+  RAFFLE_TICKETS_REVOKED: 'raffle.tickets_revoked',
 
   // Sesión de un usuario (solo a sus sockets): cambió su sucursal; el cliente relee /auth/me.
   USER_SESSION_UPDATED: 'user.session_updated',

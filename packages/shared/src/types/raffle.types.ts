@@ -17,6 +17,9 @@ export interface RaffleWinnerDto {
   ticketNumber: number;
   drawnAt: string;
   voided: boolean;
+  /** Auditoría de la anulación: solo presentes cuando voided === true. */
+  voidedAt: string | null;
+  voidReason: string | null;
 }
 
 export interface RaffleDto {
@@ -75,7 +78,19 @@ export interface CreateRaffleRequest {
   prizes: RafflePrizeDto[];
 }
 
-/** Solo name, description y los textos de premios son editables en cualquier estado. */
+/** Motivo obligatorio: queda registrado junto con quién y cuándo anuló al ganador. */
+export interface VoidWinnerRequest {
+  reason: string;
+}
+
+/** Payload de SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED: tickets retirados porque se canceló su pedido. */
+export interface RaffleTicketsRevokedPayload {
+  raffleId: string;
+  /** Números de los tickets que ya estaban entregados al cliente y se retiraron. */
+  deliveredTicketNumbers: number[];
+}
+
+/** Solo name, description y los textos de premios son editables en cualquier estado; el premio de un lugar que ya tiene ganador no. */
 export interface UpdateRaffleRequest {
   name?: string;
   description?: string;

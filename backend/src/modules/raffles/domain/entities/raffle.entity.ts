@@ -3,6 +3,20 @@ import { RaffleTicketMode } from '@pos/shared';
 
 export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
 
+/** Estados en los que se puede sortear: el sorteo ya cerró (no entran tickets) o está en curso. */
+export const DRAWABLE_STATUSES: readonly RaffleStatus[] = ['CLOSED', 'DRAWING'];
+
+/** Estados en los que aún se pueden retirar tickets por un pedido cancelado (después el ánfora ya se usó). */
+export const TICKET_REVOCABLE_STATUSES: readonly RaffleStatus[] = ['ACTIVE', 'CLOSED'];
+
+/** Estados con ganadores sorteados: los únicos en que se puede anular uno. */
+export const WINNER_VOIDABLE_STATUSES: readonly RaffleStatus[] = ['DRAWING', 'DRAWN'];
+
+/** Tickets que corresponden a un gasto acumulado: uno por cada múltiplo completo del umbral. */
+export function ticketsEarned(totalSpent: number, threshold: number): number {
+  return Math.floor(totalSpent / threshold);
+}
+
 export interface RafflePrize {
   position: number;
   prizeDescription: string;
@@ -106,9 +120,16 @@ export class Raffle {
     return this.status === 'ACTIVE';
   }
 
-  /** Puede recibir el próximo ganador mientras no esté completamente terminado. */
+  /**
+   * Puede recibir el próximo ganador. Exige haber cerrado el sorteo: con el ánfora abierta
+   * seguirían entrando tickets mientras se elige, y al sortear el primer ganador dejarían de entrar.
+   */
   get isDrawable(): boolean {
-    return this.status === 'ACTIVE' || this.status === 'CLOSED' || this.status === 'DRAWING';
+    return DRAWABLE_STATUSES.includes(this.status);
+  }
+
+  get isWinnerVoidable(): boolean {
+    return WINNER_VOIDABLE_STATUSES.includes(this.status);
   }
 
   /** No se puede eliminar si el sorteo ya comenzó o terminó. */

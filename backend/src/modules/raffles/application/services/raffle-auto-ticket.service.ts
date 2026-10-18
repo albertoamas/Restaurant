@@ -1,15 +1,8 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { SOCKET_EVENTS } from '@pos/shared';
+import { RaffleTicketsRevokedPayload, SOCKET_EVENTS } from '@pos/shared';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort, NewTicketInput } from '../../domain/ports/raffle-repository.port';
 import { EventsService } from '../../../events/events.service';
-
-export interface CancelTicketsOptions {
-  /** customerId de la orden cancelada — necesario para revertir gasto acumulado. */
-  customerId?: string;
-  /** Total de la orden cancelada en Bs — necesario para revertir gasto acumulado. */
-  orderTotal?: number;
-}
 
 @Injectable()
 export class RaffleAutoTicketService {
@@ -25,7 +18,8 @@ export class RaffleAutoTicketService {
    * Asigna tickets automáticamente tras crear una orden.
    *
    * PRODUCT_MATCH: emite N tickets por cada item cuyo productId coincida con un sorteo activo.
-   * SPENDING_THRESHOLD: acumula el total de la orden y emite tickets cuando se cruzan umbrales.
+   * SPENDING_THRESHOLD: registra el aporte del pedido al gasto del cliente y emite los tickets que
+   * ese gasto le faltaba.
    */
   async processOrder(
     tenantId: string,
@@ -36,25 +30,33 @@ export class RaffleAutoTicketService {
   ): Promise<void> {
     await Promise.all([
       this.processProductMatchTickets(tenantId, customerId, orderId, items),
-      this.processSpendingThresholdTickets(tenantId, customerId, orderTotal),
+      this.processSpendingThresholdTickets(tenantId, customerId, orderId, orderTotal),
     ]);
   }
 
   /**
-   * Revierte tickets al cancelar una orden.
-   * Para PRODUCT_MATCH borra tickets por orderId.
-   * Para SPENDING_THRESHOLD resta el monto del acumulado y borra tickets en exceso.
+   * Retira lo que un pedido cancelado otorgó: sus tickets PRODUCT_MATCH y su aporte de gasto en los
+   * sorteos SPENDING_THRESHOLD (con los tickets que ese aporte ya no cubre). Solo actúa mientras
+   * el sorteo no haya empezado a sortearse.
    */
-  async cancelOrderTickets(
-    tenantId: string,
-    orderId: string,
-    opts?: CancelTicketsOptions,
-  ): Promise<void> {
-    await this.repo.deleteTicketsByOrderId(tenantId, orderId);
-    this.logger.log(`Tickets PRODUCT_MATCH eliminados orderId=${orderId} tenantId=${tenantId}`);
+  async cancelOrderTickets(tenantId: string, orderId: string): Promise<void> {
+    const revoked = await this.repo.revokeOrderTickets(tenantId, orderId);
+    if (!revoked.length) return;
 
-    if (opts?.customerId && opts?.orderTotal) {
-      await this.revertSpendingTickets(tenantId, opts.customerId, opts.orderTotal);
+    this.logger.log(`Tickets retirados orderId=${orderId} tenantId=${tenantId} cantidad=${revoked.length}`);
+
+    const raffleIds = new Set(revoked.map((t) => t.raffleId));
+    for (const raffleId of raffleIds) {
+      const deliveredTicketNumbers = revoked
+        .filter((t) => t.raffleId === raffleId && t.delivered)
+        .map((t) => t.ticketNumber);
+      if (deliveredTicketNumbers.length) {
+        this.logger.warn(
+          `Tickets ya entregados retirados raffleId=${raffleId} orderId=${orderId} numeros=${deliveredTicketNumbers.join(',')}`,
+        );
+      }
+      const payload: RaffleTicketsRevokedPayload = { raffleId, deliveredTicketNumbers };
+      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, payload);
     }
   }
 
@@ -84,63 +86,28 @@ export class RaffleAutoTicketService {
         createdAt: now,
       }));
 
-      await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
+      const issued = await this.repo.addTickets(raffle.id, inputs);
+      if (issued) this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 
   private async processSpendingThresholdTickets(
     tenantId: string,
     customerId: string,
+    orderId: string,
     orderTotal: number,
   ): Promise<void> {
     const spendingRaffles = await this.repo.findActiveSpendingRaffles(tenantId);
-    if (!spendingRaffles.length) return;
 
     for (const raffle of spendingRaffles) {
-      const threshold = raffle.spendingThreshold!;
-
-      const { newTotal } = await this.repo.addCustomerSpending(tenantId, raffle.id, customerId, orderTotal);
-      const ticketsEarned = Math.floor(newTotal / threshold);
-
-      const existingCount = await this.repo.countTicketsByCustomer(tenantId, raffle.id, customerId);
-      const toEmit = ticketsEarned - existingCount;
-      if (toEmit <= 0) continue;
-
-      const now = new Date();
-      const inputs: NewTicketInput[] = Array.from({ length: toEmit }, () => ({
-        id: uuidv4(),
+      const issued = await this.repo.applyOrderSpending({
         tenantId,
         raffleId: raffle.id,
         customerId,
-        orderId: null,
-        createdAt: now,
-      }));
-
-      await this.repo.addTickets(raffle.id, inputs);
-      this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
-    }
-  }
-
-  private async revertSpendingTickets(
-    tenantId: string,
-    customerId: string,
-    orderTotal: number,
-  ): Promise<void> {
-    const spendingRaffles = await this.repo.findRevertibleSpendingRaffles(tenantId);
-    if (!spendingRaffles.length) return;
-
-    for (const raffle of spendingRaffles) {
-      const threshold = raffle.spendingThreshold!;
-
-      const { newTotal } = await this.repo.subtractCustomerSpending(tenantId, raffle.id, customerId, orderTotal);
-      const ticketsEarned = Math.floor(newTotal / threshold);
-
-      const existingCount = await this.repo.countTicketsByCustomer(tenantId, raffle.id, customerId);
-      const excess = existingCount - ticketsEarned;
-      if (excess <= 0) continue;
-
-      await this.repo.deleteExcessTicketsByCustomer(tenantId, raffle.id, customerId, excess);
+        orderId,
+        amount: orderTotal,
+      });
+      if (issued > 0) this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     }
   }
 }

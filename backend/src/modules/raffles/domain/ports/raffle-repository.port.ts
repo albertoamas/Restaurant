@@ -14,8 +14,21 @@ export interface NewTicketInput {
   createdAt: Date;
 }
 
-export interface SpendingResult {
-  newTotal: number;
+/** Pedido que aporta gasto a un sorteo SPENDING_THRESHOLD. */
+export interface OrderSpendingInput {
+  tenantId: string;
+  raffleId: string;
+  customerId: string;
+  orderId: string;
+  amount: number;
+}
+
+/** Ticket retirado porque su pedido se canceló. */
+export interface RevokedTicket {
+  raffleId: string;
+  ticketNumber: number;
+  /** Ya se había entregado físicamente al cliente: el dueño debe saberlo. */
+  delivered: boolean;
 }
 
 export interface RaffleRepositoryPort {
@@ -35,68 +48,47 @@ export interface RaffleRepositoryPort {
   /** Retorna sorteos ACTIVE con ticketMode SPENDING_THRESHOLD. */
   findActiveSpendingRaffles(tenantId: string): Promise<Raffle[]>;
 
-  /** Retorna sorteos ACTIVE o CLOSED con ticketMode SPENDING_THRESHOLD (para revertir al cancelar). */
-  findRevertibleSpendingRaffles(tenantId: string): Promise<Raffle[]>;
-
   /**
-   * Inserta tickets asignando números secuenciales de forma atómica.
-   * Usa SELECT FOR UPDATE sobre la fila del sorteo para serializar
-   * inserciones concurrentes y evitar colisiones en el índice UNIQUE(raffleId, ticketNumber).
+   * Inserta tickets asignando números secuenciales, solo si el sorteo sigue ACTIVE.
+   * Bloquea la fila del sorteo (SELECT FOR UPDATE): serializa contra otras emisiones, contra el
+   * cierre y contra el sorteo, y evita colisiones en UNIQUE(raffleId, ticketNumber).
+   * Retorna false (sin insertar) si el sorteo ya no está ACTIVE.
    */
-  addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<void>;
+  addTickets(raffleId: string, inputs: NewTicketInput[]): Promise<boolean>;
 
   deleteRaffle(id: string, tenantId: string): Promise<void>;
 
-  /** Borra tickets ligados a una orden (modo PRODUCT_MATCH) de sorteos no en DRAWING/DRAWN. */
-  deleteTicketsByOrderId(tenantId: string, orderId: string): Promise<void>;
-
   findWinnersByRaffleId(raffleId: string, tenantId: string): Promise<RaffleWinner[]>;
-  voidWinner(winnerId: string, raffleId: string, tenantId: string): Promise<void>;
 
   /**
    * Inserta un ganador y actualiza el estado del sorteo de forma atómica.
-   * Usa advisory lock de PostgreSQL para serializar sorteos concurrentes.
-   * Lanza ConflictException si la posición ya tiene un ganador activo.
+   * Bloquea la fila del sorteo y re-verifica estado y posición dentro de la transacción.
+   * Lanza ConflictException si el sorteo ya no se puede sortear o la posición ya tiene ganador.
    */
   drawWinnerAtomic(id: string, tenantId: string, winner: RaffleWinner, newStatus: RaffleStatus): Promise<void>;
+
+  /**
+   * Persiste la anulación del ganador (ya marcada con `winner.void(...)`) y el nuevo estado del
+   * sorteo en una sola transacción, bajo el mismo bloqueo que el sorteo.
+   * Lanza ConflictException si el ganador ya estaba anulado o el sorteo ya no admite anulaciones.
+   */
+  voidWinnerAtomic(winner: RaffleWinner, newStatus: RaffleStatus): Promise<void>;
 
   // ── Spending threshold ────────────────────────────────────────────────────
 
   /**
-   * Suma `amount` al gasto acumulado del cliente en el sorteo (upsert atómico).
-   * Retorna el nuevo total acumulado tras la suma.
+   * Registra el aporte de un pedido al gasto del cliente y emite los tickets que ese gasto le
+   * faltaba, todo en una transacción con el sorteo bloqueado. Es idempotente por pedido y no hace
+   * nada si el sorteo ya no está ACTIVE. Retorna cuántos tickets emitió.
    */
-  addCustomerSpending(
-    tenantId: string,
-    raffleId: string,
-    customerId: string,
-    amount: number,
-  ): Promise<SpendingResult>;
+  applyOrderSpending(input: OrderSpendingInput): Promise<number>;
 
   /**
-   * Resta `amount` del gasto acumulado del cliente (mínimo 0).
-   * Retorna el nuevo total acumulado tras la resta.
+   * Retira lo que un pedido cancelado otorgó: sus tickets PRODUCT_MATCH y, en los sorteos
+   * SPENDING_THRESHOLD, su aporte de gasto junto con los tickets que ese gasto ya no cubre
+   * (primero los no entregados, luego los más recientes). Solo actúa en sorteos ACTIVE o CLOSED.
    */
-  subtractCustomerSpending(
-    tenantId: string,
-    raffleId: string,
-    customerId: string,
-    amount: number,
-  ): Promise<SpendingResult>;
-
-  /** Cuenta los tickets actuales del cliente en el sorteo. */
-  countTicketsByCustomer(tenantId: string, raffleId: string, customerId: string): Promise<number>;
-
-  /**
-   * Borra los `excessCount` tickets más recientes del cliente en el sorteo.
-   * Solo actúa si el sorteo está en ACTIVE o CLOSED (no en DRAWING/DRAWN).
-   */
-  deleteExcessTicketsByCustomer(
-    tenantId: string,
-    raffleId: string,
-    customerId: string,
-    excessCount: number,
-  ): Promise<void>;
+  revokeOrderTickets(tenantId: string, orderId: string): Promise<RevokedTicket[]>;
 
   /** Marca los tickets indicados como entregados físicamente. Solo actualiza los no entregados aún. */
   deliverTickets(raffleId: string, ticketIds: string[], tenantId: string): Promise<void>;
