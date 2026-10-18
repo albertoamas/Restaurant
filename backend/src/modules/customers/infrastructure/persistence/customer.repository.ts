@@ -166,6 +166,16 @@ export class CustomerRepository implements CustomerRepositoryPort {
     };
   }
 
+  async isInvolvedInRaffles(id: string, tenantId: string): Promise<boolean> {
+    const [openTickets, wins] = await Promise.all([
+      this.prisma.raffleTicket.count({
+        where: { tenantId, customerId: id, raffle: { status: { not: 'DRAWN' } } },
+      }),
+      this.prisma.raffleWinner.count({ where: { tenantId, customerId: id } }),
+    ]);
+    return openTickets + wins > 0;
+  }
+
   async delete(id: string, tenantId: string): Promise<void> {
     await this.prisma.customer.delete({ where: { id, tenantId } });
   }

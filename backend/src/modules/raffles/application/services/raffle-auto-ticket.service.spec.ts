@@ -79,6 +79,20 @@ describe('RaffleAutoTicketService', () => {
       expect(new Set(ids).size).toBe(3);
     });
 
+    it('suma las cantidades cuando el mismo producto llega en más de una línea', async () => {
+      repo.findActiveRafflesForProducts.mockResolvedValue([makeProductRaffle('prod-1')]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
+        { productId: 'prod-1', quantity: 2 },
+        { productId: 'prod-2', quantity: 5 },
+        { productId: 'prod-1', quantity: 3 },
+      ], 500);
+
+      expect(repo.addTickets).toHaveBeenCalledTimes(1);
+      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
+      expect(inputs).toHaveLength(5);
+    });
+
     it('avisa a los dueños cuando se emitieron tickets', async () => {
       const raffle = makeProductRaffle('prod-1');
       repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);

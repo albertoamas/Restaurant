@@ -31,6 +31,13 @@ export class DeleteCustomerUseCase {
       );
     }
 
+    // Borrarlo arrastra sus tickets y su registro como ganador: se perdería el historial del sorteo.
+    if (await this.repo.isInvolvedInRaffles(id, tenantId)) {
+      throw new ConflictException(
+        'No se puede eliminar el cliente porque participa en un sorteo sin terminar o figura como ganador.',
+      );
+    }
+
     await this.repo.delete(id, tenantId);
     this.eventsService?.emitToTenant(tenantId, SOCKET_EVENTS.CUSTOMER_DELETED, { id });
   }

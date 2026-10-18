@@ -54,6 +54,10 @@ export function useRaffleDetail(
     }
   }, [raffleId, invalidate]);
 
+  const handleDeliveryChanged = useCallback((data: { raffleId: string }) => {
+    if (data.raffleId === raffleId) invalidate();
+  }, [raffleId, invalidate]);
+
   const handleRaffleUpdated = useCallback((updated: DetailRaffle) => {
     if (updated?.id === raffleId) {
       queryClient.setQueryData(qk, updated);
@@ -62,6 +66,7 @@ export function useRaffleDetail(
 
   useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_TICKET_ADDED, handleTicketAdded);
   useSocketEvent<RaffleTicketsRevokedPayload>(SOCKET_EVENTS.RAFFLE_TICKETS_REVOKED, handleTicketsRevoked);
+  useSocketEvent<{ raffleId: string }>(SOCKET_EVENTS.RAFFLE_DELIVERY_CHANGED, handleDeliveryChanged);
   useSocketEvent<DetailRaffle>(SOCKET_EVENTS.RAFFLE_UPDATED, handleRaffleUpdated);
 
   // Mutations update cache directly with server response, no extra refetch needed
