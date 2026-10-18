@@ -146,7 +146,11 @@ the override is silently ignored (`common/throttle-keys.spec.ts` guards it).
 - **expenses** — OWNER only; `cashSessionId` nullable (an expense can exist without an open
   session); per-tenant `ExpenseCategory` and `ExpenseConcept` models; optional `items[]`.
 - **raffles** — requires `rafflesEnabled`; ACTIVE→CLOSED→DRAWING→DRAWN. Ticket modes:
-  `PRODUCT_MATCH` (buying a product = ticket) and `SPENDING_THRESHOLD` (every N Bs spent).
+  `CATEGORY_MATCH` (one ticket per unit bought of any product in the raffle's categories,
+  `raffle_categories`) and `SPENDING_THRESHOLD` (every N Bs spent). `PRODUCT_MATCH` is legacy:
+  existing raffles keep working, new ones can no longer be created (`Raffle.ticketsForItems` is the
+  single place that decides what an order earns). Deleting a category used by a raffle, or holding
+  a product of one, is refused (409).
   `RaffleAutoTicketService` issues tickets when an order is **created** (fire-and-forget) and
   retires them when it is cancelled or paid as CORTESIA. Rules that are easy to break:
   - Every write that touches tickets, winners or status runs in one transaction that starts with

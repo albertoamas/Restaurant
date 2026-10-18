@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTicketRanges, positionLabel } from './raffle-utils';
+import { formatTicketRanges, joinList, positionLabel } from './raffle-utils';
 
 describe('positionLabel', () => {
   it('retorna "1er lugar" para posición 1', () => {
@@ -47,5 +47,14 @@ describe('formatTicketRanges', () => {
 
   it('vacío', () => {
     expect(formatTicketRanges([])).toBe('');
+  });
+});
+
+describe('joinList', () => {
+  it('une con comas y una "y" final', () => {
+    expect(joinList([])).toBe('');
+    expect(joinList(['Hamburguesas'])).toBe('Hamburguesas');
+    expect(joinList(['Hamburguesas', 'Milanesas'])).toBe('Hamburguesas y Milanesas');
+    expect(joinList(['A', 'B', 'C'])).toBe('A, B y C');
   });
 });

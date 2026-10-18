@@ -17,6 +17,13 @@ export function ticketsEarned(totalSpent: number, threshold: number): number {
   return Math.floor(totalSpent / threshold);
 }
 
+/** Una línea del pedido, con la categoría de su producto, para saber qué tickets otorga. */
+export interface OrderTicketItem {
+  productId: string;
+  categoryId: string;
+  quantity: number;
+}
+
 export interface RafflePrize {
   position: number;
   prizeDescription: string;
@@ -32,6 +39,7 @@ export interface RaffleProps {
   ticketMode: RaffleTicketMode;
   spendingThreshold: number | null;
   productId: string | null;
+  categoryIds: string[];
   prizes: RafflePrize[];
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +51,7 @@ export interface CreateRaffleOptions {
   description?: string;
   ticketMode: RaffleTicketMode;
   productId: string | null;
+  categoryIds?: string[];
   spendingThreshold: number | null;
   numberOfWinners: number;
   prizes: RafflePrize[];
@@ -58,6 +67,7 @@ export class Raffle {
   readonly ticketMode: RaffleTicketMode;
   readonly spendingThreshold: number | null;
   productId: string | null;
+  readonly categoryIds: string[];
   prizes: RafflePrize[];
   readonly createdAt: Date;
   updatedAt: Date;
@@ -78,6 +88,7 @@ export class Raffle {
       ticketMode: opts.ticketMode,
       spendingThreshold: opts.spendingThreshold,
       productId: opts.productId,
+      categoryIds: opts.categoryIds ?? [],
       prizes: opts.prizes,
       createdAt: now,
       updatedAt: now,
@@ -86,6 +97,20 @@ export class Raffle {
 
   static reconstitute(props: RaffleProps): Raffle {
     return new Raffle(props);
+  }
+
+  /**
+   * Tickets que otorgan las líneas de un pedido: uno por unidad que cumple la regla del sorteo
+   * (el producto, en los sorteos anteriores; cualquier producto de sus categorías, en los nuevos).
+   * Los sorteos por monto no dependen de las líneas.
+   */
+  ticketsForItems(items: OrderTicketItem[]): number {
+    const matches = (item: OrderTicketItem): boolean => {
+      if (this.ticketMode === 'PRODUCT_MATCH') return item.productId === this.productId;
+      if (this.ticketMode === 'CATEGORY_MATCH') return this.categoryIds.includes(item.categoryId);
+      return false;
+    };
+    return items.filter(matches).reduce((total, item) => total + item.quantity, 0);
   }
 
   close(): void {

@@ -14,12 +14,21 @@ function makeProductRaffle(productId: string): Raffle {
   });
 }
 
+function makeCategoryRaffle(...categoryIds: string[]): Raffle {
+  return Raffle.create({
+    tenantId: 'tenant-1', name: 'Por categorías', ticketMode: 'CATEGORY_MATCH',
+    productId: null, categoryIds, spendingThreshold: null, numberOfWinners: 1, prizes: PRIZES,
+  });
+}
+
 function makeSpendingRaffle(threshold: number): Raffle {
   return Raffle.create({
     tenantId: 'tenant-1', name: 'Acumulativo', ticketMode: 'SPENDING_THRESHOLD',
     productId: null, spendingThreshold: threshold, numberOfWinners: 1, prizes: PRIZES,
   });
 }
+
+const line = (productId: string, categoryId: string, quantity: number) => ({ productId, categoryId, quantity });
 
 describe('RaffleAutoTicketService', () => {
   let service: RaffleAutoTicketService;
@@ -32,125 +41,105 @@ describe('RaffleAutoTicketService', () => {
     service = new RaffleAutoTicketService(repo, events);
     repo.addTickets.mockResolvedValue(true);
     repo.findActiveSpendingRaffles.mockResolvedValue([]);
-    repo.findActiveRafflesForProducts.mockResolvedValue([]);
+    repo.findActiveItemRaffles.mockResolvedValue([]);
   });
 
-  describe('processOrder() — PRODUCT_MATCH', () => {
-    it('crea un input por unidad cuando hay un sorteo activo con el producto del pedido', async () => {
-      const raffle = makeProductRaffle('prod-1');
-      repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);
-
+  describe('processOrder() — sorteos por producto o categoría', () => {
+    it('busca los sorteos con los productos y categorías del pedido', async () => {
       await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 1 },
+        line('prod-1', 'cat-1', 1), line('prod-2', 'cat-2', 1),
       ], 100);
+
+      expect(repo.findActiveItemRaffles).toHaveBeenCalledWith('tenant-1', ['prod-1', 'prod-2'], ['cat-1', 'cat-2']);
+    });
+
+    it('un ticket por unidad en un sorteo por producto, a nombre del cliente y ligado al pedido', async () => {
+      const raffle = makeProductRaffle('prod-1');
+      repo.findActiveItemRaffles.mockResolvedValue([raffle]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [line('prod-1', 'cat-1', 3)], 300);
 
       expect(repo.addTickets).toHaveBeenCalledTimes(1);
       const [raffleId, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
       expect(raffleId).toBe(raffle.id);
-      expect(inputs).toHaveLength(1);
-      expect(inputs[0].customerId).toBe('cust-1');
-      expect(inputs[0].orderId).toBe('order-1');
-      expect(inputs[0].tenantId).toBe('tenant-1');
-    });
-
-    it('crea un input por unidad pedida (qty=3 → tres inputs)', async () => {
-      const raffle = makeProductRaffle('prod-1');
-      repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 3 },
-      ], 300);
-
-      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
       expect(inputs).toHaveLength(3);
-      expect(inputs.every((t) => t.customerId === 'cust-1')).toBe(true);
-      expect(inputs.every((t) => t.orderId === 'order-1')).toBe(true);
+      expect(inputs.every((t) => t.customerId === 'cust-1' && t.orderId === 'order-1' && t.tenantId === 'tenant-1')).toBe(true);
+      expect(new Set(inputs.map((t) => t.id)).size).toBe(3);
     });
 
-    it('cada input tiene un id único', async () => {
-      repo.findActiveRafflesForProducts.mockResolvedValue([makeProductRaffle('prod-1')]);
+    it('pedido de ejemplo: 2 hamburguesas, 1 milanesa y 1 soda en un sorteo de ambas categorías dan 3 tickets', async () => {
+      repo.findActiveItemRaffles.mockResolvedValue([makeCategoryRaffle('cat-hamburguesas', 'cat-milanesas')]);
 
       await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 3 },
-      ], 300);
-
-      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
-      const ids = inputs.map((t) => t.id);
-      expect(new Set(ids).size).toBe(3);
-    });
-
-    it('suma las cantidades cuando el mismo producto llega en más de una línea', async () => {
-      repo.findActiveRafflesForProducts.mockResolvedValue([makeProductRaffle('prod-1')]);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 2 },
-        { productId: 'prod-2', quantity: 5 },
-        { productId: 'prod-1', quantity: 3 },
-      ], 500);
+        line('hamburguesa-simple', 'cat-hamburguesas', 2),
+        line('milanesa-napolitana', 'cat-milanesas', 1),
+        line('soda', 'cat-bebidas', 1),
+      ], 120);
 
       expect(repo.addTickets).toHaveBeenCalledTimes(1);
+      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
+      expect(inputs).toHaveLength(3);
+    });
+
+    it('suma las líneas cuando el mismo producto llega más de una vez', async () => {
+      repo.findActiveItemRaffles.mockResolvedValue([makeProductRaffle('prod-1')]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
+        line('prod-1', 'cat-1', 2), line('prod-2', 'cat-2', 5), line('prod-1', 'cat-1', 3),
+      ], 500);
+
       const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
       expect(inputs).toHaveLength(5);
     });
 
+    it('emite en cada sorteo que corresponde, con sus propias cantidades', async () => {
+      const byProduct = makeProductRaffle('prod-1');
+      const byCategory = makeCategoryRaffle('cat-2');
+      repo.findActiveItemRaffles.mockResolvedValue([byProduct, byCategory]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
+        line('prod-1', 'cat-1', 1), line('prod-2', 'cat-2', 2),
+      ], 300);
+
+      const calls = repo.addTickets.mock.calls as [string, NewTicketInput[]][];
+      expect(calls).toHaveLength(2);
+      expect(calls[0][0]).toBe(byProduct.id);
+      expect(calls[0][1]).toHaveLength(1);
+      expect(calls[1][0]).toBe(byCategory.id);
+      expect(calls[1][1]).toHaveLength(2);
+    });
+
+    it('no emite en un sorteo que ninguna línea cumple', async () => {
+      repo.findActiveItemRaffles.mockResolvedValue([makeCategoryRaffle('cat-1')]);
+
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [line('soda', 'cat-bebidas', 2)], 20);
+
+      expect(repo.addTickets).not.toHaveBeenCalled();
+      expect(events.emitToOwners).not.toHaveBeenCalled();
+    });
+
+    it('no hace nada si no hay sorteos activos que apliquen', async () => {
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [line('prod-1', 'cat-1', 2)], 200);
+
+      expect(repo.addTickets).not.toHaveBeenCalled();
+    });
+
     it('avisa a los dueños cuando se emitieron tickets', async () => {
       const raffle = makeProductRaffle('prod-1');
-      repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);
+      repo.findActiveItemRaffles.mockResolvedValue([raffle]);
 
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [{ productId: 'prod-1', quantity: 1 }], 100);
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [line('prod-1', 'cat-1', 1)], 100);
 
       expect(events.emitToOwners).toHaveBeenCalledWith('tenant-1', SOCKET_EVENTS.RAFFLE_TICKET_ADDED, { raffleId: raffle.id });
     });
 
     it('no avisa si el sorteo ya no estaba ACTIVE y no se emitió nada', async () => {
-      repo.findActiveRafflesForProducts.mockResolvedValue([makeProductRaffle('prod-1')]);
+      repo.findActiveItemRaffles.mockResolvedValue([makeProductRaffle('prod-1')]);
       repo.addTickets.mockResolvedValue(false);
 
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [{ productId: 'prod-1', quantity: 1 }], 100);
+      await service.processOrder('tenant-1', 'cust-1', 'order-1', [line('prod-1', 'cat-1', 1)], 100);
 
       expect(events.emitToOwners).not.toHaveBeenCalled();
-    });
-
-    it('no hace nada si no hay sorteos activos de producto', async () => {
-      repo.findActiveRafflesForProducts.mockResolvedValue([]);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 2 },
-      ], 200);
-
-      expect(repo.addTickets).not.toHaveBeenCalled();
-    });
-
-    it('procesa varios sorteos con distintos productos en el mismo pedido', async () => {
-      const r1 = makeProductRaffle('prod-1');
-      const r2 = makeProductRaffle('prod-2');
-      repo.findActiveRafflesForProducts.mockResolvedValue([r1, r2]);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 1 },
-        { productId: 'prod-2', quantity: 2 },
-      ], 300);
-
-      expect(repo.addTickets).toHaveBeenCalledTimes(2);
-      const calls = repo.addTickets.mock.calls as [string, NewTicketInput[]][];
-      expect(calls[0][0]).toBe(r1.id);
-      expect(calls[0][1]).toHaveLength(1);
-      expect(calls[1][0]).toBe(r2.id);
-      expect(calls[1][1]).toHaveLength(2);
-    });
-
-    it('solo crea tickets para los productos con sorteo activo, ignora los demás', async () => {
-      const raffle = makeProductRaffle('prod-1');
-      repo.findActiveRafflesForProducts.mockResolvedValue([raffle]);
-
-      await service.processOrder('tenant-1', 'cust-1', 'order-1', [
-        { productId: 'prod-1', quantity: 1 },
-        { productId: 'prod-sin-sorteo', quantity: 3 },
-      ], 400);
-
-      expect(repo.addTickets).toHaveBeenCalledTimes(1);
-      const [, inputs] = repo.addTickets.mock.calls[0] as [string, NewTicketInput[]];
-      expect(inputs).toHaveLength(1);
     });
   });
 

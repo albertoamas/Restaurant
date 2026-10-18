@@ -1,3 +1,9 @@
+/** "A", "A y B", "A, B y C". */
+export function joinList(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
+}
+
 export function positionLabel(position: number): string {
   if (position === 1) return '1er lugar';
   if (position === 2) return '2do lugar';
@@ -23,6 +29,5 @@ export function formatTicketRanges(numbers: number[]): string {
     }
     i = j + 1;
   }
-  if (parts.length <= 1) return parts.join('');
-  return `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}`;
+  return joinList(parts);
 }

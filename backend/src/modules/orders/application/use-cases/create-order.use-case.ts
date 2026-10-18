@@ -191,7 +191,11 @@ export class CreateOrderUseCase {
 
     // 13. Auto-assign raffle tickets — skip CORTESIA orders (silent — never throws)
     if (resolvedCustomerId && this.raffleAutoTicket && !hasCortesia) {
-      const raffleItems = dto.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
+      const raffleItems = dto.items.map((i) => ({
+        productId: i.productId,
+        categoryId: productMap.get(i.productId)!.categoryId,
+        quantity: i.quantity,
+      }));
       this.raffleAutoTicket.processOrder(tenantId, resolvedCustomerId, orderId, raffleItems, order.total).catch((err) => this.logger.error(`RaffleAutoTicket failed orderId=${orderId} tenantId=${tenantId}`, err?.stack));
     }
 

@@ -86,6 +86,7 @@ model Tenant {
   raffleWinners           RaffleWinner[]
   customerRaffleSpending  CustomerRaffleSpending[]
   raffleOrderSpending     RaffleOrderSpending[]
+  raffleCategories        RaffleCategory[]
 
   @@map("tenants")
 }
@@ -136,6 +137,7 @@ model Category {
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   products Product[]
+  raffleCategories RaffleCategory[]
 
   @@index([tenantId, sortOrder])
   @@map("categories")
@@ -408,7 +410,8 @@ model Raffle {
   // ACTIVE → CLOSED → DRAWING (primer ganador sorteado) → DRAWN (todos sorteados)
   status          String   @default("ACTIVE")
   numberOfWinners Int      @default(1) @map("number_of_winners")
-  // PRODUCT_MATCH: tickets por compra de producto específico
+  // PRODUCT_MATCH: tickets por compra de un producto específico (sorteos anteriores; ya no se crean)
+  // CATEGORY_MATCH: tickets por cada unidad comprada de las categorías del sorteo (raffle_categories)
   // SPENDING_THRESHOLD: tickets por gasto acumulado (cada N Bs = 1 ticket)
   ticketMode        String  @default("PRODUCT_MATCH") @map("ticket_mode")
   spendingThreshold Int?    @map("spending_threshold")
@@ -423,6 +426,7 @@ model Raffle {
   winners                RaffleWinner[]
   customerSpendings      CustomerRaffleSpending[]
   orderSpendings         RaffleOrderSpending[]
+  categories             RaffleCategory[]
 
   @@index([tenantId, status])
   @@index([tenantId, productId])
@@ -546,4 +550,22 @@ model RaffleOrderSpending {
   @@unique([raffleId, orderId])
   @@index([tenantId, orderId])
   @@map("raffle_order_spending")
+}
+
+// ─── RaffleCategory ───────────────────────────────────────────
+// Categorías que dan tickets en un sorteo CATEGORY_MATCH. Sin ON DELETE en category: borrar una
+// categoría usada por un sorteo se rechaza en el caso de uso (y en la base, por NO ACTION).
+
+model RaffleCategory {
+  raffleId   String @map("raffle_id")
+  categoryId String @map("category_id")
+  tenantId   String @map("tenant_id")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  raffle   Raffle   @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: NoAction)
+
+  @@id([raffleId, categoryId])
+  @@index([tenantId, categoryId])
+  @@map("raffle_categories")
 }

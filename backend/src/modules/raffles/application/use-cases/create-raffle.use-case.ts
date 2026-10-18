@@ -1,8 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Optional } from '@nestjs/common';
 import { RaffleDetailDto, SOCKET_EVENTS } from '@pos/shared';
 import { Raffle } from '../../domain/entities/raffle.entity';
 import { RAFFLE_REPOSITORY_PORT, RaffleRepositoryPort } from '../../domain/ports/raffle-repository.port';
-import { PRODUCT_REPOSITORY_PORT, ProductRepositoryPort } from '../../../catalog/domain/ports/product-repository.port';
+import { CATEGORY_REPOSITORY_PORT, CategoryRepositoryPort } from '../../../catalog/domain/ports/category-repository.port';
 import { CreateRaffleDto } from '../dto/create-raffle.dto';
 import { EventsService } from '../../../events/events.service';
 
@@ -11,8 +11,8 @@ export class CreateRaffleUseCase {
   constructor(
     @Inject(RAFFLE_REPOSITORY_PORT)
     private readonly repo: RaffleRepositoryPort,
-    @Inject(PRODUCT_REPOSITORY_PORT)
-    private readonly productRepo: ProductRepositoryPort,
+    @Inject(CATEGORY_REPOSITORY_PORT)
+    private readonly categoryRepo: CategoryRepositoryPort,
     @Optional() private readonly eventsService?: EventsService,
   ) {}
 
@@ -20,13 +20,8 @@ export class CreateRaffleUseCase {
     const { ticketMode } = dto;
 
     // Validación de campos condicionales por modo
-    if (ticketMode === 'PRODUCT_MATCH') {
-      if (!dto.productId) {
-        throw new BadRequestException('productId es requerido para el modo PRODUCT_MATCH');
-      }
-      const product = await this.productRepo.findById(dto.productId, tenantId);
-      if (!product) throw new NotFoundException(`Producto ${dto.productId} no encontrado`);
-      if (!product.isActive) throw new BadRequestException('El producto seleccionado no está activo');
+    if (ticketMode === 'CATEGORY_MATCH') {
+      await this.assertCategoriesUsable(dto.categoryIds ?? [], tenantId);
     }
 
     if (ticketMode === 'SPENDING_THRESHOLD') {
@@ -53,7 +48,8 @@ export class CreateRaffleUseCase {
       name: dto.name,
       description: dto.description,
       ticketMode,
-      productId: dto.productId ?? null,
+      productId: null,
+      categoryIds: dto.categoryIds,
       spendingThreshold: dto.spendingThreshold ?? null,
       numberOfWinners: dto.numberOfWinners,
       prizes: dto.prizes.map((p) => ({ position: p.position, prizeDescription: p.prizeDescription })),
@@ -64,5 +60,17 @@ export class CreateRaffleUseCase {
     const result = await this.repo.findRaffleWithTickets(raffle.id, tenantId);
     this.eventsService?.emitToOwners(tenantId, SOCKET_EVENTS.RAFFLE_CREATED, result);
     return result!;
+  }
+
+  /** Todas las categorías existen, son del negocio y están activas. */
+  private async assertCategoriesUsable(categoryIds: string[], tenantId: string): Promise<void> {
+    const categories = await this.categoryRepo.findByIds(categoryIds, tenantId);
+    if (categories.length !== categoryIds.length) {
+      throw new BadRequestException('Alguna de las categorías elegidas no existe');
+    }
+    const inactive = categories.find((c) => !c.isActive);
+    if (inactive) {
+      throw new BadRequestException(`La categoría "${inactive.name}" no está activa`);
+    }
   }
 }

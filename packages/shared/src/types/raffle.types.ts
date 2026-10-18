@@ -1,6 +1,7 @@
 export type RaffleStatus = 'ACTIVE' | 'CLOSED' | 'DRAWING' | 'DRAWN';
 
-export type RaffleTicketMode = 'PRODUCT_MATCH' | 'SPENDING_THRESHOLD';
+/** PRODUCT_MATCH quedó solo para los sorteos anteriores: los nuevos son por categorías o por monto. */
+export type RaffleTicketMode = 'PRODUCT_MATCH' | 'CATEGORY_MATCH' | 'SPENDING_THRESHOLD';
 
 export interface RafflePrizeDto {
   position: number;
@@ -32,6 +33,8 @@ export interface RaffleDto {
   spendingThreshold: number | null;
   productId: string | null;
   productName: string | null;
+  /** Categorías que dan tickets (sorteos CATEGORY_MATCH). */
+  categories: Array<{ id: string; name: string }>;
   prizes: RafflePrizeDto[];
   winners: RaffleWinnerDto[];
   /** Posición que se sorteará en el próximo draw. null cuando status === 'DRAWN'. */
@@ -69,9 +72,10 @@ export type RaffleDetailDto = RaffleDto & {
 export interface CreateRaffleRequest {
   name: string;
   description?: string;
-  ticketMode: RaffleTicketMode;
-  /** Requerido cuando ticketMode === 'PRODUCT_MATCH'. */
-  productId?: string;
+  /** Los sorteos nuevos son 'CATEGORY_MATCH' o 'SPENDING_THRESHOLD'. */
+  ticketMode: Exclude<RaffleTicketMode, 'PRODUCT_MATCH'>;
+  /** Requerido cuando ticketMode === 'CATEGORY_MATCH': un ticket por unidad comprada de estas categorías. */
+  categoryIds?: string[];
   /** Requerido cuando ticketMode === 'SPENDING_THRESHOLD'. Monto en Bs entero positivo. */
   spendingThreshold?: number;
   numberOfWinners: number;
