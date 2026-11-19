@@ -1,4 +1,4 @@
-import { ExpenseSummaryDto, PaymentMethod } from '@pos/shared';
+import { ExpenseItemSummaryDto, ExpenseSummaryDto, PaymentMethod } from '@pos/shared';
 import { Expense } from '../entities/expense.entity';
 
 export const EXPENSE_REPOSITORY_PORT = 'ExpenseRepositoryPort';
@@ -57,6 +57,13 @@ export interface ExpenseRepositoryPort {
     from: Date,
     to: Date,
   ): Promise<ExpenseSummaryDto>;
+  /** Lo gastado por ítem en el período, agrupado como explica `ExpenseItemSummaryDto`. */
+  getItemSummary(
+    tenantId: string,
+    branchId: string | null,
+    from: Date,
+    to: Date,
+  ): Promise<ExpenseItemSummaryDto[]>;
   /** Anula un gasto activo del tenant. `false` si no existe o ya estaba anulado. */
   void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean>;
 }

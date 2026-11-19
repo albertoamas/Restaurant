@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { CategoryDto, DailyReportDto, ExpenseSummaryDto, TopCustomerDto, TopProductDto } from '@pos/shared';
+import type { CategoryDto, DailyReportDto, ExpenseItemSummaryDto, ExpenseSummaryDto, TopCustomerDto, TopProductDto } from '@pos/shared';
 import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
 import { categoriesApi } from '../api/categories.api';
@@ -23,6 +23,23 @@ export function useReportSummary(utcFrom: string, utcTo: string, branchParam: st
   });
 
   return { report, expenseSummary, loading, expenseLoading };
+}
+
+/** Detalle por ítem de la pestaña Gastos. Solo se pide cuando esa pestaña está activa. */
+export function useExpenseItemsReport(
+  utcFrom: string,
+  utcTo: string,
+  branchParam: string | undefined,
+  enabled: boolean,
+) {
+  const { data: items = [] as ExpenseItemSummaryDto[], isPending } = useQuery({
+    queryKey: queryKeys.reportExpenseItems(utcFrom, utcTo, branchParam),
+    queryFn:  () => expensesApi.getItemSummary(utcFrom, utcTo, branchParam),
+    staleTime: 0,
+    enabled,
+  });
+
+  return { items, loading: enabled && isPending };
 }
 
 /** Datos de la pestaña Productos. Solo se piden cuando esa pestaña está activa. */

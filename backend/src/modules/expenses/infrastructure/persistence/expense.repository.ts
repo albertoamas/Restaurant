@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ExpenseSummaryDto } from '@pos/shared';
+import { ExpenseItemSummaryDto, ExpenseSummaryDto } from '@pos/shared';
 import { Expense as PrismaExpense, ExpenseItem as PrismaExpenseItem, ExpenseCategory as PrismaExpenseCategory, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { Expense } from '../../domain/entities/expense.entity';
@@ -283,6 +283,69 @@ export class ExpenseRepository implements ExpenseRepositoryPort {
       byDay[row.day.toISOString().slice(0, 10)] = Number(row.total);
     }
     return { total, byCategory, byDay, transactionCount };
+  }
+
+  async getItemSummary(
+    tenantId: string,
+    branchId: string | null,
+    from: Date,
+    to: Date,
+  ): Promise<ExpenseItemSummaryDto[]> {
+    type RawRow = {
+      category: string;
+      conceptId: string | null;
+      name: string | null;
+      unit: string | null;
+      quantity: unknown;
+      total: unknown;
+      purchases: number;
+    };
+    const branchFilter = branchId ? Prisma.sql`AND e.branch_id = ${branchId}` : Prisma.empty;
+
+    // Misma categoría que getSummary (COALESCE(ec.name, e.category)), así la suma de las filas de
+    // una categoría da su barra. Los gastos viejos sin ítems salen como una fila "Sin detalle".
+    const rows = await this.prisma.$queryRaw<RawRow[]>(Prisma.sql`
+      SELECT COALESCE(ec.name, e.category)          AS category,
+             ei.concept_id                          AS "conceptId",
+             COALESCE(MAX(cn.name), MIN(ei.name))   AS name,
+             MIN(NULLIF(TRIM(ei.unit), ''))         AS unit,
+             SUM(ei.quantity)                       AS quantity,
+             SUM(ei.total_price)                    AS total,
+             COUNT(DISTINCT e.id)::int              AS purchases
+      FROM expenses e
+      JOIN expense_items ei      ON ei.expense_id = e.id
+      LEFT JOIN expense_categories ec ON ec.id = ei.category_id
+      LEFT JOIN expense_concepts cn   ON cn.id = ei.concept_id
+      WHERE e.tenant_id = ${tenantId}
+        ${branchFilter}
+        AND e.status = 'ACTIVE'
+        AND e.expense_date BETWEEN ${from} AND ${to}
+      GROUP BY COALESCE(ec.name, e.category),
+               ei.concept_id,
+               CASE WHEN ei.concept_id IS NULL THEN LOWER(TRIM(ei.name)) END,
+               LOWER(COALESCE(NULLIF(TRIM(ei.unit), ''), ''))
+
+      UNION ALL
+
+      SELECT e.category, NULL::text, NULL::text, NULL::text, 0::numeric, SUM(e.amount), COUNT(*)::int
+      FROM expenses e
+      WHERE e.tenant_id = ${tenantId}
+        ${branchFilter}
+        AND e.status = 'ACTIVE'
+        AND e.expense_date BETWEEN ${from} AND ${to}
+        AND NOT EXISTS (SELECT 1 FROM expense_items ei WHERE ei.expense_id = e.id)
+      GROUP BY e.category
+    `);
+
+    return rows.map((r) => ({
+      category:  r.category,
+      conceptId: r.conceptId,
+      name:      r.name,
+      unit:      r.unit,
+      quantity:  Number(r.quantity),
+      total:     Number(r.total),
+      purchases: Number(r.purchases),
+    }));
   }
 
   async void(id: string, tenantId: string, userId: string, reason: string | null): Promise<boolean> {

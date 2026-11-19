@@ -1,8 +1,12 @@
-import type { DailyReportDto, ExpenseSummaryDto } from '@pos/shared';
+import { useMemo, useState } from 'react';
+import type { DailyReportDto, ExpenseItemSummaryDto, ExpenseSummaryDto } from '@pos/shared';
 import { EmptyState } from '../../ui/EmptyState';
 import { Skeleton } from '../../ui/Skeleton';
 import { ExpenseTrendChart } from '../charts/ExpenseTrendChart';
-import { BreakdownRow, ChartCard, Kpi, bs, share } from '../index';
+import { ChartCard, Kpi, bs, share } from '../index';
+import { ExpenseCategoryRow } from '../ExpenseCategoryRow';
+import { ExpenseCategoryModal } from '../ExpenseCategoryModal';
+import { groupExpenseItems } from '../../../utils/expense-items-report';
 import { legacyExpenseLabel } from '../../../utils/expense-labels';
 
 interface Props {
@@ -12,10 +16,18 @@ interface Props {
   isMultiDay: boolean;
   /** Días del período (hora Bolivia): el gráfico diario muestra también los días sin gastos. */
   days: string[];
+  /** Período del reporte, para el subtítulo del detalle de una categoría. */
+  rangeLabel: string;
+  /** Detalle por ítem: se ve al abrir una categoría. */
+  items: ExpenseItemSummaryDto[];
+  itemsLoading: boolean;
 }
 
-/** En qué se fue el dinero: total del período, gasto por día y desglose por categoría. */
-export function ExpensesTab({ report, expenseSummary, loading, isMultiDay, days }: Props) {
+/** En qué se fue el dinero: total del período, gasto por día y desglose por categoría e ítem. */
+export function ExpensesTab({ report, expenseSummary, loading, isMultiDay, days, rangeLabel, items, itemsLoading }: Props) {
+  const groups = useMemo(() => groupExpenseItems(items), [items]);
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+
   if (loading) {
     return <div className="grid gap-4 lg:grid-cols-2"><Skeleton variant="card" /><Skeleton variant="card" /></div>;
   }
@@ -29,6 +41,8 @@ export function ExpensesTab({ report, expenseSummary, loading, isMultiDay, days 
   const entries = (Object.entries(expenseSummary!.byCategory) as [string, number][])
     .filter(([, amount]) => amount > 0)
     .sort(([, a], [, b]) => b - a);
+  // Si al refrescar la categoría ya no tiene gastos en el período, el detalle se cierra solo.
+  const opened = entries.find(([cat]) => cat === openCategory);
 
   return (
     <div className="space-y-4">
@@ -44,13 +58,32 @@ export function ExpensesTab({ report, expenseSummary, loading, isMultiDay, days 
         </ChartCard>
       )}
 
-      <ChartCard title="Gastos por categoría" description={`Total: ${bs(total)}`}>
+      <ChartCard title="Gastos por categoría" description={`Total: ${bs(total)}. Toca una categoría para ver en qué se gastó.`}>
         <ul className="space-y-4">
           {entries.map(([cat, amount]) => (
-            <BreakdownRow key={cat} label={legacyExpenseLabel(cat)} value={bs(amount)} pct={share(amount, total)} color="bg-rose-500" />
+            <ExpenseCategoryRow
+              key={cat}
+              label={legacyExpenseLabel(cat)}
+              amount={amount}
+              pct={share(amount, total)}
+              onOpen={() => setOpenCategory(cat)}
+            />
           ))}
         </ul>
       </ChartCard>
+
+      {opened && (
+        <ExpenseCategoryModal
+          key={opened[0]}
+          label={legacyExpenseLabel(opened[0])}
+          period={rangeLabel}
+          amount={opened[1]}
+          pctOfTotal={share(opened[1], total)}
+          group={groups.get(opened[0])}
+          loading={itemsLoading}
+          onClose={() => setOpenCategory(null)}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { SaasPlan } from '@pos/shared';
 import { useSettingsStore } from '../store/settings.store';
 import { useReportFilters, type Period } from '../hooks/useReportFilters';
-import { useReportSummary, useTopProductsReport, useTopCustomersReport } from '../hooks/useReportData';
+import { useReportSummary, useTopProductsReport, useTopCustomersReport, useExpenseItemsReport } from '../hooks/useReportData';
 import { useSalesTrends, useTopCategoriesReport, useCashReport, useBranchComparison } from '../hooks/useAdvancedReportData';
 import { reportsApi } from '../api/reports.api';
 import { expensesApi } from '../api/expenses.api';
@@ -107,6 +107,7 @@ export function ReportPage() {
   const trends    = useSalesTrends(fromUtc, toUtc, branchParam, isMultiDay, activeTab === 'ventas');
   const cash      = useCashReport(fromUtc, toUtc, branchParam, activeTab === 'caja');
   const compare   = useBranchComparison(fromUtc, toUtc, isMultiDay, activeTab === 'sucursales');
+  const expenseItems = useExpenseItemsReport(fromUtc, toUtc, branchParam, activeTab === 'gastos');
   const rangeDays = useMemo(() => eachDay(from, to), [from, to]);
 
   /**
@@ -255,7 +256,7 @@ export function ReportPage() {
       ) : activeTab === 'clientes' ? (
         <CustomersTab topCustomers={customers.topCustomers} loading={customers.loading} />
       ) : activeTab === 'gastos' ? (
-        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} isMultiDay={isMultiDay} days={rangeDays} />
+        <ExpensesTab report={report} expenseSummary={expenseSummary} loading={expenseLoading} isMultiDay={isMultiDay} days={rangeDays} rangeLabel={rangeLabel} items={expenseItems.items} itemsLoading={expenseItems.loading} />
       ) : (
         <CashTab byCashier={cash.byCashier} cashSessions={cash.cashSessions} loading={cash.loading} />
       )}
