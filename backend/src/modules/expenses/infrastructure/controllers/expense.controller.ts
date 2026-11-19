@@ -24,6 +24,7 @@ import { CreateExpenseUseCase } from '../../application/use-cases/create-expense
 import { ListExpensesUseCase } from '../../application/use-cases/list-expenses.use-case';
 import { VoidExpenseUseCase } from '../../application/use-cases/void-expense.use-case';
 import { GetExpenseSummaryUseCase } from '../../application/use-cases/get-expense-summary.use-case';
+import { GetExpenseItemSummaryUseCase } from '../../application/use-cases/get-expense-item-summary.use-case';
 import { CreateExpenseCategoryUseCase } from '../../application/use-cases/create-expense-category.use-case';
 import { ListExpenseCategoriesUseCase } from '../../application/use-cases/list-expense-categories.use-case';
 import { DeleteExpenseCategoryUseCase } from '../../application/use-cases/delete-expense-category.use-case';
@@ -43,6 +44,7 @@ import { UpdateExpenseConceptDto } from '../../application/dto/update-expense-co
 import { LoadSuggestedCatalogDto } from '../../application/dto/load-suggested-catalog.dto';
 import { LoadSuggestedExpenseCatalogUseCase } from '../../application/use-cases/load-suggested-expense-catalog.use-case';
 import { getBoliviaTodayBoundsISO } from '../../../../common/utils/timezone.util';
+import { scopedBranchId } from '../../../../common/utils/branch-scope';
 
 function validateISODate(val: string | undefined, name: string): void {
   if (val === undefined) return;
@@ -58,6 +60,7 @@ export class ExpenseController {
     private readonly listExpenses: ListExpensesUseCase,
     private readonly voidExpense: VoidExpenseUseCase,
     private readonly getExpenseSummary: GetExpenseSummaryUseCase,
+    private readonly getExpenseItemSummary: GetExpenseItemSummaryUseCase,
     private readonly createExpenseCategory: CreateExpenseCategoryUseCase,
     private readonly listExpenseCategories: ListExpenseCategoriesUseCase,
     private readonly deleteExpenseCategory: DeleteExpenseCategoryUseCase,
@@ -207,6 +210,26 @@ export class ExpenseController {
     return this.getExpenseSummary.execute(
       tenantId,
       effectiveBranchId,
+      new Date(from || defaultStart),
+      new Date(to   || defaultEnd),
+    );
+  }
+
+  /** Detalle por ítem de la pestaña Gastos de reportes. Mismos filtros que `summary`. */
+  @Get('summary/items')
+  itemSummary(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: JwtPayload,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('branchId') branchId?: string,
+  ) {
+    validateISODate(from, 'from');
+    validateISODate(to, 'to');
+    const { start: defaultStart, end: defaultEnd } = getBoliviaTodayBoundsISO();
+    return this.getExpenseItemSummary.execute(
+      tenantId,
+      scopedBranchId(user, branchId) ?? null,
       new Date(from || defaultStart),
       new Date(to   || defaultEnd),
     );

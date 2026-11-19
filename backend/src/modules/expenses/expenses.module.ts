@@ -15,6 +15,7 @@ import { ListExpensesUseCase } from './application/use-cases/list-expenses.use-c
 import { VoidExpenseUseCase } from './application/use-cases/void-expense.use-case';
 import { ExpenseItemsService } from './application/services/expense-items.service';
 import { GetExpenseSummaryUseCase } from './application/use-cases/get-expense-summary.use-case';
+import { GetExpenseItemSummaryUseCase } from './application/use-cases/get-expense-item-summary.use-case';
 import { CreateExpenseCategoryUseCase } from './application/use-cases/create-expense-category.use-case';
 import { ListExpenseCategoriesUseCase } from './application/use-cases/list-expense-categories.use-case';
 import { DeleteExpenseCategoryUseCase } from './application/use-cases/delete-expense-category.use-case';
@@ -38,6 +39,7 @@ import { LoadSuggestedExpenseCatalogUseCase } from './application/use-cases/load
     VoidExpenseUseCase,
     ExpenseItemsService,
     GetExpenseSummaryUseCase,
+    GetExpenseItemSummaryUseCase,
     CreateExpenseCategoryUseCase,
     ListExpenseCategoriesUseCase,
     DeleteExpenseCategoryUseCase,

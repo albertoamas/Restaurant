@@ -2,6 +2,7 @@ import client from './client';
 import type {
   ExpenseDto,
   ExpenseSummaryDto,
+  ExpenseItemSummaryDto,
   CreateExpenseRequest,
   UpdateExpenseRequest,
   ExpenseCategoryDto,
@@ -76,6 +77,14 @@ export const expensesApi = {
   getSummary: (from: string, to: string, branchId?: string) =>
     client
       .get<ExpenseSummaryDto>('/api/v1/expenses/summary', {
+        params: { from, to, ...(branchId ? { branchId } : {}) },
+      })
+      .then((r) => r.data),
+
+  /** Lo gastado por ítem en el período (detalle de cada categoría en reportes). */
+  getItemSummary: (from: string, to: string, branchId?: string) =>
+    client
+      .get<ExpenseItemSummaryDto[]>('/api/v1/expenses/summary/items', {
         params: { from, to, ...(branchId ? { branchId } : {}) },
       })
       .then((r) => r.data),

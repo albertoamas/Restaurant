@@ -116,6 +116,25 @@ export interface ExpenseSummaryDto {
 }
 
 /**
+ * Lo gastado en un mismo ítem durante el período (`GET /expenses/summary/items`). Los ítems de un
+ * gasto predefinido se agrupan por su id (renombrarlo no parte el historial); los escritos a mano,
+ * por nombre sin mayúsculas ni espacios de más. Cada unidad va en su propia fila: sumar kg con
+ * unidades no tendría sentido.
+ */
+export interface ExpenseItemSummaryDto {
+  /** Misma clave que `ExpenseSummaryDto.byCategory`. */
+  category: string;
+  conceptId: string | null;
+  /** `null`: gastos viejos registrados sin ítems ("Sin detalle"). */
+  name: string | null;
+  unit: string | null;
+  quantity: number;
+  total: number;
+  /** Gastos (compras) distintos en los que aparece. */
+  purchases: number;
+}
+
+/**
  * Topes de la lista de gastos por negocio. Son técnicos, no del plan: la pantalla muestra la lista
  * completa de una vez. Solo cuentan los activos (lo eliminado o quitado no ocupa lugar).
  */

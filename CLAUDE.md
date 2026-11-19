@@ -34,9 +34,10 @@ pnpm test:frontend                  # Vitest
 pnpm test:e2e                       # Playwright (starts/reuses the dev stack)
 pnpm --filter backend test -- --testPathPattern="create-order"
 pnpm --filter frontend test:run -- src/store/cart.store.spec.ts
+pnpm test:e2e -- e2e/order-flow.spec.ts
 
 pnpm --filter backend prisma:migrate:status | prisma:migrate:deploy | prisma:studio
-pnpm build
+pnpm build                          # does NOT build shared: on a clean checkout run the shared build first
 ```
 
 Demo login (after seed): `owner@demo.com` / `cajero@demo.com`, password `demo123` — tenant "Restaurante Demo" (PRO).
@@ -59,7 +60,8 @@ Vite proxies `/api`, `/uploads`, `/socket.io` to `:3000`.
 ## Backend
 
 Hexagonal modules under `backend/src/modules/<name>/` (`domain/` → `application/` →
-`infrastructure/`); repositories injected through a port token, never the concrete class.
+`infrastructure/`); repositories injected through a string port token
+(`@Inject('OrderRepositoryPort')`), never the concrete class.
 Details and test patterns: `nest-module` skill. Reference module: `raffles`.
 
 Global config: prefix `/api/v1` (`GET /health` outside it); `ValidationPipe` with
@@ -242,10 +244,10 @@ shell; `/api`, `/uploads`, `/socket.io` and `/health` always go to the network a
 
 ## Data model
 
-Schema: `backend/prisma/schema.prisma` (21 models). `Plan` is global; everything else hangs off
+Schema: `backend/prisma/schema.prisma` (23 models). `Plan` is global; everything else hangs off
 `Tenant`: users, branches, `BranchOrderSequence`, catalog, orders (+ items, payments), cash
 sessions, expenses (+ items, categories, concepts), customers and raffles (+ prizes, tickets,
-winners, spending). Enums are stored as plain strings.
+winners, categories, per-customer and per-order spending). Enums are stored as plain strings.
 
 ### Split payments
 
